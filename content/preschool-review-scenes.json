@@ -153,6 +153,45 @@
       "officialChannel": false,
       "attribution": "Gogo's Adventures with English — original animation and English performance (Longman); source upload: Children English, not verified as the rightsholder.",
       "duration": 309
+    },
+    {
+      "id": "ZvD4DLnfeo0",
+      "url": "https://www.youtube.com/watch?v=ZvD4DLnfeo0",
+      "localFile": "content/local-dubbing/review/younger-age-5/sources/ZvD4DLnfeo0.mp4",
+      "series": "Gogo's Adventures with English",
+      "episode": "How many are there?",
+      "uploadTitle": "English for Children - gogo adventure with english  Unit 9",
+      "title": "English for Children - gogo adventure with english  Unit 9",
+      "channel": "Children English",
+      "officialChannel": false,
+      "attribution": "Gogo's Adventures with English — original animation and English performance (Longman); source upload: Children English, not verified as the rightsholder.",
+      "duration": 309
+    },
+    {
+      "id": "ckHMqT9Nw7o",
+      "url": "https://www.youtube.com/watch?v=ckHMqT9Nw7o",
+      "localFile": "content/local-dubbing/review/younger-age-5/sources/ckHMqT9Nw7o.mp4",
+      "series": "Gogo's Adventures with English",
+      "episode": "Have you got a ruler?",
+      "uploadTitle": "English for Children - gogo adventure with english Unit 14",
+      "title": "English for Children - gogo adventure with english Unit 14",
+      "channel": "Children English",
+      "officialChannel": false,
+      "attribution": "Gogo's Adventures with English — original animation and English performance (Longman); source upload: Children English, not verified as the rightsholder.",
+      "duration": 346
+    },
+    {
+      "id": "hAwEoUiKxYg",
+      "url": "https://www.youtube.com/watch?v=hAwEoUiKxYg",
+      "localFile": "content/local-dubbing/review/younger-age-5/sources/hAwEoUiKxYg.mp4",
+      "series": "Gogo's Adventures with English",
+      "episode": "You're big",
+      "uploadTitle": "English for Children - gogo adventure with english Unit 17",
+      "title": "English for Children - gogo adventure with english Unit 17",
+      "channel": "Children English",
+      "officialChannel": false,
+      "attribution": "Gogo's Adventures with English — original animation and English performance (Longman); source upload: Children English, not verified as the rightsholder.",
+      "duration": 306
     }
   ],
   "scenes": [
@@ -6738,6 +6777,1814 @@
         "tool": "torchaudio 2.6.0",
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
+      }
+    },
+    {
+      "id": "clip_r84TJ-twVWk",
+      "sceneId": "scene_sbQursTISog",
+      "batch": "2026-11-11-playful-first-english-b",
+      "cohort": "younger-age-5",
+      "slug": "24-gogo-mirror-big-small",
+      "publicSlug": "gogo-mirror-big-small",
+      "routeSlug": "gogo-mirror-big-small",
+      "title": "Now I'm big!",
+      "titleZh": "我变大了！",
+      "sourceId": "hAwEoUiKxYg",
+      "start": 51.7,
+      "end": 75.7,
+      "roles": [
+        {
+          "id": "role_9_Yfz6qh2ws",
+          "name": "Gogo",
+          "selectable": true,
+          "portrait": "gogo-mirror-big-small-gogo-portrait-a8ffbdab8f8a.jpg"
+        },
+        {
+          "id": "role_SGbqPDmh6YY",
+          "name": "Tony",
+          "selectable": true,
+          "portrait": "gogo-mirror-big-small-tony-portrait-752f75bae87c.jpg"
+        },
+        {
+          "id": "role_gNZA2PGNGt4",
+          "name": "Jenny",
+          "selectable": true,
+          "portrait": "gogo-mirror-big-small-jenny-portrait-bb6627374bb1.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_80OVRvpFF6A",
+          "roleId": "role_SGbqPDmh6YY",
+          "speaker": "Tony",
+          "start": 53.682,
+          "end": 55.243,
+          "text": "You're big, Gogo.",
+          "hint": "Gogo，你变大了。",
+          "words": [
+            {
+              "text": "You're",
+              "start": 53.722,
+              "end": 53.982
+            },
+            {
+              "text": "big,",
+              "start": 54.182,
+              "end": 54.482
+            },
+            {
+              "text": "Gogo.",
+              "start": 54.682,
+              "end": 55.183
+            }
+          ]
+        },
+        {
+          "id": "line_BS1lDEUMhcU",
+          "roleId": "role_gNZA2PGNGt4",
+          "speaker": "Jenny",
+          "start": 56.804,
+          "end": 58.666,
+          "text": "Now I'm big.",
+          "hint": "现在我变大了。",
+          "words": [
+            {
+              "text": "Now",
+              "start": 56.844,
+              "end": 57.405
+            },
+            {
+              "text": "I'm",
+              "start": 57.885,
+              "end": 57.965
+            },
+            {
+              "text": "big.",
+              "start": 58.185,
+              "end": 58.606
+            }
+          ]
+        },
+        {
+          "id": "line_A_3_dq1MuEQ",
+          "roleId": "role_SGbqPDmh6YY",
+          "speaker": "Tony",
+          "start": 60.307,
+          "end": 61.468,
+          "text": "I'm small.",
+          "hint": "我变小了。",
+          "words": [
+            {
+              "text": "I'm",
+              "start": 60.347,
+              "end": 60.467
+            },
+            {
+              "text": "small.",
+              "start": 60.748,
+              "end": 61.408
+            }
+          ]
+        },
+        {
+          "id": "line_zjju9rwGVbY",
+          "roleId": "role_9_Yfz6qh2ws",
+          "speaker": "Gogo",
+          "start": 62.809,
+          "end": 64.811,
+          "text": "Now I'm small.",
+          "hint": "现在我变小了。",
+          "words": [
+            {
+              "text": "Now",
+              "start": 62.849,
+              "end": 63.67
+            },
+            {
+              "text": "I'm",
+              "start": 64.05,
+              "end": 64.19
+            },
+            {
+              "text": "small.",
+              "start": 64.331,
+              "end": 64.751
+            }
+          ]
+        },
+        {
+          "id": "line_IoZ9T1NbALM",
+          "roleId": "role_9_Yfz6qh2ws",
+          "speaker": "Gogo",
+          "start": 66.272,
+          "end": 67.313,
+          "text": "She's big.",
+          "hint": "她变大了。",
+          "words": [
+            {
+              "text": "She's",
+              "start": 66.312,
+              "end": 66.692
+            },
+            {
+              "text": "big.",
+              "start": 66.933,
+              "end": 67.253
+            }
+          ]
+        },
+        {
+          "id": "line__vJb3skJ3eY",
+          "roleId": "role_SGbqPDmh6YY",
+          "speaker": "Tony",
+          "start": 68.534,
+          "end": 69.695,
+          "text": "That's right, Gogo.",
+          "hint": "说得对，Gogo。",
+          "words": [
+            {
+              "text": "That's",
+              "start": 68.574,
+              "end": 68.854
+            },
+            {
+              "text": "right,",
+              "start": 68.934,
+              "end": 69.115
+            },
+            {
+              "text": "Gogo.",
+              "start": 69.215,
+              "end": 69.635
+            }
+          ]
+        },
+        {
+          "id": "line_pkigi9UP_l8",
+          "roleId": "role_SGbqPDmh6YY",
+          "speaker": "Tony",
+          "start": 70.436,
+          "end": 71.556,
+          "text": "She's big.",
+          "hint": "她变大了。",
+          "words": [
+            {
+              "text": "She's",
+              "start": 70.476,
+              "end": 70.896
+            },
+            {
+              "text": "big.",
+              "start": 71.116,
+              "end": 71.496
+            }
+          ]
+        },
+        {
+          "id": "line_sSpmvQc6Lb0",
+          "roleId": "role_9_Yfz6qh2ws",
+          "speaker": "Gogo",
+          "start": 73.778,
+          "end": 75.139,
+          "text": "Now I'm big.",
+          "hint": "现在我变大了。",
+          "words": [
+            {
+              "text": "Now",
+              "start": 73.818,
+              "end": 74.059
+            },
+            {
+              "text": "I'm",
+              "start": 74.439,
+              "end": 74.539
+            },
+            {
+              "text": "big.",
+              "start": 74.779,
+              "end": 75.079
+            }
+          ]
+        }
+      ],
+      "beginnerSuitable": true,
+      "beginnerReviewReason": "Short concrete sentences, visible meaning and repetition; at most five words per practice line.",
+      "practice": "Use repeated beginner phrases in a complete character exchange with a visual story.",
+      "summary": "Funny mirrors make the children and dragon look enormous or tiny.",
+      "storyBeat": "Funny mirrors make the children and dragon look enormous or tiny.",
+      "contentNotes": "Tony identifies Gogo as big and himself as small. Jenny says now I am big. Gogo says now I am small and she is big, then ends with now I am big. The cut ends before the following affirmation. Mirror distortions are visible throughout.",
+      "reviewStatus": "source captions, independent ASR, speakers and uncut boundaries reviewed; individual learner-fit listening pending",
+      "tags": [
+        "Gogo's Adventures with English",
+        "Gogo",
+        "beginner",
+        "first English",
+        "funny",
+        "英语启蒙",
+        "龙",
+        "趣味故事",
+        "mirrors",
+        "big",
+        "small",
+        "sizes",
+        "Tony",
+        "Jenny",
+        "镜子",
+        "大小"
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_izrniqzgX9I",
+      "sceneId": "scene_Omoo6OXIfiE",
+      "batch": "2026-11-11-playful-first-english-b",
+      "cohort": "younger-age-5",
+      "slug": "25-gogo-mirror-tall-short",
+      "publicSlug": "gogo-mirror-tall-short",
+      "routeSlug": "gogo-mirror-tall-short",
+      "title": "Tall or short?",
+      "titleZh": "变高了还是变矮了？",
+      "sourceId": "hAwEoUiKxYg",
+      "start": 80.45,
+      "end": 97.7,
+      "roles": [
+        {
+          "id": "role_ilinUHluLog",
+          "name": "Tony",
+          "selectable": true,
+          "portrait": "gogo-mirror-tall-short-tony-portrait-752f75bae87c.jpg"
+        },
+        {
+          "id": "role_N_A_p_Xj_LM",
+          "name": "Jenny",
+          "selectable": true,
+          "portrait": "gogo-mirror-tall-short-jenny-portrait-bb6627374bb1.jpg"
+        },
+        {
+          "id": "role_ce_NFDBs8jw",
+          "name": "Gogo",
+          "selectable": true,
+          "portrait": "gogo-mirror-tall-short-gogo-portrait-a8ffbdab8f8a.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_c93v7EuIGWY",
+          "roleId": "role_N_A_p_Xj_LM",
+          "speaker": "Jenny",
+          "start": 80.97,
+          "end": 83.532,
+          "text": "Look at me. I'm tall.",
+          "hint": "看我，我变高了。",
+          "words": [
+            {
+              "text": "Look",
+              "start": 81.01,
+              "end": 81.21
+            },
+            {
+              "text": "at",
+              "start": 81.29,
+              "end": 81.371
+            },
+            {
+              "text": "me.",
+              "start": 81.491,
+              "end": 81.631
+            },
+            {
+              "text": "I'm",
+              "start": 82.531,
+              "end": 82.691
+            },
+            {
+              "text": "tall.",
+              "start": 82.931,
+              "end": 83.472
+            }
+          ]
+        },
+        {
+          "id": "line_30U4ZrhbMOk",
+          "roleId": "role_ilinUHluLog",
+          "speaker": "Tony",
+          "start": 85.413,
+          "end": 87.134,
+          "text": "Now you're tall, Jenny.",
+          "hint": "珍妮，现在你变高了。",
+          "words": [
+            {
+              "text": "Now",
+              "start": 85.453,
+              "end": 85.653
+            },
+            {
+              "text": "you're",
+              "start": 85.853,
+              "end": 86.133
+            },
+            {
+              "text": "tall,",
+              "start": 86.293,
+              "end": 86.594
+            },
+            {
+              "text": "Jenny.",
+              "start": 86.714,
+              "end": 87.074
+            }
+          ]
+        },
+        {
+          "id": "line_tqWvt3XGxAg",
+          "roleId": "role_ce_NFDBs8jw",
+          "speaker": "Gogo",
+          "start": 91.116,
+          "end": 92.217,
+          "text": "I'm not tall.",
+          "hint": "我不高。",
+          "words": [
+            {
+              "text": "I'm",
+              "start": 91.156,
+              "end": 91.236
+            },
+            {
+              "text": "not",
+              "start": 91.356,
+              "end": 91.556
+            },
+            {
+              "text": "tall.",
+              "start": 91.697,
+              "end": 92.157
+            }
+          ]
+        },
+        {
+          "id": "line_NrFV4LgyqGs",
+          "roleId": "role_ilinUHluLog",
+          "speaker": "Tony",
+          "start": 93.177,
+          "end": 95.479,
+          "text": "No, you aren't tall.",
+          "hint": "对，你不高。",
+          "words": [
+            {
+              "text": "No,",
+              "start": 93.217,
+              "end": 93.478
+            },
+            {
+              "text": "you",
+              "start": 94.258,
+              "end": 94.358
+            },
+            {
+              "text": "aren't",
+              "start": 94.478,
+              "end": 94.798
+            },
+            {
+              "text": "tall.",
+              "start": 95.018,
+              "end": 95.419
+            }
+          ]
+        },
+        {
+          "id": "line_Uypxo1kL0Dc",
+          "roleId": "role_ilinUHluLog",
+          "speaker": "Tony",
+          "start": 96.279,
+          "end": 97.34,
+          "text": "You're short.",
+          "hint": "你变矮了。",
+          "words": [
+            {
+              "text": "You're",
+              "start": 96.319,
+              "end": 96.619
+            },
+            {
+              "text": "short.",
+              "start": 96.799,
+              "end": 97.28
+            }
+          ]
+        }
+      ],
+      "beginnerSuitable": true,
+      "beginnerReviewReason": "Short concrete sentences, visible meaning and repetition; at most five words per practice line.",
+      "practice": "Use repeated beginner phrases in a complete character exchange with a visual story.",
+      "summary": "The mirrors stretch Jenny tall but squash Gogo short.",
+      "storyBeat": "The mirrors stretch Jenny tall but squash Gogo short.",
+      "contentNotes": "Jenny gives the look-at-me line; Tony responds to her, then to Gogo. Gogo has one complete reusable three-word practice line, rather than an incidental exclamation. Stops before the later clown scene.",
+      "reviewStatus": "source captions, independent ASR, speakers and uncut boundaries reviewed; individual learner-fit listening pending",
+      "tags": [
+        "Gogo's Adventures with English",
+        "Gogo",
+        "beginner",
+        "first English",
+        "funny",
+        "英语启蒙",
+        "龙",
+        "趣味故事",
+        "mirrors",
+        "tall",
+        "short",
+        "Tony",
+        "Jenny",
+        "镜子",
+        "高矮"
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_BsHkCRtxxc0",
+      "sceneId": "scene_KuCSY-iiLBg",
+      "batch": "2026-11-11-playful-first-english-b",
+      "cohort": "younger-age-5",
+      "slug": "26-gogo-school-pen",
+      "publicSlug": "gogo-school-pen",
+      "routeSlug": "gogo-school-pen",
+      "title": "Have you got a pen?",
+      "titleZh": "你有笔吗？",
+      "sourceId": "ckHMqT9Nw7o",
+      "start": 133.7,
+      "end": 164.95,
+      "roles": [
+        {
+          "id": "role_7giqsA-v7kA",
+          "name": "Gogo",
+          "selectable": true,
+          "portrait": "gogo-school-pen-gogo-portrait-a8ffbdab8f8a.jpg"
+        },
+        {
+          "id": "role_MYPM5mjEiuk",
+          "name": "Teacher (Gogo)",
+          "selectable": true,
+          "portrait": "gogo-school-pen-teacher-portrait-1bc5e4d604ab.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_Gk8Y15QKDmk",
+          "roleId": "role_MYPM5mjEiuk",
+          "speaker": "Teacher (Gogo)",
+          "start": 135.581,
+          "end": 136.961,
+          "text": "Stand up, please, Gogo.",
+          "hint": "Gogo，请站起来。",
+          "words": [
+            {
+              "text": "Stand",
+              "start": 135.621,
+              "end": 135.841
+            },
+            {
+              "text": "up,",
+              "start": 135.921,
+              "end": 136.001
+            },
+            {
+              "text": "please,",
+              "start": 136.101,
+              "end": 136.441
+            },
+            {
+              "text": "Gogo.",
+              "start": 136.561,
+              "end": 136.901
+            }
+          ]
+        },
+        {
+          "id": "line_qNRWxQ_JwbY",
+          "roleId": "role_MYPM5mjEiuk",
+          "speaker": "Teacher (Gogo)",
+          "start": 138.742,
+          "end": 139.742,
+          "text": "Have you got a pen?",
+          "hint": "你有笔吗？",
+          "words": [
+            {
+              "text": "Have",
+              "start": 138.782,
+              "end": 138.902
+            },
+            {
+              "text": "you",
+              "start": 138.962,
+              "end": 139.042
+            },
+            {
+              "text": "got",
+              "start": 139.122,
+              "end": 139.262
+            },
+            {
+              "text": "a",
+              "start": 139.302,
+              "end": 139.322
+            },
+            {
+              "text": "pen?",
+              "start": 139.422,
+              "end": 139.682
+            }
+          ]
+        },
+        {
+          "id": "line_NXnCmAKsKSQ",
+          "roleId": "role_7giqsA-v7kA",
+          "speaker": "Gogo",
+          "start": 144.844,
+          "end": 145.764,
+          "text": "Yes, I have.",
+          "hint": "是的，我有。",
+          "words": [
+            {
+              "text": "Yes,",
+              "start": 144.884,
+              "end": 145.104
+            },
+            {
+              "text": "I",
+              "start": 145.304,
+              "end": 145.324
+            },
+            {
+              "text": "have.",
+              "start": 145.464,
+              "end": 145.704
+            }
+          ]
+        },
+        {
+          "id": "line_UNtPHpJUT6c",
+          "roleId": "role_7giqsA-v7kA",
+          "speaker": "Gogo",
+          "start": 146.424,
+          "end": 147.164,
+          "text": "I've got a pen.",
+          "hint": "我有一支笔。",
+          "words": [
+            {
+              "text": "I've",
+              "start": 146.464,
+              "end": 146.584
+            },
+            {
+              "text": "got",
+              "start": 146.624,
+              "end": 146.744
+            },
+            {
+              "text": "a",
+              "start": 146.804,
+              "end": 146.824
+            },
+            {
+              "text": "pen.",
+              "start": 146.884,
+              "end": 147.104
+            }
+          ]
+        },
+        {
+          "id": "line_H3HbN2_KLuA",
+          "roleId": "role_MYPM5mjEiuk",
+          "speaker": "Teacher (Gogo)",
+          "start": 148.925,
+          "end": 149.965,
+          "text": "Have you got a ruler?",
+          "hint": "你有尺子吗？",
+          "words": [
+            {
+              "text": "Have",
+              "start": 148.965,
+              "end": 149.065
+            },
+            {
+              "text": "you",
+              "start": 149.085,
+              "end": 149.145
+            },
+            {
+              "text": "got",
+              "start": 149.185,
+              "end": 149.305
+            },
+            {
+              "text": "a",
+              "start": 149.385,
+              "end": 149.405
+            },
+            {
+              "text": "ruler?",
+              "start": 149.545,
+              "end": 149.905
+            }
+          ]
+        },
+        {
+          "id": "line_WvN-Qn-TlvY",
+          "roleId": "role_7giqsA-v7kA",
+          "speaker": "Gogo",
+          "start": 153.446,
+          "end": 155.227,
+          "text": "Yes, yes, I have.",
+          "hint": "有，有，我有。",
+          "words": [
+            {
+              "text": "Yes,",
+              "start": 153.486,
+              "end": 153.826
+            },
+            {
+              "text": "yes,",
+              "start": 154.147,
+              "end": 154.367
+            },
+            {
+              "text": "I",
+              "start": 154.547,
+              "end": 154.587
+            },
+            {
+              "text": "have.",
+              "start": 154.847,
+              "end": 155.167
+            }
+          ]
+        },
+        {
+          "id": "line_0aBlGvbGSpA",
+          "roleId": "role_MYPM5mjEiuk",
+          "speaker": "Teacher (Gogo)",
+          "start": 156.007,
+          "end": 157.348,
+          "text": "Have you got a notebook?",
+          "hint": "你有笔记本吗？",
+          "words": [
+            {
+              "text": "Have",
+              "start": 156.047,
+              "end": 156.147
+            },
+            {
+              "text": "you",
+              "start": 156.187,
+              "end": 156.267
+            },
+            {
+              "text": "got",
+              "start": 156.327,
+              "end": 156.467
+            },
+            {
+              "text": "a",
+              "start": 156.567,
+              "end": 156.587
+            },
+            {
+              "text": "notebook?",
+              "start": 156.747,
+              "end": 157.288
+            }
+          ]
+        },
+        {
+          "id": "line_uVTj68C20vM",
+          "roleId": "role_7giqsA-v7kA",
+          "speaker": "Gogo",
+          "start": 161.829,
+          "end": 162.849,
+          "text": "Yes, I have.",
+          "hint": "是的，我有。",
+          "words": [
+            {
+              "text": "Yes,",
+              "start": 161.869,
+              "end": 162.089
+            },
+            {
+              "text": "I",
+              "start": 162.349,
+              "end": 162.369
+            },
+            {
+              "text": "have.",
+              "start": 162.529,
+              "end": 162.789
+            }
+          ]
+        },
+        {
+          "id": "line_sZhudn7jBkA",
+          "roleId": "role_7giqsA-v7kA",
+          "speaker": "Gogo",
+          "start": 163.45,
+          "end": 164.41,
+          "text": "I've got a notebook.",
+          "hint": "我有一本笔记本。",
+          "words": [
+            {
+              "text": "I've",
+              "start": 163.49,
+              "end": 163.61
+            },
+            {
+              "text": "got",
+              "start": 163.65,
+              "end": 163.79
+            },
+            {
+              "text": "a",
+              "start": 163.87,
+              "end": 163.89
+            },
+            {
+              "text": "notebook.",
+              "start": 163.95,
+              "end": 164.35
+            }
+          ]
+        }
+      ],
+      "beginnerSuitable": true,
+      "beginnerReviewReason": "Short concrete sentences, visible meaning and repetition; at most five words per practice line.",
+      "practice": "Use repeated beginner phrases in a complete character exchange with a visual story.",
+      "summary": "Gogo answers the teacher while secretly taking school supplies from Tony’s case.",
+      "storyBeat": "Gogo answers the teacher while secretly taking school supplies from Tony’s case.",
+      "contentNotes": "The classroom teacher and Gogo speak. Tony is visible losing supplies without speaking in this interval. This is cartoon mischief, not a model for borrowing politely. Complete question/answer sentences remain continuous; stops before the teacher addresses Tony.",
+      "reviewStatus": "source captions, independent ASR, speakers and uncut boundaries reviewed; individual learner-fit listening pending",
+      "tags": [
+        "Gogo's Adventures with English",
+        "Gogo",
+        "beginner",
+        "first English",
+        "funny",
+        "英语启蒙",
+        "龙",
+        "趣味故事",
+        "school",
+        "pen",
+        "ruler",
+        "notebook",
+        "classroom",
+        "学校",
+        "笔",
+        "尺子",
+        "笔记本"
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_th7kVH2c9Tg",
+      "sceneId": "scene_2hAmFois_LI",
+      "batch": "2026-11-11-playful-first-english-b",
+      "cohort": "younger-age-5",
+      "slug": "27-gogo-missing-pen",
+      "publicSlug": "gogo-missing-pen",
+      "routeSlug": "gogo-missing-pen",
+      "title": "I haven't got a pen!",
+      "titleZh": "我的笔不见了！",
+      "sourceId": "ckHMqT9Nw7o",
+      "start": 165.15,
+      "end": 204.85,
+      "roles": [
+        {
+          "id": "role_-B3qQVi8XkE",
+          "name": "Tony",
+          "selectable": true,
+          "portrait": "gogo-missing-pen-tony-portrait-752f75bae87c.jpg"
+        },
+        {
+          "id": "role_SrKIbbNYflA",
+          "name": "Teacher (Gogo)",
+          "selectable": true,
+          "portrait": "gogo-missing-pen-teacher-portrait-1bc5e4d604ab.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_ZVOABgQNCrU",
+          "roleId": "role_SrKIbbNYflA",
+          "speaker": "Teacher (Gogo)",
+          "start": 165.246,
+          "end": 166.937,
+          "text": "Stand up, please, Tony.",
+          "hint": "托尼，请站起来。",
+          "words": [
+            {
+              "text": "Stand",
+              "start": 165.286,
+              "end": 165.528
+            },
+            {
+              "text": "up,",
+              "start": 165.628,
+              "end": 165.689
+            },
+            {
+              "text": "please,",
+              "start": 165.79,
+              "end": 166.132
+            },
+            {
+              "text": "Tony.",
+              "start": 166.192,
+              "end": 166.877
+            }
+          ]
+        },
+        {
+          "id": "line_ATb7Y70-jBM",
+          "roleId": "role_SrKIbbNYflA",
+          "speaker": "Teacher (Gogo)",
+          "start": 167.871,
+          "end": 168.852,
+          "text": "Have you got a pen?",
+          "hint": "你有笔吗？",
+          "words": [
+            {
+              "text": "Have",
+              "start": 167.911,
+              "end": 168.011
+            },
+            {
+              "text": "you",
+              "start": 168.031,
+              "end": 168.091
+            },
+            {
+              "text": "got",
+              "start": 168.152,
+              "end": 168.272
+            },
+            {
+              "text": "a",
+              "start": 168.352,
+              "end": 168.372
+            },
+            {
+              "text": "pen?",
+              "start": 168.552,
+              "end": 168.792
+            }
+          ]
+        },
+        {
+          "id": "line_fgPVaNT1hLQ",
+          "roleId": "role_-B3qQVi8XkE",
+          "speaker": "Tony",
+          "start": 170.813,
+          "end": 171.993,
+          "text": "Yes, I have.",
+          "hint": "是的，我有。",
+          "words": [
+            {
+              "text": "Yes,",
+              "start": 170.853,
+              "end": 171.053
+            },
+            {
+              "text": "I",
+              "start": 171.373,
+              "end": 171.393
+            },
+            {
+              "text": "have.",
+              "start": 171.553,
+              "end": 171.933
+            }
+          ]
+        },
+        {
+          "id": "line_s61vu7Mihcg",
+          "roleId": "role_-B3qQVi8XkE",
+          "speaker": "Tony",
+          "start": 174.095,
+          "end": 176.256,
+          "text": "Oh, I'm sorry.",
+          "hint": "哦，对不起。",
+          "words": [
+            {
+              "text": "Oh,",
+              "start": 174.135,
+              "end": 174.295
+            },
+            {
+              "text": "I'm",
+              "start": 175.575,
+              "end": 175.635
+            },
+            {
+              "text": "sorry.",
+              "start": 175.795,
+              "end": 176.196
+            }
+          ]
+        },
+        {
+          "id": "line_QNGcF8wt7Ok",
+          "roleId": "role_-B3qQVi8XkE",
+          "speaker": "Tony",
+          "start": 177.023,
+          "end": 178.376,
+          "text": "I haven't got a pen.",
+          "hint": "我没有笔。",
+          "words": [
+            {
+              "text": "I",
+              "start": 177.063,
+              "end": 177.083
+            },
+            {
+              "text": "haven't",
+              "start": 177.204,
+              "end": 177.528
+            },
+            {
+              "text": "got",
+              "start": 177.629,
+              "end": 177.831
+            },
+            {
+              "text": "a",
+              "start": 177.932,
+              "end": 177.952
+            },
+            {
+              "text": "pen.",
+              "start": 178.053,
+              "end": 178.316
+            }
+          ]
+        },
+        {
+          "id": "line_xT4P2TjHLcY",
+          "roleId": "role_SrKIbbNYflA",
+          "speaker": "Teacher (Gogo)",
+          "start": 182.319,
+          "end": 183.499,
+          "text": "Have you got a ruler?",
+          "hint": "你有尺子吗？",
+          "words": [
+            {
+              "text": "Have",
+              "start": 182.359,
+              "end": 182.499
+            },
+            {
+              "text": "you",
+              "start": 182.539,
+              "end": 182.639
+            },
+            {
+              "text": "got",
+              "start": 182.719,
+              "end": 182.839
+            },
+            {
+              "text": "a",
+              "start": 182.919,
+              "end": 182.939
+            },
+            {
+              "text": "ruler?",
+              "start": 182.999,
+              "end": 183.439
+            }
+          ]
+        },
+        {
+          "id": "line_y8RNOy8qF0g",
+          "roleId": "role_-B3qQVi8XkE",
+          "speaker": "Tony",
+          "start": 185.36,
+          "end": 187.281,
+          "text": "No, I haven't.",
+          "hint": "不，我没有。",
+          "words": [
+            {
+              "text": "No,",
+              "start": 185.4,
+              "end": 185.64
+            },
+            {
+              "text": "I",
+              "start": 186.661,
+              "end": 186.681
+            },
+            {
+              "text": "haven't.",
+              "start": 186.781,
+              "end": 187.221
+            }
+          ]
+        },
+        {
+          "id": "line_xac83qgIXbQ",
+          "roleId": "role_-B3qQVi8XkE",
+          "speaker": "Tony",
+          "start": 187.942,
+          "end": 189.422,
+          "text": "I haven't got a ruler.",
+          "hint": "我没有尺子。",
+          "words": [
+            {
+              "text": "I",
+              "start": 187.982,
+              "end": 188.002
+            },
+            {
+              "text": "haven't",
+              "start": 188.102,
+              "end": 188.402
+            },
+            {
+              "text": "got",
+              "start": 188.522,
+              "end": 188.682
+            },
+            {
+              "text": "a",
+              "start": 188.802,
+              "end": 188.822
+            },
+            {
+              "text": "ruler.",
+              "start": 188.902,
+              "end": 189.362
+            }
+          ]
+        },
+        {
+          "id": "line_udEHQIjBIpQ",
+          "roleId": "role_SrKIbbNYflA",
+          "speaker": "Teacher (Gogo)",
+          "start": 191.964,
+          "end": 193.244,
+          "text": "Have you got a notebook?",
+          "hint": "你有笔记本吗？",
+          "words": [
+            {
+              "text": "Have",
+              "start": 192.004,
+              "end": 192.124
+            },
+            {
+              "text": "you",
+              "start": 192.164,
+              "end": 192.244
+            },
+            {
+              "text": "got",
+              "start": 192.304,
+              "end": 192.424
+            },
+            {
+              "text": "a",
+              "start": 192.504,
+              "end": 192.524
+            },
+            {
+              "text": "notebook?",
+              "start": 192.624,
+              "end": 193.184
+            }
+          ]
+        },
+        {
+          "id": "line_iVTDrDmbYk4",
+          "roleId": "role_-B3qQVi8XkE",
+          "speaker": "Tony",
+          "start": 194.425,
+          "end": 196.066,
+          "text": "No, I haven't.",
+          "hint": "不，我没有。",
+          "words": [
+            {
+              "text": "No,",
+              "start": 194.465,
+              "end": 194.705
+            },
+            {
+              "text": "I",
+              "start": 195.385,
+              "end": 195.405
+            },
+            {
+              "text": "haven't.",
+              "start": 195.525,
+              "end": 196.006
+            }
+          ]
+        },
+        {
+          "id": "line_S6NIx926QL8",
+          "roleId": "role_-B3qQVi8XkE",
+          "speaker": "Tony",
+          "start": 196.682,
+          "end": 198.235,
+          "text": "I haven't got a notebook.",
+          "hint": "我没有笔记本。",
+          "words": [
+            {
+              "text": "I",
+              "start": 196.722,
+              "end": 196.742
+            },
+            {
+              "text": "haven't",
+              "start": 196.883,
+              "end": 197.206
+            },
+            {
+              "text": "got",
+              "start": 197.307,
+              "end": 197.469
+            },
+            {
+              "text": "a",
+              "start": 197.61,
+              "end": 197.63
+            },
+            {
+              "text": "notebook.",
+              "start": 197.731,
+              "end": 198.175
+            }
+          ]
+        },
+        {
+          "id": "line_dlrwlmovVMQ",
+          "roleId": "role_-B3qQVi8XkE",
+          "speaker": "Tony",
+          "start": 201.98,
+          "end": 204.26,
+          "text": "Gogo!",
+          "hint": "Gogo！",
+          "words": [
+            {
+              "text": "Gogo!",
+              "start": 202.02,
+              "end": 204.2
+            }
+          ]
+        }
+      ],
+      "beginnerSuitable": true,
+      "beginnerReviewReason": "Short concrete sentences, visible meaning and repetition; at most five words per practice line.",
+      "practice": "Use repeated beginner phrases in a complete character exchange with a visual story.",
+      "summary": "Tony discovers his case is empty while Gogo sits behind him holding the missing supplies.",
+      "storyBeat": "Tony discovers his case is empty while Gogo sits behind him holding the missing supplies.",
+      "contentNotes": "The teacher asks and Tony answers. Gogo is a silent visual participant. Tony’s last Gogo reaction completes the reveal. Longer natural turns split only at complete sentence boundaries, retaining the source order and original gaps.",
+      "reviewStatus": "source captions, independent ASR, speakers and uncut boundaries reviewed; individual learner-fit listening pending",
+      "tags": [
+        "Gogo's Adventures with English",
+        "Gogo",
+        "beginner",
+        "first English",
+        "funny",
+        "英语启蒙",
+        "龙",
+        "趣味故事",
+        "school",
+        "pen",
+        "ruler",
+        "notebook",
+        "missing",
+        "classroom",
+        "学校",
+        "笔",
+        "尺子",
+        "笔记本",
+        "不见了"
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en",
+        "review": "The final proper-name reaction uses a broad source-reviewed window; other words use CTC alignment."
+      }
+    },
+    {
+      "id": "clip_DSnSj2wJGMk",
+      "sceneId": "scene_kvazEdhTetI",
+      "batch": "2026-11-11-playful-first-english-b",
+      "cohort": "younger-age-5",
+      "slug": "28-gogo-counting-steps",
+      "publicSlug": "gogo-counting-steps",
+      "routeSlug": "gogo-counting-steps",
+      "title": "How many steps?",
+      "titleZh": "一共有多少级台阶？",
+      "sourceId": "ZvD4DLnfeo0",
+      "start": 137.7,
+      "end": 163.0,
+      "roles": [
+        {
+          "id": "role_TswQKem2LCM",
+          "name": "Gogo",
+          "selectable": true,
+          "portrait": "gogo-counting-steps-gogo-portrait-a8ffbdab8f8a.jpg"
+        },
+        {
+          "id": "role_SdXqOYmlXcg",
+          "name": "Jenny",
+          "selectable": true,
+          "portrait": "gogo-counting-steps-jenny-portrait-bb6627374bb1.jpg"
+        },
+        {
+          "id": "role_7Vi0O1v-C2o",
+          "name": "Tony",
+          "selectable": true,
+          "portrait": "gogo-counting-steps-tony-portrait-752f75bae87c.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_kABRjzIpqxk",
+          "roleId": "role_SdXqOYmlXcg",
+          "speaker": "Jenny",
+          "start": 138.981,
+          "end": 140.522,
+          "text": "How many are there, Gogo?",
+          "hint": "Gogo，一共有多少级？",
+          "words": [
+            {
+              "text": "How",
+              "start": 139.021,
+              "end": 139.161
+            },
+            {
+              "text": "many",
+              "start": 139.261,
+              "end": 139.461
+            },
+            {
+              "text": "are",
+              "start": 139.622,
+              "end": 139.722
+            },
+            {
+              "text": "there,",
+              "start": 139.762,
+              "end": 139.982
+            },
+            {
+              "text": "Gogo?",
+              "start": 140.062,
+              "end": 140.462
+            }
+          ]
+        },
+        {
+          "id": "line_dXMGBe292pI",
+          "roleId": "role_TswQKem2LCM",
+          "speaker": "Gogo",
+          "start": 141.721,
+          "end": 145.76,
+          "text": "One, two, three, four, five.",
+          "hint": "一、二、三、四、五。",
+          "words": [
+            {
+              "text": "One,",
+              "start": 141.761,
+              "end": 141.882
+            },
+            {
+              "text": "two,",
+              "start": 142.666,
+              "end": 142.887
+            },
+            {
+              "text": "three,",
+              "start": 143.53,
+              "end": 143.811
+            },
+            {
+              "text": "four,",
+              "start": 144.394,
+              "end": 144.715
+            },
+            {
+              "text": "five.",
+              "start": 145.399,
+              "end": 145.7
+            }
+          ]
+        },
+        {
+          "id": "line_BEwrGSGLOQc",
+          "roleId": "role_TswQKem2LCM",
+          "speaker": "Gogo",
+          "start": 147.848,
+          "end": 149.99,
+          "text": "One, two, three.",
+          "hint": "一、二、三。",
+          "words": [
+            {
+              "text": "One,",
+              "start": 147.888,
+              "end": 148.008
+            },
+            {
+              "text": "two,",
+              "start": 148.469,
+              "end": 148.709
+            },
+            {
+              "text": "three.",
+              "start": 149.589,
+              "end": 149.93
+            }
+          ]
+        },
+        {
+          "id": "line_FdTPYo9DAVw",
+          "roleId": "role_TswQKem2LCM",
+          "speaker": "Gogo",
+          "start": 150.71,
+          "end": 153.572,
+          "text": "Four, five, six.",
+          "hint": "四、五、六。",
+          "words": [
+            {
+              "text": "Four,",
+              "start": 150.75,
+              "end": 151.111
+            },
+            {
+              "text": "five,",
+              "start": 151.931,
+              "end": 152.412
+            },
+            {
+              "text": "six.",
+              "start": 153.232,
+              "end": 153.512
+            }
+          ]
+        },
+        {
+          "id": "line_e2ShOU_pTww",
+          "roleId": "role_TswQKem2LCM",
+          "speaker": "Gogo",
+          "start": 154.273,
+          "end": 158.236,
+          "text": "Seven, eight, nine, ten.",
+          "hint": "七、八、九、十。",
+          "words": [
+            {
+              "text": "Seven,",
+              "start": 154.313,
+              "end": 154.794
+            },
+            {
+              "text": "eight,",
+              "start": 155.554,
+              "end": 155.814
+            },
+            {
+              "text": "nine,",
+              "start": 156.535,
+              "end": 156.975
+            },
+            {
+              "text": "ten.",
+              "start": 157.756,
+              "end": 158.176
+            }
+          ]
+        },
+        {
+          "id": "line_jUqHIAcuejI",
+          "roleId": "role_7Vi0O1v-C2o",
+          "speaker": "Tony",
+          "start": 160.198,
+          "end": 161.919,
+          "text": "There are ten steps, Gogo.",
+          "hint": "Gogo，一共有十级台阶。",
+          "words": [
+            {
+              "text": "There",
+              "start": 160.238,
+              "end": 160.418
+            },
+            {
+              "text": "are",
+              "start": 160.478,
+              "end": 160.558
+            },
+            {
+              "text": "ten",
+              "start": 160.638,
+              "end": 160.858
+            },
+            {
+              "text": "steps,",
+              "start": 160.998,
+              "end": 161.299
+            },
+            {
+              "text": "Gogo.",
+              "start": 161.419,
+              "end": 161.859
+            }
+          ]
+        }
+      ],
+      "beginnerSuitable": true,
+      "beginnerReviewReason": "Short concrete sentences, visible meaning and repetition; at most five words per practice line.",
+      "practice": "Use repeated beginner phrases in a complete character exchange with a visual story.",
+      "summary": "Gogo stumbles down the steps and has to count them again on his way up.",
+      "storyBeat": "Gogo stumbles down the steps and has to count them again on his way up.",
+      "contentNotes": "Jenny asks the opening question; Gogo counts; Tony gives the final answer. Counting groups follow the source pauses and source caption groupings. A brief comic stumble and nonverbal yelp remain in the original performance. Ends before the fantasy-world counting segment.",
+      "reviewStatus": "source captions, independent ASR, speakers and uncut boundaries reviewed; individual learner-fit listening pending",
+      "tags": [
+        "Gogo's Adventures with English",
+        "Gogo",
+        "beginner",
+        "first English",
+        "funny",
+        "英语启蒙",
+        "龙",
+        "趣味故事",
+        "counting",
+        "numbers",
+        "one",
+        "ten",
+        "steps",
+        "Tony",
+        "Jenny",
+        "数数",
+        "数字",
+        "台阶"
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_6Jpt1HYbKXE",
+      "sceneId": "scene_yF-Ktpm3Rec",
+      "batch": "2026-11-11-playful-first-english-b",
+      "cohort": "younger-age-5",
+      "slug": "29-gogo-growing-flower",
+      "publicSlug": "gogo-growing-flower",
+      "routeSlug": "gogo-growing-flower",
+      "title": "Big, then small!",
+      "titleZh": "一会儿大，一会儿小！",
+      "sourceId": "hAwEoUiKxYg",
+      "start": 201.1,
+      "end": 228.4,
+      "roles": [
+        {
+          "id": "role_SJXtL6AHKYc",
+          "name": "Gogo",
+          "selectable": true,
+          "portrait": "gogo-growing-flower-gogo-portrait-a8ffbdab8f8a.jpg"
+        },
+        {
+          "id": "role_8-K5CgHvc0U",
+          "name": "Jeeby",
+          "selectable": true,
+          "portrait": "gogo-growing-flower-jeeby-portrait-2da3dd7189b7.jpg"
+        },
+        {
+          "id": "role_vmvZHeTGKSg",
+          "name": "Green friend",
+          "selectable": true,
+          "portrait": "gogo-growing-flower-green-friend-portrait-b36bc9d943ac.jpg"
+        },
+        {
+          "id": "role_SzpEQCemp48",
+          "name": "Friend (reaction)",
+          "selectable": false,
+          "portrait": "gogo-growing-flower-friends-portrait-d4240d4bfd49.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_lgvFsCGjSD0",
+          "roleId": "role_SJXtL6AHKYc",
+          "speaker": "Gogo",
+          "start": 203.302,
+          "end": 204.863,
+          "text": "What's that, Jeeby?",
+          "hint": "Jeeby，那是什么？",
+          "words": [
+            {
+              "text": "What's",
+              "start": 203.342,
+              "end": 203.582
+            },
+            {
+              "text": "that,",
+              "start": 203.682,
+              "end": 203.842
+            },
+            {
+              "text": "Jeeby?",
+              "start": 204.102,
+              "end": 204.803
+            }
+          ]
+        },
+        {
+          "id": "line__bFjgC9Wn48",
+          "roleId": "role_8-K5CgHvc0U",
+          "speaker": "Jeeby",
+          "start": 205.403,
+          "end": 207.205,
+          "text": "It's a flower, Gogo.",
+          "hint": "Gogo，那是一朵花。",
+          "words": [
+            {
+              "text": "It's",
+              "start": 205.443,
+              "end": 205.543
+            },
+            {
+              "text": "a",
+              "start": 205.623,
+              "end": 205.643
+            },
+            {
+              "text": "flower,",
+              "start": 205.704,
+              "end": 206.364
+            },
+            {
+              "text": "Gogo.",
+              "start": 206.604,
+              "end": 207.145
+            }
+          ]
+        },
+        {
+          "id": "line_cPN0gkY8VX0",
+          "roleId": "role_SJXtL6AHKYc",
+          "speaker": "Gogo",
+          "start": 208.286,
+          "end": 210.267,
+          "text": "It's small, Jeeby.",
+          "hint": "Jeeby，它很小。",
+          "words": [
+            {
+              "text": "It's",
+              "start": 208.326,
+              "end": 208.486
+            },
+            {
+              "text": "small,",
+              "start": 208.566,
+              "end": 209.046
+            },
+            {
+              "text": "Jeeby.",
+              "start": 209.867,
+              "end": 210.207
+            }
+          ]
+        },
+        {
+          "id": "line_vK9TuooIe80",
+          "roleId": "role_SzpEQCemp48",
+          "speaker": "Friend (reaction)",
+          "start": 212.91,
+          "end": 215.51,
+          "text": "Oh, Gogo!",
+          "hint": "哦，Gogo！",
+          "words": [
+            {
+              "text": "Oh,",
+              "start": 212.95,
+              "end": 213.35
+            },
+            {
+              "text": "Gogo!",
+              "start": 213.45,
+              "end": 215.45
+            }
+          ]
+        },
+        {
+          "id": "line_5L0385IENms",
+          "roleId": "role_SJXtL6AHKYc",
+          "speaker": "Gogo",
+          "start": 216.132,
+          "end": 217.973,
+          "text": "It isn't small now, Jeeby.",
+          "hint": "Jeeby，它现在不小了。",
+          "words": [
+            {
+              "text": "It",
+              "start": 216.172,
+              "end": 216.212
+            },
+            {
+              "text": "isn't",
+              "start": 216.312,
+              "end": 216.532
+            },
+            {
+              "text": "small",
+              "start": 216.612,
+              "end": 216.932
+            },
+            {
+              "text": "now,",
+              "start": 217.072,
+              "end": 217.312
+            },
+            {
+              "text": "Jeeby.",
+              "start": 217.513,
+              "end": 217.913
+            }
+          ]
+        },
+        {
+          "id": "line_7JJkZZzKb_U",
+          "roleId": "role_SJXtL6AHKYc",
+          "speaker": "Gogo",
+          "start": 218.734,
+          "end": 219.614,
+          "text": "It's big.",
+          "hint": "它变大了。",
+          "words": [
+            {
+              "text": "It's",
+              "start": 218.774,
+              "end": 218.954
+            },
+            {
+              "text": "big.",
+              "start": 219.254,
+              "end": 219.554
+            }
+          ]
+        },
+        {
+          "id": "line_nQZRBzte_e8",
+          "roleId": "role_vmvZHeTGKSg",
+          "speaker": "Green friend",
+          "start": 221.716,
+          "end": 223.577,
+          "text": "It isn't big now.",
+          "hint": "它现在不大了。",
+          "words": [
+            {
+              "text": "It",
+              "start": 221.756,
+              "end": 222.196
+            },
+            {
+              "text": "isn't",
+              "start": 222.336,
+              "end": 222.576
+            },
+            {
+              "text": "big",
+              "start": 222.717,
+              "end": 222.917
+            },
+            {
+              "text": "now.",
+              "start": 223.157,
+              "end": 223.517
+            }
+          ]
+        },
+        {
+          "id": "line_vQHW20FGmRs",
+          "roleId": "role_vmvZHeTGKSg",
+          "speaker": "Green friend",
+          "start": 224.143,
+          "end": 227.276,
+          "text": "Ha! Ha! It's small.",
+          "hint": "哈哈！它变小了。",
+          "words": [
+            {
+              "text": "Ha!",
+              "start": 224.183,
+              "end": 224.705
+            },
+            {
+              "text": "Ha!",
+              "start": 224.966,
+              "end": 225.006
+            },
+            {
+              "text": "It's",
+              "start": 226.192,
+              "end": 226.373
+            },
+            {
+              "text": "small.",
+              "start": 226.533,
+              "end": 227.216
+            }
+          ]
+        }
+      ],
+      "beginnerSuitable": true,
+      "beginnerReviewReason": "Short concrete sentences, visible meaning and repetition; at most five words per practice line.",
+      "practice": "Use repeated beginner phrases in a complete character exchange with a visual story.",
+      "summary": "A little flower shoots up tall, then the green friend laughs as it shrinks again.",
+      "storyBeat": "A little flower shoots up tall, then the green friend laughs as it shrinks again.",
+      "contentNotes": "Jeeby is the blue friend addressed by name in the original captions; the green friend uses a descriptive label rather than an unverified name. The green friend says both final small-flower lines. Stops before the lesson song. Original source captions remain visible. The brief Oh, Gogo reaction is not assigned to a verified individual among the pictured friends; it uses a descriptive non-selectable supporting role and retains the original voice. Its broad cue follows the source subtitle/reaction window, not a precise phonetic claim.",
+      "reviewStatus": "source captions, independent ASR, speakers and uncut boundaries reviewed; individual learner-fit listening pending",
+      "tags": [
+        "Gogo's Adventures with English",
+        "Gogo",
+        "beginner",
+        "first English",
+        "funny",
+        "英语启蒙",
+        "龙",
+        "趣味故事",
+        "magic",
+        "flower",
+        "big",
+        "small",
+        "Jeeby",
+        "friend",
+        "魔法",
+        "花朵",
+        "大小",
+        "朋友"
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en",
+        "review": "The incidental Oh, Gogo reaction uses a broad source-reviewed subtitle window; other words use CTC alignment."
       }
     }
   ]

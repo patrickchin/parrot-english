@@ -1,0 +1,208 @@
+{
+  "version": 1,
+  "id": "scene_Omoo6OXIfiE",
+  "title": "变高了还是变矮了？",
+  "tags": [
+    "Gogo's Adventures with English",
+    "Gogo",
+    "beginner",
+    "first English",
+    "funny",
+    "英语启蒙",
+    "龙",
+    "趣味故事",
+    "mirrors",
+    "tall",
+    "short",
+    "Tony",
+    "Jenny",
+    "镜子",
+    "高矮"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 17.28,
+  "video": "gogo-mirror-tall-short-review-902650ba9c11.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-mirror-tall-short/",
+  "poster": "gogo-mirror-tall-short-poster-902650ba9c11.jpg",
+  "waveform": "waveform-902650ba9c11.json",
+  "roles": [
+    {
+      "id": "role_ilinUHluLog",
+      "name": "托尼",
+      "label": "托尼",
+      "hint": "3 句台词",
+      "portrait": "gogo-mirror-tall-short-tony-portrait-752f75bae87c.jpg"
+    },
+    {
+      "id": "role_N_A_p_Xj_LM",
+      "name": "珍妮",
+      "label": "珍妮",
+      "hint": "1 句台词",
+      "portrait": "gogo-mirror-tall-short-jenny-portrait-bb6627374bb1.jpg"
+    },
+    {
+      "id": "role_ce_NFDBs8jw",
+      "name": "Gogo",
+      "label": "Gogo",
+      "hint": "1 句台词",
+      "portrait": "gogo-mirror-tall-short-gogo-portrait-a8ffbdab8f8a.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_c93v7EuIGWY",
+      "roleId": "role_N_A_p_Xj_LM",
+      "start": 0.52,
+      "end": 3.082,
+      "text": "Look at me. I'm tall.",
+      "hint": "看我，我变高了。",
+      "words": [
+        {
+          "text": "Look",
+          "start": 0.56,
+          "end": 0.76
+        },
+        {
+          "text": "at",
+          "start": 0.84,
+          "end": 0.921
+        },
+        {
+          "text": "me.",
+          "start": 1.041,
+          "end": 1.181
+        },
+        {
+          "text": "I'm",
+          "start": 2.081,
+          "end": 2.241
+        },
+        {
+          "text": "tall.",
+          "start": 2.481,
+          "end": 3.022
+        }
+      ]
+    },
+    {
+      "id": "line_30U4ZrhbMOk",
+      "roleId": "role_ilinUHluLog",
+      "start": 4.963,
+      "end": 6.684,
+      "text": "Now you're tall, Jenny.",
+      "hint": "珍妮，现在你变高了。",
+      "words": [
+        {
+          "text": "Now",
+          "start": 5.003,
+          "end": 5.203
+        },
+        {
+          "text": "you're",
+          "start": 5.403,
+          "end": 5.683
+        },
+        {
+          "text": "tall,",
+          "start": 5.843,
+          "end": 6.144
+        },
+        {
+          "text": "Jenny.",
+          "start": 6.264,
+          "end": 6.624
+        }
+      ]
+    },
+    {
+      "id": "line_tqWvt3XGxAg",
+      "roleId": "role_ce_NFDBs8jw",
+      "start": 10.666,
+      "end": 11.767,
+      "text": "I'm not tall.",
+      "hint": "我不高。",
+      "words": [
+        {
+          "text": "I'm",
+          "start": 10.706,
+          "end": 10.786
+        },
+        {
+          "text": "not",
+          "start": 10.906,
+          "end": 11.106
+        },
+        {
+          "text": "tall.",
+          "start": 11.247,
+          "end": 11.707
+        }
+      ]
+    },
+    {
+      "id": "line_NrFV4LgyqGs",
+      "roleId": "role_ilinUHluLog",
+      "start": 12.727,
+      "end": 15.029,
+      "text": "No, you aren't tall.",
+      "hint": "对，你不高。",
+      "words": [
+        {
+          "text": "No,",
+          "start": 12.767,
+          "end": 13.028
+        },
+        {
+          "text": "you",
+          "start": 13.808,
+          "end": 13.908
+        },
+        {
+          "text": "aren't",
+          "start": 14.028,
+          "end": 14.348
+        },
+        {
+          "text": "tall.",
+          "start": 14.568,
+          "end": 14.969
+        }
+      ]
+    },
+    {
+      "id": "line_Uypxo1kL0Dc",
+      "roleId": "role_ilinUHluLog",
+      "start": 15.829,
+      "end": 16.89,
+      "text": "You're short.",
+      "hint": "你变矮了。",
+      "words": [
+        {
+          "text": "You're",
+          "start": 15.869,
+          "end": 16.169
+        },
+        {
+          "text": "short.",
+          "start": 16.349,
+          "end": 16.83
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Gogo's Adventures with English — You're big",
+    "attribution": "Gogo's Adventures with English — original animation and English performance (Longman); source upload: Children English, not verified as the rightsholder.",
+    "source": "https://www.youtube.com/watch?v=hAwEoUiKxYg&t=80s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 80.45–97.7 秒的连续节选。Jenny gives the look-at-me line; Tony responds to her, then to Gogo. Gogo has one complete reusable three-word practice line, rather than an incidental exclamation. Stops before the later clown scene."
+  }
+}

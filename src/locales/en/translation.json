@@ -560,6 +560,36 @@
       "title": "Is it a tiger?",
       "licence": "Redistribution permission unconfirmed",
       "changes": "Internal prototype review; continuous source excerpt 146.4–165.5 s. Gogo guesses the wrong animals in front of a friendly elephant. Jenny gives the first no and final praise; Tony gives the second no and identifies the elephant."
+    },
+    "scene_sbQursTISog": {
+      "title": "Now I'm big!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype review; continuous source excerpt 51.7–75.7 s. Funny mirrors make the children and Gogo look big or small. Stops after Gogo says he is big."
+    },
+    "scene_Omoo6OXIfiE": {
+      "title": "Tall or short?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype review; continuous source excerpt 80.45–97.7 s. Jenny looks tall in a mirror, while Gogo looks short. Tony responds to both."
+    },
+    "scene_KuCSY-iiLBg": {
+      "title": "Have you got a pen?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype review; continuous source excerpt 133.7–164.95 s. Gogo answers the teacher while taking supplies from Tony’s case. Cartoon mischief stays visible."
+    },
+    "scene_2hAmFois_LI": {
+      "title": "I haven't got a pen!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype review; continuous source excerpt 165.15–204.85 s. Tony finds his case empty. The teacher asks about a pen, ruler and notebook; Gogo holds the missing things behind him."
+    },
+    "scene_kvazEdhTetI": {
+      "title": "How many steps?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype review; continuous source excerpt 137.7–163.0 s. Gogo stumbles on the steps and counts again. Jenny asks the question; Tony gives the final answer."
+    },
+    "scene_yF-Ktpm3Rec": {
+      "title": "Big, then small!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype review; continuous source excerpt 201.1–228.4 s. A flower grows and shrinks. Jeeby is the blue friend; the green friend says the final lines. The short Oh, Gogo reaction remains an original supporting voice with no individual attribution."
     }
   },
   "roles": {
@@ -1314,6 +1344,74 @@
     "role_rkFjPTbuc7A": {
       "name": "Tony",
       "hint": "2 lines"
+    },
+    "role_9_Yfz6qh2ws": {
+      "name": "Gogo",
+      "hint": "3 lines"
+    },
+    "role_SGbqPDmh6YY": {
+      "name": "Tony",
+      "hint": "4 lines"
+    },
+    "role_gNZA2PGNGt4": {
+      "name": "Jenny",
+      "hint": "1 line"
+    },
+    "role_ilinUHluLog": {
+      "name": "Tony",
+      "hint": "3 lines"
+    },
+    "role_N_A_p_Xj_LM": {
+      "name": "Jenny",
+      "hint": "1 line"
+    },
+    "role_ce_NFDBs8jw": {
+      "name": "Gogo",
+      "hint": "1 line"
+    },
+    "role_7giqsA-v7kA": {
+      "name": "Gogo",
+      "hint": "5 lines"
+    },
+    "role_MYPM5mjEiuk": {
+      "name": "Teacher",
+      "hint": "4 lines"
+    },
+    "role_-B3qQVi8XkE": {
+      "name": "Tony",
+      "hint": "8 lines"
+    },
+    "role_SrKIbbNYflA": {
+      "name": "Teacher",
+      "hint": "4 lines"
+    },
+    "role_TswQKem2LCM": {
+      "name": "Gogo",
+      "hint": "4 lines"
+    },
+    "role_SdXqOYmlXcg": {
+      "name": "Jenny",
+      "hint": "1 line"
+    },
+    "role_7Vi0O1v-C2o": {
+      "name": "Tony",
+      "hint": "1 line"
+    },
+    "role_SJXtL6AHKYc": {
+      "name": "Gogo",
+      "hint": "4 lines"
+    },
+    "role_8-K5CgHvc0U": {
+      "name": "Jeeby",
+      "hint": "1 line"
+    },
+    "role_vmvZHeTGKSg": {
+      "name": "Green friend",
+      "hint": "2 lines"
+    },
+    "role_SzpEQCemp48": {
+      "name": "Friend",
+      "hint": "1 line"
     }
   },
   "app": {

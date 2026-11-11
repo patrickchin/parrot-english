@@ -37,10 +37,10 @@ pronunciation scoring. See
 [the UI and waveform notes](docs/ui-design.md).
 
 The internal-test shelf has four folders: **38 film/animation scenes**,
-**nine First English conversations**, **12 Young Sheldon/Harry Potter conversations for
+**15 First English conversations**, **12 Young Sheldon/Harry Potter conversations for
 ages 10–12**, and **14 Friends/HIMYM/Big Bang Theory conversations for teens**.
 The First English folder uses language level, with five foundational English Singsing
-conversations and four playful Gogo stories built from short, concrete phrases;
+conversations and ten playful Gogo stories built from short, concrete phrases;
 see [the beginner review](docs/first-english-review.md).
 See [the latest 12 scenes](docs/clip-expansion-2026-11-11-c.md) and
 [the earlier TV scenes](docs/tv-review.md) for sources and content notes. The 21 short meme excerpts have been expanded or replaced with complete

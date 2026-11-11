@@ -750,5 +750,71 @@
     "source": "https://www.youtube.com/watch?v=XREZd9YAuFY&t=146s",
     "cohort": "younger-age-5",
     "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-elephant-guess/gogo-elephant-guess-poster-188f5a6eb28d.jpg"
+  },
+  {
+    "id": "scene_sbQursTISog",
+    "slug": "gogo-mirror-big-small",
+    "routeSlug": "gogo-mirror-big-small",
+    "title": "我变大了！",
+    "english": "Now I'm big!",
+    "note": "Gogo's Adventures with English",
+    "source": "https://www.youtube.com/watch?v=hAwEoUiKxYg&t=51s",
+    "cohort": "younger-age-5",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-mirror-big-small/gogo-mirror-big-small-poster-1e5fd4bb5d67.jpg"
+  },
+  {
+    "id": "scene_Omoo6OXIfiE",
+    "slug": "gogo-mirror-tall-short",
+    "routeSlug": "gogo-mirror-tall-short",
+    "title": "变高了还是变矮了？",
+    "english": "Tall or short?",
+    "note": "Gogo's Adventures with English",
+    "source": "https://www.youtube.com/watch?v=hAwEoUiKxYg&t=80s",
+    "cohort": "younger-age-5",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-mirror-tall-short/gogo-mirror-tall-short-poster-902650ba9c11.jpg"
+  },
+  {
+    "id": "scene_KuCSY-iiLBg",
+    "slug": "gogo-school-pen",
+    "routeSlug": "gogo-school-pen",
+    "title": "你有笔吗？",
+    "english": "Have you got a pen?",
+    "note": "Gogo's Adventures with English",
+    "source": "https://www.youtube.com/watch?v=ckHMqT9Nw7o&t=133s",
+    "cohort": "younger-age-5",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-school-pen/gogo-school-pen-poster-d7c47226b543.jpg"
+  },
+  {
+    "id": "scene_2hAmFois_LI",
+    "slug": "gogo-missing-pen",
+    "routeSlug": "gogo-missing-pen",
+    "title": "我的笔不见了！",
+    "english": "I haven't got a pen!",
+    "note": "Gogo's Adventures with English",
+    "source": "https://www.youtube.com/watch?v=ckHMqT9Nw7o&t=165s",
+    "cohort": "younger-age-5",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-missing-pen/gogo-missing-pen-poster-d6c9b8341576.jpg"
+  },
+  {
+    "id": "scene_kvazEdhTetI",
+    "slug": "gogo-counting-steps",
+    "routeSlug": "gogo-counting-steps",
+    "title": "一共有多少级台阶？",
+    "english": "How many steps?",
+    "note": "Gogo's Adventures with English",
+    "source": "https://www.youtube.com/watch?v=ZvD4DLnfeo0&t=137s",
+    "cohort": "younger-age-5",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-counting-steps/gogo-counting-steps-poster-5c0dddfaddec.jpg"
+  },
+  {
+    "id": "scene_yF-Ktpm3Rec",
+    "slug": "gogo-growing-flower",
+    "routeSlug": "gogo-growing-flower",
+    "title": "一会儿大，一会儿小！",
+    "english": "Big, then small!",
+    "note": "Gogo's Adventures with English",
+    "source": "https://www.youtube.com/watch?v=hAwEoUiKxYg&t=201s",
+    "cohort": "younger-age-5",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-growing-flower/gogo-growing-flower-poster-9bc044ed2556.jpg"
   }
 ]

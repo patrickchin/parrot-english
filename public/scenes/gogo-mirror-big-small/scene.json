@@ -1,0 +1,254 @@
+{
+  "version": 1,
+  "id": "scene_sbQursTISog",
+  "title": "我变大了！",
+  "tags": [
+    "Gogo's Adventures with English",
+    "Gogo",
+    "beginner",
+    "first English",
+    "funny",
+    "英语启蒙",
+    "龙",
+    "趣味故事",
+    "mirrors",
+    "big",
+    "small",
+    "sizes",
+    "Tony",
+    "Jenny",
+    "镜子",
+    "大小"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 24,
+  "video": "gogo-mirror-big-small-review-1e5fd4bb5d67.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-mirror-big-small/",
+  "poster": "gogo-mirror-big-small-poster-1e5fd4bb5d67.jpg",
+  "waveform": "waveform-1e5fd4bb5d67.json",
+  "roles": [
+    {
+      "id": "role_9_Yfz6qh2ws",
+      "name": "Gogo",
+      "label": "Gogo",
+      "hint": "3 句台词",
+      "portrait": "gogo-mirror-big-small-gogo-portrait-a8ffbdab8f8a.jpg"
+    },
+    {
+      "id": "role_SGbqPDmh6YY",
+      "name": "托尼",
+      "label": "托尼",
+      "hint": "4 句台词",
+      "portrait": "gogo-mirror-big-small-tony-portrait-752f75bae87c.jpg"
+    },
+    {
+      "id": "role_gNZA2PGNGt4",
+      "name": "珍妮",
+      "label": "珍妮",
+      "hint": "1 句台词",
+      "portrait": "gogo-mirror-big-small-jenny-portrait-bb6627374bb1.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_80OVRvpFF6A",
+      "roleId": "role_SGbqPDmh6YY",
+      "start": 1.982,
+      "end": 3.543,
+      "text": "You're big, Gogo.",
+      "hint": "Gogo，你变大了。",
+      "words": [
+        {
+          "text": "You're",
+          "start": 2.022,
+          "end": 2.282
+        },
+        {
+          "text": "big,",
+          "start": 2.482,
+          "end": 2.782
+        },
+        {
+          "text": "Gogo.",
+          "start": 2.982,
+          "end": 3.483
+        }
+      ]
+    },
+    {
+      "id": "line_BS1lDEUMhcU",
+      "roleId": "role_gNZA2PGNGt4",
+      "start": 5.104,
+      "end": 6.966,
+      "text": "Now I'm big.",
+      "hint": "现在我变大了。",
+      "words": [
+        {
+          "text": "Now",
+          "start": 5.144,
+          "end": 5.705
+        },
+        {
+          "text": "I'm",
+          "start": 6.185,
+          "end": 6.265
+        },
+        {
+          "text": "big.",
+          "start": 6.485,
+          "end": 6.906
+        }
+      ]
+    },
+    {
+      "id": "line_A_3_dq1MuEQ",
+      "roleId": "role_SGbqPDmh6YY",
+      "start": 8.607,
+      "end": 9.768,
+      "text": "I'm small.",
+      "hint": "我变小了。",
+      "words": [
+        {
+          "text": "I'm",
+          "start": 8.647,
+          "end": 8.767
+        },
+        {
+          "text": "small.",
+          "start": 9.048,
+          "end": 9.708
+        }
+      ]
+    },
+    {
+      "id": "line_zjju9rwGVbY",
+      "roleId": "role_9_Yfz6qh2ws",
+      "start": 11.109,
+      "end": 13.111,
+      "text": "Now I'm small.",
+      "hint": "现在我变小了。",
+      "words": [
+        {
+          "text": "Now",
+          "start": 11.149,
+          "end": 11.97
+        },
+        {
+          "text": "I'm",
+          "start": 12.35,
+          "end": 12.49
+        },
+        {
+          "text": "small.",
+          "start": 12.631,
+          "end": 13.051
+        }
+      ]
+    },
+    {
+      "id": "line_IoZ9T1NbALM",
+      "roleId": "role_9_Yfz6qh2ws",
+      "start": 14.572,
+      "end": 15.613,
+      "text": "She's big.",
+      "hint": "她变大了。",
+      "words": [
+        {
+          "text": "She's",
+          "start": 14.612,
+          "end": 14.992
+        },
+        {
+          "text": "big.",
+          "start": 15.233,
+          "end": 15.553
+        }
+      ]
+    },
+    {
+      "id": "line__vJb3skJ3eY",
+      "roleId": "role_SGbqPDmh6YY",
+      "start": 16.834,
+      "end": 17.995,
+      "text": "That's right, Gogo.",
+      "hint": "说得对，Gogo。",
+      "words": [
+        {
+          "text": "That's",
+          "start": 16.874,
+          "end": 17.154
+        },
+        {
+          "text": "right,",
+          "start": 17.234,
+          "end": 17.415
+        },
+        {
+          "text": "Gogo.",
+          "start": 17.515,
+          "end": 17.935
+        }
+      ]
+    },
+    {
+      "id": "line_pkigi9UP_l8",
+      "roleId": "role_SGbqPDmh6YY",
+      "start": 18.736,
+      "end": 19.856,
+      "text": "She's big.",
+      "hint": "她变大了。",
+      "words": [
+        {
+          "text": "She's",
+          "start": 18.776,
+          "end": 19.196
+        },
+        {
+          "text": "big.",
+          "start": 19.416,
+          "end": 19.796
+        }
+      ]
+    },
+    {
+      "id": "line_sSpmvQc6Lb0",
+      "roleId": "role_9_Yfz6qh2ws",
+      "start": 22.078,
+      "end": 23.439,
+      "text": "Now I'm big.",
+      "hint": "现在我变大了。",
+      "words": [
+        {
+          "text": "Now",
+          "start": 22.118,
+          "end": 22.359
+        },
+        {
+          "text": "I'm",
+          "start": 22.739,
+          "end": 22.839
+        },
+        {
+          "text": "big.",
+          "start": 23.079,
+          "end": 23.379
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Gogo's Adventures with English — You're big",
+    "attribution": "Gogo's Adventures with English — original animation and English performance (Longman); source upload: Children English, not verified as the rightsholder.",
+    "source": "https://www.youtube.com/watch?v=hAwEoUiKxYg&t=51s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 51.7–75.7 秒的连续节选。Tony identifies Gogo as big and himself as small. Jenny says now I am big. Gogo says now I am small and she is big, then ends with now I am big. The cut ends before the following affirmation. Mirror distortions are visible throughout."
+  }
+}

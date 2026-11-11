@@ -15,7 +15,7 @@ test('each authored character avatar loads in the role picker', async ({ page },
     authoredScenes++;
     await page.goto(scenePath(clip.slug));
     for (const role of scene.roles.filter((role: { selectable?: boolean }) => role.selectable !== false)) {
-      const button = page.getByRole('button', { name: new RegExp('^' + role.name) });
+      const button = page.getByRole('button', { name: role.name, exact: true });
       await expect(button).toBeVisible();
       if (role.name === '来电者') continue; // Never appears in the scene.
       expect(role.portrait).toBeTruthy();
@@ -32,7 +32,7 @@ test('each authored character avatar loads in the role picker', async ({ page },
       await expect(button).toHaveAttribute('aria-pressed', 'true');
     }
   }
-  expect(authoredScenes).toBe(61);
+  expect(authoredScenes).toBe(67);
   expect(avatars.get('Young Sheldon谢尔顿')).not.toBe(avatars.get('The Big Bang Theory谢尔顿'));
   await page.goto('/scenes/onions');
   await expect(page.getByRole('button', { name: /^驴子/ })).toBeVisible();

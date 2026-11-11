@@ -560,6 +560,36 @@
       "title": "¿Es un tigre?",
       "licence": "Permiso de redistribución sin confirmar",
       "changes": "Revisión interna del prototipo; fragmento continuo del original 146.4–165.5 s. Gogo confunde a un elefante amistoso con otros animales. Jenny da la primera respuesta negativa y el elogio final; Tony da la segunda respuesta negativa e identifica al elefante."
+    },
+    "scene_sbQursTISog": {
+      "title": "¡Ahora soy grande!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Revisión interna del prototipo; fragmento continuo del original 51.7–75.7 s. Los espejos deformantes hacen que los niños y Gogo parezcan grandes o pequeños. El fragmento termina cuando Gogo dice que es grande."
+    },
+    "scene_Omoo6OXIfiE": {
+      "title": "¿Alto o bajo?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Revisión interna del prototipo; fragmento continuo del original 80.45–97.7 s. Jenny parece alta en el espejo y Gogo parece bajo. Tony responde a los dos."
+    },
+    "scene_KuCSY-iiLBg": {
+      "title": "¿Tienes un bolígrafo?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Revisión interna del prototipo; fragmento continuo del original 133.7–164.95 s. Gogo contesta a la profesora mientras toma los útiles del estuche de Tony. Se conserva la travesura del dibujo animado."
+    },
+    "scene_2hAmFois_LI": {
+      "title": "¡No tengo bolígrafo!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Revisión interna del prototipo; fragmento continuo del original 165.15–204.85 s. Tony encuentra su estuche vacío. La profesora pregunta por un bolígrafo, una regla y un cuaderno; Gogo tiene los objetos detrás de él."
+    },
+    "scene_kvazEdhTetI": {
+      "title": "¿Cuántos escalones hay?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Revisión interna del prototipo; fragmento continuo del original 137.7–163.0 s. Gogo tropieza en la escalera y vuelve a contar. Jenny pregunta y Tony da la respuesta final."
+    },
+    "scene_yF-Ktpm3Rec": {
+      "title": "¡Grande y luego pequeña!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Revisión interna del prototipo; fragmento continuo del original 201.1–228.4 s. Una flor crece y se encoge. Jeeby es el amigo azul; el personaje verde dice las últimas frases. La breve reacción Oh, Gogo conserva la voz original sin atribuirla a un personaje concreto."
     }
   },
   "roles": {
@@ -1314,6 +1344,74 @@
     "role_rkFjPTbuc7A": {
       "name": "Tony",
       "hint": "2 frases"
+    },
+    "role_9_Yfz6qh2ws": {
+      "name": "Gogo",
+      "hint": "3 frases"
+    },
+    "role_SGbqPDmh6YY": {
+      "name": "Tony",
+      "hint": "4 frases"
+    },
+    "role_gNZA2PGNGt4": {
+      "name": "Jenny",
+      "hint": "1 frase"
+    },
+    "role_ilinUHluLog": {
+      "name": "Tony",
+      "hint": "3 frases"
+    },
+    "role_N_A_p_Xj_LM": {
+      "name": "Jenny",
+      "hint": "1 frase"
+    },
+    "role_ce_NFDBs8jw": {
+      "name": "Gogo",
+      "hint": "1 frase"
+    },
+    "role_7giqsA-v7kA": {
+      "name": "Gogo",
+      "hint": "5 frases"
+    },
+    "role_MYPM5mjEiuk": {
+      "name": "Profesora",
+      "hint": "4 frases"
+    },
+    "role_-B3qQVi8XkE": {
+      "name": "Tony",
+      "hint": "8 frases"
+    },
+    "role_SrKIbbNYflA": {
+      "name": "Profesora",
+      "hint": "4 frases"
+    },
+    "role_TswQKem2LCM": {
+      "name": "Gogo",
+      "hint": "4 frases"
+    },
+    "role_SdXqOYmlXcg": {
+      "name": "Jenny",
+      "hint": "1 frase"
+    },
+    "role_7Vi0O1v-C2o": {
+      "name": "Tony",
+      "hint": "1 frase"
+    },
+    "role_SJXtL6AHKYc": {
+      "name": "Gogo",
+      "hint": "4 frases"
+    },
+    "role_8-K5CgHvc0U": {
+      "name": "Jeeby",
+      "hint": "1 frase"
+    },
+    "role_vmvZHeTGKSg": {
+      "name": "Personaje verde",
+      "hint": "2 frases"
+    },
+    "role_SzpEQCemp48": {
+      "name": "Amigo",
+      "hint": "1 frase"
     }
   },
   "app": {

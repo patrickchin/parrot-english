@@ -560,6 +560,36 @@
       "title": "호랑이일까?",
       "licence": "재배포 허가 미확인",
       "changes": "내부 프로토타입 검토용. 원본의 연속 장면 발췌 146.4–165.5 s. 고고는 눈앞의 친근한 코끼리를 다른 동물로 착각해요. 첫 번째 부정과 마지막 칭찬은 제니가, 두 번째 부정과 코끼리를 알려 주는 말은 토니가 해요."
+    },
+    "scene_sbQursTISog": {
+      "title": "이제 커졌어!",
+      "licence": "재배포 허가 미확인",
+      "changes": "내부 프로토타입 검토용. 원본의 연속 장면 발췌 51.7–75.7 s. 요술 거울 속에서 아이들과 고고가 커졌다 작아져요. 고고가 커졌다고 말한 뒤 장면이 끝나요."
+    },
+    "scene_Omoo6OXIfiE": {
+      "title": "키가 클까, 작을까?",
+      "licence": "재배포 허가 미확인",
+      "changes": "내부 프로토타입 검토용. 원본의 연속 장면 발췌 80.45–97.7 s. 거울 속에서 제니는 키가 커지고 고고는 작아져요. 토니가 둘에게 대답해요."
+    },
+    "scene_KuCSY-iiLBg": {
+      "title": "펜이 있니?",
+      "licence": "재배포 허가 미확인",
+      "changes": "내부 프로토타입 검토용. 원본의 연속 장면 발췌 133.7–164.95 s. 고고는 토니의 필통에서 학용품을 가져가면서 선생님께 대답해요. 만화 속 장난 장면을 그대로 남겼어요."
+    },
+    "scene_2hAmFois_LI": {
+      "title": "펜이 없어!",
+      "licence": "재배포 허가 미확인",
+      "changes": "내부 프로토타입 검토용. 원본의 연속 장면 발췌 165.15–204.85 s. 토니의 필통이 텅 비었어요. 선생님이 펜, 자, 공책을 물어보는데 고고가 뒤에서 물건을 들고 있어요."
+    },
+    "scene_kvazEdhTetI": {
+      "title": "계단이 몇 개일까?",
+      "licence": "재배포 허가 미확인",
+      "changes": "내부 프로토타입 검토용. 원본의 연속 장면 발췌 137.7–163.0 s. 고고가 계단에서 발을 헛디뎌 다시 세어요. 제니가 질문하고 토니가 마지막 답을 말해요."
+    },
+    "scene_yF-Ktpm3Rec": {
+      "title": "커졌다 작아졌다!",
+      "licence": "재배포 허가 미확인",
+      "changes": "내부 프로토타입 검토용. 원본의 연속 장면 발췌 201.1–228.4 s. 꽃이 커졌다 작아져요. 파란 친구는 지비이고 마지막 대사는 초록색 친구가 말해요. 짧은Oh, Gogo반응은 특정 친구로 지정하지 않고 원음을 유지해요."
     }
   },
   "roles": {
@@ -1314,6 +1344,74 @@
     "role_rkFjPTbuc7A": {
       "name": "토니",
       "hint": "대사 2개"
+    },
+    "role_9_Yfz6qh2ws": {
+      "name": "고고",
+      "hint": "대사 3개"
+    },
+    "role_SGbqPDmh6YY": {
+      "name": "토니",
+      "hint": "대사 4개"
+    },
+    "role_gNZA2PGNGt4": {
+      "name": "제니",
+      "hint": "대사 1개"
+    },
+    "role_ilinUHluLog": {
+      "name": "토니",
+      "hint": "대사 3개"
+    },
+    "role_N_A_p_Xj_LM": {
+      "name": "제니",
+      "hint": "대사 1개"
+    },
+    "role_ce_NFDBs8jw": {
+      "name": "고고",
+      "hint": "대사 1개"
+    },
+    "role_7giqsA-v7kA": {
+      "name": "고고",
+      "hint": "대사 5개"
+    },
+    "role_MYPM5mjEiuk": {
+      "name": "선생님",
+      "hint": "대사 4개"
+    },
+    "role_-B3qQVi8XkE": {
+      "name": "토니",
+      "hint": "대사 8개"
+    },
+    "role_SrKIbbNYflA": {
+      "name": "선생님",
+      "hint": "대사 4개"
+    },
+    "role_TswQKem2LCM": {
+      "name": "고고",
+      "hint": "대사 4개"
+    },
+    "role_SdXqOYmlXcg": {
+      "name": "제니",
+      "hint": "대사 1개"
+    },
+    "role_7Vi0O1v-C2o": {
+      "name": "토니",
+      "hint": "대사 1개"
+    },
+    "role_SJXtL6AHKYc": {
+      "name": "고고",
+      "hint": "대사 4개"
+    },
+    "role_8-K5CgHvc0U": {
+      "name": "지비",
+      "hint": "대사 1개"
+    },
+    "role_vmvZHeTGKSg": {
+      "name": "초록색 친구",
+      "hint": "대사 2개"
+    },
+    "role_SzpEQCemp48": {
+      "name": "친구",
+      "hint": "대사 1개"
     }
   },
   "app": {

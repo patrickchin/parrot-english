@@ -45,7 +45,7 @@ redistribution-not-cleared metadata. The maintained recipe requires explicit
 beginnerSuitable approval: unreviewed preschool entries default to the general
 collection when regenerated. The folder label is First English / 英语启蒙.
 
-The catalogue has 73 scenes: 38 film/animation, 9 First English, 12 older-child,
+The catalogue has 79 scenes: 38 film/animation, 15 First English, 12 older-child,
 and 14 teen scenes. The new media upload is verified independently of the app
 release. Releases still merge to GitHub main and use automatic ESA deployment,
 with live revision and playback/recording checks.
@@ -87,3 +87,46 @@ credits Addison Wesley Longman and the original producers. This is source
 attribution, not redistribution clearance. All four retain the established
 internal-review scope and redistribution-not-cleared metadata. All existing
 69 scenes, including the five English Singsing conversations, are retained.
+
+
+## Six more playful scenes — 2026-11-11
+
+The next requested batch retains all previous 73 scenes and adds six more short
+Gogo exchanges. The beginner folder now has 15 scenes and the full catalogue 79.
+All six new selections keep at most five words per practice line, multiple
+selectable roles and a continuous source interval with a visible story beat.
+
+| Conversation | Continuous source interval | Story beat |
+| --- | --- | --- |
+| Now I'm big! | [Episode 17](https://www.youtube.com/watch?v=hAwEoUiKxYg&t=51s), 51.7–75.7 s | Funny mirrors make the children and Gogo look huge or tiny. |
+| Tall or short? | [Episode 17](https://www.youtube.com/watch?v=hAwEoUiKxYg&t=80s), 80.45–97.7 s | Jenny stretches tall, but Gogo's reflection is short. |
+| Have you got a pen? | [Episode 14](https://www.youtube.com/watch?v=ckHMqT9Nw7o&t=133s), 133.7–164.95 s | Gogo answers the teacher while taking supplies from Tony's case. |
+| I haven't got a pen! | [Episode 14](https://www.youtube.com/watch?v=ckHMqT9Nw7o&t=165s), 165.15–204.85 s | Tony discovers his empty case while Gogo holds the missing objects behind him. |
+| How many steps? | [Episode 9](https://www.youtube.com/watch?v=ZvD4DLnfeo0&t=137s), 137.7–163.0 s | Gogo stumbles and has to count again. |
+| Big, then small! | [Episode 17](https://www.youtube.com/watch?v=hAwEoUiKxYg&t=201s), 201.1–228.4 s | A small flower grows and then shrinks. |
+
+The two school scenes retain cartoon mischief; they do not demonstrate polite
+borrowing. The counting scene includes a brief comic stumble without injury.
+The mirror scenes stop before the following affirmation/clown exchanges, and
+separate clips do not overlap. Repeated counts follow the source phrase groups;
+longer turns split only at complete sentences. A one-line role remains selectable
+when it provides a complete useful phrase, such as Gogo's I'm not tall or Jeeby's
+It's a flower, Gogo. Source names are retained; the green friend has a descriptive
+label rather than an invented identity. The classroom teacher has a distinct
+record/portrait from English Singsing's teacher.
+
+Source captions, base/small English ASR, CTC alignment and timestamped source
+frames supported review. The music and acted voices produced stretched pen and
+notebook endings; those were realigned within the uncut source utterances. The
+brief final Gogo reaction and the incidental Oh, Gogo use broad source-reviewed
+reaction windows rather than a claim of precise phonetic alignment. The latter
+reaction is not attributed to a verified individual among the friends: a descriptive
+non-selectable supporting role retains the original voice. Its audio stays in the
+scene; the other three flower roles provide the practice. This narrow speaker
+identity remains unconfirmed for adult review.
+
+Three additional portraits use the actual source teacher, Jeeby and green friend;
+the existing Gogo/Tony/Jenny crops remain consistent. Source resolution remains
+320×240 with original English subtitles. Attribution and the established internal
+review / redistribution-not-cleared status remain unchanged. Media stays in OSS;
+code and structured scene data stay in ESA. No speech was generated.
