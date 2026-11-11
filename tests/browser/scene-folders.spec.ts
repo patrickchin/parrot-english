@@ -4,7 +4,9 @@ import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-test('audience folders keep the eight younger scenes separate and survive playback, language changes and reload', async ({ page }, info) => {
+const youngerCount = clips.filter(clip => clip.cohort === 'younger-age-5').length;
+
+test('audience folders keep the younger scenes separate and survive playback, language changes and reload', async ({ page }, info) => {
   await page.goto('/');
   const categories = page.getByRole('group', { name: '片段分类', exact: true });
   const younger = categories.getByRole('button', { name: /^较小孩子/ });
@@ -17,7 +19,7 @@ test('audience folders keep the eight younger scenes separate and survive playba
   await expect(younger).toHaveAttribute('aria-pressed', 'true');
   await expect(categories.getByRole('button', { pressed: true })).toHaveCount(1);
   await expect(page.getByRole('searchbox')).toHaveValue('');
-  await expect(page.getByRole('listitem')).toHaveCount(8);
+  await expect(page.getByRole('listitem')).toHaveCount(youngerCount);
   for (const clip of clips.filter(c => c.cohort === 'younger-age-5')) await expect(page.getByRole('button', { name: `选择片段：${clip.title}`, exact: true })).toBeVisible();
   for (const width of [320, 768, 1280]) {
     await page.setViewportSize({ width, height: 812 });
@@ -33,7 +35,7 @@ test('audience folders keep the eight younger scenes separate and survive playba
       expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
     }
     await expect(categories.getByText('24 个片段', { exact: true })).toBeVisible();
-    await expect(categories.getByText('8 个片段', { exact: true })).toBeVisible();
+    await expect(younger.getByText(`${youngerCount} 个片段`, { exact: true })).toBeVisible();
     if (info.project.name === 'chromium') {
       const shots = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english'); await mkdir(shots, { recursive: true });
       await page.screenshot({ path: join(shots, `category-tabs-${width}.png`), animations: 'disabled', fullPage: true });
@@ -68,7 +70,7 @@ test('audience folders keep the eight younger scenes separate and survive playba
   await translatedYounger.focus();
   await translatedYounger.press('Space');
   await expect(translatedYounger).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByRole('listitem')).toHaveCount(8);
+  await expect(page.getByRole('listitem')).toHaveCount(youngerCount);
   await films.click();
   await page.getByRole('searchbox').fill('banana');
   await expect(page.getByRole('button', { name: 'Choose scene: What about the floor?', exact: true })).toBeVisible();
