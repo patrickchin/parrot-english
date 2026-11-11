@@ -16,7 +16,7 @@ Page navigation uses `/library/:folder`, `/dubs`, `/scenes/:slug`, and
 `/scenes/:slug/dubs/:dubId`. The root opens the default film library. Audience
 selection adds a history entry, and direct scene links return to that scene's
 audience folder. Saved dub IDs replace the current scene address without
-reloading the player. Each page has `/en/` and `/zh/` versions, with the URL
+reloading the player. Each page supports `/en/`, `/zh/`, `/es/`, `/ja/`, and `/ko/`, with the URL
 determining the interface language. An unprefixed entry uses the saved browser
 preference, defaulting to Chinese, and replaces its address with the prefixed URL.
 
@@ -49,7 +49,7 @@ Role selection, recording, and the finished result are steps within the player.
 
 Navigation uses React Router data routing, route matching, redirects, and
 navigation blockers. Translations use i18next and react-i18next directly, with
-separate JSON resources in `src/locales/en` and `src/locales/zh-CN`. Use stable
+separate JSON resources under `src/locales` for English, Chinese, Spanish, Japanese, and Korean. Use stable
 semantic keys and named `{{variables}}`; scene and role content is keyed by record
 ID. `useTranslation()` renders messages, while `useLanguage()` exposes only the
 URL language and language selector action. The navigation adapter preserves the

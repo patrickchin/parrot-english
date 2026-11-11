@@ -23,7 +23,7 @@ test('serves video byte ranges for mobile seeking without exposing unknown paths
 test('serves the app on page paths while missing assets and API routes stay 404', async () => {
   const worker = createWorker({ '/index.html': { type: 'text/html; charset=utf-8', body: btoa('app') } });
   const get = (path, method = 'GET') => worker.fetch(new Request('https://parrotbook.test' + path, { method }));
-  for (const path of ['/dubs', '/dubs/', '/library/teens', '/scenes/patrick', '/scenes/patrick/dubs/dub_abc123', '/scenes/patrick/', '/en', '/zh/', '/en/dubs', '/zh/dubs/', '/en/library/teens', '/zh/scenes/toy-story-infinity', '/en/scenes/patrick/dubs/dub_abc123']) {
+  for (const path of ['/dubs', '/dubs/', '/en/dubs', '/zh/dubs/', '/library/teens', '/scenes/patrick', '/scenes/patrick/dubs/dub_abc123', '/scenes/patrick/', '/en', '/zh/', '/en/library/teens', '/zh/scenes/toy-story-infinity', '/en/scenes/patrick/dubs/dub_abc123', '/es/', '/ja/library/teens', '/ko/dubs', '/es/scenes/patrick', '/ja/scenes/patrick/dubs/dub_abc123']) {
     const response = await get(path);
     assert.equal(response.status, 200);
     assert.match(response.headers.get('content-type'), /^text\/html/);
@@ -35,6 +35,7 @@ test('serves the app on page paths while missing assets and API routes stay 404'
     assert.equal((await get(path)).status, 404);
   }
 });
+
 
 
 test('native text assets preserve Unicode JSON and byte lengths for GET, HEAD and ranges', async () => {
