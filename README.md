@@ -81,7 +81,11 @@ hardware and WeChat still need manual checks before a child pilot.
 
 `npm run build` emits application code, HTML/CSS, and scene metadata in
 `build/edge-worker.mjs` for Alibaba ESA. It rejects media in the public build
-instead of embedding it in the function. The retained [account smoke test](prototype/README.md)
+instead of embedding it in the function. Only the waveform named by each scene
+manifest is bundled; obsolete `waveform-*.json` files from earlier edits are
+omitted. The build reports embedded sizes for app assets, manifests, and waveforms,
+plus remaining space under the 4 MiB code limit.
+The retained [account smoke test](prototype/README.md)
 records the earlier deployment proof. The [infrastructure record](docs/infrastructure.md)
 describes the current service and previous services parked with data retained.
 
