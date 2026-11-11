@@ -12,7 +12,7 @@ each scene or reset. The browser handles microphone access when needed. Keep
 the local-recording notice in the footer and guardian guidance in Help; guardian
 authorization before child use remains part of the planned grown-up setup.
 
-Page navigation uses `/library/:folder`, `/scenes/:slug`, and
+Page navigation uses `/library/:folder`, `/dubs`, `/scenes/:slug`, and
 `/scenes/:slug/dubs/:dubId`. The root opens the default film library. Audience
 selection adds a history entry, and direct scene links return to that scene's
 audience folder. Saved dub IDs replace the current scene address without
@@ -26,6 +26,7 @@ Approved sitemap:
 /library/younger-age-5                 Younger children
 /library/older-children                Ages 10–12
 /library/teens                         Teenagers
+/dubs                                  My dubs
 /scenes/patrick                        Patrick scene
 /scenes/friends-cheesecake             Friends cheesecake scene
 /scenes/toy-story-infinity             Toy Story scene
@@ -35,8 +36,12 @@ Approved sitemap:
 Scene URLs use stable readable names, separate from translated display titles.
 An optional catalog `routeSlug` provides a public name that differs from the
 pack folder, preserving media locations and the scene references in saved dubs.
-"My dubs" remains a section in the library. Role selection, recording, and the
-finished result are steps within the scene player.
+"My dubs" is a separate page at `/dubs`, reached through header navigation on
+the same row as the language and theme controls. Narrow screens use a navigation
+menu in that row. Saved attempts retain continue/delete actions, loading and
+storage errors, and an empty state with a route back to scene selection. The
+home page omits Help; the dubbing player retains its Help and guardian guidance.
+Role selection, recording, and the finished result are steps within the player.
 
 Browse prerecorded videos using visible, solid category buttons for Films &
 animation, Younger children, Ages 10–12, and Teenagers. Each shows its scene
@@ -122,8 +127,8 @@ selected source video. Binary buffers avoid WebKit's Blob preparation failures.
 
 Each started session receives a random `dub_…` ID. The URL remembers the current
 draft after a committed save. Reloading restores its role, current turn,
-skipped/recorded dispositions, completion state, and recordings. My dubs on the
-shelf opens older attempts and confirms individual deletions. Starting over
+skipped/recorded dispositions, completion state, and recordings. The My dubs
+page opens older attempts and confirms individual deletions. Starting over
 keeps the previous session. Media bytes and lesson metadata commit atomically;
 the UI reports Saved only after the latest transaction completes. Unsaved or
 actively captured work retains the navigation warning. Quota/blocked storage

@@ -5,7 +5,7 @@ import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-test('the simplified shelf keeps scenes, help, privacy and source details accessible', async ({ page }, info) => {
+test('the simplified shelf keeps scenes, privacy and source details accessible without a Help button', async ({ page }, info) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1, name: '不，这是派大星！' })).toBeVisible();
   await expect(page.getByRole('button', { name: /Sintel/ })).toHaveCount(0);
@@ -23,8 +23,7 @@ test('the simplified shelf keeps scenes, help, privacy and source details access
       await page.screenshot({ path: join(folder, `cleanup-library-${width}.png`), fullPage: true });
     }
   }
-  await page.getByRole('button', { name: '怎么配音？', exact: true }).click();
-  await expect(page.getByText('选片段 → 选角色 → 听原声 → 一句一句录 → 看你的版本。', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '怎么配音？', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: '选择片段：不，这是派大星！', exact: true }).click();
   await expect(page.getByRole('button', { name: '开始配音', exact: true })).toBeEnabled();
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);

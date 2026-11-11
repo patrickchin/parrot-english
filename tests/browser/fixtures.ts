@@ -36,3 +36,13 @@ export async function setLanguage(page: Page, language: 'en' | 'zh-CN') {
   await page.getByRole('combobox', { name: 'UI language / 界面语言', exact: true }).click();
   await page.getByRole('option', { name: language === 'en' ? 'English' : '简体中文', exact: true }).click();
 }
+
+
+export async function headerDestination(page: Page, name: string) {
+  const menu = page.getByRole('button', { name: /^(主导航|Main navigation)$/ });
+  if (await menu.isVisible()) {
+    if (await menu.getAttribute('aria-expanded') !== 'true') await menu.click();
+    return page.getByRole('menuitem', { name, exact: true });
+  }
+  return page.getByRole('link', { name, exact: true });
+}
