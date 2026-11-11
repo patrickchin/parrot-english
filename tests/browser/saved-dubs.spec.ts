@@ -160,3 +160,79 @@ test('unavailable storage keeps recording usable and retry can save the current 
   await page.getByRole('button', { name: '重试保存', exact: true }).click(); await saved(page);
   await page.reload(); await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
 });
+
+test('queued writes cannot mark newer progress saved and a failed latest write remains retryable', async ({ page }) => {
+  type AuditWindow = Window & { pendingWrites: { finish: () => void; fail: () => void }[]; restoreArrayBuffer: () => void };
+  await page.goto('/#patrick');
+  await page.getByRole('button', { name: '开始配音', exact: true }).click();
+  await saved(page);
+  await page.evaluate(() => {
+    const state = window as unknown as AuditWindow;
+    const original = Blob.prototype.arrayBuffer;
+    state.pendingWrites = [];
+    state.restoreArrayBuffer = () => { Blob.prototype.arrayBuffer = original; };
+    Blob.prototype.arrayBuffer = function () {
+      if (!this.type.startsWith('audio/')) return original.call(this);
+      return new Promise<ArrayBuffer>((resolve, reject) => state.pendingWrites.push({
+        finish: () => { void original.call(this).then(resolve, reject); },
+        fail: () => reject(new DOMException('Full', 'QuotaExceededError')),
+      }));
+    };
+  });
+  await page.getByRole('button', { name: '开始录音', exact: true }).click();
+  await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
+  await expect.poll(() => page.evaluate(() => (window as unknown as AuditWindow).pendingWrites.length)).toBe(1);
+  await page.getByRole('button', { name: '下一步', exact: true }).click();
+  await page.evaluate(() => (window as unknown as AuditWindow).pendingWrites[0].finish());
+  await expect.poll(() => page.evaluate(() => (window as unknown as AuditWindow).pendingWrites.length)).toBe(2);
+  await expect(page.getByText('正在保存…', { exact: true })).toBeVisible();
+  await expect(page.getByText('已保存到本机', { exact: true })).toHaveCount(0);
+  await page.evaluate(() => (window as unknown as AuditWindow).pendingWrites[1].fail());
+  await expect(page.getByRole('alert')).toContainText('本机存储空间不足');
+  await page.evaluate(() => (window as unknown as AuditWindow).restoreArrayBuffer());
+  await page.getByRole('button', { name: '重试保存', exact: true }).click();
+  await saved(page);
+  await page.reload();
+  await expect(page.getByRole('button', { name: "第 2 句：I'm searching for someone.", exact: true })).toHaveAttribute('aria-current', 'step');
+  await page.getByRole('button', { name: '第 1 句：Thank you.', exact: true }).click();
+  await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
+});
+
+test('a deletion failure belongs to its confirmation dialog and can be cancelled or retried', async ({ page }) => {
+  await page.goto('/#patrick');
+  await page.getByRole('button', { name: '开始配音', exact: true }).click();
+  await saved(page);
+  await page.getByRole('button', { name: '返回片段', exact: true }).click();
+  const history = page.getByRole('region', { name: '我的配音', exact: true });
+  await expect(history.getByRole('listitem')).toHaveCount(1);
+  await page.evaluate(() => {
+    const original = IDBObjectStore.prototype.delete;
+    (window as Window & { restoreDeletion?: () => void }).restoreDeletion = () => { IDBObjectStore.prototype.delete = original; };
+    IDBObjectStore.prototype.delete = function (...args) {
+      if (this.name === 'dubs') throw new DOMException('Unavailable', 'UnknownError');
+      return original.apply(this, args);
+    };
+  });
+  const remove = history.getByRole('button', { name: '删除配音：你在找谁？', exact: true });
+  const dialog = page.getByRole('dialog', { name: '删除这次配音？', exact: true });
+  await remove.click();
+  await dialog.getByRole('button', { name: '删除配音', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toContainText('无法删除这次配音');
+  await expect(page.getByRole('alert')).toHaveCount(1);
+  await dialog.getByRole('button', { name: '保留配音', exact: true }).click();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await expect(history.getByRole('listitem')).toHaveCount(1);
+  await remove.click();
+  await dialog.getByRole('button', { name: '删除配音', exact: true }).click();
+  await expect(dialog.getByRole('alert')).toBeVisible();
+  await page.evaluate(() => (window as Window & { restoreDeletion?: () => void }).restoreDeletion!());
+  await dialog.getByRole('button', { name: '删除配音', exact: true }).click();
+  await expect(history).toHaveCount(0);
+  const remaining = () => page.evaluate(async () => {
+    const path = '/src/dub-store.ts'; return (await import(path)).listDubs();
+  });
+  expect(await remaining()).toEqual([]);
+  await page.reload();
+  expect(await remaining()).toEqual([]);
+  await expect(history).toHaveCount(0);
+});
