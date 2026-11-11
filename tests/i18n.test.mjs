@@ -1,0 +1,44 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { i18n } from '../src/i18n-engine.ts';
+import en from '../src/locales/en/translation.json' with { type: 'json' };
+import zhCN from '../src/locales/zh-CN/translation.json' with { type: 'json' };
+import clips from '../src/review-clips.json' with { type: 'json' };
+
+function messages(resource, prefix = '') {
+  return Object.entries(resource).flatMap(([key, value]) => typeof value === 'string'
+    ? [[prefix + key, value]] : messages(value, `${prefix}${key}.`));
+}
+
+test('locale resources have matching keys and named interpolation variables', () => {
+  const english = new Map(messages(en)), chinese = new Map(messages(zhCN));
+  assert.deepEqual([...english.keys()].sort(), [...chinese.keys()].sort());
+  for (const [key, value] of english) {
+    assert.doesNotMatch(key, /[\p{Script=Han}]/u);
+    assert.doesNotMatch(value, /[\p{Script=Han}]/u, key);
+    const variables = text => [...text.matchAll(/{{(\w+)}}/g)].map(match => match[1]).sort();
+    assert.deepEqual(variables(value), variables(chinese.get(key)), key);
+    assert.doesNotMatch(value, /{\d+}/, key);
+  }
+});
+
+test('i18next renders semantic keys and named variables in either language', () => {
+  assert.equal(i18n.t('recording.lineLabel', { lng: 'en', number: 2, text: 'Hello, Sam.' }), 'Line 2: Hello, Sam.');
+  assert.equal(i18n.t('library.sceneCount', { lng: 'zh-CN', count: 3 }), '3 个片段');
+  assert.equal(i18n.t('navigation.library', { lng: 'en' }), 'Scene library');
+  assert.equal(i18n.t('errors.microphoneDenied', { lng: 'en' }), 'Microphone access is off. Allow it in your browser’s site settings, then press record.');
+});
+
+test('every catalogued scene and role has bilingual content using its record ID', () => {
+  for (const clip of clips) {
+    const scene = JSON.parse(readFileSync(new URL(`../public/scenes/${clip.slug}/scene.json`, import.meta.url)));
+    assert.equal(clip.id, scene.id);
+    for (const language of ['en', 'zh-CN']) {
+      for (const field of ['title', 'licence', 'changes']) assert.equal(i18n.exists(`scenes.${scene.id}.${field}`, { lng: language }), true);
+      for (const role of scene.roles) {
+        for (const field of ['name', 'hint']) assert.equal(i18n.exists(`roles.${role.id}.${field}`, { lng: language }), true);
+      }
+    }
+  }
+});

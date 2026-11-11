@@ -39,6 +39,7 @@ export async function setLanguage(page: Page, language: 'en' | 'zh-CN') {
 
 
 export async function headerDestination(page: Page, name: string) {
+  await expect(page.getByRole('navigation', { name: /^(主导航|Main navigation)$/ })).toBeVisible();
   const menu = page.getByRole('button', { name: /^(主导航|Main navigation)$/ });
   if (await menu.isVisible()) {
     if (await menu.getAttribute('aria-expanded') !== 'true') await menu.click();

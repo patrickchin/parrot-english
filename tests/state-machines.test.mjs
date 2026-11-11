@@ -71,7 +71,7 @@ test('lesson keeps line dispositions exclusive, wraps unfinished lines, and rese
 test('video startup times out, aborts, and follows playing rather than a delayed play promise', async () => {
   const video = new EventTarget();
   const abort = new AbortController();
-  await assert.rejects(waitForVideo(video, 'playing', abort.signal, { start: () => new Promise(() => {}), timeout: 5 }), /视频定位较慢/);
+  await assert.rejects(waitForVideo(video, 'playing', abort.signal, { start: () => new Promise(() => {}), timeout: 5 }), /errors\.seekTimeout/);
   const waiting = waitForVideo(video, 'seeked', abort.signal);
   abort.abort();
   await assert.rejects(waiting, { name: 'AbortError' });

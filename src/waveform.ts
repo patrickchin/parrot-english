@@ -5,7 +5,7 @@ export function validateWaveform(value: unknown): ReferenceWaveform {
   const wave = value as ReferenceWaveform;
   if (!wave || wave.version !== 2 || !Number.isFinite(wave.duration) || wave.duration <= 0 || wave.duration > 120 ||
       wave.step !== waveformStep || !Array.isArray(wave.peaks) || wave.peaks.length !== Math.ceil(wave.duration / wave.step) ||
-      !wave.peaks.every(n => Number.isFinite(n) && n >= 0 && n <= 1)) throw new Error('原声波形暂时无法显示，仍可听原声并录音。');
+      !wave.peaks.every(n => Number.isFinite(n) && n >= 0 && n <= 1)) throw new Error("errors.waveformUnavailable");
   return wave;
 }
 

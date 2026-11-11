@@ -8,8 +8,8 @@ export const youngerClips = clips.filter(clip => clip.cohort === 'younger-age-5'
 export type ClipSlug = typeof clips[number]['slug'];
 
 export const folders = [
-  { value: 'older-audience', title: '电影与动画' },
-  { value: 'younger-age-5', title: '较小孩子' },
-  { value: 'older-children', title: '10–12岁' },
-  { value: 'teens', title: '青少年' },
+  { value: 'older-audience', title: "categories.films" },
+  { value: 'younger-age-5', title: "categories.younger" },
+  { value: 'older-children', title: "categories.older" },
+  { value: 'teens', title: "categories.teens" },
 ];

@@ -84,7 +84,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
 
   async function readyVideo(start: number, muted: boolean) {
     const el = video.current;
-    if (!el || el.error) throw new Error('视频暂时无法播放，请重新加载片段。');
+    if (!el || el.error) throw new Error("errors.videoPlayback");
     const id = operation.current, signal = cancellation.current.signal;
     el.muted = muted;
     if (Math.abs(el.currentTime - start) > 0.025) {
@@ -105,7 +105,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
       const el = video.current;
       if (id !== operation.current || !el) return;
       if (!el.ended && el.currentTime < end && (el.paused || el.seeking || el.readyState < HTMLMediaElement.HAVE_FUTURE_DATA || el.playbackRate !== 1)) {
-        stop('播放或录音暂时中断了，请再试一次。'); return;
+        stop("errors.mediaInterrupted"); return;
       }
       const clock = replayClock.current;
       if (clock && !el.ended && el.currentTime < end) {
@@ -113,7 +113,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
         // Stop rather than silently accepting a shifted dub after an output
         // device change or a picture startup/stall outside the sync tolerance.
         if (clock.context.state !== 'running' || Math.abs(audible - el.currentTime) > 0.12) {
-          stop('播放或录音暂时中断了，请再试一次。'); return;
+          stop("errors.mediaInterrupted"); return;
         }
       }
       if (takes) el.muted = scene.lines.some(line => takes[line.id] && el.currentTime >= line.start && el.currentTime < line.end);
@@ -144,7 +144,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
     const id = begin('recording');
     const window = lineWindow(scene, line);
     if (!navigator.mediaDevices?.getUserMedia || typeof AudioWorkletNode === 'undefined') {
-      setError('这个浏览器暂不支持录音。请用新版 Safari 或 Chrome 打开这个网址。'); return;
+      setError("errors.recordingUnsupported"); return;
     }
     setLivePeaks([]); setLiveStart(window.start); setTime(window.start);
     try {
@@ -193,22 +193,22 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
         const peak = peaks.slice(Math.ceil(preroll / waveformStep), Math.ceil((window.voiceEnd - captureStart) / waveformStep)).reduce((max, value) => Math.max(max, value), 0);
         setLevel(0);
         if (duration - preroll < 0.3 || peak < 0.003) {
-          setError('没听到清楚的声音。靠近麦克风，再试一次吧。'); return;
+          setError("errors.quietRecording"); return;
         }
         const blob = encodePcmWav(chunks, ctx.sampleRate);
         onTake(line.id, { blob, url: URL.createObjectURL(blob), duration, start: captureStart, peaks });
         release();
         advance('SAVED', id);
       };
-      detail.onprocessorerror = () => { if (id === operation.current) stop('录音中断了，请再试一次。上一次录音还在。'); };
+      detail.onprocessorerror = () => { if (id === operation.current) stop("errors.recordingInterrupted"); };
       captured.getAudioTracks().forEach(track => { track.onended = () => {
-        if (id === operation.current && (captureStage === 'starting' || captureStage === 'recording')) stop('麦克风已断开，请连接后再试一次。');
+        if (id === operation.current && (captureStage === 'starting' || captureStage === 'recording')) stop("errors.microphoneDisconnected");
       }; });
       const el = await readyVideo(window.start, window.start >= line.start);
       if (id !== operation.current) return;
       // Acknowledge the first retained PCM frame before releasing the picture.
       await new Promise<void>((resolve, reject) => {
-        const timeout = setTimeout(() => finish(new Error('录音准备较慢，请稍后再试。')), 8000);
+        const timeout = setTimeout(() => finish(new Error("errors.microphoneTimeout")), 8000);
         const finish = (error?: unknown) => {
           clearTimeout(timeout); detail.port.removeEventListener('message', ready); signal.removeEventListener('abort', cancelled);
           error ? reject(error) : resolve();
@@ -233,7 +233,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
       finishRecording.current = () => {
         if (captureStage !== 'recording') return;
         captureStage = 'saving'; cancelAnimationFrame(frame.current); el.pause(); setTime(el.currentTime); advance('FINISH', id);
-        saveTimeout = setTimeout(() => { if (id === operation.current) stop('录音中断了，请再试一次。上一次录音还在。'); }, 8000);
+        saveTimeout = setTimeout(() => { if (id === operation.current) stop("errors.recordingInterrupted"); }, 8000);
         detail.port.postMessage('stop');
       };
       let shownPeaks = 0;
@@ -242,7 +242,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
         setTime(el.currentTime);
         if (el.ended || el.currentTime >= window.end) { finishRecording.current?.(); return; }
         if (ctx.state !== 'running' || el.paused || el.seeking || el.readyState < HTMLMediaElement.HAVE_FUTURE_DATA || el.playbackRate !== 1) {
-          stop('播放或录音暂时中断了，请再试一次。'); return;
+          stop("errors.mediaInterrupted"); return;
         }
         el.muted = el.currentTime >= line.start && el.currentTime < line.end;
         if (peaks.length !== shownPeaks) {
@@ -288,7 +288,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
       advance('TAKES_READY', id);
       if (buffers.length && scene.backing && !backing.current) {
         const response = await fetch(asset(scene, scene.backing), { signal: cancellation.current.signal });
-        if (!response.ok) throw new Error('背景声音未加载成功，请再试一次。');
+        if (!response.ok) throw new Error("errors.backingLoad");
         const decoded = await ctx.decodeAudioData(await response.arrayBuffer());
         if (id !== operation.current) return;
         backing.current = decoded;
@@ -330,7 +330,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
       // marks real startup; a delayed play() promise must not delay the watcher.
       await playVideo(el, id, {
         delay: Math.max(0, (startAt - audibleContextTime(ctx)) * 1000),
-        timeout: 120, timeoutMessage: '视频暂时无法播放，请重新加载片段。',
+        timeout: 120, timeoutMessage: "errors.videoPlayback",
       });
       if (id !== operation.current) return;
       advance('PLAYING', id); watch(id, end, takes);
@@ -342,9 +342,9 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
 
 function message(error: unknown): string {
   if (error instanceof DOMException) {
-    if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') return '麦克风还没开启。请在浏览器的网站设置里允许麦克风，再点录音。';
-    if (error.name === 'NotFoundError') return '没有找到麦克风。请连接麦克风，再试一次。';
-    if (error.name === 'NotReadableError') return '麦克风正被其他应用使用。关闭占用麦克风的应用，再试一次。';
+    if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') return "errors.microphoneDenied";
+    if (error.name === 'NotFoundError') return "errors.microphoneMissing";
+    if (error.name === 'NotReadableError') return "errors.microphoneBusy";
   }
-  return error instanceof Error ? error.message : '播放或录音暂时中断了，请再试一次。';
+  return error instanceof Error ? error.message : "errors.mediaInterrupted";
 }
