@@ -23,9 +23,11 @@ test('each authored character avatar loads in the role picker', async ({ page },
       await expect(portrait).toBeVisible();
       await expect.poll(() => portrait.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThanOrEqual(192);
       const filename = (await portrait.getAttribute('src'))!.split('/').pop()!;
+      // Scene-specific filenames may share the same source-character crop.
+      const imageId = filename.match(/(?:avatar|portrait)-([a-f0-9]+)\.jpg$/)?.[1] ?? filename;
       const character = role.name === '谢尔顿' ? scene.credit.title.split(' — ')[0] + role.name : role.name;
-      if (avatars.has(character)) expect(filename).toBe(avatars.get(character));
-      avatars.set(character, filename);
+      if (avatars.has(character)) expect(imageId).toBe(avatars.get(character));
+      avatars.set(character, imageId);
       await button.click();
       await expect(button).toHaveAttribute('aria-pressed', 'true');
     }
