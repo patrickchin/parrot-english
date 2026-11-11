@@ -38,6 +38,12 @@ pack folder, preserving media locations and the scene references in saved dubs.
 "My dubs" remains a section in the library. Role selection, recording, and the
 finished result are steps within the scene player.
 
+Browse prerecorded videos using visible, solid category buttons for Films &
+animation, Younger children, Ages 10–12, and Teenagers. Each shows its scene
+count and a small thumbnail from its videos, and the selected category has a
+contrasting fill. Keep every category visible: four across on larger screens,
+two columns on phones, without a dropdown.
+
 The picture frame follows the source video's metadata instead of stretching to
 fill the viewport height. Fit the picture and its 44px neutral control strip
 within the available player cell; keep unused space outside the frame. Use a

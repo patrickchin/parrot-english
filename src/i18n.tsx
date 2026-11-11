@@ -98,7 +98,7 @@ const english: Record<string, string> = {
   "我可以和本一起玩吗？": "Can I play with Ben?",
   "精灵从来不害怕！": "Elves are never scared!",
   "我看起来怎么样？": "How do I look?",
-  "片段文件夹": "Scene folder",
+  "片段分类": "Scene categories",
   "较大孩子": "Older children",
   "较小孩子": "Younger children",
   '切换到浅色模式': 'Switch to light mode',

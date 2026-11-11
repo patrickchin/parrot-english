@@ -9,45 +9,36 @@ const teenCount = clips.filter(clip => clip.cohort === 'teens').length;
 
 test('TV folders open directly, keep complete scenes separate, and survive language changes and reload', async ({ page }, info) => {
   await page.goto('/library/older-children');
-  const folder = page.getByRole('combobox', { name: '片段文件夹', exact: true });
-  await expect(folder).toContainText('10–12岁');
+  const categories = page.getByRole('group', { name: '片段分类', exact: true });
+  const teens = categories.getByRole('button', { name: /^青少年/ });
+  await expect(categories.getByRole('button', { pressed: true })).toContainText('10–12岁');
   await expect(page.getByRole('listitem')).toHaveCount(olderChildCount);
   await page.getByRole('searchbox').fill('not-a-scene');
-  await folder.click();
-  await page.getByRole('option', { name: /^青少年/ }).click();
+  await teens.click();
   await expect(page.getByRole('searchbox')).toHaveValue('');
   await expect(page.getByRole('listitem')).toHaveCount(teenCount);
   for (const clip of clips.filter(clip => clip.cohort === 'teens')) await expect(page.getByRole('button', { name: `选择片段：${clip.title}`, exact: true })).toBeVisible();
   for (const width of [320, 768, 1280]) {
     await page.setViewportSize({ width, height: 812 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await folder.click();
-    const menu = page.getByRole('listbox');
-    await expect(menu.getByRole('option')).toHaveCount(4);
-    const labelBounds = (await page.getByText('片段文件夹', { exact: true }).boundingBox())!;
-    expect(labelBounds.y).toBeGreaterThanOrEqual(0);
-    await expect(menu.getByText(`${olderChildCount} 个片段`, { exact: true })).toBeVisible();
-    await expect(menu.getByText(`${teenCount} 个片段`, { exact: true })).toBeVisible();
-    const bounds = (await menu.boundingBox())!;
-    expect(bounds.x).toBeGreaterThanOrEqual(0);
-    expect(bounds.y).toBeGreaterThanOrEqual(0);
-    expect(bounds.y + bounds.height).toBeLessThanOrEqual(812);
-    expect(bounds.x + bounds.width).toBeLessThanOrEqual(width);
+    await expect(categories.getByRole('button')).toHaveCount(4);
+    await expect(categories.getByText(`${olderChildCount} 个片段`, { exact: true })).toBeVisible();
+    await expect(categories.getByText(`${teenCount} 个片段`, { exact: true })).toBeVisible();
+    await expect(teens).toHaveAttribute('aria-pressed', 'true');
     if (info.project.name === 'chromium') {
       const shots = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english');
       await mkdir(shots, { recursive: true });
-      await page.screenshot({ path: join(shots, `tv-folders-${width}.png`), animations: 'disabled' });
+      await page.screenshot({ path: join(shots, `tv-category-tabs-${width}.png`), animations: 'disabled', fullPage: true });
     }
-    await page.keyboard.press('Escape');
   }
   await page.getByRole('button', { name: '选择片段：转不过弯的沙发', exact: true }).click();
   await expect(page.getByRole('button', { name: '开始配音', exact: true })).toBeEnabled();
   await expect(page.getByRole('button', { name: /瑞秋和钱德勒/ })).toHaveCount(0);
   await page.getByRole('button', { name: '返回片段', exact: true }).click();
-  await expect(folder).toContainText('青少年');
+  await expect(teens).toHaveAttribute('aria-pressed', 'true');
   await setLanguage(page, 'en');
   await page.reload();
-  await expect(page.getByRole('combobox', { name: 'Scene folder', exact: true })).toContainText('Teenagers');
+  await expect(page.getByRole('group', { name: 'Scene categories', exact: true }).getByRole('button', { pressed: true })).toContainText('Teenagers');
   await expect(page.getByRole('listitem')).toHaveCount(teenCount);
 });
 
@@ -64,6 +55,6 @@ for (const slug of ['young-sheldon-library', 'himym-driving-lesson', 'harry-pott
 
 test('an unknown folder returns to the established film library', async ({ page }) => {
   await page.goto('/library/unknown');
-  await expect(page.getByRole('combobox', { name: '片段文件夹', exact: true })).toContainText('电影与动画');
+  await expect(page.getByRole('group', { name: '片段分类', exact: true }).getByRole('button', { pressed: true })).toContainText('电影与动画');
   await expect(page.getByRole('listitem')).toHaveCount(24);
 });

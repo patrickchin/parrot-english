@@ -22,10 +22,10 @@ test('the readable Toy Story URL keeps its name through saving, reload and resum
 
 test('folder paths follow selection, reload, Back and Forward', async ({ page }) => {
   await page.goto('/library/older-children');
-  const folder = page.getByRole('combobox', { name: '片段文件夹', exact: true });
+  const categories = page.getByRole('group', { name: '片段分类', exact: true });
+  const folder = categories.getByRole('button', { pressed: true });
   await expect(folder).toContainText('10–12岁');
-  await folder.click();
-  await page.getByRole('option', { name: /^青少年/ }).click();
+  await categories.getByRole('button', { name: /^青少年/ }).click();
   await expect(page).toHaveURL(/\/library\/teens$/);
   await expect(folder).toContainText('青少年');
   await page.getByRole('searchbox').fill('not-a-scene');
@@ -38,7 +38,7 @@ test('folder paths follow selection, reload, Back and Forward', async ({ page })
   await expect(folder).toContainText('青少年');
   await setLanguage(page, 'en');
   await expect(page).toHaveURL(/\/library\/teens$/);
-  await expect(page.getByRole('combobox', { name: 'Scene folder', exact: true })).toContainText('Teenagers');
+  await expect(page.getByRole('group', { name: 'Scene categories', exact: true }).getByRole('button', { pressed: true })).toContainText('Teenagers');
 });
 
 test('scene paths open directly, reload and return to their audience folder', async ({ page }) => {
@@ -50,7 +50,7 @@ test('scene paths open directly, reload and return to their audience folder', as
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   await page.getByRole('button', { name: '返回片段', exact: true }).click();
   await expect(page).toHaveURL(/\/library\/younger-age-5$/);
-  await expect(page.getByRole('combobox', { name: '片段文件夹', exact: true })).toContainText('较小孩子');
+  await expect(page.getByRole('group', { name: '片段分类', exact: true }).getByRole('button', { pressed: true })).toContainText('较小孩子');
   await page.getByRole('button', { name: '选择片段：我看起来怎么样？', exact: true }).click();
   await expect(page).toHaveURL(/\/scenes\/ben-blue-hat$/);
   await expect(start).toBeEnabled();
