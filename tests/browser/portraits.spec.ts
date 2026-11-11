@@ -32,7 +32,7 @@ test('each authored character avatar loads in the role picker', async ({ page },
       await expect(button).toHaveAttribute('aria-pressed', 'true');
     }
   }
-  expect(authoredScenes).toBe(57);
+  expect(authoredScenes).toBe(61);
   expect(avatars.get('Young Sheldon谢尔顿')).not.toBe(avatars.get('The Big Bang Theory谢尔顿'));
   await page.goto('/scenes/onions');
   await expect(page.getByRole('button', { name: /^驴子/ })).toBeVisible();

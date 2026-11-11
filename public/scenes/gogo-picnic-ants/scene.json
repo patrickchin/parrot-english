@@ -1,0 +1,252 @@
+{
+  "version": 1,
+  "id": "scene_A6AHrPGux9Y",
+  "title": "我不喜欢蚂蚁！",
+  "tags": [
+    "Gogo's Adventures with English",
+    "Gogo",
+    "Tony",
+    "Jenny",
+    "dragon",
+    "beginner",
+    "first English",
+    "funny",
+    "英语启蒙",
+    "龙",
+    "趣味故事",
+    "picnic",
+    "ants",
+    "sandwiches",
+    "pond",
+    "dislikes",
+    "野餐",
+    "蚂蚁",
+    "三明治"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 36.8,
+  "video": "gogo-picnic-ants-review-20d836bc633a.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-picnic-ants/",
+  "poster": "gogo-picnic-ants-poster-20d836bc633a.jpg",
+  "waveform": "waveform-20d836bc633a.json",
+  "roles": [
+    {
+      "id": "role_ekd_7mmBAJ8",
+      "name": "Gogo",
+      "label": "Gogo",
+      "hint": "3 句台词",
+      "portrait": "gogo-picnic-ants-gogo-portrait-a8ffbdab8f8a.jpg"
+    },
+    {
+      "id": "role_1de8iaC5BVQ",
+      "name": "托尼",
+      "label": "托尼",
+      "hint": "2 句台词",
+      "portrait": "gogo-picnic-ants-tony-portrait-752f75bae87c.jpg"
+    },
+    {
+      "id": "role_5cqjyxmLDbQ",
+      "name": "珍妮",
+      "label": "珍妮",
+      "hint": "2 句台词",
+      "portrait": "gogo-picnic-ants-jenny-portrait-bb6627374bb1.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_bTwehWbL1Og",
+      "roleId": "role_1de8iaC5BVQ",
+      "start": 1.921,
+      "end": 3.362,
+      "text": "What are those, Gogo?",
+      "hint": "Gogo，那些是什么？",
+      "words": [
+        {
+          "text": "What",
+          "start": 1.961,
+          "end": 2.101
+        },
+        {
+          "text": "are",
+          "start": 2.221,
+          "end": 2.281
+        },
+        {
+          "text": "those,",
+          "start": 2.341,
+          "end": 2.721
+        },
+        {
+          "text": "Gogo?",
+          "start": 2.862,
+          "end": 3.302
+        }
+      ]
+    },
+    {
+      "id": "line_O8hFfolmrjw",
+      "roleId": "role_ekd_7mmBAJ8",
+      "start": 4.783,
+      "end": 5.663,
+      "text": "I don't know.",
+      "hint": "我不知道。",
+      "words": [
+        {
+          "text": "I",
+          "start": 4.823,
+          "end": 4.843
+        },
+        {
+          "text": "don't",
+          "start": 4.963,
+          "end": 5.203
+        },
+        {
+          "text": "know.",
+          "start": 5.363,
+          "end": 5.603
+        }
+      ]
+    },
+    {
+      "id": "line_k05QJAHO2xQ",
+      "roleId": "role_1de8iaC5BVQ",
+      "start": 6.143,
+      "end": 7.924,
+      "text": "Those are sandwiches.",
+      "hint": "那些是三明治。",
+      "words": [
+        {
+          "text": "Those",
+          "start": 6.183,
+          "end": 6.524
+        },
+        {
+          "text": "are",
+          "start": 6.664,
+          "end": 6.764
+        },
+        {
+          "text": "sandwiches.",
+          "start": 6.904,
+          "end": 7.864
+        }
+      ]
+    },
+    {
+      "id": "line_yHxtMeV0TWA",
+      "roleId": "role_ekd_7mmBAJ8",
+      "start": 13.441,
+      "end": 14.668,
+      "text": "No, thank you.",
+      "hint": "不了，谢谢。",
+      "words": [
+        {
+          "text": "No,",
+          "start": 13.481,
+          "end": 13.702
+        },
+        {
+          "text": "thank",
+          "start": 14.024,
+          "end": 14.165
+        },
+        {
+          "text": "you.",
+          "start": 14.286,
+          "end": 14.608
+        }
+      ]
+    },
+    {
+      "id": "line_tInGfwXfQMI",
+      "roleId": "role_5cqjyxmLDbQ",
+      "start": 18.77,
+      "end": 19.631,
+      "text": "Ants, Gogo.",
+      "hint": "是蚂蚁，Gogo。",
+      "words": [
+        {
+          "text": "Ants,",
+          "start": 18.81,
+          "end": 18.99
+        },
+        {
+          "text": "Gogo.",
+          "start": 19.15,
+          "end": 19.571
+        }
+      ]
+    },
+    {
+      "id": "line_DMNMLq0WaNY",
+      "roleId": "role_5cqjyxmLDbQ",
+      "start": 20.051,
+      "end": 21.332,
+      "text": "Those are ants.",
+      "hint": "那些是蚂蚁。",
+      "words": [
+        {
+          "text": "Those",
+          "start": 20.091,
+          "end": 20.411
+        },
+        {
+          "text": "are",
+          "start": 20.571,
+          "end": 20.651
+        },
+        {
+          "text": "ants.",
+          "start": 20.951,
+          "end": 21.272
+        }
+      ]
+    },
+    {
+      "id": "line_mUTYJ0y1HQk",
+      "roleId": "role_ekd_7mmBAJ8",
+      "start": 33.998,
+      "end": 35.219,
+      "text": "I don't like ants.",
+      "hint": "我不喜欢蚂蚁。",
+      "words": [
+        {
+          "text": "I",
+          "start": 34.038,
+          "end": 34.059
+        },
+        {
+          "text": "don't",
+          "start": 34.179,
+          "end": 34.399
+        },
+        {
+          "text": "like",
+          "start": 34.519,
+          "end": 34.739
+        },
+        {
+          "text": "ants.",
+          "start": 34.939,
+          "end": 35.159
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Gogo's Adventures with English — Do you like sausages?",
+    "attribution": "Gogo's Adventures with English — original animation and English performance (Longman); source upload: Children English, not verified as the rightsholder.",
+    "source": "https://www.youtube.com/watch?v=LHV46j9vkm8&t=99s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 99.7–136.5 秒的连续节选。Jenny identifies the ants, including the source close-up while her voice is off screen. Gogo says no thank you and the final ant complaint. Comic ant nips and a brief pond splash remain visible; no lesson about swimming or real animal handling. Stops before the later hot-dog sequence. Nonverbal yelps stay in the original audio rather than becoming practice prompts."
+  }
+}

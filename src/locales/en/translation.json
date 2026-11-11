@@ -537,6 +537,26 @@
       "title": "This is for you",
       "licence": "Redistribution permission unconfirmed",
       "changes": "Internal prototype review; continuous excerpt from 45.7–56.5 seconds of the source upload. Birthday scene beside a supervised pool; no swimming action in the selected exchange. Stops before the song and later montage."
+    },
+    "scene_YEtT30gD2zw": {
+      "title": "Magic flowers!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype review; continuous source excerpt 83.7–112.2 s. Giant flowers surprise the children. The shared wow and the dragon’s isolated oops stay as supporting original voices."
+    },
+    "scene_GlNQxic6XKU": {
+      "title": "Do you like doughnuts?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype review; continuous source excerpt 64.0–99.35 s. Gogo fills the picnic with sausages and doughnuts. Tony says the final sentence about liking both foods."
+    },
+    "scene_A6AHrPGux9Y": {
+      "title": "I don't like ants!",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype review; continuous source excerpt 99.7–136.5 s. Ants interrupt the picnic; Gogo splashes into the pond and says he does not like ants. Nonverbal yelps remain original."
+    },
+    "scene_-1fU_8OJfvw": {
+      "title": "Is it a tiger?",
+      "licence": "Redistribution permission unconfirmed",
+      "changes": "Internal prototype review; continuous source excerpt 146.4–165.5 s. Gogo guesses the wrong animals in front of a friendly elephant. Jenny gives the first no and final praise; Tony gives the second no and identifies the elephant."
     }
   },
   "roles": {
@@ -1238,6 +1258,58 @@
     },
     "role_c20cLSGQdAQ": {
       "name": "Child in blue",
+      "hint": "2 lines"
+    },
+    "role_QlsPddNBXGQ": {
+      "name": "Jenny",
+      "hint": "2 lines"
+    },
+    "role_TfRZb1jojO8": {
+      "name": "Tony",
+      "hint": "3 lines"
+    },
+    "role_GqmpVhh4sXc": {
+      "name": "Gogo",
+      "hint": "1 line"
+    },
+    "role_ml1pMwDvf3A": {
+      "name": "Tony and Jenny",
+      "hint": "1 line"
+    },
+    "role_pMbWuJAc6TM": {
+      "name": "Gogo",
+      "hint": "5 lines"
+    },
+    "role_6PoExuj3NZc": {
+      "name": "Tony",
+      "hint": "3 lines"
+    },
+    "role_N8xc7CSXiA0": {
+      "name": "Jenny",
+      "hint": "3 lines"
+    },
+    "role_ekd_7mmBAJ8": {
+      "name": "Gogo",
+      "hint": "3 lines"
+    },
+    "role_1de8iaC5BVQ": {
+      "name": "Tony",
+      "hint": "2 lines"
+    },
+    "role_5cqjyxmLDbQ": {
+      "name": "Jenny",
+      "hint": "2 lines"
+    },
+    "role_uoIAOk7SIc8": {
+      "name": "Gogo",
+      "hint": "4 lines"
+    },
+    "role_JAL2Cnx5A48": {
+      "name": "Jenny",
+      "hint": "2 lines"
+    },
+    "role_rkFjPTbuc7A": {
+      "name": "Tony",
       "hint": "2 lines"
     }
   },

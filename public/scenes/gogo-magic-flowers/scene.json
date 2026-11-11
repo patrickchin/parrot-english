@@ -1,0 +1,243 @@
+{
+  "version": 1,
+  "id": "scene_YEtT30gD2zw",
+  "title": "花朵变颜色了！",
+  "tags": [
+    "Gogo's Adventures with English",
+    "Gogo",
+    "Tony",
+    "Jenny",
+    "dragon",
+    "beginner",
+    "first English",
+    "funny",
+    "英语启蒙",
+    "龙",
+    "趣味故事",
+    "magic",
+    "flowers",
+    "colours",
+    "colors",
+    "blue",
+    "red",
+    "yellow",
+    "魔法",
+    "花朵",
+    "颜色"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 28.52,
+  "video": "gogo-magic-flowers-review-5b4cb8f6b25e.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-magic-flowers/",
+  "poster": "gogo-magic-flowers-poster-5b4cb8f6b25e.jpg",
+  "waveform": "waveform-5b4cb8f6b25e.json",
+  "roles": [
+    {
+      "id": "role_QlsPddNBXGQ",
+      "name": "珍妮",
+      "label": "珍妮",
+      "hint": "2 句台词",
+      "portrait": "gogo-magic-flowers-jenny-portrait-bb6627374bb1.jpg"
+    },
+    {
+      "id": "role_TfRZb1jojO8",
+      "name": "托尼",
+      "label": "托尼",
+      "hint": "3 句台词",
+      "portrait": "gogo-magic-flowers-tony-portrait-752f75bae87c.jpg"
+    },
+    {
+      "id": "role_GqmpVhh4sXc",
+      "name": "Gogo",
+      "label": "Gogo",
+      "hint": "1 句台词",
+      "portrait": "gogo-magic-flowers-gogo-portrait-a8ffbdab8f8a.jpg",
+      "selectable": false
+    },
+    {
+      "id": "role_ml1pMwDvf3A",
+      "name": "托尼和珍妮",
+      "label": "托尼和珍妮",
+      "hint": "1 句台词",
+      "portrait": "gogo-magic-flowers-tony-and-jenny-portrait-cf6640d3ffa6.jpg",
+      "selectable": false
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_a3dDNhgJS0k",
+      "roleId": "role_QlsPddNBXGQ",
+      "start": 0.886,
+      "end": 2.077,
+      "text": "This is yellow.",
+      "hint": "这是黄色。",
+      "words": [
+        {
+          "text": "This",
+          "start": 0.926,
+          "end": 1.128
+        },
+        {
+          "text": "is",
+          "start": 1.391,
+          "end": 1.472
+        },
+        {
+          "text": "yellow.",
+          "start": 1.633,
+          "end": 2.017
+        }
+      ]
+    },
+    {
+      "id": "line_PwL28eaKpV0",
+      "roleId": "role_ml1pMwDvf3A",
+      "start": 11.708,
+      "end": 12.068,
+      "text": "Wow!",
+      "hint": "哇！",
+      "words": [
+        {
+          "text": "Wow!",
+          "start": 11.748,
+          "end": 12.008
+        }
+      ]
+    },
+    {
+      "id": "line_5bjA8ORIyJM",
+      "roleId": "role_TfRZb1jojO8",
+      "start": 13.309,
+      "end": 13.569,
+      "text": "Oh!",
+      "hint": "哦！",
+      "words": [
+        {
+          "text": "Oh!",
+          "start": 13.349,
+          "end": 13.509
+        }
+      ]
+    },
+    {
+      "id": "line_6vVRiwVnEK0",
+      "roleId": "role_TfRZb1jojO8",
+      "start": 14.951,
+      "end": 16.572,
+      "text": "That flower is blue.",
+      "hint": "那朵花是蓝色的。",
+      "words": [
+        {
+          "text": "That",
+          "start": 14.991,
+          "end": 15.171
+        },
+        {
+          "text": "flower",
+          "start": 15.291,
+          "end": 15.711
+        },
+        {
+          "text": "is",
+          "start": 15.891,
+          "end": 15.971
+        },
+        {
+          "text": "blue.",
+          "start": 16.171,
+          "end": 16.512
+        }
+      ]
+    },
+    {
+      "id": "line_VagRyQaqQCM",
+      "roleId": "role_GqmpVhh4sXc",
+      "start": 19.334,
+      "end": 19.754,
+      "text": "Oops!",
+      "hint": "哎呀！",
+      "words": [
+        {
+          "text": "Oops!",
+          "start": 19.374,
+          "end": 19.694
+        }
+      ]
+    },
+    {
+      "id": "line_lTltACVmlkU",
+      "roleId": "role_TfRZb1jojO8",
+      "start": 21.575,
+      "end": 22.976,
+      "text": "That flower is red.",
+      "hint": "那朵花是红色的。",
+      "words": [
+        {
+          "text": "That",
+          "start": 21.615,
+          "end": 21.795
+        },
+        {
+          "text": "flower",
+          "start": 21.875,
+          "end": 22.256
+        },
+        {
+          "text": "is",
+          "start": 22.396,
+          "end": 22.476
+        },
+        {
+          "text": "red.",
+          "start": 22.616,
+          "end": 22.916
+        }
+      ]
+    },
+    {
+      "id": "line_nbhdEs5tt1g",
+      "roleId": "role_QlsPddNBXGQ",
+      "start": 25.698,
+      "end": 27.239,
+      "text": "That flower is yellow.",
+      "hint": "那朵花是黄色的。",
+      "words": [
+        {
+          "text": "That",
+          "start": 25.738,
+          "end": 25.918
+        },
+        {
+          "text": "flower",
+          "start": 26.018,
+          "end": 26.399
+        },
+        {
+          "text": "is",
+          "start": 26.559,
+          "end": 26.639
+        },
+        {
+          "text": "yellow.",
+          "start": 26.799,
+          "end": 27.179
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Gogo's Adventures with English — What colour is this?",
+    "attribution": "Gogo's Adventures with English — original animation and English performance (Longman); source upload: Children English, not verified as the rightsholder.",
+    "source": "https://www.youtube.com/watch?v=As5kCF2ydXQ&t=83s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 83.7–112.2 秒的连续节选。Jenny identifies yellow paint before the magic. Tony notices the blue/red flowers, Jenny the yellow one. The shared wow stays in original audio as an incidental non-selectable chorus. Stops before the children are swallowed by a paint spill; source captions remain visible. The dragon’s isolated oops also stays as a non-selectable supporting reaction; the children offer the reusable sentences."
+  }
+}

@@ -1,0 +1,378 @@
+{
+  "version": 1,
+  "id": "scene_GlNQxic6XKU",
+  "title": "你喜欢甜甜圈吗？",
+  "tags": [
+    "Gogo's Adventures with English",
+    "Gogo",
+    "Tony",
+    "Jenny",
+    "dragon",
+    "beginner",
+    "first English",
+    "funny",
+    "英语启蒙",
+    "龙",
+    "趣味故事",
+    "picnic",
+    "food",
+    "sausages",
+    "doughnuts",
+    "donuts",
+    "likes",
+    "野餐",
+    "香肠",
+    "甜甜圈"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 35.36,
+  "video": "gogo-picnic-doughnuts-review-b46806a52ee1.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-picnic-doughnuts/",
+  "poster": "gogo-picnic-doughnuts-poster-b46806a52ee1.jpg",
+  "waveform": "waveform-b46806a52ee1.json",
+  "roles": [
+    {
+      "id": "role_pMbWuJAc6TM",
+      "name": "Gogo",
+      "label": "Gogo",
+      "hint": "5 句台词",
+      "portrait": "gogo-picnic-doughnuts-gogo-portrait-a8ffbdab8f8a.jpg"
+    },
+    {
+      "id": "role_6PoExuj3NZc",
+      "name": "托尼",
+      "label": "托尼",
+      "hint": "3 句台词",
+      "portrait": "gogo-picnic-doughnuts-tony-portrait-752f75bae87c.jpg"
+    },
+    {
+      "id": "role_N8xc7CSXiA0",
+      "name": "珍妮",
+      "label": "珍妮",
+      "hint": "3 句台词",
+      "portrait": "gogo-picnic-doughnuts-jenny-portrait-bb6627374bb1.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_BWPqZm-Byag",
+      "roleId": "role_6PoExuj3NZc",
+      "start": 0.98,
+      "end": 2.841,
+      "text": "These are sausages, Gogo.",
+      "hint": "Gogo，这些是香肠。",
+      "words": [
+        {
+          "text": "These",
+          "start": 1.02,
+          "end": 1.26
+        },
+        {
+          "text": "are",
+          "start": 1.42,
+          "end": 1.52
+        },
+        {
+          "text": "sausages,",
+          "start": 1.64,
+          "end": 2.241
+        },
+        {
+          "text": "Gogo.",
+          "start": 2.361,
+          "end": 2.781
+        }
+      ]
+    },
+    {
+      "id": "line_cIlbbY6wfQY",
+      "roleId": "role_6PoExuj3NZc",
+      "start": 3.381,
+      "end": 5.021,
+      "text": "Do you like sausages?",
+      "hint": "你喜欢香肠吗？",
+      "words": [
+        {
+          "text": "Do",
+          "start": 3.421,
+          "end": 3.501
+        },
+        {
+          "text": "you",
+          "start": 3.581,
+          "end": 3.701
+        },
+        {
+          "text": "like",
+          "start": 3.801,
+          "end": 4.021
+        },
+        {
+          "text": "sausages?",
+          "start": 4.261,
+          "end": 4.961
+        }
+      ]
+    },
+    {
+      "id": "line_LNyGTKN3BG8",
+      "roleId": "role_pMbWuJAc6TM",
+      "start": 8.983,
+      "end": 10.163,
+      "text": "Yes, I do.",
+      "hint": "是的，我喜欢。",
+      "words": [
+        {
+          "text": "Yes,",
+          "start": 9.023,
+          "end": 9.403
+        },
+        {
+          "text": "I",
+          "start": 9.803,
+          "end": 9.823
+        },
+        {
+          "text": "do.",
+          "start": 9.963,
+          "end": 10.103
+        }
+      ]
+    },
+    {
+      "id": "line_aIxzgXMn2zU",
+      "roleId": "role_pMbWuJAc6TM",
+      "start": 11.123,
+      "end": 12.644,
+      "text": "I like sausages.",
+      "hint": "我喜欢香肠。",
+      "words": [
+        {
+          "text": "I",
+          "start": 11.163,
+          "end": 11.183
+        },
+        {
+          "text": "like",
+          "start": 11.363,
+          "end": 11.583
+        },
+        {
+          "text": "sausages.",
+          "start": 11.843,
+          "end": 12.584
+        }
+      ]
+    },
+    {
+      "id": "line_nsIEYzNr0Bg",
+      "roleId": "role_pMbWuJAc6TM",
+      "start": 14.484,
+      "end": 15.424,
+      "text": "What are these?",
+      "hint": "这些是什么？",
+      "words": [
+        {
+          "text": "What",
+          "start": 14.524,
+          "end": 14.664
+        },
+        {
+          "text": "are",
+          "start": 14.764,
+          "end": 14.864
+        },
+        {
+          "text": "these?",
+          "start": 14.944,
+          "end": 15.364
+        }
+      ]
+    },
+    {
+      "id": "line_S3rMrp9h18Q",
+      "roleId": "role_N8xc7CSXiA0",
+      "start": 16.965,
+      "end": 18.405,
+      "text": "Those are doughnuts.",
+      "hint": "那些是甜甜圈。",
+      "words": [
+        {
+          "text": "Those",
+          "start": 17.005,
+          "end": 17.325
+        },
+        {
+          "text": "are",
+          "start": 17.525,
+          "end": 17.605
+        },
+        {
+          "text": "doughnuts.",
+          "start": 17.725,
+          "end": 18.345
+        }
+      ]
+    },
+    {
+      "id": "line_BaI2JtZuTCc",
+      "roleId": "role_N8xc7CSXiA0",
+      "start": 19.185,
+      "end": 20.546,
+      "text": "Do you like doughnuts?",
+      "hint": "你喜欢甜甜圈吗？",
+      "words": [
+        {
+          "text": "Do",
+          "start": 19.225,
+          "end": 19.285
+        },
+        {
+          "text": "you",
+          "start": 19.325,
+          "end": 19.446
+        },
+        {
+          "text": "like",
+          "start": 19.566,
+          "end": 19.786
+        },
+        {
+          "text": "doughnuts?",
+          "start": 19.906,
+          "end": 20.486
+        }
+      ]
+    },
+    {
+      "id": "line_PVPqPV6fFzs",
+      "roleId": "role_pMbWuJAc6TM",
+      "start": 25.307,
+      "end": 26.427,
+      "text": "Yes, I do.",
+      "hint": "是的，我喜欢。",
+      "words": [
+        {
+          "text": "Yes,",
+          "start": 25.347,
+          "end": 25.687
+        },
+        {
+          "text": "I",
+          "start": 25.967,
+          "end": 25.987
+        },
+        {
+          "text": "do.",
+          "start": 26.167,
+          "end": 26.367
+        }
+      ]
+    },
+    {
+      "id": "line_tdkW8hBj36w",
+      "roleId": "role_pMbWuJAc6TM",
+      "start": 27.508,
+      "end": 28.968,
+      "text": "Do you like doughnuts?",
+      "hint": "你喜欢甜甜圈吗？",
+      "words": [
+        {
+          "text": "Do",
+          "start": 27.548,
+          "end": 27.648
+        },
+        {
+          "text": "you",
+          "start": 27.728,
+          "end": 27.828
+        },
+        {
+          "text": "like",
+          "start": 28.088,
+          "end": 28.268
+        },
+        {
+          "text": "doughnuts?",
+          "start": 28.408,
+          "end": 28.908
+        }
+      ]
+    },
+    {
+      "id": "line_zu3ZudAbDvw",
+      "roleId": "role_N8xc7CSXiA0",
+      "start": 30.069,
+      "end": 31.369,
+      "text": "Yes, I do.",
+      "hint": "是的，我喜欢。",
+      "words": [
+        {
+          "text": "Yes,",
+          "start": 30.109,
+          "end": 30.449
+        },
+        {
+          "text": "I",
+          "start": 31.009,
+          "end": 31.029
+        },
+        {
+          "text": "do.",
+          "start": 31.189,
+          "end": 31.309
+        }
+      ]
+    },
+    {
+      "id": "line_U_Ir_z1mDiI",
+      "roleId": "role_6PoExuj3NZc",
+      "start": 32.129,
+      "end": 35.15,
+      "text": "I like sausages and doughnuts.",
+      "hint": "我喜欢香肠和甜甜圈。",
+      "words": [
+        {
+          "text": "I",
+          "start": 32.169,
+          "end": 32.189
+        },
+        {
+          "text": "like",
+          "start": 32.309,
+          "end": 32.509
+        },
+        {
+          "text": "sausages",
+          "start": 32.649,
+          "end": 33.189
+        },
+        {
+          "text": "and",
+          "start": 33.97,
+          "end": 34.27
+        },
+        {
+          "text": "doughnuts.",
+          "start": 34.43,
+          "end": 35.09
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Gogo's Adventures with English — Do you like sausages?",
+    "attribution": "Gogo's Adventures with English — original animation and English performance (Longman); source upload: Children English, not verified as the rightsholder.",
+    "source": "https://www.youtube.com/watch?v=LHV46j9vkm8&t=64s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 64–99.35 秒的连续节选。Tony introduces sausages and says the final line about liking both foods. Gogo asks about the doughnuts and then asks Jenny if she likes them. Each sentence is a complete practice prompt; original scene and all speakers remain continuous. Stops before the sandwich question."
+  }
+}

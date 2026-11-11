@@ -537,6 +537,26 @@
       "title": "Esto es para ti",
       "licence": "Permiso de redistribución sin confirmar",
       "changes": "Prueba interna del prototipo; fragmento de los segundos 45.7–56.5 del vídeo original. Escena de cumpleaños junto a una piscina vigilada. No se nada durante el diálogo elegido. Termina antes de la canción y el montaje posterior."
+    },
+    "scene_YEtT30gD2zw": {
+      "title": "¡Flores mágicas!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Revisión interna del prototipo; fragmento continuo del original 83.7–112.2 s. Unas flores gigantes sorprenden a los niños. El asombro de ambos y la breve reacción del dragón se conservan con sus voces originales."
+    },
+    "scene_GlNQxic6XKU": {
+      "title": "¿Te gustan los dónuts?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Revisión interna del prototipo; fragmento continuo del original 64.0–99.35 s. Gogo llena el pícnic de salchichas y dónuts. Tony dice la última frase sobre las dos comidas."
+    },
+    "scene_A6AHrPGux9Y": {
+      "title": "¡No me gustan las hormigas!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Revisión interna del prototipo; fragmento continuo del original 99.7–136.5 s. Las hormigas interrumpen el pícnic; Gogo salta al estanque y dice que no le gustan las hormigas. Los gritos no verbales conservan el audio original."
+    },
+    "scene_-1fU_8OJfvw": {
+      "title": "¿Es un tigre?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Revisión interna del prototipo; fragmento continuo del original 146.4–165.5 s. Gogo confunde a un elefante amistoso con otros animales. Jenny da la primera respuesta negativa y el elogio final; Tony da la segunda respuesta negativa e identifica al elefante."
     }
   },
   "roles": {
@@ -1238,6 +1258,58 @@
     },
     "role_c20cLSGQdAQ": {
       "name": "Niño de azul",
+      "hint": "2 frases"
+    },
+    "role_QlsPddNBXGQ": {
+      "name": "Jenny",
+      "hint": "2 frases"
+    },
+    "role_TfRZb1jojO8": {
+      "name": "Tony",
+      "hint": "3 frases"
+    },
+    "role_GqmpVhh4sXc": {
+      "name": "Gogo",
+      "hint": "1 frase"
+    },
+    "role_ml1pMwDvf3A": {
+      "name": "Tony y Jenny",
+      "hint": "1 frase"
+    },
+    "role_pMbWuJAc6TM": {
+      "name": "Gogo",
+      "hint": "5 frases"
+    },
+    "role_6PoExuj3NZc": {
+      "name": "Tony",
+      "hint": "3 frases"
+    },
+    "role_N8xc7CSXiA0": {
+      "name": "Jenny",
+      "hint": "3 frases"
+    },
+    "role_ekd_7mmBAJ8": {
+      "name": "Gogo",
+      "hint": "3 frases"
+    },
+    "role_1de8iaC5BVQ": {
+      "name": "Tony",
+      "hint": "2 frases"
+    },
+    "role_5cqjyxmLDbQ": {
+      "name": "Jenny",
+      "hint": "2 frases"
+    },
+    "role_uoIAOk7SIc8": {
+      "name": "Gogo",
+      "hint": "4 frases"
+    },
+    "role_JAL2Cnx5A48": {
+      "name": "Jenny",
+      "hint": "2 frases"
+    },
+    "role_rkFjPTbuc7A": {
+      "name": "Tony",
       "hint": "2 frases"
     }
   },
