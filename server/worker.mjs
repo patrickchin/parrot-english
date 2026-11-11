@@ -9,8 +9,9 @@ export function createWorker(assets, revision = null) {
       const appRoute = path === '/' || /^\/dubs\/?$/.test(path) || /^\/library\/[a-z0-9-]+\/?$/.test(path) || /^\/scenes\/[a-z0-9-]+(?:\/dubs\/[A-Za-z0-9_-]+)?\/?$/.test(path);
       const file = assets[appRoute ? '/index.html' : path];
       if (!file) return new Response('Not found', { status: 404, headers });
-      const text = atob(file.body);
-      const bytes = Uint8Array.from(text, char => char.charCodeAt(0));
+      const bytes = file.encoding === 'utf8'
+        ? new TextEncoder().encode(file.body)
+        : Uint8Array.from(atob(file.body), char => char.charCodeAt(0));
       const responseHeaders = { ...headers, 'Content-Type': file.type, 'Content-Length': String(bytes.length), 'Accept-Ranges': 'bytes', 'Cache-Control': path.startsWith('/assets/') || /-v1\.(mp4|m4a|jpg)$/.test(path) ? 'public, max-age=31536000, immutable' : 'no-cache' };
       const range = request.headers.get('Range');
       if (range) {
