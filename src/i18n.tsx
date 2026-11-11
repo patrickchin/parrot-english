@@ -204,6 +204,7 @@ const english: Record<string, string> = {
   '第 {0} / {1} 句': 'Line {0} of {1}',
   '正在录音，跟着指针说。': 'Recording. Speak along with the cursor.',
   '正在整理这次录音…': 'Preparing your recording…',
+  '台词时间范围': 'Target line timing',
   '录音已保存，可听录音或继续下一句。': 'Your take is ready. Listen to it or go to the next line.',
   '先听原声，再录音。': 'Listen to the original, then record.',
   '配音操作': 'Dubbing controls',

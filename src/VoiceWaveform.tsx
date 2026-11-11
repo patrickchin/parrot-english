@@ -4,8 +4,9 @@ import type { LoadState } from './load-state';
 import type { Pack } from './pack';
 import { validateWaveform, waveformPath, type ReferenceWaveform } from './waveform';
 
-export function VoiceWaveform({ pack, start, end, time, recordings, recording = false }: {
+export function VoiceWaveform({ pack, start, end, target, time, recordings, recording = false }: {
   pack: Pack; start: number; end: number; time: number;
+  target?: { start: number; end: number };
   recordings: { start: number; peaks: number[] }[]; recording?: boolean;
 }) {
   const { t } = useLanguage();
@@ -31,6 +32,7 @@ export function VoiceWaveform({ pack, start, end, time, recordings, recording = 
       <div className="flex items-center gap-5"><span className="flex items-center gap-2"><span className="h-2 w-5 rounded-full bg-brand/70" />{t("原声")}</span><span className="flex items-center gap-2"><span className="h-2 w-5 rounded-full bg-coral" />{recording ? t("你的声音 · 录音中") : t("你的声音")}</span></div>
     </div>
     <div className="voice-waveform relative overflow-hidden rounded-xl bg-brand/4">
+      {target && <div role="img" aria-label={t('台词时间范围')} className="pointer-events-none absolute inset-y-0 border-x border-brand/30 bg-brand/8" style={{ left: `${(target.start - start) / (end - start) * 100}%`, width: `${(target.end - target.start) / (end - start) * 100}%` }} />}
       <div className="absolute inset-x-0 top-1/2 h-px bg-brand/10" />
       {reference && <svg role="img" aria-label={t("原声波形")} viewBox="0 0 1000 80" preserveAspectRatio="none" className="absolute inset-0 h-full w-full"><path d={originalPath} className="fill-brand/22 stroke-brand/70" strokeWidth="0.6" /></svg>}
       {recordings.some(r => r.peaks.length > 0) && <svg role="img" aria-label={t("你的声音波形")} viewBox="0 0 1000 80" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">{recordedPaths.map((path, i) => <path key={i} d={path} className="fill-coral/25 stroke-coral" strokeWidth="0.75" />)}</svg>}

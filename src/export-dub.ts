@@ -1,5 +1,6 @@
 import { asset, type Pack } from './pack';
 import type { Takes } from './useDubbing';
+import { lineWindow } from './line-window';
 
 const unsupported = '这个浏览器暂不支持导出 MP4。请用新版 Safari 或 Chrome 重试。';
 
@@ -23,11 +24,13 @@ export async function mixDubAudio(pack: Pack, takes: Takes, original: ArrayBuffe
     backingGain.gain.setValueAtTime(1, line.end - 0.015);
     backingGain.gain.linearRampToValueAtTime(0, line.end);
     const take = takes[line.id], buffer = voices[index]!;
-    const offset = Math.max(0, -take.start);
-    const duration = Math.min(buffer.duration, line.end - take.start) - offset;
+    const window = lineWindow(pack, line);
+    const voiceStart = Math.max(window.voiceStart, take.start);
+    const offset = voiceStart - take.start;
+    const duration = Math.min(buffer.duration, window.voiceEnd - take.start) - offset;
     if (duration <= 0) continue;
     const voice = context.createBufferSource(); voice.buffer = buffer;
-    voice.connect(context.destination); voice.start(Math.max(0, take.start), offset, duration);
+    voice.connect(context.destination); voice.start(voiceStart, offset, duration);
   }
   const source = context.createBufferSource(); source.buffer = scene;
   source.connect(originalGain).connect(context.destination); source.start();

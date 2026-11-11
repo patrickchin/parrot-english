@@ -7,6 +7,7 @@ import { asset, validatePack, type Pack, type Role } from './pack';
 import { useDubbing, type Take } from './useDubbing';
 import { Library } from './Library';
 import { VoiceWaveform } from './VoiceWaveform';
+import { lineWindow } from './line-window';
 import { clips } from './catalog';
 import { createLesson, lessonTakes, transitionLesson, type LessonEvent, type LessonState } from './lesson-state';
 import { useSceneNavigation } from './app/useSceneNavigation';
@@ -81,6 +82,7 @@ function Player({ pack, slug, initial, rememberDraft, onBack, leaving, onConfirm
   const video = useRef<HTMLVideoElement>(null);
   const rolesLines = pack.lines.filter(line => line.roleId === roleId);
   const line = rolesLines[lineIndex];
+  const window = lineWindow(pack, line);
   const role = pack.roles.find(r => r.id === roleId)!;
   const media = useDubbing(video, pack, saveTake);
   const [exporting, setExporting] = useState(false);
@@ -174,7 +176,7 @@ function Player({ pack, slug, initial, rememberDraft, onBack, leaving, onConfirm
               <span><span className="block font-display font-extrabold">{t(role.name)}</span><span role="status" className="block text-xs text-muted-foreground">{t(autosave.status === 'saved' ? '已保存到本机' : autosave.status === 'saving' ? '正在保存…' : autosave.status === 'error' ? '尚未保存' : '仅在此设备保存')}</span></span><span className="sr-only">{t('已完成 {0} / {1} 句', completed, rolesLines.length)}</span>
               <nav aria-label={t("你的台词")} className="flex justify-center">{rolesLines.map((l, i) => <button key={l.id} disabled={busy} onClick={() => chooseLine(i)} aria-label={t("第 {0} 句：{1}", i + 1, l.text)} aria-current={i === lineIndex ? 'step' : undefined} className="flex h-11 min-w-11 items-center justify-center rounded-full text-sm text-muted-foreground aria-[current=step]:bg-brand/10 aria-[current=step]:font-extrabold aria-[current=step]:text-ink focus-visible:outline-3 focus-visible:outline-brand">{takes[l.id] ? <Icon name="check" /> : i + 1}{skipped.has(l.id) && <span className="sr-only">{t("原声")}</span>}</button>)}</nav>
             </div>
-            <VoiceWaveform pack={pack} start={step === 'result' ? 0 : line.start} end={step === 'result' ? pack.duration : line.end} time={media.time} recordings={graphRecordings} recording={media.phase === 'recording'} />
+            <VoiceWaveform pack={pack} start={step === 'result' ? 0 : window.start} end={step === 'result' ? pack.duration : window.end} target={step === 'result' ? undefined : line} time={media.time} recordings={graphRecordings} recording={media.phase === 'recording'} />
             <p className="sr-only">{t('第 {0} / {1} 句', lineIndex + 1, rolesLines.length)}</p>
             <div className="practice-caption text-center" role="group" aria-label={t('台词')}>
               {pack.lines.map(l => <div key={l.id} aria-hidden={l.id !== captionId} className={l.id === captionId ? undefined : 'invisible'}><p className="text-balance font-medium" lang="en">{l.text}</p><p lang="zh-CN" className="mt-1 text-base text-muted-foreground">{l.hint}</p></div>)}

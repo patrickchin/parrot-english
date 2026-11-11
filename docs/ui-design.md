@@ -24,12 +24,19 @@ The practice waveform and English words share one horizontal time axis. Words
 start beneath their measured speech onsets and highlight while spoken. Closely
 spaced words use up to two rows; the timeline pans with the playhead on smaller
 screens. The optional Chinese meaning hint remains below. Microphone capture is
-confirmed ready while the picture is paused, then the picture starts with no count-in. Capture preroll is aligned to the native
-`playing` event and excluded from the learner turn on replay. A cancelled take
+confirmed ready while the picture is paused, then the picture starts with no count-in.
+Recording and “My recording” include up to 0.5 seconds of preceding video and
+0.5 seconds after the line, stopping before the next speaker. The moving cursor
+approaches the shaded target-line range, and original audio remains audible
+outside the target line. Capture begins during the lead-in so early speech survives.
+Takes keep their original timing and may extend into surrounding gaps; short gaps
+are divided halfway between adjacent lines so voices cannot overlap. Replay and
+MP4 export use the same limits. Capture startup is aligned to the native
+`playing` event. A cancelled take
 keeps the previous accepted recording.
-“My recording” replays the matching video turn with the recorded voice and any
+“My recording” replays the matching video window with the recorded voice and any
 pack backing track, using the same scheduler as the assembled dub. The original
-voice is muted for that turn; stopping or reaching its end pauses both.
+voice is muted for that turn; stopping or reaching the padded window's end pauses both.
 
 ## Signal and alignment
 
