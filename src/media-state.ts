@@ -1,5 +1,5 @@
 export type Activity = 'preview' | 'recording' | 'replay' | 'listening';
-export type Preparation = 'microphone' | 'worklet' | 'audio' | 'decoding' | 'backing' | 'video' | 'capture' | 'playing';
+type Preparation = 'microphone' | 'worklet' | 'audio' | 'decoding' | 'backing' | 'video' | 'capture' | 'playing';
 export type MediaState =
   | { phase: 'idle'; error: string }
   | { phase: 'loading'; operation: number; activity: Activity; stage: Preparation }

@@ -5,8 +5,6 @@ import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-const filmCount = clips.filter(clip => clip.cohort === 'older-audience').length;
-
 const olderChildCount = clips.filter(clip => clip.cohort === 'older-children').length;
 const teenCount = clips.filter(clip => clip.cohort === 'teens').length;
 
@@ -56,8 +54,8 @@ for (const slug of ['young-sheldon-library', 'himym-driving-lesson', 'harry-pott
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled({ timeout: 20000 });
 });
 
-test('an unknown folder returns to the established film library', async ({ page }) => {
+test('an unknown folder shows a missing-page error', async ({ page }) => {
   await page.goto('/library/unknown');
-  await expect(page.getByRole('group', { name: '片段分类', exact: true }).getByRole('button', { pressed: true })).toContainText('电影与动画');
-  await expect(page.getByRole('listitem')).toHaveCount(filmCount);
+  await expect(page.getByRole('heading', { level: 1, name: '页面不存在', exact: true })).toBeVisible();
+  await expect(page.getByRole('searchbox')).toHaveCount(0);
 });

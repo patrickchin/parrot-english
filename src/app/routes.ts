@@ -8,7 +8,7 @@ export const pageRoutes = [
   { id: 'dubs', path: '/:language/dubs' },
   { id: 'scene', path: '/:language/scenes/:sceneName' },
   { id: 'dub', path: '/:language/scenes/:sceneName/dubs/:draftId' },
-  { id: 'fallback', path: '*' },
+  { id: 'not-found', path: '*' },
 ];
 
 export const libraryPath = (folder: string, language: Language) => languagePath(generatePath('/library/:folder', { folder: encodeURIComponent(folder) }), language);
@@ -26,11 +26,13 @@ export function readRoute(href: string) {
   const match = matchRoutes(pageRoutes, url.pathname)?.at(-1);
   const params = match?.params ?? {};
   const clip = clips.find(clip => (clip.routeSlug ?? clip.slug) === params.sceneName);
+  const folder = folders.find(item => item.value === params.folder);
+  const route = match?.route.id;
   return {
-    page: match?.route.id === 'dubs' ? 'dubs' : clip ? 'scene' : 'library',
+    page: route === 'dubs' ? 'dubs' : clip ? 'scene' : route === 'home' || route === 'library' && folder ? 'library' : 'not-found',
     language: pathLanguage(url.pathname) ?? 'zh-CN',
     slug: clip?.slug ?? '',
     draftId: clip ? params.draftId : undefined,
-    folder: clip?.cohort ?? folders.find(item => item.value === params.folder)?.value ?? folders[0].value,
+    folder: clip?.cohort ?? folder?.value ?? folders[0].value,
   };
 }

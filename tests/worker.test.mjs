@@ -2,26 +2,22 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { gzipSync, gunzipSync } from 'node:zlib';
 import { createWorker } from '../server/worker.mjs';
-test('serves video byte ranges for mobile seeking without exposing unknown paths', async () => {
-  const worker = createWorker({ '/test.mp4': { type: 'video/mp4', body: btoa('0123456789') }, '/index.html': { type: 'text/html', body: btoa('hello') } }, 'test-revision');
+test('serves application assets, health, and HEAD requests without exposing unknown paths', async () => {
+  const worker = createWorker({ '/index.html': { type: 'text/html', body: 'hello', encoding: 'utf8' } }, 'test-revision');
   const get = (path, options) => worker.fetch(new Request('https://parrotbook.test' + path, options));
-  let response = await get('/test.mp4', { headers: { Range: 'bytes=2-5' } });
-  assert.equal(response.status, 206); assert.equal(response.headers.get('content-range'), 'bytes 2-5/10'); assert.equal(await response.text(), '2345');
-  assert.equal(await (await get('/test.mp4', { headers: { Range: 'bytes=-3' } })).text(), '789');
-  assert.equal(await (await get('/test.mp4', { headers: { Range: 'bytes=7-' } })).text(), '789');
-  for (const Range of ['bytes=20-', 'bytes=8-3', 'bytes=-', 'bytes=0-1,3-4', 'nonsense']) assert.equal((await get('/test.mp4', { headers: { Range } })).status, 416);
-  response = await get('/test.mp4', { method: 'HEAD', headers: { Range: 'bytes=2-5' } });
-  assert.equal(response.status, 206); assert.equal(await response.text(), ''); assert.equal(response.headers.get('content-length'), '4');
   assert.equal((await get('/not-present')).status, 404);
-  assert.equal((await get('/test.mp4', { method: 'POST' })).status, 405);
+  assert.equal((await get('/', { method: 'POST' })).status, 405);
   assert.equal(await (await get('/')).text(), 'hello');
+  const head = await get('/', { method: 'HEAD' });
+  assert.equal(await head.text(), '');
+  assert.equal(head.headers.get('content-length'), '5');
   const health = await get('/api/health');
   assert.equal(health.headers.get('cache-control'), 'no-store');
   assert.equal((await health.json()).revision, 'test-revision');
 });
 
 test('serves the app on page paths while missing assets and API routes stay 404', async () => {
-  const worker = createWorker({ '/index.html': { type: 'text/html; charset=utf-8', body: btoa('app') } });
+  const worker = createWorker({ '/index.html': { type: 'text/html; charset=utf-8', body: 'app', encoding: 'utf8' } });
   const get = (path, method = 'GET') => worker.fetch(new Request('https://parrotbook.test' + path, { method }));
   for (const path of ['/dubs', '/dubs/', '/en/dubs', '/zh/dubs/', '/library/teens', '/scenes/patrick', '/scenes/patrick/dubs/dub_abc123', '/scenes/patrick/', '/en', '/zh/', '/en/library/teens', '/zh/scenes/toy-story-infinity', '/en/scenes/patrick/dubs/dub_abc123', '/es/', '/ja/library/teens', '/ko/dubs', '/es/scenes/patrick', '/ja/scenes/patrick/dubs/dub_abc123']) {
     const response = await get(path);
@@ -38,7 +34,7 @@ test('serves the app on page paths while missing assets and API routes stay 404'
 
 
 
-test('native text assets preserve Unicode JSON and byte lengths for GET, HEAD and ranges', async () => {
+test('native text assets preserve Unicode JSON and byte lengths for GET and HEAD', async () => {
   const body = JSON.stringify({ title: '佩奇 🐷', line: 'Can we play?' });
   const bytes = new TextEncoder().encode(body);
   const worker = createWorker({ '/scene.json': { type: 'application/json', body, encoding: 'utf8' } });
@@ -50,8 +46,9 @@ test('native text assets preserve Unicode JSON and byte lengths for GET, HEAD an
   assert.equal(await head.text(), '');
   assert.equal(head.headers.get('content-length'), String(bytes.length));
   const range = await get({ headers: { Range: 'bytes=0-17' } });
-  assert.equal(range.status, 206);
-  assert.deepEqual(new Uint8Array(await range.arrayBuffer()), bytes.slice(0, 18));
+  assert.equal(range.status, 200, 'ESA serves complete code and metadata; OSS handles media ranges');
+  assert.equal(range.headers.get('accept-ranges'), 'none');
+  assert.deepEqual(new Uint8Array(await range.arrayBuffer()), bytes);
 });
 
 

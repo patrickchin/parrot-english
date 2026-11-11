@@ -24,35 +24,35 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 export default function App() {
   const { t } = useTranslation();
   const navigation = useSceneNavigation();
-  const [loadedScene, setLoadedScene] = useState<{ slug: string; load: LoadState<Scene>; draft?: RestoredDub }>({ slug: '', load: { status: 'loading' } });
+  const [loadedScene, setLoadedScene] = useState<{ revision: number; attempt: number; load: LoadState<{ scene: Scene; draft?: RestoredDub }> }>({ revision: -1, attempt: 0, load: { status: 'loading' } });
   const [attempt, setAttempt] = useState(0);
   const selected = clips.find(c => c.slug === navigation.slug);
   const choose = (slug: string, draftId?: string) => navigation.navigate(slug, draftId);
   const back = () => navigation.navigate('');
   useEffect(() => {
     const abort = new AbortController();
-    if (!selected) { setLoadedScene({ slug: '', load: { status: 'loading' } }); return; }
-    const slug = selected.slug;
-    setLoadedScene({ slug, load: { status: 'loading' } });
+    const request = { revision: navigation.revision, attempt };
+    setLoadedScene({ ...request, load: { status: 'loading' } });
+    if (!selected) return;
     const base = `/scenes/${selected.slug}/`;
     fetch(base + 'scene.json', { signal: abort.signal, cache: 'no-cache' })
       .then(r => { if (!r.ok) throw new Error("errors.sceneLoad"); return r.json(); })
       .then(async data => {
         const scene = validateScene(data, base);
         const draft = navigation.draftId ? await loadDub(navigation.draftId, scene) : undefined;
-        if (!abort.signal.aborted) setLoadedScene({ slug, load: { status: 'ready', value: scene }, draft });
-        else if (draft) Object.values(lessonTakes(draft.lesson.progress)).forEach(take => URL.revokeObjectURL(take.url));
+        if (!abort.signal.aborted) setLoadedScene({ ...request, load: { status: 'ready', value: { scene, draft } } });
       })
-      .catch(e => { if (!abort.signal.aborted) setLoadedScene({ slug, load: { status: 'error', error: e instanceof Error ? e.message : "errors.sceneLoadFailed" } }); });
+      .catch(e => { if (!abort.signal.aborted) setLoadedScene({ ...request, load: { status: 'error', error: e instanceof Error ? e.message : "errors.sceneLoadFailed" } }); });
     return () => abort.abort();
   // Saving an ID into the current URL does not reload the running Player.
   }, [attempt, selected, navigation.revision]);
+  if (navigation.page === 'not-found') return <div className="min-h-dvh bg-paper text-ink"><AppHeader /><main className="mx-auto max-w-md px-6 py-16 text-center"><h1 className="mb-6 font-display text-3xl font-bold">{t('errors.pageNotFound')}</h1><Button onClick={back}>{t('navigation.library')}</Button></main></div>;
   if (navigation.page === 'dubs') return <SavedDubs onChoose={choose} />;
   if (!selected) return <Library onChoose={choose} folder={navigation.folder} onFolderChange={navigation.chooseFolder} />;
-  const load: LoadState<Scene> = loadedScene.slug === selected.slug ? loadedScene.load : { status: 'loading' };
+  const load = loadedScene.revision === navigation.revision && loadedScene.attempt === attempt ? loadedScene.load : { status: 'loading' } as const;
   const error = load.status === 'error' ? load.error : '';
   if (load.status !== 'ready') return <div className="min-h-dvh bg-paper text-ink"><AppHeader onBack={back} /><main className="flex min-h-[70dvh] items-center justify-center px-6"><div className="max-w-md text-center"><h1 className="font-display text-3xl font-extrabold">Parrotbook</h1><p role={error ? 'alert' : 'status'} className="my-6 text-muted-foreground">{error ? t(error, { defaultValue: t('errors.unexpected') }) : t("player.loading")}</p>{error && <><Button onClick={() => setAttempt(n => n + 1)}>{t("player.reload")}</Button>{navigation.draftId && <Button tone="quiet" onClick={() => choose(selected.slug)}>{t("player.startANewDub")}</Button>}</>}</div></main></div>;
-  return <Player key={load.value.id + (loadedScene.draft?.saved.id ?? '')} scene={load.value} slug={selected.slug} initial={loadedScene.draft} rememberDraft={navigation.rememberDraft} onBack={back} leaving={navigation.pending} onConfirmLeave={navigation.confirm} onCancelLeave={navigation.cancel} onDirtyChange={navigation.protect} />;
+  return <Player key={load.value.scene.id + (load.value.draft?.saved.id ?? '')} scene={load.value.scene} slug={selected.slug} initial={load.value.draft} rememberDraft={navigation.rememberDraft} onBack={back} leaving={navigation.pending} onConfirmLeave={navigation.confirm} onCancelLeave={navigation.cancel} onDirtyChange={navigation.protect} />;
 }
 
 function Player({ scene, slug, initial, rememberDraft, onBack, leaving, onConfirmLeave, onCancelLeave, onDirtyChange }: {
@@ -65,8 +65,6 @@ function Player({ scene, slug, initial, rememberDraft, onBack, leaving, onConfir
   const practiceRoles = scene.roles.filter(role => role.selectable !== false);
   const takes = useMemo(() => lessonTakes(progress), [progress]);
   const skipped = useMemo(() => new Set(Object.keys(progress).filter(id => progress[id].status === 'skipped')), [progress]);
-  // This map owns URL cleanup; lesson.progress is the sole source of take state.
-  const takeUrls = useRef(new Map(Object.entries(takes).map(([id, take]) => [id, take.url])));
   const modal = leaving ? 'reset' : lesson.overlay === 'none' ? null : lesson.overlay;
   function setModal(value: 'help' | 'details' | 'reset' | null) {
     if (value) send({ type: 'OPEN_OVERLAY', overlay: value });
@@ -77,14 +75,13 @@ function Player({ scene, slug, initial, rememberDraft, onBack, leaving, onConfir
   const [videoAspect, setVideoAspect] = useState(16 / 9);
   const [localVideo, setLocalVideo] = useState<string>();
   const [localSource, setLocalSource] = useState<Blob | undefined>(initial?.source);
-  const localVideoRef = useRef(localVideo);
   useEffect(() => {
-    if (!initial?.source) return;
-    const url = URL.createObjectURL(initial.source); localVideoRef.current = url; setLocalVideo(url);
+    if (!localSource) return;
+    const url = URL.createObjectURL(localSource); setLocalVideo(url);
     return () => URL.revokeObjectURL(url);
-  }, [initial?.source]);
+  }, [localSource]);
   const autosave = useDubAutosave(scene, slug, lesson, initial, localSource);
-  const source = scene.mode === 'local' ? localVideo ?? (import.meta.env.DEV ? `/content/local-dubbing/${scene.video}` : undefined) : asset(scene, scene.video);
+  const source = scene.mode === 'local' ? localVideo : asset(scene, scene.video);
   const video = useRef<HTMLVideoElement>(null);
   const main = useRef<HTMLElement>(null);
   const videoFrame = useRef<HTMLDivElement>(null);
@@ -122,32 +119,22 @@ function Player({ scene, slug, initial, rememberDraft, onBack, leaving, onConfir
   useEffect(() => { if (autosave.status === 'saved' && !autosave.dirty && step !== 'choose' && !leaving) rememberDraft(autosave.id); }, [autosave.status, autosave.dirty, autosave.id, step, leaving, rememberDraft]);
 
   function saveTake(id: string, take: Take) {
-    const previous = takeUrls.current.get(id);
-    if (previous) URL.revokeObjectURL(previous);
-    takeUrls.current.set(id, take.url);
     send({ type: 'SAVE_TAKE', id, take }); onDirtyChange(true);
   }
-  useEffect(() => () => {
-    takeUrls.current.forEach(url => URL.revokeObjectURL(url));
-    onDirtyChange(false);
-  }, [onDirtyChange]);
-  useEffect(() => () => { if (localVideoRef.current) URL.revokeObjectURL(localVideoRef.current); }, []);
+  useEffect(() => () => onDirtyChange(false), [onDirtyChange]);
   useEffect(() => { if (leaving) media.stop(); }, [leaving]);
 
   function reset() {
     media.stop(); media.setError('');
-    takeUrls.current.forEach(url => URL.revokeObjectURL(url)); takeUrls.current.clear();
     autosave.startNew(); rememberDraft();
     send({ type: 'RESET' }); onDirtyChange(false);
     if (video.current) video.current.currentTime = 0;
-    if (leaving) onConfirmLeave();
   }
   function openFile(file?: File) {
     if (!file) return;
     if (file.size > 100 * 1024 * 1024 || !/\.(mp4|webm|mov)$/i.test(file.name)) { media.setError("errors.invalidVideoFile"); return; }
     media.stop(); media.setError(''); setVideoStatus('loading');
-    if (localVideoRef.current) URL.revokeObjectURL(localVideoRef.current);
-    const url = URL.createObjectURL(file); localVideoRef.current = url; setLocalVideo(url); setLocalSource(file);
+    setLocalSource(file);
   }
   function chooseLine(index: number) { media.stop(); media.setError(''); if (step === 'practice' && index === lineIndex) return; onDirtyChange(true); send({ type: 'CHOOSE_LINE', index }); }
   function nextLine() {

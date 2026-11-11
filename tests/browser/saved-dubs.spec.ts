@@ -39,6 +39,38 @@ async function record(page: import('@playwright/test').Page) {
   await saved(page);
 }
 
+test('saved recordings require the current binary format and damaged media stays visible as an error', async ({ page, browserName }) => {
+  await page.goto('/scenes/patrick');
+  await page.getByRole('button', { name: '开始配音', exact: true }).click();
+  await record(page);
+  // Chromium can persist the retired Blob shape. WebKit rejects Blob writes
+  // itself, so exercise a missing binary buffer there without a Blob field.
+  await page.evaluate(legacyBlob => new Promise<void>((resolve, reject) => {
+    const request = indexedDB.open('parrotbook-dubs', 1);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const db = request.result;
+      const tx = db.transaction('media', 'readwrite');
+      tx.oncomplete = () => { db.close(); resolve(); };
+      tx.onabort = () => { db.close(); reject(tx.error); };
+      const store = tx.objectStore('media');
+      const rows = store.getAll();
+      rows.onsuccess = () => {
+        const take = rows.result.find(row => row.lineId !== 'source');
+        if (legacyBlob) take.blob = new Blob([take.bytes], { type: take.mimeType });
+        delete take.bytes;
+        store.put(take);
+      };
+    };
+  }), browserName === 'chromium');
+  await page.reload();
+  await expect(page.getByRole('alert')).toContainText('这次配音的数据不完整，无法打开。');
+  await expect(page.getByRole('button', { name: '开始录音', exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: '返回片段', exact: true }).click();
+  await (await headerDestination(page, '我的配音')).click();
+  await expect(page.getByRole('region', { name: '我的配音', exact: true }).getByRole('listitem')).toHaveCount(1);
+});
+
 test('partial dubs survive reload and a new tab with exact audio, waveform, role, and line progress', async ({ page, context }) => {
   const uploads: string[] = [];
   page.on('request', request => { if (!['GET', 'HEAD'].includes(request.method())) uploads.push(request.url()); });

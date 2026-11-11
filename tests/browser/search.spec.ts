@@ -1,5 +1,5 @@
 import { test, expect, setLanguage } from './fixtures';
-import { clips, youngerClips } from '../../src/catalog';
+import { clips } from '../../src/catalog';
 
 test('scene search finds tags and full dialogue while preserving audience folders', async ({ page }) => {
   await page.goto('/');
@@ -23,7 +23,7 @@ test('scene search finds tags and full dialogue while preserving audience folder
   await expect(search).toBeFocused();
   await expect(results).toHaveCount(clips.filter(clip => clip.cohort === 'older-audience').length);
   await page.getByRole('group', { name: '片段分类' }).getByRole('button', { name: /^英语启蒙/ }).click();
-  await expect(results).toHaveCount(youngerClips.length);
+  await expect(results).toHaveCount(clips.filter(clip => clip.cohort === 'younger-age-5').length);
   await search.fill('SpongeBob');
   await expect(results).toHaveCount(0);
   await search.fill('good morning');

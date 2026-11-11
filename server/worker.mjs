@@ -13,17 +13,7 @@ export function createWorker(assets, revision = null) {
       const bytes = file.encoding === 'utf8'
         ? new TextEncoder().encode(file.body)
         : Uint8Array.from(atob(file.body), char => char.charCodeAt(0));
-      const responseHeaders = { ...headers, 'Content-Type': file.type, 'Content-Length': String(bytes.length), 'Accept-Ranges': file.contentEncoding ? 'none' : 'bytes', ...(file.contentEncoding ? { 'Content-Encoding': file.contentEncoding } : {}), 'Cache-Control': path.startsWith('/assets/') || /-v1\.(mp4|m4a|jpg)$/.test(path) ? 'public, max-age=31536000, immutable' : 'no-cache' };
-      const range = request.headers.get('Range');
-      if (range && !file.contentEncoding) {
-        const match = /^bytes=(\d*)-(\d*)$/.exec(range);
-        let start = 0, end = bytes.length - 1;
-        if (!match || (!match[1] && !match[2])) return new Response(null, { status: 416, headers: { ...responseHeaders, 'Content-Length': '0', 'Content-Range': `bytes */${bytes.length}` } });
-        if (match[1]) { start = Number(match[1]); if (match[2]) end = Math.min(Number(match[2]), end); }
-        else start = Math.max(0, bytes.length - Number(match[2]));
-        if (start >= bytes.length || start > end || !Number.isSafeInteger(start) || !Number.isSafeInteger(end)) return new Response(null, { status: 416, headers: { ...responseHeaders, 'Content-Length': '0', 'Content-Range': `bytes */${bytes.length}` } });
-        return new Response(request.method === 'HEAD' ? null : bytes.slice(start, end + 1), { status: 206, headers: { ...responseHeaders, 'Content-Range': `bytes ${start}-${end}/${bytes.length}`, 'Content-Length': String(end - start + 1) } });
-      }
+      const responseHeaders = { ...headers, 'Content-Type': file.type, 'Content-Length': String(bytes.length), 'Accept-Ranges': 'none', ...(file.contentEncoding ? { 'Content-Encoding': file.contentEncoding } : {}), 'Cache-Control': path.startsWith('/assets/') ? 'public, max-age=31536000, immutable' : 'no-cache' };
       return new Response(request.method === 'HEAD' ? null : bytes, { headers: responseHeaders });
     },
   };
