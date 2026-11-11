@@ -7,7 +7,7 @@ All 14 earlier preschool/Bluey scenes now belong to the general film/animation
 folder, with individual review reasons in the maintained preschool recipe.
 Their continuous edits remain available, without being presented as starters.
 
-The First English folder contains five English Singsing conversations. These
+The original five First English conversations are from English Singsing. These
 use repeated, everyday phrases with visible meaning and no adult irony, idioms,
 or long explanations. Each practice line has one to five words; each scene
 retains multiple speaking roles and at least three actual character turns.
@@ -45,7 +45,45 @@ redistribution-not-cleared metadata. The maintained recipe requires explicit
 beginnerSuitable approval: unreviewed preschool entries default to the general
 collection when regenerated. The folder label is First English / 英语启蒙.
 
-The catalogue has 69 scenes: 38 film/animation, 5 First English, 12 older-child,
+The catalogue has 73 scenes: 38 film/animation, 9 First English, 12 older-child,
 and 14 teen scenes. The new media upload is verified independently of the app
 release. Releases still merge to GitHub main and use automatic ESA deployment,
 with live revision and playback/recording checks.
+
+
+## Playful additions — 2026-11-11
+
+The owner approved the level of the original five but found their stories dull,
+and asked to retain those clips while adding more. Four continuous Gogo scenes
+add a visible setup and payoff without increasing the practice-line ceiling:
+
+| Conversation | Source range | Story beat |
+| --- | --- | --- |
+| Magic flowers! | [Episode 6](https://www.youtube.com/watch?v=As5kCF2ydXQ&t=83s), 83.7–112.2 s | Painted flowers become giant real flowers. |
+| Do you like doughnuts? | [Episode 12](https://www.youtube.com/watch?v=LHV46j9vkm8&t=64s), 64.0–99.35 s | Gogo produces an absurd pile of picnic food. |
+| I don't like ants! | [Episode 12](https://www.youtube.com/watch?v=LHV46j9vkm8&t=99s), 99.7–136.5 s | Ants interrupt the picnic; the dragon splashes into a pond. |
+| Is it a tiger? | [Episode 5](https://www.youtube.com/watch?v=XREZd9YAuFY&t=146s), 146.4–165.5 s | Gogo guesses the wrong animals in front of an elephant. |
+
+Each new scene has at least two selectable characters, multiple actual speaking
+turns and at most five words per practice line. The flowers' shared wow and
+Gogo's isolated oops retain their original supporting voices rather than one-word
+practice roles. Jenny says “This is yellow,” the final flower colour, the first
+animal no and the final animal praise. Tony says the blue/red flower observations,
+the second animal no, the elephant answer and the picnic's final food sentence.
+The ant scene retains nonverbal yelps as original audio; the useful final prompt
+is “I don't like ants.” The visible comic nips and brief splash remain part of
+this adult-review selection. The guessing scene ends before the next introduction.
+
+Base/small English ASR passes, source captions, CTC alignment and timestamped
+source frames support the dialogue, speaker and uncut-boundary checks. Music
+caused stretched word alignments in the yellow-paint and no-thank-you prompts;
+those were aligned within their complete source utterances. Source animation is
+320×240; original English subtitles remain burned in. Portraits are reviewed
+source crops, shared consistently across scenes. No new voices were generated.
+
+The source uploads are on Children English, which is not verified as the
+rightsholder. [WorldCat's video record](https://search.worldcat.org/title/298470173)
+credits Addison Wesley Longman and the original producers. This is source
+attribution, not redistribution clearance. All four retain the established
+internal-review scope and redistribution-not-cleared metadata. All existing
+69 scenes, including the five English Singsing conversations, are retained.

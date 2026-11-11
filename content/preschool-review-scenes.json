@@ -114,6 +114,45 @@
       "officialChannel": true,
       "attribution": "English Singsing — original educational animation and English performance",
       "duration": 291
+    },
+    {
+      "id": "As5kCF2ydXQ",
+      "url": "https://www.youtube.com/watch?v=As5kCF2ydXQ",
+      "localFile": "content/local-dubbing/review/younger-age-5/sources/As5kCF2ydXQ.mp4",
+      "series": "Gogo's Adventures with English",
+      "episode": "What colour is this?",
+      "uploadTitle": "English for Children - gogo adventure with english  Unit 6",
+      "title": "English for Children - gogo adventure with english  Unit 6",
+      "channel": "Children English",
+      "officialChannel": false,
+      "attribution": "Gogo's Adventures with English — original animation and English performance (Longman); source upload: Children English, not verified as the rightsholder.",
+      "duration": 307
+    },
+    {
+      "id": "XREZd9YAuFY",
+      "url": "https://www.youtube.com/watch?v=XREZd9YAuFY",
+      "localFile": "content/local-dubbing/review/younger-age-5/sources/XREZd9YAuFY.mp4",
+      "series": "Gogo's Adventures with English",
+      "episode": "Is that a tiger?",
+      "uploadTitle": "English for Children - gogo adventure with english Unit 5",
+      "title": "English for Children - gogo adventure with english Unit 5",
+      "channel": "Children English",
+      "officialChannel": false,
+      "attribution": "Gogo's Adventures with English — original animation and English performance (Longman); source upload: Children English, not verified as the rightsholder.",
+      "duration": 306
+    },
+    {
+      "id": "LHV46j9vkm8",
+      "url": "https://www.youtube.com/watch?v=LHV46j9vkm8",
+      "localFile": "content/local-dubbing/review/younger-age-5/sources/LHV46j9vkm8.mp4",
+      "series": "Gogo's Adventures with English",
+      "episode": "Do you like sausages?",
+      "uploadTitle": "English for Children - gogo adventure with english Unit 12",
+      "title": "English for Children - gogo adventure with english Unit 12",
+      "channel": "Children English",
+      "officialChannel": false,
+      "attribution": "Gogo's Adventures with English — original animation and English performance (Longman); source upload: Children English, not verified as the rightsholder.",
+      "duration": 309
     }
   ],
   "scenes": [
@@ -5514,6 +5553,1185 @@
         "thank you",
         "生日",
         "礼物"
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_I6WcC_rZQ8A",
+      "sceneId": "scene_YEtT30gD2zw",
+      "batch": "2026-11-11-playful-first-english",
+      "cohort": "younger-age-5",
+      "slug": "20-gogo-magic-flowers",
+      "publicSlug": "gogo-magic-flowers",
+      "routeSlug": "gogo-magic-flowers",
+      "title": "Magic flowers!",
+      "titleZh": "花朵变颜色了！",
+      "sourceId": "As5kCF2ydXQ",
+      "start": 83.7,
+      "end": 112.2,
+      "roles": [
+        {
+          "id": "role_QlsPddNBXGQ",
+          "name": "Jenny",
+          "selectable": true,
+          "portrait": "gogo-magic-flowers-jenny-portrait-bb6627374bb1.jpg"
+        },
+        {
+          "id": "role_TfRZb1jojO8",
+          "name": "Tony",
+          "selectable": true,
+          "portrait": "gogo-magic-flowers-tony-portrait-752f75bae87c.jpg"
+        },
+        {
+          "id": "role_GqmpVhh4sXc",
+          "name": "Gogo",
+          "selectable": false,
+          "portrait": "gogo-magic-flowers-gogo-portrait-a8ffbdab8f8a.jpg"
+        },
+        {
+          "id": "role_ml1pMwDvf3A",
+          "name": "Tony and Jenny",
+          "selectable": false,
+          "portrait": "gogo-magic-flowers-tony-and-jenny-portrait-cf6640d3ffa6.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_a3dDNhgJS0k",
+          "roleId": "role_QlsPddNBXGQ",
+          "speaker": "Jenny",
+          "start": 84.586,
+          "end": 85.777,
+          "text": "This is yellow.",
+          "hint": "这是黄色。",
+          "words": [
+            {
+              "text": "This",
+              "start": 84.626,
+              "end": 84.828
+            },
+            {
+              "text": "is",
+              "start": 85.091,
+              "end": 85.172
+            },
+            {
+              "text": "yellow.",
+              "start": 85.333,
+              "end": 85.717
+            }
+          ]
+        },
+        {
+          "id": "line_PwL28eaKpV0",
+          "roleId": "role_ml1pMwDvf3A",
+          "speaker": "Tony and Jenny",
+          "start": 95.408,
+          "end": 95.768,
+          "text": "Wow!",
+          "hint": "哇！",
+          "words": [
+            {
+              "text": "Wow!",
+              "start": 95.448,
+              "end": 95.708
+            }
+          ]
+        },
+        {
+          "id": "line_5bjA8ORIyJM",
+          "roleId": "role_TfRZb1jojO8",
+          "speaker": "Tony",
+          "start": 97.009,
+          "end": 97.269,
+          "text": "Oh!",
+          "hint": "哦！",
+          "words": [
+            {
+              "text": "Oh!",
+              "start": 97.049,
+              "end": 97.209
+            }
+          ]
+        },
+        {
+          "id": "line_6vVRiwVnEK0",
+          "roleId": "role_TfRZb1jojO8",
+          "speaker": "Tony",
+          "start": 98.651,
+          "end": 100.272,
+          "text": "That flower is blue.",
+          "hint": "那朵花是蓝色的。",
+          "words": [
+            {
+              "text": "That",
+              "start": 98.691,
+              "end": 98.871
+            },
+            {
+              "text": "flower",
+              "start": 98.991,
+              "end": 99.411
+            },
+            {
+              "text": "is",
+              "start": 99.591,
+              "end": 99.671
+            },
+            {
+              "text": "blue.",
+              "start": 99.871,
+              "end": 100.212
+            }
+          ]
+        },
+        {
+          "id": "line_VagRyQaqQCM",
+          "roleId": "role_GqmpVhh4sXc",
+          "speaker": "Gogo",
+          "start": 103.034,
+          "end": 103.454,
+          "text": "Oops!",
+          "hint": "哎呀！",
+          "words": [
+            {
+              "text": "Oops!",
+              "start": 103.074,
+              "end": 103.394
+            }
+          ]
+        },
+        {
+          "id": "line_lTltACVmlkU",
+          "roleId": "role_TfRZb1jojO8",
+          "speaker": "Tony",
+          "start": 105.275,
+          "end": 106.676,
+          "text": "That flower is red.",
+          "hint": "那朵花是红色的。",
+          "words": [
+            {
+              "text": "That",
+              "start": 105.315,
+              "end": 105.495
+            },
+            {
+              "text": "flower",
+              "start": 105.575,
+              "end": 105.956
+            },
+            {
+              "text": "is",
+              "start": 106.096,
+              "end": 106.176
+            },
+            {
+              "text": "red.",
+              "start": 106.316,
+              "end": 106.616
+            }
+          ]
+        },
+        {
+          "id": "line_nbhdEs5tt1g",
+          "roleId": "role_QlsPddNBXGQ",
+          "speaker": "Jenny",
+          "start": 109.398,
+          "end": 110.939,
+          "text": "That flower is yellow.",
+          "hint": "那朵花是黄色的。",
+          "words": [
+            {
+              "text": "That",
+              "start": 109.438,
+              "end": 109.618
+            },
+            {
+              "text": "flower",
+              "start": 109.718,
+              "end": 110.099
+            },
+            {
+              "text": "is",
+              "start": 110.259,
+              "end": 110.339
+            },
+            {
+              "text": "yellow.",
+              "start": 110.499,
+              "end": 110.879
+            }
+          ]
+        }
+      ],
+      "beginnerSuitable": true,
+      "beginnerReviewReason": "Concrete blue, red and yellow flowers; repeated four-word statements.",
+      "practice": "Concrete blue, red and yellow flowers; repeated four-word statements.",
+      "summary": "Concrete blue, red and yellow flowers; repeated four-word statements.",
+      "storyBeat": "The painted flowers become enormous real flowers, surprising the children.",
+      "contentNotes": "Jenny identifies yellow paint before the magic. Tony notices the blue/red flowers, Jenny the yellow one. The shared wow stays in original audio as an incidental non-selectable chorus. Stops before the children are swallowed by a paint spill; source captions remain visible. The dragon’s isolated oops also stays as a non-selectable supporting reaction; the children offer the reusable sentences.",
+      "reviewStatus": "source dialogue, speakers and uncut boundaries reviewed; individual learner-fit listening pending",
+      "tags": [
+        "Gogo's Adventures with English",
+        "Gogo",
+        "Tony",
+        "Jenny",
+        "dragon",
+        "beginner",
+        "first English",
+        "funny",
+        "英语启蒙",
+        "龙",
+        "趣味故事",
+        "magic",
+        "flowers",
+        "colours",
+        "colors",
+        "blue",
+        "red",
+        "yellow",
+        "魔法",
+        "花朵",
+        "颜色"
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_o3xi3q8gU3M",
+      "sceneId": "scene_GlNQxic6XKU",
+      "batch": "2026-11-11-playful-first-english",
+      "cohort": "younger-age-5",
+      "slug": "21-gogo-picnic-doughnuts",
+      "publicSlug": "gogo-picnic-doughnuts",
+      "routeSlug": "gogo-picnic-doughnuts",
+      "title": "Do you like doughnuts?",
+      "titleZh": "你喜欢甜甜圈吗？",
+      "sourceId": "LHV46j9vkm8",
+      "start": 64.0,
+      "end": 99.35,
+      "roles": [
+        {
+          "id": "role_pMbWuJAc6TM",
+          "name": "Gogo",
+          "selectable": true,
+          "portrait": "gogo-picnic-doughnuts-gogo-portrait-a8ffbdab8f8a.jpg"
+        },
+        {
+          "id": "role_6PoExuj3NZc",
+          "name": "Tony",
+          "selectable": true,
+          "portrait": "gogo-picnic-doughnuts-tony-portrait-752f75bae87c.jpg"
+        },
+        {
+          "id": "role_N8xc7CSXiA0",
+          "name": "Jenny",
+          "selectable": true,
+          "portrait": "gogo-picnic-doughnuts-jenny-portrait-bb6627374bb1.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_BWPqZm-Byag",
+          "roleId": "role_6PoExuj3NZc",
+          "speaker": "Tony",
+          "start": 64.98,
+          "end": 66.841,
+          "text": "These are sausages, Gogo.",
+          "hint": "Gogo，这些是香肠。",
+          "words": [
+            {
+              "text": "These",
+              "start": 65.02,
+              "end": 65.26
+            },
+            {
+              "text": "are",
+              "start": 65.42,
+              "end": 65.52
+            },
+            {
+              "text": "sausages,",
+              "start": 65.64,
+              "end": 66.241
+            },
+            {
+              "text": "Gogo.",
+              "start": 66.361,
+              "end": 66.781
+            }
+          ]
+        },
+        {
+          "id": "line_cIlbbY6wfQY",
+          "roleId": "role_6PoExuj3NZc",
+          "speaker": "Tony",
+          "start": 67.381,
+          "end": 69.021,
+          "text": "Do you like sausages?",
+          "hint": "你喜欢香肠吗？",
+          "words": [
+            {
+              "text": "Do",
+              "start": 67.421,
+              "end": 67.501
+            },
+            {
+              "text": "you",
+              "start": 67.581,
+              "end": 67.701
+            },
+            {
+              "text": "like",
+              "start": 67.801,
+              "end": 68.021
+            },
+            {
+              "text": "sausages?",
+              "start": 68.261,
+              "end": 68.961
+            }
+          ]
+        },
+        {
+          "id": "line_LNyGTKN3BG8",
+          "roleId": "role_pMbWuJAc6TM",
+          "speaker": "Gogo",
+          "start": 72.983,
+          "end": 74.163,
+          "text": "Yes, I do.",
+          "hint": "是的，我喜欢。",
+          "words": [
+            {
+              "text": "Yes,",
+              "start": 73.023,
+              "end": 73.403
+            },
+            {
+              "text": "I",
+              "start": 73.803,
+              "end": 73.823
+            },
+            {
+              "text": "do.",
+              "start": 73.963,
+              "end": 74.103
+            }
+          ]
+        },
+        {
+          "id": "line_aIxzgXMn2zU",
+          "roleId": "role_pMbWuJAc6TM",
+          "speaker": "Gogo",
+          "start": 75.123,
+          "end": 76.644,
+          "text": "I like sausages.",
+          "hint": "我喜欢香肠。",
+          "words": [
+            {
+              "text": "I",
+              "start": 75.163,
+              "end": 75.183
+            },
+            {
+              "text": "like",
+              "start": 75.363,
+              "end": 75.583
+            },
+            {
+              "text": "sausages.",
+              "start": 75.843,
+              "end": 76.584
+            }
+          ]
+        },
+        {
+          "id": "line_nsIEYzNr0Bg",
+          "roleId": "role_pMbWuJAc6TM",
+          "speaker": "Gogo",
+          "start": 78.484,
+          "end": 79.424,
+          "text": "What are these?",
+          "hint": "这些是什么？",
+          "words": [
+            {
+              "text": "What",
+              "start": 78.524,
+              "end": 78.664
+            },
+            {
+              "text": "are",
+              "start": 78.764,
+              "end": 78.864
+            },
+            {
+              "text": "these?",
+              "start": 78.944,
+              "end": 79.364
+            }
+          ]
+        },
+        {
+          "id": "line_S3rMrp9h18Q",
+          "roleId": "role_N8xc7CSXiA0",
+          "speaker": "Jenny",
+          "start": 80.965,
+          "end": 82.405,
+          "text": "Those are doughnuts.",
+          "hint": "那些是甜甜圈。",
+          "words": [
+            {
+              "text": "Those",
+              "start": 81.005,
+              "end": 81.325
+            },
+            {
+              "text": "are",
+              "start": 81.525,
+              "end": 81.605
+            },
+            {
+              "text": "doughnuts.",
+              "start": 81.725,
+              "end": 82.345
+            }
+          ]
+        },
+        {
+          "id": "line_BaI2JtZuTCc",
+          "roleId": "role_N8xc7CSXiA0",
+          "speaker": "Jenny",
+          "start": 83.185,
+          "end": 84.546,
+          "text": "Do you like doughnuts?",
+          "hint": "你喜欢甜甜圈吗？",
+          "words": [
+            {
+              "text": "Do",
+              "start": 83.225,
+              "end": 83.285
+            },
+            {
+              "text": "you",
+              "start": 83.325,
+              "end": 83.446
+            },
+            {
+              "text": "like",
+              "start": 83.566,
+              "end": 83.786
+            },
+            {
+              "text": "doughnuts?",
+              "start": 83.906,
+              "end": 84.486
+            }
+          ]
+        },
+        {
+          "id": "line_PVPqPV6fFzs",
+          "roleId": "role_pMbWuJAc6TM",
+          "speaker": "Gogo",
+          "start": 89.307,
+          "end": 90.427,
+          "text": "Yes, I do.",
+          "hint": "是的，我喜欢。",
+          "words": [
+            {
+              "text": "Yes,",
+              "start": 89.347,
+              "end": 89.687
+            },
+            {
+              "text": "I",
+              "start": 89.967,
+              "end": 89.987
+            },
+            {
+              "text": "do.",
+              "start": 90.167,
+              "end": 90.367
+            }
+          ]
+        },
+        {
+          "id": "line_tdkW8hBj36w",
+          "roleId": "role_pMbWuJAc6TM",
+          "speaker": "Gogo",
+          "start": 91.508,
+          "end": 92.968,
+          "text": "Do you like doughnuts?",
+          "hint": "你喜欢甜甜圈吗？",
+          "words": [
+            {
+              "text": "Do",
+              "start": 91.548,
+              "end": 91.648
+            },
+            {
+              "text": "you",
+              "start": 91.728,
+              "end": 91.828
+            },
+            {
+              "text": "like",
+              "start": 92.088,
+              "end": 92.268
+            },
+            {
+              "text": "doughnuts?",
+              "start": 92.408,
+              "end": 92.908
+            }
+          ]
+        },
+        {
+          "id": "line_zu3ZudAbDvw",
+          "roleId": "role_N8xc7CSXiA0",
+          "speaker": "Jenny",
+          "start": 94.069,
+          "end": 95.369,
+          "text": "Yes, I do.",
+          "hint": "是的，我喜欢。",
+          "words": [
+            {
+              "text": "Yes,",
+              "start": 94.109,
+              "end": 94.449
+            },
+            {
+              "text": "I",
+              "start": 95.009,
+              "end": 95.029
+            },
+            {
+              "text": "do.",
+              "start": 95.189,
+              "end": 95.309
+            }
+          ]
+        },
+        {
+          "id": "line_U_Ir_z1mDiI",
+          "roleId": "role_6PoExuj3NZc",
+          "speaker": "Tony",
+          "start": 96.129,
+          "end": 99.15,
+          "text": "I like sausages and doughnuts.",
+          "hint": "我喜欢香肠和甜甜圈。",
+          "words": [
+            {
+              "text": "I",
+              "start": 96.169,
+              "end": 96.189
+            },
+            {
+              "text": "like",
+              "start": 96.309,
+              "end": 96.509
+            },
+            {
+              "text": "sausages",
+              "start": 96.649,
+              "end": 97.189
+            },
+            {
+              "text": "and",
+              "start": 97.97,
+              "end": 98.27
+            },
+            {
+              "text": "doughnuts.",
+              "start": 98.43,
+              "end": 99.09
+            }
+          ]
+        }
+      ],
+      "beginnerSuitable": true,
+      "beginnerReviewReason": "Visible foods, a repeated do-you-like question and yes-I-do answer; one to five words per line.",
+      "practice": "Visible foods, a repeated do-you-like question and yes-I-do answer; one to five words per line.",
+      "summary": "Visible foods, a repeated do-you-like question and yes-I-do answer; one to five words per line.",
+      "storyBeat": "Gogo produces an absurd pile of sausages and doughnuts at the picnic.",
+      "contentNotes": "Tony introduces sausages and says the final line about liking both foods. Gogo asks about the doughnuts and then asks Jenny if she likes them. Each sentence is a complete practice prompt; original scene and all speakers remain continuous. Stops before the sandwich question.",
+      "reviewStatus": "source dialogue, speakers and uncut boundaries reviewed; individual learner-fit listening pending",
+      "tags": [
+        "Gogo's Adventures with English",
+        "Gogo",
+        "Tony",
+        "Jenny",
+        "dragon",
+        "beginner",
+        "first English",
+        "funny",
+        "英语启蒙",
+        "龙",
+        "趣味故事",
+        "picnic",
+        "food",
+        "sausages",
+        "doughnuts",
+        "donuts",
+        "likes",
+        "野餐",
+        "香肠",
+        "甜甜圈"
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_38PVysIWmPk",
+      "sceneId": "scene_A6AHrPGux9Y",
+      "batch": "2026-11-11-playful-first-english",
+      "cohort": "younger-age-5",
+      "slug": "22-gogo-picnic-ants",
+      "publicSlug": "gogo-picnic-ants",
+      "routeSlug": "gogo-picnic-ants",
+      "title": "I don't like ants!",
+      "titleZh": "我不喜欢蚂蚁！",
+      "sourceId": "LHV46j9vkm8",
+      "start": 99.7,
+      "end": 136.5,
+      "roles": [
+        {
+          "id": "role_ekd_7mmBAJ8",
+          "name": "Gogo",
+          "selectable": true,
+          "portrait": "gogo-picnic-ants-gogo-portrait-a8ffbdab8f8a.jpg"
+        },
+        {
+          "id": "role_1de8iaC5BVQ",
+          "name": "Tony",
+          "selectable": true,
+          "portrait": "gogo-picnic-ants-tony-portrait-752f75bae87c.jpg"
+        },
+        {
+          "id": "role_5cqjyxmLDbQ",
+          "name": "Jenny",
+          "selectable": true,
+          "portrait": "gogo-picnic-ants-jenny-portrait-bb6627374bb1.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_bTwehWbL1Og",
+          "roleId": "role_1de8iaC5BVQ",
+          "speaker": "Tony",
+          "start": 101.621,
+          "end": 103.062,
+          "text": "What are those, Gogo?",
+          "hint": "Gogo，那些是什么？",
+          "words": [
+            {
+              "text": "What",
+              "start": 101.661,
+              "end": 101.801
+            },
+            {
+              "text": "are",
+              "start": 101.921,
+              "end": 101.981
+            },
+            {
+              "text": "those,",
+              "start": 102.041,
+              "end": 102.421
+            },
+            {
+              "text": "Gogo?",
+              "start": 102.562,
+              "end": 103.002
+            }
+          ]
+        },
+        {
+          "id": "line_O8hFfolmrjw",
+          "roleId": "role_ekd_7mmBAJ8",
+          "speaker": "Gogo",
+          "start": 104.483,
+          "end": 105.363,
+          "text": "I don't know.",
+          "hint": "我不知道。",
+          "words": [
+            {
+              "text": "I",
+              "start": 104.523,
+              "end": 104.543
+            },
+            {
+              "text": "don't",
+              "start": 104.663,
+              "end": 104.903
+            },
+            {
+              "text": "know.",
+              "start": 105.063,
+              "end": 105.303
+            }
+          ]
+        },
+        {
+          "id": "line_k05QJAHO2xQ",
+          "roleId": "role_1de8iaC5BVQ",
+          "speaker": "Tony",
+          "start": 105.843,
+          "end": 107.624,
+          "text": "Those are sandwiches.",
+          "hint": "那些是三明治。",
+          "words": [
+            {
+              "text": "Those",
+              "start": 105.883,
+              "end": 106.224
+            },
+            {
+              "text": "are",
+              "start": 106.364,
+              "end": 106.464
+            },
+            {
+              "text": "sandwiches.",
+              "start": 106.604,
+              "end": 107.564
+            }
+          ]
+        },
+        {
+          "id": "line_yHxtMeV0TWA",
+          "roleId": "role_ekd_7mmBAJ8",
+          "speaker": "Gogo",
+          "start": 113.141,
+          "end": 114.368,
+          "text": "No, thank you.",
+          "hint": "不了，谢谢。",
+          "words": [
+            {
+              "text": "No,",
+              "start": 113.181,
+              "end": 113.402
+            },
+            {
+              "text": "thank",
+              "start": 113.724,
+              "end": 113.865
+            },
+            {
+              "text": "you.",
+              "start": 113.986,
+              "end": 114.308
+            }
+          ]
+        },
+        {
+          "id": "line_tInGfwXfQMI",
+          "roleId": "role_5cqjyxmLDbQ",
+          "speaker": "Jenny",
+          "start": 118.47,
+          "end": 119.331,
+          "text": "Ants, Gogo.",
+          "hint": "是蚂蚁，Gogo。",
+          "words": [
+            {
+              "text": "Ants,",
+              "start": 118.51,
+              "end": 118.69
+            },
+            {
+              "text": "Gogo.",
+              "start": 118.85,
+              "end": 119.271
+            }
+          ]
+        },
+        {
+          "id": "line_DMNMLq0WaNY",
+          "roleId": "role_5cqjyxmLDbQ",
+          "speaker": "Jenny",
+          "start": 119.751,
+          "end": 121.032,
+          "text": "Those are ants.",
+          "hint": "那些是蚂蚁。",
+          "words": [
+            {
+              "text": "Those",
+              "start": 119.791,
+              "end": 120.111
+            },
+            {
+              "text": "are",
+              "start": 120.271,
+              "end": 120.351
+            },
+            {
+              "text": "ants.",
+              "start": 120.651,
+              "end": 120.972
+            }
+          ]
+        },
+        {
+          "id": "line_mUTYJ0y1HQk",
+          "roleId": "role_ekd_7mmBAJ8",
+          "speaker": "Gogo",
+          "start": 133.698,
+          "end": 134.919,
+          "text": "I don't like ants.",
+          "hint": "我不喜欢蚂蚁。",
+          "words": [
+            {
+              "text": "I",
+              "start": 133.738,
+              "end": 133.759
+            },
+            {
+              "text": "don't",
+              "start": 133.879,
+              "end": 134.099
+            },
+            {
+              "text": "like",
+              "start": 134.219,
+              "end": 134.439
+            },
+            {
+              "text": "ants.",
+              "start": 134.639,
+              "end": 134.859
+            }
+          ]
+        }
+      ],
+      "beginnerSuitable": true,
+      "beginnerReviewReason": "Visible sandwiches and ants, short everyday replies and a four-word negative preference.",
+      "practice": "Visible sandwiches and ants, short everyday replies and a four-word negative preference.",
+      "summary": "Visible sandwiches and ants, short everyday replies and a four-word negative preference.",
+      "storyBeat": "Tiny ants interrupt the picnic and send the surprised dragon splashing into the pond.",
+      "contentNotes": "Jenny identifies the ants, including the source close-up while her voice is off screen. Gogo says no thank you and the final ant complaint. Comic ant nips and a brief pond splash remain visible; no lesson about swimming or real animal handling. Stops before the later hot-dog sequence. Nonverbal yelps stay in the original audio rather than becoming practice prompts.",
+      "reviewStatus": "source dialogue, speakers and uncut boundaries reviewed; individual learner-fit listening pending",
+      "tags": [
+        "Gogo's Adventures with English",
+        "Gogo",
+        "Tony",
+        "Jenny",
+        "dragon",
+        "beginner",
+        "first English",
+        "funny",
+        "英语启蒙",
+        "龙",
+        "趣味故事",
+        "picnic",
+        "ants",
+        "sandwiches",
+        "pond",
+        "dislikes",
+        "野餐",
+        "蚂蚁",
+        "三明治"
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment on prepared source audio",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_lf2aC4A7umA",
+      "sceneId": "scene_-1fU_8OJfvw",
+      "batch": "2026-11-11-playful-first-english",
+      "cohort": "younger-age-5",
+      "slug": "23-gogo-elephant-guess",
+      "publicSlug": "gogo-elephant-guess",
+      "routeSlug": "gogo-elephant-guess",
+      "title": "Is it a tiger?",
+      "titleZh": "是老虎吗？",
+      "sourceId": "XREZd9YAuFY",
+      "start": 146.4,
+      "end": 165.5,
+      "roles": [
+        {
+          "id": "role_uoIAOk7SIc8",
+          "name": "Gogo",
+          "selectable": true,
+          "portrait": "gogo-elephant-guess-gogo-portrait-a8ffbdab8f8a.jpg"
+        },
+        {
+          "id": "role_JAL2Cnx5A48",
+          "name": "Jenny",
+          "selectable": true,
+          "portrait": "gogo-elephant-guess-jenny-portrait-bb6627374bb1.jpg"
+        },
+        {
+          "id": "role_rkFjPTbuc7A",
+          "name": "Tony",
+          "selectable": true,
+          "portrait": "gogo-elephant-guess-tony-portrait-752f75bae87c.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_YT6mON9IZg0",
+          "roleId": "role_uoIAOk7SIc8",
+          "speaker": "Gogo",
+          "start": 148.642,
+          "end": 150.184,
+          "text": "Is that a zebra?",
+          "hint": "那是一匹斑马吗？",
+          "words": [
+            {
+              "text": "Is",
+              "start": 148.682,
+              "end": 148.782
+            },
+            {
+              "text": "that",
+              "start": 148.903,
+              "end": 149.123
+            },
+            {
+              "text": "a",
+              "start": 149.403,
+              "end": 149.423
+            },
+            {
+              "text": "zebra?",
+              "start": 149.603,
+              "end": 150.124
+            }
+          ]
+        },
+        {
+          "id": "line_LeE_dlGBPy0",
+          "roleId": "role_JAL2Cnx5A48",
+          "speaker": "Jenny",
+          "start": 151.245,
+          "end": 152.366,
+          "text": "No, it isn't.",
+          "hint": "不，不是。",
+          "words": [
+            {
+              "text": "No,",
+              "start": 151.285,
+              "end": 151.465
+            },
+            {
+              "text": "it",
+              "start": 151.766,
+              "end": 151.826
+            },
+            {
+              "text": "isn't.",
+              "start": 151.986,
+              "end": 152.306
+            }
+          ]
+        },
+        {
+          "id": "line_yhaihucPkMQ",
+          "roleId": "role_uoIAOk7SIc8",
+          "speaker": "Gogo",
+          "start": 153.107,
+          "end": 154.268,
+          "text": "Is it a tiger?",
+          "hint": "是老虎吗？",
+          "words": [
+            {
+              "text": "Is",
+              "start": 153.147,
+              "end": 153.227
+            },
+            {
+              "text": "it",
+              "start": 153.307,
+              "end": 153.367
+            },
+            {
+              "text": "a",
+              "start": 153.507,
+              "end": 153.527
+            },
+            {
+              "text": "tiger?",
+              "start": 153.648,
+              "end": 154.208
+            }
+          ]
+        },
+        {
+          "id": "line_fG3aZbOxA54",
+          "roleId": "role_rkFjPTbuc7A",
+          "speaker": "Tony",
+          "start": 154.729,
+          "end": 155.91,
+          "text": "No, it isn't.",
+          "hint": "不，不是。",
+          "words": [
+            {
+              "text": "No,",
+              "start": 154.769,
+              "end": 154.989
+            },
+            {
+              "text": "it",
+              "start": 155.309,
+              "end": 155.369
+            },
+            {
+              "text": "isn't.",
+              "start": 155.55,
+              "end": 155.85
+            }
+          ]
+        },
+        {
+          "id": "line_ddW7IdwgsuM",
+          "roleId": "role_uoIAOk7SIc8",
+          "speaker": "Gogo",
+          "start": 157.211,
+          "end": 157.992,
+          "text": "What is it?",
+          "hint": "它是什么？",
+          "words": [
+            {
+              "text": "What",
+              "start": 157.251,
+              "end": 157.412
+            },
+            {
+              "text": "is",
+              "start": 157.632,
+              "end": 157.732
+            },
+            {
+              "text": "it?",
+              "start": 157.872,
+              "end": 157.932
+            }
+          ]
+        },
+        {
+          "id": "line_9bh86P0sAR0",
+          "roleId": "role_rkFjPTbuc7A",
+          "speaker": "Tony",
+          "start": 158.733,
+          "end": 160.174,
+          "text": "It's an elephant.",
+          "hint": "是一头大象。",
+          "words": [
+            {
+              "text": "It's",
+              "start": 158.773,
+              "end": 158.953
+            },
+            {
+              "text": "an",
+              "start": 159.053,
+              "end": 159.093
+            },
+            {
+              "text": "elephant.",
+              "start": 159.554,
+              "end": 160.114
+            }
+          ]
+        },
+        {
+          "id": "line_To5K5rn8yVM",
+          "roleId": "role_uoIAOk7SIc8",
+          "speaker": "Gogo",
+          "start": 161.095,
+          "end": 162.517,
+          "text": "It's an elephant.",
+          "hint": "是一头大象。",
+          "words": [
+            {
+              "text": "It's",
+              "start": 161.135,
+              "end": 161.316
+            },
+            {
+              "text": "an",
+              "start": 161.476,
+              "end": 161.516
+            },
+            {
+              "text": "elephant.",
+              "start": 161.996,
+              "end": 162.457
+            }
+          ]
+        },
+        {
+          "id": "line_rmTZoj8dmPg",
+          "roleId": "role_JAL2Cnx5A48",
+          "speaker": "Jenny",
+          "start": 163.958,
+          "end": 165.18,
+          "text": "Very good, Gogo.",
+          "hint": "说得很好，Gogo。",
+          "words": [
+            {
+              "text": "Very",
+              "start": 163.998,
+              "end": 164.299
+            },
+            {
+              "text": "good,",
+              "start": 164.479,
+              "end": 164.639
+            },
+            {
+              "text": "Gogo.",
+              "start": 164.819,
+              "end": 165.12
+            }
+          ]
+        }
+      ],
+      "beginnerSuitable": true,
+      "beginnerReviewReason": "Yes/no animal guessing with visible animals and repeated three/four-word phrases.",
+      "practice": "Yes/no animal guessing with visible animals and repeated three/four-word phrases.",
+      "summary": "Yes/no animal guessing with visible animals and repeated three/four-word phrases.",
+      "storyBeat": "The elephant is right in front of Gogo, but he keeps guessing other animals.",
+      "contentNotes": "Jenny gives the first negative reply and final praise; Tony gives the second negative reply and identifies the elephant, then Gogo repeats it. Stops before Gogo introduces himself to the elephant. The large friendly elephant and the wrong guesses supply the visual joke.",
+      "reviewStatus": "source dialogue, speakers and uncut boundaries reviewed; individual learner-fit listening pending",
+      "tags": [
+        "Gogo's Adventures with English",
+        "Gogo",
+        "Tony",
+        "Jenny",
+        "dragon",
+        "beginner",
+        "first English",
+        "funny",
+        "英语启蒙",
+        "龙",
+        "趣味故事",
+        "zoo",
+        "animals",
+        "elephant",
+        "tiger",
+        "zebra",
+        "guessing",
+        "动物",
+        "大象",
+        "老虎",
+        "斑马"
       ],
       "wordTiming": {
         "method": "CTC forced alignment on prepared source audio",

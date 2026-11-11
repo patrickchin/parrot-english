@@ -1,0 +1,284 @@
+{
+  "version": 1,
+  "id": "scene_-1fU_8OJfvw",
+  "title": "是老虎吗？",
+  "tags": [
+    "Gogo's Adventures with English",
+    "Gogo",
+    "Tony",
+    "Jenny",
+    "dragon",
+    "beginner",
+    "first English",
+    "funny",
+    "英语启蒙",
+    "龙",
+    "趣味故事",
+    "zoo",
+    "animals",
+    "elephant",
+    "tiger",
+    "zebra",
+    "guessing",
+    "动物",
+    "大象",
+    "老虎",
+    "斑马"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 19.12,
+  "video": "gogo-elephant-guess-review-188f5a6eb28d.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-elephant-guess/",
+  "poster": "gogo-elephant-guess-poster-188f5a6eb28d.jpg",
+  "waveform": "waveform-188f5a6eb28d.json",
+  "roles": [
+    {
+      "id": "role_uoIAOk7SIc8",
+      "name": "Gogo",
+      "label": "Gogo",
+      "hint": "4 句台词",
+      "portrait": "gogo-elephant-guess-gogo-portrait-a8ffbdab8f8a.jpg"
+    },
+    {
+      "id": "role_JAL2Cnx5A48",
+      "name": "珍妮",
+      "label": "珍妮",
+      "hint": "2 句台词",
+      "portrait": "gogo-elephant-guess-jenny-portrait-bb6627374bb1.jpg"
+    },
+    {
+      "id": "role_rkFjPTbuc7A",
+      "name": "托尼",
+      "label": "托尼",
+      "hint": "2 句台词",
+      "portrait": "gogo-elephant-guess-tony-portrait-752f75bae87c.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_YT6mON9IZg0",
+      "roleId": "role_uoIAOk7SIc8",
+      "start": 2.242,
+      "end": 3.784,
+      "text": "Is that a zebra?",
+      "hint": "那是一匹斑马吗？",
+      "words": [
+        {
+          "text": "Is",
+          "start": 2.282,
+          "end": 2.382
+        },
+        {
+          "text": "that",
+          "start": 2.503,
+          "end": 2.723
+        },
+        {
+          "text": "a",
+          "start": 3.003,
+          "end": 3.023
+        },
+        {
+          "text": "zebra?",
+          "start": 3.203,
+          "end": 3.724
+        }
+      ]
+    },
+    {
+      "id": "line_LeE_dlGBPy0",
+      "roleId": "role_JAL2Cnx5A48",
+      "start": 4.845,
+      "end": 5.966,
+      "text": "No, it isn't.",
+      "hint": "不，不是。",
+      "words": [
+        {
+          "text": "No,",
+          "start": 4.885,
+          "end": 5.065
+        },
+        {
+          "text": "it",
+          "start": 5.366,
+          "end": 5.426
+        },
+        {
+          "text": "isn't.",
+          "start": 5.586,
+          "end": 5.906
+        }
+      ]
+    },
+    {
+      "id": "line_yhaihucPkMQ",
+      "roleId": "role_uoIAOk7SIc8",
+      "start": 6.707,
+      "end": 7.868,
+      "text": "Is it a tiger?",
+      "hint": "是老虎吗？",
+      "words": [
+        {
+          "text": "Is",
+          "start": 6.747,
+          "end": 6.827
+        },
+        {
+          "text": "it",
+          "start": 6.907,
+          "end": 6.967
+        },
+        {
+          "text": "a",
+          "start": 7.107,
+          "end": 7.127
+        },
+        {
+          "text": "tiger?",
+          "start": 7.248,
+          "end": 7.808
+        }
+      ]
+    },
+    {
+      "id": "line_fG3aZbOxA54",
+      "roleId": "role_rkFjPTbuc7A",
+      "start": 8.329,
+      "end": 9.51,
+      "text": "No, it isn't.",
+      "hint": "不，不是。",
+      "words": [
+        {
+          "text": "No,",
+          "start": 8.369,
+          "end": 8.589
+        },
+        {
+          "text": "it",
+          "start": 8.909,
+          "end": 8.969
+        },
+        {
+          "text": "isn't.",
+          "start": 9.15,
+          "end": 9.45
+        }
+      ]
+    },
+    {
+      "id": "line_ddW7IdwgsuM",
+      "roleId": "role_uoIAOk7SIc8",
+      "start": 10.811,
+      "end": 11.592,
+      "text": "What is it?",
+      "hint": "它是什么？",
+      "words": [
+        {
+          "text": "What",
+          "start": 10.851,
+          "end": 11.012
+        },
+        {
+          "text": "is",
+          "start": 11.232,
+          "end": 11.332
+        },
+        {
+          "text": "it?",
+          "start": 11.472,
+          "end": 11.532
+        }
+      ]
+    },
+    {
+      "id": "line_9bh86P0sAR0",
+      "roleId": "role_rkFjPTbuc7A",
+      "start": 12.333,
+      "end": 13.774,
+      "text": "It's an elephant.",
+      "hint": "是一头大象。",
+      "words": [
+        {
+          "text": "It's",
+          "start": 12.373,
+          "end": 12.553
+        },
+        {
+          "text": "an",
+          "start": 12.653,
+          "end": 12.693
+        },
+        {
+          "text": "elephant.",
+          "start": 13.154,
+          "end": 13.714
+        }
+      ]
+    },
+    {
+      "id": "line_To5K5rn8yVM",
+      "roleId": "role_uoIAOk7SIc8",
+      "start": 14.695,
+      "end": 16.117,
+      "text": "It's an elephant.",
+      "hint": "是一头大象。",
+      "words": [
+        {
+          "text": "It's",
+          "start": 14.735,
+          "end": 14.916
+        },
+        {
+          "text": "an",
+          "start": 15.076,
+          "end": 15.116
+        },
+        {
+          "text": "elephant.",
+          "start": 15.596,
+          "end": 16.057
+        }
+      ]
+    },
+    {
+      "id": "line_rmTZoj8dmPg",
+      "roleId": "role_JAL2Cnx5A48",
+      "start": 17.558,
+      "end": 18.78,
+      "text": "Very good, Gogo.",
+      "hint": "说得很好，Gogo。",
+      "words": [
+        {
+          "text": "Very",
+          "start": 17.598,
+          "end": 17.899
+        },
+        {
+          "text": "good,",
+          "start": 18.079,
+          "end": 18.239
+        },
+        {
+          "text": "Gogo.",
+          "start": 18.419,
+          "end": 18.72
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment on prepared source audio",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Gogo's Adventures with English — Is that a tiger?",
+    "attribution": "Gogo's Adventures with English — original animation and English performance (Longman); source upload: Children English, not verified as the rightsholder.",
+    "source": "https://www.youtube.com/watch?v=XREZd9YAuFY&t=146s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 146.4–165.5 秒的连续节选。Jenny gives the first negative reply and final praise; Tony gives the second negative reply and identifies the elephant, then Gogo repeats it. Stops before Gogo introduces himself to the elephant. The large friendly elephant and the wrong guesses supply the visual joke."
+  }
+}

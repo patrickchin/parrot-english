@@ -537,6 +537,26 @@
       "title": "这是送给你的",
       "licence": "未确认再分发许可",
       "changes": "内部原型测试；原上传 45.7–56.5 秒的连续节选。Birthday scene beside a supervised pool; no swimming action in the selected exchange. Stops before the song and later montage."
+    },
+    "scene_YEtT30gD2zw": {
+      "title": "花朵变颜色了！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原片连续节选 83.7–112.2 s. 巨大花朵让小朋友们吃了一惊。合声“哇”和小龙单独的“哎呀”保留原声。"
+    },
+    "scene_GlNQxic6XKU": {
+      "title": "你喜欢甜甜圈吗？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原片连续节选 64.0–99.35 s. Gogo在野餐时变出许多香肠和甜甜圈。最后说喜欢这两种食物的是托尼。"
+    },
+    "scene_A6AHrPGux9Y": {
+      "title": "我不喜欢蚂蚁！",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原片连续节选 99.7–136.5 s. 蚂蚁打断了野餐；Gogo扑通跳进池塘，说自己不喜欢蚂蚁。没有词义的叫声保留原声。"
+    },
+    "scene_-1fU_8OJfvw": {
+      "title": "是老虎吗？",
+      "licence": "未确认再分发许可",
+      "changes": "内部原型测试；原片连续节选 146.4–165.5 s. 面对友好的大象，Gogo猜错了动物。珍妮先说“不”并在最后表扬Gogo；托尼第二次说“不”，并说出是大象。"
     }
   },
   "roles": {
@@ -1238,6 +1258,58 @@
     },
     "role_c20cLSGQdAQ": {
       "name": "蓝衣小朋友",
+      "hint": "2 句台词"
+    },
+    "role_QlsPddNBXGQ": {
+      "name": "珍妮",
+      "hint": "2 句台词"
+    },
+    "role_TfRZb1jojO8": {
+      "name": "托尼",
+      "hint": "3 句台词"
+    },
+    "role_GqmpVhh4sXc": {
+      "name": "Gogo",
+      "hint": "1 句台词"
+    },
+    "role_ml1pMwDvf3A": {
+      "name": "托尼和珍妮",
+      "hint": "1 句台词"
+    },
+    "role_pMbWuJAc6TM": {
+      "name": "Gogo",
+      "hint": "5 句台词"
+    },
+    "role_6PoExuj3NZc": {
+      "name": "托尼",
+      "hint": "3 句台词"
+    },
+    "role_N8xc7CSXiA0": {
+      "name": "珍妮",
+      "hint": "3 句台词"
+    },
+    "role_ekd_7mmBAJ8": {
+      "name": "Gogo",
+      "hint": "3 句台词"
+    },
+    "role_1de8iaC5BVQ": {
+      "name": "托尼",
+      "hint": "2 句台词"
+    },
+    "role_5cqjyxmLDbQ": {
+      "name": "珍妮",
+      "hint": "2 句台词"
+    },
+    "role_uoIAOk7SIc8": {
+      "name": "Gogo",
+      "hint": "4 句台词"
+    },
+    "role_JAL2Cnx5A48": {
+      "name": "珍妮",
+      "hint": "2 句台词"
+    },
+    "role_rkFjPTbuc7A": {
+      "name": "托尼",
       "hint": "2 句台词"
     }
   },

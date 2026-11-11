@@ -706,5 +706,49 @@
     "source": "https://www.youtube.com/watch?v=LMs5M_IiQbc&t=45s",
     "cohort": "younger-age-5",
     "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/first-english-birthday-present/first-english-birthday-present-poster-f51f0fc3f84a.jpg"
+  },
+  {
+    "id": "scene_YEtT30gD2zw",
+    "slug": "gogo-magic-flowers",
+    "routeSlug": "gogo-magic-flowers",
+    "title": "花朵变颜色了！",
+    "english": "Magic flowers!",
+    "note": "Gogo's Adventures with English",
+    "source": "https://www.youtube.com/watch?v=As5kCF2ydXQ&t=83s",
+    "cohort": "younger-age-5",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-magic-flowers/gogo-magic-flowers-poster-5b4cb8f6b25e.jpg"
+  },
+  {
+    "id": "scene_GlNQxic6XKU",
+    "slug": "gogo-picnic-doughnuts",
+    "routeSlug": "gogo-picnic-doughnuts",
+    "title": "你喜欢甜甜圈吗？",
+    "english": "Do you like doughnuts?",
+    "note": "Gogo's Adventures with English",
+    "source": "https://www.youtube.com/watch?v=LHV46j9vkm8&t=64s",
+    "cohort": "younger-age-5",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-picnic-doughnuts/gogo-picnic-doughnuts-poster-b46806a52ee1.jpg"
+  },
+  {
+    "id": "scene_A6AHrPGux9Y",
+    "slug": "gogo-picnic-ants",
+    "routeSlug": "gogo-picnic-ants",
+    "title": "我不喜欢蚂蚁！",
+    "english": "I don't like ants!",
+    "note": "Gogo's Adventures with English",
+    "source": "https://www.youtube.com/watch?v=LHV46j9vkm8&t=99s",
+    "cohort": "younger-age-5",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-picnic-ants/gogo-picnic-ants-poster-20d836bc633a.jpg"
+  },
+  {
+    "id": "scene_-1fU_8OJfvw",
+    "slug": "gogo-elephant-guess",
+    "routeSlug": "gogo-elephant-guess",
+    "title": "是老虎吗？",
+    "english": "Is it a tiger?",
+    "note": "Gogo's Adventures with English",
+    "source": "https://www.youtube.com/watch?v=XREZd9YAuFY&t=146s",
+    "cohort": "younger-age-5",
+    "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-elephant-guess/gogo-elephant-guess-poster-188f5a6eb28d.jpg"
   }
 ]
