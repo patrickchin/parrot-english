@@ -4,6 +4,8 @@ import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
+const youngerCount = clips.filter(clip => clip.cohort === 'younger-age-5').length;
+
 test('each category groups scenes by show or film without losing or repeating scenes', async ({ page }) => {
   for (const folder of ['older-audience', 'younger-age-5', 'older-children', 'teens']) {
     await page.goto(`/en/library/${folder}`);
@@ -71,12 +73,12 @@ test('show filters support search, history, reload, language, playback and small
   await translatedFilters.getByRole('button', { name: '全部剧集与电影', exact: true }).click();
   await expect(page.getByRole('listitem')).toHaveCount(14);
   await page.getByRole('group', { name: '片段分类' }).getByRole('button', { name: /^英语启蒙/ }).click();
-  await expect(page.getByRole('listitem')).toHaveCount(9);
+  await expect(page.getByRole('listitem')).toHaveCount(youngerCount);
   await expect(translatedFilters.getByRole('button', { name: 'Friends', exact: true })).toHaveCount(0);
 });
 
 test('a show outside the selected category falls back to all shows', async ({ page }) => {
   await page.goto('/en/library/younger-age-5?show=Friends');
   await expect(page.getByRole('group', { name: 'Shows & films', exact: true }).getByRole('button', { pressed: true })).toHaveText('All shows & films');
-  await expect(page.getByRole('listitem')).toHaveCount(9);
+  await expect(page.getByRole('listitem')).toHaveCount(youngerCount);
 });
