@@ -12,14 +12,6 @@ export type SavedDub = {
 type SavedMedia = { dubId: string; lineId: string; bytes?: ArrayBuffer; mimeType?: string; blob?: Blob; duration?: number; start?: number; peaks?: number[] };
 export type RestoredDub = { saved: SavedDub; lesson: LessonState; source?: Blob };
 
-type StoredDub = SavedDub | (Omit<SavedDub, 'sceneId'> & { packId: string });
-
-function readSavedDub(saved: StoredDub): SavedDub {
-  if ('sceneId' in saved) return saved;
-  const { packId, ...rest } = saved;
-  return { ...rest, sceneId: packId };
-}
-
 export function newDubId() {
   return 'dub_' + Array.from(crypto.getRandomValues(new Uint8Array(15)), byte => byte.toString(16).padStart(2, '0')).join('');
 }
@@ -62,14 +54,14 @@ async function transaction<T>(mode: IDBTransactionMode, run: (tx: IDBTransaction
 export function listDubs(): Promise<SavedDub[]> {
   return transaction('readonly', tx => {
     const request = tx.objectStore('dubs').getAll();
-    return () => (request.result as StoredDub[]).map(readSavedDub).sort((a, b) => b.updatedAt - a.updatedAt);
+    return () => (request.result as SavedDub[]).sort((a, b) => b.updatedAt - a.updatedAt);
   });
 }
 
 export async function loadDub(id: string, scene: Scene): Promise<RestoredDub> {
   const { saved, media } = await transaction('readonly', tx => {
     const saved = tx.objectStore('dubs').get(id), media = tx.objectStore('media').index('dubId').getAll(id);
-    return () => ({ saved: saved.result ? readSavedDub(saved.result as StoredDub) : undefined, media: media.result as SavedMedia[] });
+    return () => ({ saved: saved.result as SavedDub | undefined, media: media.result as SavedMedia[] });
   }).catch(error => { throw new Error('无法读取本机配音。请重试；现有配音不会被删除。', { cause: error }); });
   if (!saved) throw new Error('这次配音已被删除或无法找到。');
   if (saved.signature !== signature(scene)) throw new Error('片段已更新，这次配音无法继续。已保存的录音仍保留在本机。');

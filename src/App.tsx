@@ -6,6 +6,8 @@ import { Button, Icon } from './shared/ui';
 import { asset, validateScene, type Scene, type Role } from './scene';
 import { useDubbing, type Take } from './useDubbing';
 import { Library } from './Library';
+import { SavedDubs } from './app/SavedDubs';
+import { dubsPath } from './app/routes';
 import { VoiceWaveform } from './VoiceWaveform';
 import { PreviewSubtitles } from './PreviewSubtitles';
 import { lineWindow } from './line-window';
@@ -44,6 +46,7 @@ export default function App() {
     return () => abort.abort();
   // Saving an ID into the current URL does not reload the running Player.
   }, [attempt, selected, navigation.revision]);
+  if (navigation.page === 'dubs') return <SavedDubs onChoose={choose} />;
   if (!selected) return <Library onChoose={choose} folder={navigation.folder} onFolderChange={navigation.chooseFolder} />;
   const load: LoadState<Scene> = loadedScene.slug === selected.slug ? loadedScene.load : { status: 'loading' };
   const error = load.status === 'error' ? load.error : '';
@@ -230,7 +233,7 @@ function Player({ scene, slug, initial, rememberDraft, onBack, leaving, onConfir
           </div>
         </>}
         {media.error && <div role="alert" className="player-error rounded-xl border border-danger/25 bg-destructive/10 p-3 text-sm leading-6 text-destructive"><p>{t(media.error)}</p>{!videoReady && <button onClick={() => { media.setError(''); setVideoStatus('loading'); video.current?.load(); }} className="mt-2 min-h-11 rounded-lg px-2 font-bold underline">{t("重新加载视频")}</button>}</div>}
-        {autosave.status === 'error' && <div className="player-error rounded-xl bg-destructive/10 p-3 text-sm"><p role="alert">{t(autosave.error!)}</p><div className="mt-2 flex flex-wrap items-center gap-3"><Button tone="quiet" onClick={autosave.retry}>{t('重试保存')}</Button><a href="/" target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center rounded-lg px-2 underline">{t('在新标签页管理已保存的配音')}</a></div></div>}
+        {autosave.status === 'error' && <div className="player-error rounded-xl bg-destructive/10 p-3 text-sm"><p role="alert">{t(autosave.error!)}</p><div className="mt-2 flex flex-wrap items-center gap-3"><Button tone="quiet" onClick={autosave.retry}>{t('重试保存')}</Button><a href={dubsPath()} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center rounded-lg px-2 underline">{t('在新标签页管理已保存的配音')}</a></div></div>}
       </section>
     </main>
     {step === 'choose' && <footer className="player-footer text-xs text-muted-foreground">

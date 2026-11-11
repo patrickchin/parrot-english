@@ -5,11 +5,14 @@ import { readFile, mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-test('each selectable character has a loaded avatar in the role picker', async ({ page }, info) => {
+test('each authored character avatar loads in the role picker', async ({ page }, info) => {
   test.setTimeout(180000);
   const avatars = new Map<string, string>();
+  let authoredScenes = 0;
   for (const clip of clips) {
     const scene = JSON.parse(await readFile(`public/scenes/${clip.slug}/scene.json`, 'utf8'));
+    if (!scene.roles.some((role: { portrait?: string }) => role.portrait)) continue;
+    authoredScenes++;
     await page.goto(scenePath(clip.slug));
     for (const role of scene.roles.filter((role: { selectable?: boolean }) => role.selectable !== false)) {
       const button = page.getByRole('button', { name: new RegExp('^' + role.name) });
@@ -27,6 +30,7 @@ test('each selectable character has a loaded avatar in the role picker', async (
       await expect(button).toHaveAttribute('aria-pressed', 'true');
     }
   }
+  expect(authoredScenes).toBe(52);
   expect(avatars.get('Young Sheldon谢尔顿')).not.toBe(avatars.get('The Big Bang Theory谢尔顿'));
   await page.goto('/scenes/onions');
   await expect(page.getByRole('button', { name: /^驴子/ })).toBeVisible();

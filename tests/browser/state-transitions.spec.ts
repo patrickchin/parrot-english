@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures';
+import { test, expect, headerDestination } from './fixtures';
 
 test.use({ sampleScene: true });
 
@@ -54,6 +54,7 @@ test('changing the scene path leaves the saved attempt available in My dubs', as
   await page.goto('/scenes/chocolate');
   await expect(page.getByRole('heading', { name: '巧克力？！', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '返回片段', exact: true }).click();
+  await (await headerDestination(page, '我的配音')).click();
   await page.getByRole('button', { name: '继续配音：你在找谁？，Sintel', exact: true }).click();
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
 });

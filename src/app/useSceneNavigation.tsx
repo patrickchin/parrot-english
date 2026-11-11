@@ -1,11 +1,24 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { libraryPath, readRoute, scenePath } from './routes';
 
 type RouteState =
   | { status: 'active'; href: string }
   | { status: 'confirming'; href: string; destination: string };
 
+const NavigationContext = createContext<ReturnType<typeof useNavigationState> | null>(null);
+
+export function NavigationProvider({ children }: { children: ReactNode }) {
+  const navigation = useNavigationState();
+  return <NavigationContext value={navigation}>{children}</NavigationContext>;
+}
+
 export function useSceneNavigation() {
+  const navigation = useContext(NavigationContext);
+  if (!navigation) throw new Error('NavigationProvider is missing.');
+  return navigation;
+}
+
+function useNavigationState() {
   const [route, setRoute] = useState<RouteState>(() => ({ status: 'active', href: location.href }));
   const current = useRef(route);
   const [dirty, setDirty] = useState(false);
@@ -46,6 +59,7 @@ export function useSceneNavigation() {
   return {
     ...readRoute(route.href),
     revision, rememberDraft,
+    navigateTo(path: string) { request(new URL(path, current.current.href).href); },
     pending: route.status === 'confirming',
     protect,
     navigate(slug: string, draftId?: string) {

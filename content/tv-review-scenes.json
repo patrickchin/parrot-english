@@ -200,6 +200,32 @@
       "officialChannel": false,
       "attribution": "20th Television",
       "duration": 233
+    },
+    {
+      "id": "VSrdPFnxYNA",
+      "url": "https://www.youtube.com/watch?v=VSrdPFnxYNA",
+      "localFile": "content/local-dubbing/review/older-children/sources/VSrdPFnxYNA.mp4",
+      "series": "Young Sheldon",
+      "episode": "S2 E4",
+      "uploadTitle": "Sheldon’s First Sleepover at Tam’s | Young Sheldon",
+      "title": "Sheldon’s First Sleepover at Tam’s | Young Sheldon",
+      "channel": "Young Sheldon",
+      "officialChannel": true,
+      "attribution": "Warner Bros. Television / CBS",
+      "duration": 172
+    },
+    {
+      "id": "IHJI6_VpH00",
+      "url": "https://www.youtube.com/watch?v=IHJI6_VpH00",
+      "localFile": "content/local-dubbing/review/teens/sources/IHJI6_VpH00.mp4",
+      "series": "Friends",
+      "episode": "S6 E19",
+      "uploadTitle": "Friends: Joey Pushes Ross Into His Fridge (Season 6 Clip) | TBS",
+      "title": "Friends: Joey Pushes Ross Into His Fridge (Season 6 Clip) | TBS",
+      "channel": "TBS",
+      "officialChannel": true,
+      "attribution": "Warner Bros. Television",
+      "duration": 223
     }
   ],
   "scenes": [
@@ -229,7 +255,7 @@
       "practice": "Asking for help, offering suggestions, responding with dry humour.",
       "contentNotes": "A child feels out of place at school; the librarian makes a self-deprecating joke about being unpopular.",
       "reviewStatus": "draft-source-and-boundary-reviewed; human listening and age-fit review pending",
-      "sceneId": "pack_F6ws6xrH7b0",
+      "sceneId": "scene_F6ws6xrH7b0",
       "publicSlug": "young-sheldon-library",
       "lines": [
         {
@@ -687,7 +713,7 @@
       "practice": "Questions, feedback and playful disagreement.",
       "contentNotes": "Family sarcasm. The cut ends after the final name repetition and before the channel end card.",
       "reviewStatus": "draft-source-and-boundary-reviewed; human listening and age-fit review pending",
-      "sceneId": "pack_K-EnMBJWy2E",
+      "sceneId": "scene_K-EnMBJWy2E",
       "publicSlug": "young-sheldon-compliments",
       "lines": [
         {
@@ -1024,7 +1050,7 @@
       "practice": "Explaining a problem, requests, reasons and refusal.",
       "contentNotes": "College homework is the setting; the selected exchange uses parent/child language. Mild criticism of the professor. Later crude adult dialogue is excluded.",
       "reviewStatus": "draft-source-and-boundary-reviewed; human listening and age-fit review pending",
-      "sceneId": "pack_qs532GUZz7E",
+      "sceneId": "scene_qs532GUZz7E",
       "publicSlug": "young-sheldon-homework",
       "lines": [
         {
@@ -1860,7 +1886,7 @@
       "practice": "Directions, urgent delivery and reacting to frustration.",
       "contentNotes": "Raised voices and a repeated rude command to be quiet. The earlier sketch innuendo is excluded.",
       "reviewStatus": "draft-source-and-boundary-reviewed; human listening and age-fit review pending",
-      "sceneId": "pack_pywI3ZgiZ-Y",
+      "sceneId": "scene_pywI3ZgiZ-Y",
       "publicSlug": "friends-moving-couch",
       "lines": [
         {
@@ -2173,7 +2199,7 @@
       "practice": "Asking for clarification, explaining a process and expressing delight.",
       "contentNotes": "Adoption recommendation is the background. The later dating innuendo is excluded.",
       "reviewStatus": "draft-source-and-boundary-reviewed; human listening and age-fit review pending",
-      "sceneId": "pack_lPxb4HHQVrQ",
+      "sceneId": "scene_lPxb4HHQVrQ",
       "publicSlug": "friends-thesaurus",
       "lines": [
         {
@@ -2738,7 +2764,7 @@
       "practice": "Comparisons, choices, negotiation and setting conditions.",
       "contentNotes": "Food squabbling; the surrounding story involves taking someone else’s cake. Later wedding and sexual jokes in the source compilation are excluded.",
       "reviewStatus": "draft-source-and-boundary-reviewed; human listening and age-fit review pending",
-      "sceneId": "pack__ZPXHnc-PuE",
+      "sceneId": "scene__ZPXHnc-PuE",
       "publicSlug": "friends-cheesecake",
       "lines": [
         {
@@ -3196,7 +3222,7 @@
       "practice": "Reassurance, urgent requests and concise instructions.",
       "contentNotes": "Comic unsafe driving and panic; not driving instruction. Earlier sexist remarks and the later accident joke are excluded. Mild expletive. Zitch-dog is the show’s invented car game, not a standard English word.",
       "reviewStatus": "draft-source-and-boundary-reviewed; human listening and age-fit review pending",
-      "sceneId": "pack_kNsWCUYPVwU",
+      "sceneId": "scene_kNsWCUYPVwU",
       "publicSlug": "himym-driving-lesson",
       "lines": [
         {
@@ -3589,7 +3615,7 @@
       "practice": "Opinions, comparisons, disagreement and emphasis.",
       "contentNotes": "A bar setting with drinks, a dating metaphor and a mild insult directed at ducks. Stops before the narrator and later animal-fighting suggestion.",
       "reviewStatus": "draft-source-and-boundary-reviewed; human listening and age-fit review pending",
-      "sceneId": "pack_ON8p1LWII74",
+      "sceneId": "scene_ON8p1LWII74",
       "publicSlug": "himym-rabbit-or-duck",
       "lines": [
         {
@@ -4188,7 +4214,7 @@
     },
     {
       "id": "clip_YSYdU4e8FmI",
-      "sceneId": "pack_yjYJv1eTPR4",
+      "sceneId": "scene_yjYJv1eTPR4",
       "batch": "2026-11-11-b",
       "cohort": "older-children",
       "slug": "04-young-sheldon-einstein",
@@ -4606,7 +4632,7 @@
     },
     {
       "id": "clip_ARdqABsW4Tg",
-      "sceneId": "pack_eMvqUxta4mg",
+      "sceneId": "scene_eMvqUxta4mg",
       "batch": "2026-11-11-b",
       "cohort": "older-children",
       "slug": "05-young-sheldon-camera",
@@ -4994,7 +5020,7 @@
     },
     {
       "id": "clip_VdEHR88LCKs",
-      "sceneId": "pack_hua0i_EVO5o",
+      "sceneId": "scene_hua0i_EVO5o",
       "batch": "2026-11-11-b",
       "cohort": "older-children",
       "slug": "06-young-sheldon-breakfast",
@@ -5518,7 +5544,7 @@
     },
     {
       "id": "clip_pCOn9LnZxso",
-      "sceneId": "pack_VgEVwH_D_ZM",
+      "sceneId": "scene_VgEVwH_D_ZM",
       "batch": "2026-11-11-b",
       "cohort": "older-children",
       "slug": "07-young-sheldon-chore-chart",
@@ -5894,7 +5920,7 @@
     },
     {
       "id": "clip_P1pVYlGCqS8",
-      "sceneId": "pack_cgQRAEx-Czo",
+      "sceneId": "scene_cgQRAEx-Czo",
       "batch": "2026-11-11-b",
       "cohort": "older-children",
       "slug": "08-harry-potter-moving-card",
@@ -6096,7 +6122,7 @@
     },
     {
       "id": "clip_uFLtSyvVJd4",
-      "sceneId": "pack_3YCRbWX5VTE",
+      "sceneId": "scene_3YCRbWX5VTE",
       "batch": "2026-11-11-b",
       "cohort": "older-children",
       "slug": "09-harry-potter-new-friend",
@@ -6443,7 +6469,7 @@
     },
     {
       "id": "clip_OQ4LJptCyKU",
-      "sceneId": "pack_ib-oCCujJSU",
+      "sceneId": "scene_ib-oCCujJSU",
       "batch": "2026-11-11-b",
       "cohort": "teens",
       "slug": "06-friends-return-couch",
@@ -6929,7 +6955,7 @@
     },
     {
       "id": "clip_cpwh9ilXMRw",
-      "sceneId": "pack_VcyyHi5Kk4A",
+      "sceneId": "scene_VcyyHi5Kk4A",
       "batch": "2026-11-11-b",
       "cohort": "teens",
       "slug": "07-friends-vacuum-attachments",
@@ -7312,7 +7338,7 @@
     },
     {
       "id": "clip_RjhpcIBvmHs",
-      "sceneId": "pack_U4HGHLNvT3k",
+      "sceneId": "scene_U4HGHLNvT3k",
       "batch": "2026-11-11-b",
       "cohort": "teens",
       "slug": "08-friends-unpaid-bill",
@@ -7589,7 +7615,7 @@
     },
     {
       "id": "clip_8AKpqP9H2vs",
-      "sceneId": "pack_s8bVKn-BMFI",
+      "sceneId": "scene_s8bVKn-BMFI",
       "batch": "2026-11-11-b",
       "cohort": "teens",
       "slug": "09-big-bang-the-present",
@@ -7960,7 +7986,7 @@
     },
     {
       "id": "clip_O2ZhybUyZ3E",
-      "sceneId": "pack_guZULjk7gGk",
+      "sceneId": "scene_guZULjk7gGk",
       "batch": "2026-11-11-b",
       "cohort": "teens",
       "slug": "10-big-bang-notebook",
@@ -8377,7 +8403,7 @@
     },
     {
       "id": "clip_LC3l_KtvYIM",
-      "sceneId": "pack_d6ZZqjpfSfA",
+      "sceneId": "scene_d6ZZqjpfSfA",
       "batch": "2026-11-11-b",
       "cohort": "teens",
       "slug": "11-himym-literally",
@@ -8709,6 +8735,2302 @@
         "model": "WAV2VEC2_ASR_BASE_960H",
         "language": "en"
       }
+    },
+    {
+      "id": "clip_GlA5VriXguE",
+      "batch": "2026-11-11-c",
+      "cohort": "older-children",
+      "slug": "10-young-sheldon-good-guest",
+      "publicSlug": "young-sheldon-good-guest",
+      "routeSlug": "that-is-no-way-to-thank-our-hosts",
+      "title": "That is no way to thank our hosts",
+      "titleZh": "这样可不好感谢主人",
+      "sourceId": "VSrdPFnxYNA",
+      "start": 0.4,
+      "end": 26.1,
+      "roles": [
+        {
+          "id": "role_g5_sn-Abuf0",
+          "name": "George Cooper Sr.",
+          "selectable": true
+        },
+        {
+          "id": "role_K78BsqE_7Yc",
+          "name": "Sheldon",
+          "selectable": true
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_Dht8R4TiIiA",
+          "roleId": "role_g5_sn-Abuf0",
+          "speaker": "George Cooper Sr.",
+          "start": 0.68,
+          "end": 8.106,
+          "text": "Hey, here's a funny prank you can try tonight. When Tam falls asleep, put some shaving cream in his hand and then tickle his nose.",
+          "hint": "嘿，今晚你可以试个好玩的恶作剧。等谭睡着，在他手上放点剃须膏，再挠挠他的鼻子。",
+          "words": [
+            {
+              "text": "Hey,",
+              "start": 0.76,
+              "end": 1.02
+            },
+            {
+              "text": "here's",
+              "start": 2.201,
+              "end": 2.362
+            },
+            {
+              "text": "a",
+              "start": 2.402,
+              "end": 2.422
+            },
+            {
+              "text": "funny",
+              "start": 2.462,
+              "end": 2.642
+            },
+            {
+              "text": "prank",
+              "start": 2.702,
+              "end": 2.902
+            },
+            {
+              "text": "you",
+              "start": 2.962,
+              "end": 3.022
+            },
+            {
+              "text": "can",
+              "start": 3.082,
+              "end": 3.162
+            },
+            {
+              "text": "try",
+              "start": 3.222,
+              "end": 3.342
+            },
+            {
+              "text": "tonight.",
+              "start": 3.442,
+              "end": 3.803
+            },
+            {
+              "text": "When",
+              "start": 4.263,
+              "end": 4.363
+            },
+            {
+              "text": "Tam",
+              "start": 4.403,
+              "end": 4.583
+            },
+            {
+              "text": "falls",
+              "start": 4.663,
+              "end": 4.863
+            },
+            {
+              "text": "asleep,",
+              "start": 4.924,
+              "end": 5.184
+            },
+            {
+              "text": "put",
+              "start": 5.264,
+              "end": 5.364
+            },
+            {
+              "text": "some",
+              "start": 5.404,
+              "end": 5.524
+            },
+            {
+              "text": "shaving",
+              "start": 5.584,
+              "end": 5.904
+            },
+            {
+              "text": "cream",
+              "start": 5.944,
+              "end": 6.185
+            },
+            {
+              "text": "in",
+              "start": 6.265,
+              "end": 6.325
+            },
+            {
+              "text": "his",
+              "start": 6.365,
+              "end": 6.465
+            },
+            {
+              "text": "hand",
+              "start": 6.505,
+              "end": 6.725
+            },
+            {
+              "text": "and",
+              "start": 7.125,
+              "end": 7.185
+            },
+            {
+              "text": "then",
+              "start": 7.205,
+              "end": 7.285
+            },
+            {
+              "text": "tickle",
+              "start": 7.345,
+              "end": 7.566
+            },
+            {
+              "text": "his",
+              "start": 7.626,
+              "end": 7.726
+            },
+            {
+              "text": "nose.",
+              "start": 7.766,
+              "end": 8.046
+            }
+          ]
+        },
+        {
+          "id": "line_m_pTVLlh8CM",
+          "roleId": "role_K78BsqE_7Yc",
+          "speaker": "Sheldon",
+          "start": 8.606,
+          "end": 8.947,
+          "text": "Why?",
+          "hint": "为什么？",
+          "words": [
+            {
+              "text": "Why?",
+              "start": 8.646,
+              "end": 8.887
+            }
+          ]
+        },
+        {
+          "id": "line_374JsBEugb0",
+          "roleId": "role_g5_sn-Abuf0",
+          "speaker": "George Cooper Sr.",
+          "start": 9.767,
+          "end": 14.471,
+          "text": "Because then he'll go to scratch his nose and get shaving cream on his face.",
+          "hint": "这样他去挠鼻子，就会把剃须膏弄到脸上。",
+          "words": [
+            {
+              "text": "Because",
+              "start": 9.807,
+              "end": 10.148
+            },
+            {
+              "text": "then",
+              "start": 10.608,
+              "end": 10.708
+            },
+            {
+              "text": "he'll",
+              "start": 10.768,
+              "end": 10.948
+            },
+            {
+              "text": "go",
+              "start": 10.988,
+              "end": 11.048
+            },
+            {
+              "text": "to",
+              "start": 11.128,
+              "end": 11.168
+            },
+            {
+              "text": "scratch",
+              "start": 12.049,
+              "end": 12.329
+            },
+            {
+              "text": "his",
+              "start": 12.389,
+              "end": 12.449
+            },
+            {
+              "text": "nose",
+              "start": 12.529,
+              "end": 12.81
+            },
+            {
+              "text": "and",
+              "start": 12.89,
+              "end": 12.95
+            },
+            {
+              "text": "get",
+              "start": 13.01,
+              "end": 13.11
+            },
+            {
+              "text": "shaving",
+              "start": 13.17,
+              "end": 13.49
+            },
+            {
+              "text": "cream",
+              "start": 13.57,
+              "end": 13.77
+            },
+            {
+              "text": "on",
+              "start": 13.931,
+              "end": 13.991
+            },
+            {
+              "text": "his",
+              "start": 14.051,
+              "end": 14.151
+            },
+            {
+              "text": "face.",
+              "start": 14.191,
+              "end": 14.411
+            }
+          ]
+        },
+        {
+          "id": "line_t3_8dM35UwM",
+          "roleId": "role_K78BsqE_7Yc",
+          "speaker": "Sheldon",
+          "start": 15.292,
+          "end": 15.952,
+          "text": "And then what?",
+          "hint": "然后呢？",
+          "words": [
+            {
+              "text": "And",
+              "start": 15.332,
+              "end": 15.432
+            },
+            {
+              "text": "then",
+              "start": 15.472,
+              "end": 15.612
+            },
+            {
+              "text": "what?",
+              "start": 15.712,
+              "end": 15.892
+            }
+          ]
+        },
+        {
+          "id": "line_BQjE6ydssvU",
+          "roleId": "role_g5_sn-Abuf0",
+          "speaker": "George Cooper Sr.",
+          "start": 16.693,
+          "end": 18.954,
+          "text": "Well, that's it.",
+          "hint": "呃，就这样。",
+          "words": [
+            {
+              "text": "Well,",
+              "start": 16.733,
+              "end": 16.973
+            },
+            {
+              "text": "that's",
+              "start": 18.434,
+              "end": 18.614
+            },
+            {
+              "text": "it.",
+              "start": 18.814,
+              "end": 18.894
+            }
+          ]
+        },
+        {
+          "id": "line_1Kpn60Nsa8w",
+          "roleId": "role_K78BsqE_7Yc",
+          "speaker": "Sheldon",
+          "start": 20.035,
+          "end": 24.579,
+          "text": "But I'm a guest in their home, and that doesn't seem like a very good way to repay their kindness.",
+          "hint": "可我是他们家的客人，这样似乎不太能报答他们的好意。",
+          "words": [
+            {
+              "text": "But",
+              "start": 20.075,
+              "end": 20.175
+            },
+            {
+              "text": "I'm",
+              "start": 20.295,
+              "end": 20.356
+            },
+            {
+              "text": "a",
+              "start": 20.436,
+              "end": 20.456
+            },
+            {
+              "text": "guest",
+              "start": 20.536,
+              "end": 20.716
+            },
+            {
+              "text": "in",
+              "start": 20.836,
+              "end": 20.876
+            },
+            {
+              "text": "their",
+              "start": 20.956,
+              "end": 21.056
+            },
+            {
+              "text": "home,",
+              "start": 21.116,
+              "end": 21.416
+            },
+            {
+              "text": "and",
+              "start": 21.717,
+              "end": 21.777
+            },
+            {
+              "text": "that",
+              "start": 21.817,
+              "end": 21.897
+            },
+            {
+              "text": "doesn't",
+              "start": 21.957,
+              "end": 22.177
+            },
+            {
+              "text": "seem",
+              "start": 22.257,
+              "end": 22.397
+            },
+            {
+              "text": "like",
+              "start": 22.477,
+              "end": 22.597
+            },
+            {
+              "text": "a",
+              "start": 22.677,
+              "end": 22.697
+            },
+            {
+              "text": "very",
+              "start": 22.737,
+              "end": 22.918
+            },
+            {
+              "text": "good",
+              "start": 22.978,
+              "end": 23.098
+            },
+            {
+              "text": "way",
+              "start": 23.158,
+              "end": 23.258
+            },
+            {
+              "text": "to",
+              "start": 23.298,
+              "end": 23.358
+            },
+            {
+              "text": "repay",
+              "start": 23.378,
+              "end": 23.638
+            },
+            {
+              "text": "their",
+              "start": 23.738,
+              "end": 23.838
+            },
+            {
+              "text": "kindness.",
+              "start": 23.918,
+              "end": 24.519
+            }
+          ]
+        },
+        {
+          "id": "line_8PPgarKRg6U",
+          "roleId": "role_g5_sn-Abuf0",
+          "speaker": "George Cooper Sr.",
+          "start": 25.359,
+          "end": 25.86,
+          "text": "Never mind.",
+          "hint": "算了，当我没说。",
+          "words": [
+            {
+              "text": "Never",
+              "start": 25.399,
+              "end": 25.56
+            },
+            {
+              "text": "mind.",
+              "start": 25.62,
+              "end": 25.8
+            }
+          ]
+        }
+      ],
+      "observedDialogueTurnsAtLeast": 7,
+      "summary": "Dad proposes a sleepover prank; Sheldon questions it and chooses to be a considerate guest.",
+      "practice": "Asking why, explaining consequences, and polite disagreement.",
+      "contentNotes": "A shaving-cream prank is described and rejected; it is not performed. The later eye-stinging discussion and cultural stereotypes are excluded.",
+      "reviewStatus": "source, cast, bilingual dialogue and uncut boundary reviewed; human listening and age-fit review pending",
+      "wordTiming": {
+        "method": "CTC forced alignment with independently transcribed source checks and reviewed word corrections",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "tags": [
+        "Young Sheldon",
+        "Sheldon",
+        "George Cooper",
+        "sleepover",
+        "kindness",
+        "谢尔顿",
+        "做客",
+        "礼貌"
+      ],
+      "sceneId": "scene_v-EwUnOY6rw"
+    },
+    {
+      "id": "clip_Yy81EfEyFFo",
+      "batch": "2026-11-11-c",
+      "cohort": "older-children",
+      "slug": "11-young-sheldon-own-breakfast",
+      "publicSlug": "young-sheldon-own-breakfast",
+      "routeSlug": "you-can-make-your-own-breakfast",
+      "title": "You can make your own breakfast",
+      "titleZh": "你可以自己做早餐",
+      "sourceId": "sSd7LrihSik",
+      "start": 114.4,
+      "end": 137.3,
+      "roles": [
+        {
+          "id": "role_zuTeBzcMsTI",
+          "name": "George Cooper Sr.",
+          "selectable": true
+        },
+        {
+          "id": "role_fBXr-KJbR5s",
+          "name": "Missy",
+          "selectable": true
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_MrHMxWvmCzE",
+          "roleId": "role_zuTeBzcMsTI",
+          "speaker": "George Cooper Sr.",
+          "start": 114.732,
+          "end": 116.274,
+          "text": "Well, you didn't make a big old breakfast?",
+          "hint": "咦，你没给大家做一顿丰盛的早餐吗？",
+          "words": [
+            {
+              "text": "Well,",
+              "start": 114.772,
+              "end": 114.933
+            },
+            {
+              "text": "you",
+              "start": 114.953,
+              "end": 115.053
+            },
+            {
+              "text": "didn't",
+              "start": 115.073,
+              "end": 115.213
+            },
+            {
+              "text": "make",
+              "start": 115.233,
+              "end": 115.353
+            },
+            {
+              "text": "a",
+              "start": 115.393,
+              "end": 115.413
+            },
+            {
+              "text": "big",
+              "start": 115.473,
+              "end": 115.573
+            },
+            {
+              "text": "old",
+              "start": 115.653,
+              "end": 115.773
+            },
+            {
+              "text": "breakfast?",
+              "start": 115.833,
+              "end": 116.214
+            }
+          ]
+        },
+        {
+          "id": "line_D-qMyLVKq4k",
+          "roleId": "role_fBXr-KJbR5s",
+          "speaker": "Missy",
+          "start": 116.694,
+          "end": 122.819,
+          "text": "I did, and I'm eating it. And when I'm done, I'm gonna go watch TV while you make your own breakfast and do the dishes.",
+          "hint": "做了呀，我正吃着呢。吃完我要去看电视，你就自己做早餐，再把碗洗了吧。",
+          "words": [
+            {
+              "text": "I",
+              "start": 116.734,
+              "end": 116.754
+            },
+            {
+              "text": "did,",
+              "start": 116.814,
+              "end": 116.914
+            },
+            {
+              "text": "and",
+              "start": 117.274,
+              "end": 117.375
+            },
+            {
+              "text": "I'm",
+              "start": 117.415,
+              "end": 117.475
+            },
+            {
+              "text": "eating",
+              "start": 117.515,
+              "end": 117.715
+            },
+            {
+              "text": "it.",
+              "start": 117.775,
+              "end": 117.815
+            },
+            {
+              "text": "And",
+              "start": 118.676,
+              "end": 118.756
+            },
+            {
+              "text": "when",
+              "start": 118.796,
+              "end": 118.876
+            },
+            {
+              "text": "I'm",
+              "start": 118.916,
+              "end": 119.016
+            },
+            {
+              "text": "done,",
+              "start": 119.056,
+              "end": 119.236
+            },
+            {
+              "text": "I'm",
+              "start": 119.536,
+              "end": 119.616
+            },
+            {
+              "text": "gonna",
+              "start": 119.656,
+              "end": 119.796
+            },
+            {
+              "text": "go",
+              "start": 119.836,
+              "end": 119.896
+            },
+            {
+              "text": "watch",
+              "start": 119.977,
+              "end": 120.117
+            },
+            {
+              "text": "TV",
+              "start": 120.157,
+              "end": 120.337
+            },
+            {
+              "text": "while",
+              "start": 120.577,
+              "end": 120.737
+            },
+            {
+              "text": "you",
+              "start": 120.757,
+              "end": 120.837
+            },
+            {
+              "text": "make",
+              "start": 120.897,
+              "end": 121.017
+            },
+            {
+              "text": "your",
+              "start": 121.057,
+              "end": 121.178
+            },
+            {
+              "text": "own",
+              "start": 121.238,
+              "end": 121.338
+            },
+            {
+              "text": "breakfast",
+              "start": 121.398,
+              "end": 121.798
+            },
+            {
+              "text": "and",
+              "start": 122.098,
+              "end": 122.198
+            },
+            {
+              "text": "do",
+              "start": 122.218,
+              "end": 122.278
+            },
+            {
+              "text": "the",
+              "start": 122.358,
+              "end": 122.418
+            },
+            {
+              "text": "dishes.",
+              "start": 122.438,
+              "end": 122.759
+            }
+          ]
+        },
+        {
+          "id": "line_kzm_il4Tym0",
+          "roleId": "role_zuTeBzcMsTI",
+          "speaker": "George Cooper Sr.",
+          "start": 124.4,
+          "end": 129.124,
+          "text": "But you were doing great. So grown up, cooking and cleaning.",
+          "hint": "可你之前做得很好啊，像个大人一样，又做饭又打扫。",
+          "words": [
+            {
+              "text": "But",
+              "start": 124.44,
+              "end": 124.6
+            },
+            {
+              "text": "you",
+              "start": 125.961,
+              "end": 126.061
+            },
+            {
+              "text": "were",
+              "start": 126.121,
+              "end": 126.221
+            },
+            {
+              "text": "doing",
+              "start": 126.262,
+              "end": 126.502
+            },
+            {
+              "text": "great.",
+              "start": 126.582,
+              "end": 126.922
+            },
+            {
+              "text": "So",
+              "start": 127.042,
+              "end": 127.102
+            },
+            {
+              "text": "grown",
+              "start": 127.282,
+              "end": 127.482
+            },
+            {
+              "text": "up,",
+              "start": 127.803,
+              "end": 127.983
+            },
+            {
+              "text": "cooking",
+              "start": 128.103,
+              "end": 128.503
+            },
+            {
+              "text": "and",
+              "start": 128.563,
+              "end": 128.643
+            },
+            {
+              "text": "cleaning.",
+              "start": 128.703,
+              "end": 129.064
+            }
+          ]
+        },
+        {
+          "id": "line_2gkp0SmHpJE",
+          "roleId": "role_fBXr-KJbR5s",
+          "speaker": "Missy",
+          "start": 129.424,
+          "end": 130.415,
+          "text": "Mm-hmm. Pass the syrup.",
+          "hint": "嗯哼。把糖浆递给我。",
+          "words": [
+            {
+              "text": "Mm-hmm.",
+              "start": 129.464,
+              "end": 129.664
+            },
+            {
+              "text": "Pass",
+              "start": 129.944,
+              "end": 130.085
+            },
+            {
+              "text": "the",
+              "start": 130.105,
+              "end": 130.165
+            },
+            {
+              "text": "syrup.",
+              "start": 130.205,
+              "end": 130.405
+            }
+          ]
+        },
+        {
+          "id": "line_aBxItXh3Kiw",
+          "roleId": "role_zuTeBzcMsTI",
+          "speaker": "George Cooper Sr.",
+          "start": 133.08,
+          "end": 134.728,
+          "text": "I thought we had a whole thing going here.",
+          "hint": "我还以为咱们已经安排得挺好了呢。",
+          "words": [
+            {
+              "text": "I",
+              "start": 133.12,
+              "end": 133.26
+            },
+            {
+              "text": "thought",
+              "start": 133.287,
+              "end": 133.467
+            },
+            {
+              "text": "we",
+              "start": 133.487,
+              "end": 133.527
+            },
+            {
+              "text": "had",
+              "start": 133.607,
+              "end": 133.687
+            },
+            {
+              "text": "a",
+              "start": 133.707,
+              "end": 133.727
+            },
+            {
+              "text": "whole",
+              "start": 133.747,
+              "end": 133.908
+            },
+            {
+              "text": "thing",
+              "start": 133.968,
+              "end": 134.148
+            },
+            {
+              "text": "going",
+              "start": 134.228,
+              "end": 134.468
+            },
+            {
+              "text": "here.",
+              "start": 134.528,
+              "end": 134.668
+            }
+          ]
+        },
+        {
+          "id": "line_OwfsVa8FXcw",
+          "roleId": "role_fBXr-KJbR5s",
+          "speaker": "Missy",
+          "start": 135.121,
+          "end": 136.966,
+          "text": "Now I have a new thing. Look at the fridge.",
+          "hint": "现在我有新安排了。看看冰箱上吧。",
+          "words": [
+            {
+              "text": "Now",
+              "start": 135.161,
+              "end": 135.241
+            },
+            {
+              "text": "I",
+              "start": 135.281,
+              "end": 135.301
+            },
+            {
+              "text": "have",
+              "start": 135.341,
+              "end": 135.422
+            },
+            {
+              "text": "a",
+              "start": 135.462,
+              "end": 135.482
+            },
+            {
+              "text": "new",
+              "start": 135.522,
+              "end": 135.582
+            },
+            {
+              "text": "thing.",
+              "start": 135.642,
+              "end": 135.823
+            },
+            {
+              "text": "Look",
+              "start": 136.304,
+              "end": 136.525
+            },
+            {
+              "text": "at",
+              "start": 136.545,
+              "end": 136.585
+            },
+            {
+              "text": "the",
+              "start": 136.605,
+              "end": 136.665
+            },
+            {
+              "text": "fridge.",
+              "start": 136.705,
+              "end": 136.906
+            }
+          ]
+        }
+      ],
+      "observedDialogueTurnsAtLeast": 6,
+      "summary": "Missy makes her own breakfast and tells Dad it is his turn to cook and clean; he finds that praise will not change her mind.",
+      "practice": "Household responsibilities, future plans, and requests.",
+      "contentNotes": "Family sarcasm. The earlier crude family dialogue is excluded; the separate existing chore-chart scene begins later.",
+      "reviewStatus": "source, cast, bilingual dialogue and uncut boundary reviewed; human listening and age-fit review pending",
+      "wordTiming": {
+        "method": "CTC forced alignment with independently transcribed source checks and reviewed word corrections",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "tags": [
+        "Young Sheldon",
+        "Missy",
+        "George Cooper",
+        "breakfast",
+        "chores",
+        "米茜",
+        "早餐",
+        "家务"
+      ],
+      "sceneId": "scene_LiOGfPU3EPE"
+    },
+    {
+      "id": "clip_ZCr2kCUepOo",
+      "batch": "2026-11-11-c",
+      "cohort": "older-children",
+      "slug": "12-young-sheldon-timed-test",
+      "publicSlug": "young-sheldon-timed-test",
+      "routeSlug": "will-i-be-timed",
+      "title": "Will I be timed?",
+      "titleZh": "会给我计时吗？",
+      "sourceId": "Twb47ynU4lw",
+      "start": 110.78,
+      "end": 134.6,
+      "roles": [
+        {
+          "id": "role_OOU1lIZ-hMw",
+          "name": "Dr. Sturgis",
+          "selectable": true
+        },
+        {
+          "id": "role_tSxcC_9Ky4g",
+          "name": "Sheldon",
+          "selectable": true
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_5qpifpc0zAs",
+          "roleId": "role_OOU1lIZ-hMw",
+          "speaker": "Dr. Sturgis",
+          "start": 112.621,
+          "end": 117.743,
+          "text": "Okay, Sheldon, this first battery of tests measures basic problem-solving abilities.",
+          "hint": "好，谢尔顿，第一组测试衡量的是基本的问题解决能力。",
+          "words": [
+            {
+              "text": "Okay,",
+              "start": 112.661,
+              "end": 112.881
+            },
+            {
+              "text": "Sheldon,",
+              "start": 112.921,
+              "end": 113.221
+            },
+            {
+              "text": "this",
+              "start": 113.921,
+              "end": 114.061
+            },
+            {
+              "text": "first",
+              "start": 114.161,
+              "end": 114.382
+            },
+            {
+              "text": "battery",
+              "start": 114.462,
+              "end": 114.802
+            },
+            {
+              "text": "of",
+              "start": 114.882,
+              "end": 114.922
+            },
+            {
+              "text": "tests",
+              "start": 115.022,
+              "end": 115.322
+            },
+            {
+              "text": "measures",
+              "start": 115.422,
+              "end": 115.882
+            },
+            {
+              "text": "basic",
+              "start": 116.142,
+              "end": 116.442
+            },
+            {
+              "text": "problem-solving",
+              "start": 116.522,
+              "end": 117.203
+            },
+            {
+              "text": "abilities.",
+              "start": 117.243,
+              "end": 117.683
+            }
+          ]
+        },
+        {
+          "id": "line_cL0csPnPFXg",
+          "roleId": "role_tSxcC_9Ky4g",
+          "speaker": "Sheldon",
+          "start": 118.263,
+          "end": 121.104,
+          "text": "Is this the Kaufman test or the Wechsler intelligence scale?",
+          "hint": "这是考夫曼测试，还是韦氏智力量表？",
+          "words": [
+            {
+              "text": "Is",
+              "start": 118.303,
+              "end": 118.363
+            },
+            {
+              "text": "this",
+              "start": 118.423,
+              "end": 118.543
+            },
+            {
+              "text": "the",
+              "start": 118.643,
+              "end": 118.723
+            },
+            {
+              "text": "Kaufman",
+              "start": 118.763,
+              "end": 119.124
+            },
+            {
+              "text": "test",
+              "start": 119.164,
+              "end": 119.384
+            },
+            {
+              "text": "or",
+              "start": 119.504,
+              "end": 119.544
+            },
+            {
+              "text": "the",
+              "start": 119.584,
+              "end": 119.644
+            },
+            {
+              "text": "Wechsler",
+              "start": 119.684,
+              "end": 120.084
+            },
+            {
+              "text": "intelligence",
+              "start": 120.144,
+              "end": 120.704
+            },
+            {
+              "text": "scale?",
+              "start": 120.764,
+              "end": 121.044
+            }
+          ]
+        },
+        {
+          "id": "line_gSWcq06lL4o",
+          "roleId": "role_OOU1lIZ-hMw",
+          "speaker": "Dr. Sturgis",
+          "start": 122.645,
+          "end": 123.866,
+          "text": "Are you familiar with those?",
+          "hint": "你了解这些吗？",
+          "words": [
+            {
+              "text": "Are",
+              "start": 122.685,
+              "end": 122.765
+            },
+            {
+              "text": "you",
+              "start": 122.805,
+              "end": 122.885
+            },
+            {
+              "text": "familiar",
+              "start": 122.965,
+              "end": 123.345
+            },
+            {
+              "text": "with",
+              "start": 123.405,
+              "end": 123.505
+            },
+            {
+              "text": "those?",
+              "start": 123.565,
+              "end": 123.806
+            }
+          ]
+        },
+        {
+          "id": "line_CdZR54zhsgg",
+          "roleId": "role_tSxcC_9Ky4g",
+          "speaker": "Sheldon",
+          "start": 124.286,
+          "end": 127.187,
+          "text": "It's embarrassing, but I enjoy a little light reading in the bathroom.",
+          "hint": "说来不好意思，我喜欢在洗手间读点轻松的东西。",
+          "words": [
+            {
+              "text": "It's",
+              "start": 124.326,
+              "end": 124.446
+            },
+            {
+              "text": "embarrassing,",
+              "start": 124.486,
+              "end": 124.986
+            },
+            {
+              "text": "but",
+              "start": 125.106,
+              "end": 125.226
+            },
+            {
+              "text": "I",
+              "start": 125.306,
+              "end": 125.326
+            },
+            {
+              "text": "enjoy",
+              "start": 125.426,
+              "end": 125.646
+            },
+            {
+              "text": "a",
+              "start": 125.706,
+              "end": 125.726
+            },
+            {
+              "text": "little",
+              "start": 125.766,
+              "end": 125.966
+            },
+            {
+              "text": "light",
+              "start": 126.007,
+              "end": 126.187
+            },
+            {
+              "text": "reading",
+              "start": 126.247,
+              "end": 126.507
+            },
+            {
+              "text": "in",
+              "start": 126.527,
+              "end": 126.567
+            },
+            {
+              "text": "the",
+              "start": 126.627,
+              "end": 126.687
+            },
+            {
+              "text": "bathroom.",
+              "start": 126.727,
+              "end": 127.127
+            }
+          ]
+        },
+        {
+          "id": "line_DqHjR5hW1so",
+          "roleId": "role_OOU1lIZ-hMw",
+          "speaker": "Dr. Sturgis",
+          "start": 128.668,
+          "end": 130.608,
+          "text": "Okay. Are you ready?",
+          "hint": "好吧，你准备好了吗？",
+          "words": [
+            {
+              "text": "Okay.",
+              "start": 128.708,
+              "end": 129.108
+            },
+            {
+              "text": "Are",
+              "start": 130.128,
+              "end": 130.208
+            },
+            {
+              "text": "you",
+              "start": 130.248,
+              "end": 130.328
+            },
+            {
+              "text": "ready?",
+              "start": 130.348,
+              "end": 130.548
+            }
+          ]
+        },
+        {
+          "id": "line_G_dqblX0SoE",
+          "roleId": "role_tSxcC_9Ky4g",
+          "speaker": "Sheldon",
+          "start": 131.089,
+          "end": 131.929,
+          "text": "Will I be timed?",
+          "hint": "会给我计时吗？",
+          "words": [
+            {
+              "text": "Will",
+              "start": 131.129,
+              "end": 131.269
+            },
+            {
+              "text": "I",
+              "start": 131.349,
+              "end": 131.369
+            },
+            {
+              "text": "be",
+              "start": 131.449,
+              "end": 131.509
+            },
+            {
+              "text": "timed?",
+              "start": 131.569,
+              "end": 131.869
+            }
+          ]
+        },
+        {
+          "id": "line_ljVxTvkBtBI",
+          "roleId": "role_OOU1lIZ-hMw",
+          "speaker": "Dr. Sturgis",
+          "start": 132.549,
+          "end": 132.889,
+          "text": "Yes.",
+          "hint": "会的。",
+          "words": [
+            {
+              "text": "Yes.",
+              "start": 132.589,
+              "end": 132.829
+            }
+          ]
+        },
+        {
+          "id": "line_w72Xy5VHy2Q",
+          "roleId": "role_tSxcC_9Ky4g",
+          "speaker": "Sheldon",
+          "start": 133.381,
+          "end": 134.123,
+          "text": "Fantastic!",
+          "hint": "太棒了！",
+          "words": [
+            {
+              "text": "Fantastic!",
+              "start": 133.421,
+              "end": 134.063
+            }
+          ]
+        }
+      ],
+      "observedDialogueTurnsAtLeast": 8,
+      "summary": "A researcher introduces a test; Sheldon already knows the names, asks about timing, and is delighted by the answer.",
+      "practice": "Preparing for an activity, checking a detail, and expressing enthusiasm.",
+      "contentNotes": "Test names are proper nouns, not a medical assessment. Mild bathroom-reading joke; source avoids later appearance/body comments.",
+      "reviewStatus": "source, cast, bilingual dialogue and uncut boundary reviewed; human listening and age-fit review pending",
+      "wordTiming": {
+        "method": "CTC forced alignment with independently transcribed source checks and reviewed word corrections",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "tags": [
+        "Young Sheldon",
+        "Sheldon",
+        "Dr. Sturgis",
+        "test",
+        "questions",
+        "谢尔顿",
+        "测试",
+        "计时"
+      ],
+      "sceneId": "scene_W-m8Y8JwqZc"
+    },
+    {
+      "id": "clip_6yg5AewmIa8",
+      "batch": "2026-11-11-c",
+      "cohort": "teens",
+      "slug": "12-friends-brown-jar",
+      "publicSlug": "friends-brown-jar",
+      "routeSlug": "what-was-in-that-brown-jar",
+      "title": "What was in that brown jar?",
+      "titleZh": "那个棕色罐子里装的是什么？",
+      "sourceId": "IHJI6_VpH00",
+      "start": 7.2,
+      "end": 23.25,
+      "roles": [
+        {
+          "id": "role_aR1LFDLlZOg",
+          "name": "Chandler",
+          "selectable": true
+        },
+        {
+          "id": "role_eUgVQq3TJ18",
+          "name": "Joey",
+          "selectable": true
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_hJUTqpE-Ipo",
+          "roleId": "role_aR1LFDLlZOg",
+          "speaker": "Chandler",
+          "start": 7.502,
+          "end": 9.923,
+          "text": "Well, you don't look good, Joe.",
+          "hint": "呃，乔伊，你气色不太好啊。",
+          "words": [
+            {
+              "text": "Well,",
+              "start": 7.542,
+              "end": 7.722
+            },
+            {
+              "text": "you",
+              "start": 8.983,
+              "end": 9.043
+            },
+            {
+              "text": "don't",
+              "start": 9.103,
+              "end": 9.243
+            },
+            {
+              "text": "look",
+              "start": 9.263,
+              "end": 9.403
+            },
+            {
+              "text": "good,",
+              "start": 9.463,
+              "end": 9.603
+            },
+            {
+              "text": "Joe.",
+              "start": 9.643,
+              "end": 9.863
+            }
+          ]
+        },
+        {
+          "id": "line_myOsJ0hqyus",
+          "roleId": "role_eUgVQq3TJ18",
+          "speaker": "Joey",
+          "start": 11.524,
+          "end": 18.027,
+          "text": "Well, the fridge broke, so I had to eat everything. Cold cuts, ice cream, limes.",
+          "hint": "冰箱坏了，所以我只好把里面的东西都吃了。冷切肉、冰淇淋、青柠。",
+          "words": [
+            {
+              "text": "Well,",
+              "start": 11.564,
+              "end": 11.684
+            },
+            {
+              "text": "the",
+              "start": 11.724,
+              "end": 11.804
+            },
+            {
+              "text": "fridge",
+              "start": 11.864,
+              "end": 12.124
+            },
+            {
+              "text": "broke,",
+              "start": 12.225,
+              "end": 12.545
+            },
+            {
+              "text": "so",
+              "start": 12.805,
+              "end": 12.845
+            },
+            {
+              "text": "I",
+              "start": 12.885,
+              "end": 12.905
+            },
+            {
+              "text": "had",
+              "start": 12.925,
+              "end": 12.985
+            },
+            {
+              "text": "to",
+              "start": 13.005,
+              "end": 13.085
+            },
+            {
+              "text": "eat",
+              "start": 13.165,
+              "end": 13.265
+            },
+            {
+              "text": "everything.",
+              "start": 13.345,
+              "end": 13.725
+            },
+            {
+              "text": "Cold",
+              "start": 15.826,
+              "end": 16.026
+            },
+            {
+              "text": "cuts,",
+              "start": 16.106,
+              "end": 16.427
+            },
+            {
+              "text": "ice",
+              "start": 16.587,
+              "end": 16.687
+            },
+            {
+              "text": "cream,",
+              "start": 16.787,
+              "end": 17.087
+            },
+            {
+              "text": "limes.",
+              "start": 17.467,
+              "end": 17.967
+            }
+          ]
+        },
+        {
+          "id": "line_kaU5JjHa6Bg",
+          "roleId": "role_eUgVQq3TJ18",
+          "speaker": "Joey",
+          "start": 18.408,
+          "end": 21.089,
+          "text": "And hey, what was in that brown jar?",
+          "hint": "对了，那个棕色罐子里装的是什么？",
+          "words": [
+            {
+              "text": "And",
+              "start": 18.448,
+              "end": 18.528
+            },
+            {
+              "text": "hey,",
+              "start": 18.608,
+              "end": 18.788
+            },
+            {
+              "text": "what",
+              "start": 19.648,
+              "end": 19.748
+            },
+            {
+              "text": "was",
+              "start": 19.808,
+              "end": 19.888
+            },
+            {
+              "text": "in",
+              "start": 19.968,
+              "end": 20.008
+            },
+            {
+              "text": "that",
+              "start": 20.068,
+              "end": 20.188
+            },
+            {
+              "text": "brown",
+              "start": 20.309,
+              "end": 20.609
+            },
+            {
+              "text": "jar?",
+              "start": 20.709,
+              "end": 21.029
+            }
+          ]
+        },
+        {
+          "id": "line_3XV-efLp9Bg",
+          "roleId": "role_aR1LFDLlZOg",
+          "speaker": "Chandler",
+          "start": 21.269,
+          "end": 22.209,
+          "text": "That's still in there?",
+          "hint": "那东西还在里面？",
+          "words": [
+            {
+              "text": "That's",
+              "start": 21.309,
+              "end": 21.509
+            },
+            {
+              "text": "still",
+              "start": 21.589,
+              "end": 21.809
+            },
+            {
+              "text": "in",
+              "start": 21.869,
+              "end": 21.929
+            },
+            {
+              "text": "there?",
+              "start": 21.989,
+              "end": 22.149
+            }
+          ]
+        },
+        {
+          "id": "line__xqRc6YIsbA",
+          "roleId": "role_eUgVQq3TJ18",
+          "speaker": "Joey",
+          "start": 22.27,
+          "end": 22.97,
+          "text": "Not anymore.",
+          "hint": "现在不在了。",
+          "words": [
+            {
+              "text": "Not",
+              "start": 22.31,
+              "end": 22.43
+            },
+            {
+              "text": "anymore.",
+              "start": 22.53,
+              "end": 22.91
+            }
+          ]
+        }
+      ],
+      "observedDialogueTurnsAtLeast": 4,
+      "summary": "Chandler notices Joey looks ill; Joey explains his broken-fridge solution and asks about a mysterious jar.",
+      "practice": "Explaining a problem, listing things, and a follow-up question.",
+      "contentNotes": "Gross-out food joke and deliberately poor food-safety judgment, not advice. Stops before the payment argument, violent shove, and adult subplot.",
+      "reviewStatus": "source, cast, bilingual dialogue and uncut boundary reviewed; human listening and age-fit review pending",
+      "wordTiming": {
+        "method": "CTC forced alignment with independently transcribed source checks and reviewed word corrections",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "tags": [
+        "Friends",
+        "Joey",
+        "Chandler",
+        "fridge",
+        "food",
+        "乔伊",
+        "钱德勒",
+        "冰箱",
+        "食物"
+      ],
+      "sceneId": "scene_h81smyBB8mI"
+    },
+    {
+      "id": "clip_FuJ0diUuNTM",
+      "batch": "2026-11-11-c",
+      "cohort": "teens",
+      "slug": "13-himym-water-is-a-drink",
+      "publicSlug": "himym-water-is-a-drink",
+      "routeSlug": "is-that-how-water-works",
+      "title": "Is that how water works?",
+      "titleZh": "水原来是这么用的吗？",
+      "sourceId": "C-0azcoEvks",
+      "start": 1.45,
+      "end": 16.95,
+      "roles": [
+        {
+          "id": "role_wdNMXASdk5c",
+          "name": "Ted",
+          "selectable": true
+        },
+        {
+          "id": "role_KfPCH2pob7g",
+          "name": "Robin",
+          "selectable": true
+        },
+        {
+          "id": "role_XyMomtlHVYE",
+          "name": "Marshall",
+          "selectable": false
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_0b8wuSiuqks",
+          "roleId": "role_wdNMXASdk5c",
+          "speaker": "Ted",
+          "start": 1.73,
+          "end": 2.702,
+          "text": "You guys, uh, want a drink?",
+          "hint": "你们，呃，要喝点什么吗？",
+          "words": [
+            {
+              "text": "You",
+              "start": 1.77,
+              "end": 1.831
+            },
+            {
+              "text": "guys,",
+              "start": 1.851,
+              "end": 1.991
+            },
+            {
+              "text": "uh,",
+              "start": 2.191,
+              "end": 2.251
+            },
+            {
+              "text": "want",
+              "start": 2.351,
+              "end": 2.511
+            },
+            {
+              "text": "a",
+              "start": 2.531,
+              "end": 2.551
+            },
+            {
+              "text": "drink?",
+              "start": 2.571,
+              "end": 2.692
+            }
+          ]
+        },
+        {
+          "id": "line_aSogX9R512g",
+          "roleId": "role_KfPCH2pob7g",
+          "speaker": "Robin",
+          "start": 3.04,
+          "end": 4.14,
+          "text": "Uh, I'll just have a water.",
+          "hint": "呃，我喝水就好。",
+          "words": [
+            {
+              "start": 3.1,
+              "end": 3.26,
+              "text": "Uh,"
+            },
+            {
+              "start": 3.3,
+              "end": 3.42,
+              "text": "I'll"
+            },
+            {
+              "start": 3.42,
+              "end": 3.56,
+              "text": "just"
+            },
+            {
+              "start": 3.56,
+              "end": 3.7,
+              "text": "have"
+            },
+            {
+              "start": 3.7,
+              "end": 3.82,
+              "text": "a"
+            },
+            {
+              "start": 3.82,
+              "end": 4.06,
+              "text": "water."
+            }
+          ]
+        },
+        {
+          "id": "line_Njz37adTrMU",
+          "roleId": "role_wdNMXASdk5c",
+          "speaker": "Ted",
+          "start": 4.414,
+          "end": 6.216,
+          "text": "Mm, technically water is a drink.",
+          "hint": "嗯，严格来说，水也是饮品。",
+          "words": [
+            {
+              "text": "Mm,",
+              "start": 4.454,
+              "end": 4.654
+            },
+            {
+              "text": "technically",
+              "start": 4.834,
+              "end": 5.275
+            },
+            {
+              "text": "water",
+              "start": 5.375,
+              "end": 5.636
+            },
+            {
+              "text": "is",
+              "start": 5.736,
+              "end": 5.816
+            },
+            {
+              "text": "a",
+              "start": 5.876,
+              "end": 5.896
+            },
+            {
+              "text": "drink.",
+              "start": 5.916,
+              "end": 6.156
+            }
+          ]
+        },
+        {
+          "id": "line_QYw3wo34Fn8",
+          "roleId": "role_KfPCH2pob7g",
+          "speaker": "Robin",
+          "start": 6.897,
+          "end": 10.902,
+          "text": "Really, Professor? You drink it? Is that how water works?",
+          "hint": "真的吗，教授？水是拿来喝的？原来水是这么用的？",
+          "words": [
+            {
+              "text": "Really,",
+              "start": 6.937,
+              "end": 7.198
+            },
+            {
+              "text": "Professor?",
+              "start": 7.598,
+              "end": 8.059
+            },
+            {
+              "text": "You",
+              "start": 8.72,
+              "end": 8.8
+            },
+            {
+              "text": "drink",
+              "start": 8.88,
+              "end": 9.08
+            },
+            {
+              "text": "it?",
+              "start": 9.2,
+              "end": 9.26
+            },
+            {
+              "text": "Is",
+              "start": 9.681,
+              "end": 9.741
+            },
+            {
+              "text": "that",
+              "start": 9.781,
+              "end": 9.921
+            },
+            {
+              "text": "how",
+              "start": 9.981,
+              "end": 10.081
+            },
+            {
+              "text": "water",
+              "start": 10.222,
+              "end": 10.502
+            },
+            {
+              "text": "works?",
+              "start": 10.582,
+              "end": 10.862
+            }
+          ]
+        },
+        {
+          "id": "line_r7zeIgihrFU",
+          "roleId": "role_KfPCH2pob7g",
+          "speaker": "Robin",
+          "start": 10.902,
+          "end": 13.646,
+          "text": "Because I was just gonna smear it on my skin and hope I absorbed it.",
+          "hint": "我本来还打算把水抹在皮肤上，指望能吸收呢。",
+          "words": [
+            {
+              "text": "Because",
+              "start": 10.942,
+              "end": 11.163
+            },
+            {
+              "text": "I",
+              "start": 11.263,
+              "end": 11.283
+            },
+            {
+              "text": "was",
+              "start": 11.363,
+              "end": 11.443
+            },
+            {
+              "text": "just",
+              "start": 11.503,
+              "end": 11.623
+            },
+            {
+              "text": "gonna",
+              "start": 11.643,
+              "end": 11.824
+            },
+            {
+              "text": "smear",
+              "start": 11.884,
+              "end": 12.064
+            },
+            {
+              "text": "it",
+              "start": 12.124,
+              "end": 12.164
+            },
+            {
+              "text": "on",
+              "start": 12.204,
+              "end": 12.244
+            },
+            {
+              "text": "my",
+              "start": 12.324,
+              "end": 12.404
+            },
+            {
+              "text": "skin",
+              "start": 12.464,
+              "end": 12.625
+            },
+            {
+              "text": "and",
+              "start": 12.705,
+              "end": 12.765
+            },
+            {
+              "text": "hope",
+              "start": 12.805,
+              "end": 12.945
+            },
+            {
+              "text": "I",
+              "start": 13.005,
+              "end": 13.025
+            },
+            {
+              "text": "absorbed",
+              "start": 13.125,
+              "end": 13.466
+            },
+            {
+              "text": "it.",
+              "start": 13.546,
+              "end": 13.586
+            }
+          ]
+        },
+        {
+          "id": "line_gtF6PYJILNE",
+          "roleId": "role_XyMomtlHVYE",
+          "speaker": "Marshall",
+          "start": 14.447,
+          "end": 16.51,
+          "text": "Or you could, you know, pour it over your shirt.",
+          "hint": "或者，你知道，也可以倒在衬衫上。",
+          "words": [
+            {
+              "text": "Or",
+              "start": 14.487,
+              "end": 14.567
+            },
+            {
+              "text": "you",
+              "start": 14.627,
+              "end": 14.687
+            },
+            {
+              "text": "could,",
+              "start": 14.768,
+              "end": 14.908
+            },
+            {
+              "text": "you",
+              "start": 14.948,
+              "end": 15.008
+            },
+            {
+              "text": "know,",
+              "start": 15.048,
+              "end": 15.148
+            },
+            {
+              "text": "pour",
+              "start": 15.388,
+              "end": 15.549
+            },
+            {
+              "text": "it",
+              "start": 15.629,
+              "end": 15.689
+            },
+            {
+              "text": "over",
+              "start": 15.849,
+              "end": 15.969
+            },
+            {
+              "text": "your",
+              "start": 16.029,
+              "end": 16.149
+            },
+            {
+              "text": "shirt.",
+              "start": 16.209,
+              "end": 16.45
+            }
+          ]
+        }
+      ],
+      "observedDialogueTurnsAtLeast": 5,
+      "summary": "Ted corrects a simple request for water; Robin answers with dry sarcasm and Marshall adds a shirt joke.",
+      "practice": "Offering a drink, responding to an unnecessary correction, and recognizing sarcasm.",
+      "contentNotes": "Adult sitcom context, but only water is discussed. Brief Marshall joke remains as non-selectable support. Ends before the already published literally/figuratively exchange.",
+      "reviewStatus": "source, cast, bilingual dialogue and uncut boundary reviewed; human listening and age-fit review pending",
+      "wordTiming": {
+        "method": "CTC forced alignment with independently transcribed source checks and reviewed word corrections",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "tags": [
+        "How I Met Your Mother",
+        "Ted",
+        "Robin",
+        "Marshall",
+        "water",
+        "sarcasm",
+        "泰德",
+        "罗宾",
+        "喝水",
+        "反讽"
+      ],
+      "sceneId": "scene_Jjy8Z_ovOQI"
+    },
+    {
+      "id": "clip_ywckYM8F-38",
+      "batch": "2026-11-11-c",
+      "cohort": "teens",
+      "slug": "14-big-bang-long-lesson",
+      "publicSlug": "big-bang-long-lesson",
+      "routeSlug": "not-for-two-thousand-six-hundred-years",
+      "title": "Not for two thousand six hundred years",
+      "titleZh": "我可憋不了两千六百年",
+      "sourceId": "hiBXVUMDugY",
+      "start": 106.55,
+      "end": 120.45,
+      "roles": [
+        {
+          "id": "role_oerHj7CpZxs",
+          "name": "Penny",
+          "selectable": true
+        },
+        {
+          "id": "role_9ZB7SS6ZoTs",
+          "name": "Sheldon",
+          "selectable": true
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_WwxPeaR_Lwc",
+          "roleId": "role_oerHj7CpZxs",
+          "speaker": "Penny",
+          "start": 106.63,
+          "end": 108.413,
+          "text": "Oh. Two thousand six hundred years?",
+          "hint": "哦，两千六百年？",
+          "words": [
+            {
+              "text": "Oh.",
+              "start": 106.67,
+              "end": 106.71
+            },
+            {
+              "text": "Two",
+              "start": 106.81,
+              "end": 106.931
+            },
+            {
+              "text": "thousand",
+              "start": 106.991,
+              "end": 107.151
+            },
+            {
+              "text": "six",
+              "start": 107.191,
+              "end": 107.331
+            },
+            {
+              "text": "hundred",
+              "start": 107.471,
+              "end": 107.772
+            },
+            {
+              "text": "years?",
+              "start": 107.892,
+              "end": 108.353
+            }
+          ]
+        },
+        {
+          "id": "line_Xa-MiGcVq9Y",
+          "roleId": "role_9ZB7SS6ZoTs",
+          "speaker": "Sheldon",
+          "start": 108.413,
+          "end": 113.34,
+          "text": "Yeah, give or take. As I was saying, it's a warm summer evening in ancient Greece.",
+          "hint": "对，大概吧。刚才我讲到，古希腊一个温暖的夏夜。",
+          "words": [
+            {
+              "text": "Yeah,",
+              "start": 108.453,
+              "end": 108.553
+            },
+            {
+              "text": "give",
+              "start": 108.713,
+              "end": 108.833
+            },
+            {
+              "text": "or",
+              "start": 108.913,
+              "end": 108.953
+            },
+            {
+              "text": "take.",
+              "start": 108.994,
+              "end": 109.234
+            },
+            {
+              "text": "As",
+              "start": 109.394,
+              "end": 109.434
+            },
+            {
+              "text": "I",
+              "start": 109.534,
+              "end": 109.574
+            },
+            {
+              "text": "was",
+              "start": 109.634,
+              "end": 109.735
+            },
+            {
+              "text": "saying,",
+              "start": 109.795,
+              "end": 110.075
+            },
+            {
+              "text": "it's",
+              "start": 110.396,
+              "end": 110.516
+            },
+            {
+              "text": "a",
+              "start": 110.576,
+              "end": 110.596
+            },
+            {
+              "text": "warm",
+              "start": 110.716,
+              "end": 111.097
+            },
+            {
+              "text": "summer",
+              "start": 111.317,
+              "end": 111.557
+            },
+            {
+              "text": "evening",
+              "start": 111.757,
+              "end": 112.098
+            },
+            {
+              "text": "in",
+              "start": 112.198,
+              "end": 112.238
+            },
+            {
+              "text": "ancient",
+              "start": 112.418,
+              "end": 112.719
+            },
+            {
+              "text": "Greece.",
+              "start": 112.879,
+              "end": 113.28
+            }
+          ]
+        },
+        {
+          "id": "line_0BSdRDbHD2c",
+          "roleId": "role_9ZB7SS6ZoTs",
+          "speaker": "Sheldon",
+          "start": 114.842,
+          "end": 115.483,
+          "text": "Yes, Penny?",
+          "hint": "什么事，佩妮？",
+          "words": [
+            {
+              "text": "Yes,",
+              "start": 114.882,
+              "end": 115.102
+            },
+            {
+              "text": "Penny?",
+              "start": 115.202,
+              "end": 115.463
+            }
+          ]
+        },
+        {
+          "id": "line_aZJkssWyzLw",
+          "roleId": "role_oerHj7CpZxs",
+          "speaker": "Penny",
+          "start": 115.66,
+          "end": 116.5,
+          "text": "I have to go to the bathroom.",
+          "hint": "我想去洗手间。",
+          "words": [
+            {
+              "start": 115.72,
+              "end": 115.8,
+              "text": "I"
+            },
+            {
+              "start": 115.8,
+              "end": 115.86,
+              "text": "have"
+            },
+            {
+              "start": 115.86,
+              "end": 115.96,
+              "text": "to"
+            },
+            {
+              "start": 115.96,
+              "end": 116.06,
+              "text": "go"
+            },
+            {
+              "start": 116.06,
+              "end": 116.14,
+              "text": "to"
+            },
+            {
+              "start": 116.14,
+              "end": 116.24,
+              "text": "the"
+            },
+            {
+              "start": 116.24,
+              "end": 116.42,
+              "text": "bathroom."
+            }
+          ]
+        },
+        {
+          "id": "line_NZBz-x20VVA",
+          "roleId": "role_9ZB7SS6ZoTs",
+          "speaker": "Sheldon",
+          "start": 116.925,
+          "end": 118.607,
+          "text": "Well, can't you hold it?",
+          "hint": "呃，你不能忍一忍吗？",
+          "words": [
+            {
+              "text": "Well,",
+              "start": 116.965,
+              "end": 117.105
+            },
+            {
+              "text": "can't",
+              "start": 117.786,
+              "end": 117.946
+            },
+            {
+              "text": "you",
+              "start": 117.986,
+              "end": 118.067
+            },
+            {
+              "text": "hold",
+              "start": 118.147,
+              "end": 118.367
+            },
+            {
+              "text": "it?",
+              "start": 118.487,
+              "end": 118.547
+            }
+          ]
+        },
+        {
+          "id": "line_2hsuTNgNN2s",
+          "roleId": "role_oerHj7CpZxs",
+          "speaker": "Penny",
+          "start": 118.768,
+          "end": 120.27,
+          "text": "Not for two thousand six hundred years.",
+          "hint": "我可憋不了两千六百年。",
+          "words": [
+            {
+              "text": "Not",
+              "start": 118.808,
+              "end": 118.968
+            },
+            {
+              "text": "for",
+              "start": 119.008,
+              "end": 119.088
+            },
+            {
+              "text": "two",
+              "start": 119.148,
+              "end": 119.208
+            },
+            {
+              "text": "thousand",
+              "start": 119.248,
+              "end": 119.409
+            },
+            {
+              "text": "six",
+              "start": 119.429,
+              "end": 119.529
+            },
+            {
+              "text": "hundred",
+              "start": 119.629,
+              "end": 119.849
+            },
+            {
+              "text": "years.",
+              "start": 119.909,
+              "end": 120.21
+            }
+          ]
+        }
+      ],
+      "observedDialogueTurnsAtLeast": 5,
+      "summary": "Penny reacts to the length of Sheldon’s proposed history lesson and turns a bathroom request into a joke about its duration.",
+      "practice": "Checking a surprising number, requesting a break, and figurative duration.",
+      "contentNotes": "Classroom-style sarcasm and a bathroom request. The technical lecture and accusation about Leonard’s research are excluded.",
+      "reviewStatus": "source, cast, bilingual dialogue and uncut boundary reviewed; human listening and age-fit review pending",
+      "wordTiming": {
+        "method": "CTC forced alignment with independently transcribed source checks and reviewed word corrections",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      },
+      "tags": [
+        "The Big Bang Theory",
+        "Penny",
+        "Sheldon",
+        "lesson",
+        "bathroom",
+        "佩妮",
+        "谢尔顿",
+        "上课",
+        "洗手间"
+      ],
+      "sceneId": "scene_5XN5XS_M_Mw"
     }
   ]
 }

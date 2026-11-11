@@ -49,7 +49,7 @@ export function DubDownload({ scene, takes, source, active, disabled, onExportin
     {state.status === 'exporting'
       ? <Button tone="quiet" aria-label={t('取消导出')} className="py-1" onClick={() => { controller.current?.abort(); controller.current = null; send({ type: 'RESET' }); }}><span><span className="block">{t('取消导出')} · {state.percent}%</span><span className="block text-xs font-normal">{t('请保持页面打开')}</span></span></Button>
       : state.status === 'ready'
-        ? <a ref={link} href={downloadUrl} download={`parrotbook-${scene.id.replace(/^pack_/, 'scene_')}.mp4`} className={buttonVariants({ size: 'lg', className: 'min-h-14 gap-3 px-5 py-3 text-lg font-semibold' })}><Icon name="download" />{t('再次下载视频')}</a>
+        ? <a ref={link} href={downloadUrl} download={`parrotbook-${scene.id}.mp4`} className={buttonVariants({ size: 'lg', className: 'min-h-14 gap-3 px-5 py-3 text-lg font-semibold' })}><Icon name="download" />{t('再次下载视频')}</a>
         : <Button tone="primary" title={t('视频在本机生成，不会上传。')} disabled={disabled || !source} onClick={() => void download()}><Icon name="download" />{t('下载配音视频')}</Button>}
     {state.status === 'error' ? <p role="alert" className="text-sm text-destructive">{t(state.error)}</p>
       : <p role="status" className="sr-only">{state.status === 'exporting' ? t('正在生成视频 {0}%，请保持页面打开。', state.percent)

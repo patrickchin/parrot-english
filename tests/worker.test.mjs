@@ -22,7 +22,7 @@ test('serves video byte ranges for mobile seeking without exposing unknown paths
 test('serves the app on page paths while missing assets and API routes stay 404', async () => {
   const worker = createWorker({ '/index.html': { type: 'text/html; charset=utf-8', body: btoa('app') } });
   const get = (path, method = 'GET') => worker.fetch(new Request('https://parrotbook.test' + path, { method }));
-  for (const path of ['/library/teens', '/scenes/patrick', '/scenes/patrick/dubs/dub_abc123', '/scenes/patrick/']) {
+  for (const path of ['/dubs', '/dubs/', '/library/teens', '/scenes/patrick', '/scenes/patrick/dubs/dub_abc123', '/scenes/patrick/']) {
     const response = await get(path);
     assert.equal(response.status, 200);
     assert.match(response.headers.get('content-type'), /^text\/html/);
@@ -35,19 +35,19 @@ test('serves the app on page paths while missing assets and API routes stay 404'
   }
 });
 
-test('scene metadata URLs and legacy cached-client URLs serve the same JSON', async () => {
-  const worker = createWorker({
-    '/index.html': { type: 'text/html', body: btoa('app') },
-    '/scenes/patrick/scene.json': { type: 'application/json', body: btoa('{"id":"pack_existing"}') },
-    '/scenes/patrick/waveform-v2.json': { type: 'application/json', body: btoa('{"peaks":[]}') },
-  });
-  const get = path => worker.fetch(new Request('https://parrotbook.test' + path));
-  for (const path of ['/scenes/patrick/scene.json', '/packs/patrick/pack.json']) {
-    const response = await get(path);
-    assert.equal(response.status, 200);
-    assert.equal(response.headers.get('content-type'), 'application/json');
-    assert.equal((await response.json()).id, 'pack_existing');
-  }
-  assert.deepEqual(await (await get('/packs/patrick/waveform-v2.json')).json(), { peaks: [] });
-  assert.equal((await get('/packs/missing/pack.json')).status, 404);
+
+test('native text assets preserve Unicode JSON and byte lengths for GET, HEAD and ranges', async () => {
+  const body = JSON.stringify({ title: '佩奇 🐷', line: 'Can we play?' });
+  const bytes = new TextEncoder().encode(body);
+  const worker = createWorker({ '/scene.json': { type: 'application/json', body, encoding: 'utf8' } });
+  const get = options => worker.fetch(new Request('https://parrotbook.test/scene.json', options));
+  const response = await get();
+  assert.deepEqual(await response.json(), JSON.parse(body));
+  assert.equal(response.headers.get('content-length'), String(bytes.length));
+  const head = await get({ method: 'HEAD' });
+  assert.equal(await head.text(), '');
+  assert.equal(head.headers.get('content-length'), String(bytes.length));
+  const range = await get({ headers: { Range: 'bytes=0-17' } });
+  assert.equal(range.status, 206);
+  assert.deepEqual(new Uint8Array(await range.arrayBuffer()), bytes.slice(0, 18));
 });

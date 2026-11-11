@@ -12,7 +12,7 @@ export const asset = (scene: Scene, path: string) => (scene.mediaBase ?? scene.b
 export function validateScene(value: unknown, base = sceneRoot): Scene {
   const p = value as Scene;
   const safeFile = (s: unknown) => typeof s === 'string' && /^[a-zA-Z0-9_-]+\.(mp4|m4a|jpg)$/.test(s);
-  if (!p || p.version !== 1 || !/^(?:scene|pack)_[\w-]+$/.test(p.id) ||
+  if (!p || p.version !== 1 || !/^scene_[\w-]+$/.test(p.id) ||
       typeof p.title !== 'string' || typeof p.description !== 'string' ||
       !Number.isFinite(p.duration) || p.duration <= 0 || p.duration > 120 ||
       !safeFile(p.video) || ![p.backing, p.poster].every(v => v === undefined || safeFile(v)) ||

@@ -6,13 +6,12 @@ export function createWorker(assets, revision = null) {
       if (!['GET', 'HEAD'].includes(request.method)) return new Response('Method not allowed', { status: 405, headers: { ...headers, Allow: 'GET, HEAD' } });
       if (path === '/api/health') return new Response(request.method === 'HEAD' ? null : JSON.stringify({ ok: true, platform: 'Alibaba ESA', revision, serverTime: new Date().toISOString() }), { headers: { ...headers, 'Content-Type': 'application/json' } });
       if (path === '/favicon.ico') return new Response(null, { status: 204, headers });
-      const appRoute = path === '/' || /^\/library\/[a-z0-9-]+\/?$/.test(path) || /^\/scenes\/[a-z0-9-]+(?:\/dubs\/[A-Za-z0-9_-]+)?\/?$/.test(path);
-      // Older open tabs still request their original manifest and waveform URLs.
-      const assetPath = path.startsWith('/packs/') ? path.replace(/^\/packs\//, '/scenes/').replace(/\/pack\.json$/, '/scene.json') : path;
-      const file = assets[appRoute ? '/index.html' : assetPath];
+      const appRoute = path === '/' || /^\/dubs\/?$/.test(path) || /^\/library\/[a-z0-9-]+\/?$/.test(path) || /^\/scenes\/[a-z0-9-]+(?:\/dubs\/[A-Za-z0-9_-]+)?\/?$/.test(path);
+      const file = assets[appRoute ? '/index.html' : path];
       if (!file) return new Response('Not found', { status: 404, headers });
-      const text = atob(file.body);
-      const bytes = Uint8Array.from(text, char => char.charCodeAt(0));
+      const bytes = file.encoding === 'utf8'
+        ? new TextEncoder().encode(file.body)
+        : Uint8Array.from(atob(file.body), char => char.charCodeAt(0));
       const responseHeaders = { ...headers, 'Content-Type': file.type, 'Content-Length': String(bytes.length), 'Accept-Ranges': 'bytes', 'Cache-Control': path.startsWith('/assets/') || /-v1\.(mp4|m4a|jpg)$/.test(path) ? 'public, max-age=31536000, immutable' : 'no-cache' };
       const range = request.headers.get('Range');
       if (range) {

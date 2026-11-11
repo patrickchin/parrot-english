@@ -1,4 +1,4 @@
-import { test, expect, setLanguage } from './fixtures';
+import { test, expect, setLanguage, headerDestination } from './fixtures';
 import { readFile, mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -38,40 +38,6 @@ async function record(page: import('@playwright/test').Page) {
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
   await saved(page);
 }
-
-test('dubs saved before the scene terminology change keep their recording and progress', async ({ page }) => {
-  await page.goto('/scenes/patrick');
-  await page.getByRole('button', { name: '开始配音', exact: true }).click();
-  await record(page);
-  const wave = page.getByRole('img', { name: '你的声音波形', exact: true });
-  const path = await wave.locator('path').getAttribute('d');
-  await page.evaluate(() => new Promise<void>((resolve, reject) => {
-    const request = indexedDB.open('parrotbook-dubs', 1);
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => {
-      const db = request.result;
-      const tx = db.transaction('dubs', 'readwrite');
-      const store = tx.objectStore('dubs');
-      const rows = store.getAll();
-      rows.onsuccess = () => {
-        for (const row of rows.result) {
-          row.packId = row.sceneId;
-          delete row.sceneId;
-          store.put(row);
-        }
-      };
-      tx.oncomplete = () => { db.close(); resolve(); };
-      tx.onabort = () => { db.close(); reject(tx.error); };
-    };
-  }));
-  await page.reload();
-  await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
-  await expect(wave.locator('path')).toHaveAttribute('d', path!);
-  await page.getByRole('button', { name: '下一步', exact: true }).click();
-  await saved(page);
-  await page.reload();
-  await expect(page.getByRole('button', { name: "第 2 句：I'm searching for someone.", exact: true })).toHaveAttribute('aria-current', 'step');
-});
 
 test('partial dubs survive reload and a new tab with exact audio, waveform, role, and line progress', async ({ page, context }) => {
   const uploads: string[] = [];
@@ -127,6 +93,7 @@ test('completed and partial attempts stay separate; restarting keeps history and
   await page.getByRole('button', { name: /^旅人/ }).click(); await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await record(page); const secondUrl = page.url(); expect(secondUrl).not.toBe(firstUrl);
   await page.getByRole('button', { name: '返回片段', exact: true }).click();
+  await (await headerDestination(page, '我的配音')).click();
   const history = page.getByRole('region', { name: '我的配音', exact: true });
   await expect(history.getByRole('listitem')).toHaveCount(2);
   await expect(history.getByText(/已完成 · 已录 1 \/ 2 句/)).toBeVisible();
@@ -139,6 +106,7 @@ test('completed and partial attempts stay separate; restarting keeps history and
   await history.getByRole('button', { name: '继续配音：你在找谁？，Sintel', exact: true }).click();
   await expect(page).toHaveURL(firstUrl); await expect(page.getByRole('heading', { name: '你的配音，完成啦！', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '返回片段', exact: true }).click();
+  await (await headerDestination(page, '我的配音')).click();
   const row = history.getByRole('listitem').filter({ has: page.getByRole('button', { name: '继续配音：你在找谁？，Sintel', exact: true }) });
   await row.getByRole('button', { name: '删除配音：你在找谁？', exact: true }).click();
   await page.getByRole('dialog').getByRole('button', { name: '删除配音', exact: true }).click();
@@ -174,6 +142,7 @@ test('changed content cannot overwrite a saved dub and My dubs translates', asyn
   await page.route('**/scenes/patrick/scene.json', async route => { const scene = JSON.parse(await readFile('tests/fixtures/sintel/scene.json', 'utf8')); scene.video = 'changed.mp4'; await route.fulfill({ json: scene }); });
   await page.reload(); await expect(page.getByRole('alert')).toContainText('片段已更新');
   await page.getByRole('button', { name: '返回片段', exact: true }).click(); await setLanguage(page, 'en');
+  await (await headerDestination(page, 'My dubs')).click();
   await expect(page.getByRole('region', { name: 'My dubs', exact: true }).getByRole('listitem')).toHaveCount(1);
   await expect(page.getByText(/Saved only in this browser/)).toBeVisible();
 });
@@ -237,6 +206,7 @@ test('a deletion failure belongs to its confirmation dialog and can be cancelled
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await saved(page);
   await page.getByRole('button', { name: '返回片段', exact: true }).click();
+  await (await headerDestination(page, '我的配音')).click();
   const history = page.getByRole('region', { name: '我的配音', exact: true });
   await expect(history.getByRole('listitem')).toHaveCount(1);
   await page.evaluate(() => {
@@ -261,12 +231,14 @@ test('a deletion failure belongs to its confirmation dialog and can be cancelled
   await expect(dialog.getByRole('alert')).toBeVisible();
   await page.evaluate(() => (window as Window & { restoreDeletion?: () => void }).restoreDeletion!());
   await dialog.getByRole('button', { name: '删除配音', exact: true }).click();
-  await expect(history).toHaveCount(0);
+  await expect(history.getByRole('listitem')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: '还没有配音', exact: true })).toBeVisible();
   const remaining = () => page.evaluate(async () => {
     const path = '/src/dub-store.ts'; return (await import(path)).listDubs();
   });
   expect(await remaining()).toEqual([]);
   await page.reload();
   expect(await remaining()).toEqual([]);
-  await expect(history).toHaveCount(0);
+  await expect(history.getByRole('listitem')).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: '还没有配音', exact: true })).toBeVisible();
 });

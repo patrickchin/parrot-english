@@ -7,9 +7,9 @@ test('the independently loaded scene rejects traversal, missing roles and overla
   assert.equal(validateScene(scene).lines.length, 5);
   assert.equal(asset(validateScene(scene), scene.video), scene.mediaBase + scene.video);
   assert.equal(validateScene({ ...scene, id: 'scene_example' }).id, 'scene_example');
-  assert.equal(validateScene(scene).id, scene.id, 'legacy scene IDs remain stable');
   for (const change of [
     p => { p.id = 'unknown_example'; },
+    p => { p.id = 'pack_example'; },
     p => { p.video = '../../secrets.mp4'; },
     p => { p.mediaBase = 'http://insecure.example/clips/'; },
     p => { p.mediaBase = 'https://example.com/clips/?token=private'; },
@@ -26,15 +26,15 @@ test('the independently loaded scene rejects traversal, missing roles and overla
 });
 
 
-test('all 52 internal-test scenes have valid scenes, timed words, waveforms and separate audience folders', async () => {
+test('all 64 internal-test scenes have valid scenes, timed words, waveforms and separate audience folders', async () => {
   const scenes = JSON.parse(await readFile('src/review-clips.json', 'utf8'));
   const { validateWaveform } = await import('../src/waveform.ts');
-  assert.equal(scenes.length, 52);
-  assert.equal(scenes.filter(s => s.cohort === 'younger-age-5').length, 8);
+  assert.equal(scenes.length, 64);
+  assert.equal(scenes.filter(s => s.cohort === 'younger-age-5').length, 14);
   assert.equal(scenes.filter(s => s.cohort === 'older-audience').length, 24);
-  assert.equal(scenes.filter(s => s.cohort === 'older-children').length, 9);
-  assert.equal(scenes.filter(s => s.cohort === 'teens').length, 11);
-  assert.equal(new Set(scenes.map(s => s.slug)).size, 52);
+  assert.equal(scenes.filter(s => s.cohort === 'older-children').length, 12);
+  assert.equal(scenes.filter(s => s.cohort === 'teens').length, 14);
+  assert.equal(new Set(scenes.map(s => s.slug)).size, 64);
   assert.equal(new Set(scenes.map(s => s.routeSlug ?? s.slug)).size, scenes.length, 'public scene names must be unique');
   const ids = new Set();
   for (const entry of scenes) {
@@ -106,4 +106,20 @@ test('successive TV batches use distinct source ranges and preserve the new cast
   assert.equal(game.roles.find(role => role.name === '艾米').selectable, false);
   const einstein = validateScene(JSON.parse(await readFile('public/scenes/young-sheldon-einstein/scene.json', 'utf8')));
   assert.equal(einstein.roles.find(role => role.id === einstein.lines[0].roleId).name, '斯特吉斯博士');
+});
+
+
+test('the third batch keeps all twelve exchanges distinct and preserves the water-scene support', async () => {
+  const recipes = await Promise.all(['preschool', 'tv'].map(async name => JSON.parse(await readFile(`content/${name}-review-scenes.json`, 'utf8'))));
+  const all = recipes.flatMap(recipe => recipe.scenes);
+  const batch = all.filter(scene => scene.batch === '2026-11-11-c');
+  assert.equal(batch.length, 12);
+  assert.equal(batch.filter(scene => scene.cohort === 'younger-age-5').length, 6);
+  for (const scene of batch) {
+    assert.ok(new Set(scene.lines.map(line => line.roleId)).size >= 2);
+    assert.ok(scene.lines.filter((line, i, lines) => !i || line.roleId !== lines[i - 1].roleId).length >= 3);
+    for (const other of all) if (scene !== other && scene.sourceId === other.sourceId) assert.ok(scene.end <= other.start || other.end <= scene.start, `overlapping scenes: ${scene.slug}, ${other.slug}`);
+  }
+  const water = validateScene(JSON.parse(await readFile('public/scenes/himym-water-is-a-drink/scene.json', 'utf8')));
+  assert.equal(water.roles.find(role => role.name === '马修').selectable, false);
 });
