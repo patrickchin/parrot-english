@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures';
+import { test, expect, setLanguage } from './fixtures';
 import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -58,7 +58,7 @@ test('appearance switching still works across scene navigation without browser s
   await page.getByRole('button', { name: '选择片段：飞向宇宙！', exact: true }).click();
   await expect(page.getByRole('region', { name: '选择角色', exact: true })).toBeVisible();
   await expect.poll(() => background(page)).toBe('rgb(21, 28, 23)');
-  await page.getByRole('combobox', { name: 'UI language / 界面语言' }).selectOption('en');
+  await setLanguage(page, 'en');
   await page.getByRole('button', { name: 'Switch to light mode', exact: true }).click();
   await expect.poll(() => background(page)).toBe('rgb(250, 252, 247)');
 });

@@ -1,9 +1,9 @@
 import type { ButtonHTMLAttributes } from 'react';
-import { ArrowLeft, ArrowRight, Check, CircleHelp, LayoutGrid, List, Mic, Moon, Play, RotateCcw, Search, Square, Sun, Volume2, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, CircleHelp, Mic, Moon, Play, RotateCcw, Search, Square, Sun, Volume2, X } from 'lucide-react';
 import { Button as ShadcnButton } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-const icons = { play: Play, mic: Mic, stop: Square, arrow: ArrowRight, check: Check, sound: Volume2, back: ArrowLeft, repeat: RotateCcw, help: CircleHelp, search: Search, close: X, grid: LayoutGrid, list: List, sun: Sun, moon: Moon };
+const icons = { play: Play, mic: Mic, stop: Square, arrow: ArrowRight, check: Check, sound: Volume2, back: ArrowLeft, repeat: RotateCcw, help: CircleHelp, search: Search, close: X, sun: Sun, moon: Moon };
 export function Icon({ name, className }: { name: keyof typeof icons; className?: string }) {
   const Component = icons[name];
   return <Component className={cn('size-5 shrink-0', className)} strokeWidth={1.8} aria-hidden="true" />;

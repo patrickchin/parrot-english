@@ -16,7 +16,7 @@ The first player is live at <https://parrotbook.com/>. Choose a scene and role,
 listen to the original dialogue, record each turn, then replay with your voice.
 Takes remain in memory and disappear on refresh, close, or an explicit reset.
 
-The header's UI language selector offers English and 简体中文. It remembers only
+The header's styled language menu offers English and 简体中文. It remembers only
 the interface preference on this browser; switching languages keeps the current
 scene and recordings. English dialogue/audio and the optional Chinese meaning
 hints are independent of the UI language.
@@ -36,9 +36,11 @@ The internal-test shelf has two folders: **24 older-audience scenes** and
 **eight conversations for children around age five** from Peppa Pig and Ben and
 Holly. The 21 short meme excerpts have been expanded or replaced with complete
 exchanges; Patrick, Chocolate, and Onions retain their original edits.
+The folder dropdown shows stacked video previews and scene counts, and keeps the
+selected folder across playback, language changes, and reloads.
 See [the meme re-edits](docs/meme-review.md) and
 [the younger scenes](docs/preschool-review.md) for the current cuts.
-Search by scene, English line, or film. Every scene opens directly from Alibaba
+Browse the thumbnail grid or search by scene, English line, or film. Every scene opens directly from Alibaba
 OSS, with an original-audio waveform, aligned words, and Chinese meaning hints.
 See [clip sources](docs/clip-sources.md) and [the 20 additional scenes](docs/extra-clips.md)
 for YouTube links, source offsets, credits, and redistribution status.
