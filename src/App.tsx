@@ -63,6 +63,7 @@ function Player({ pack, onBack }: { pack: Pack; onBack: () => void }) {
   const recorded = rolesLines.filter(l => takes[l.id]).length;
   const currentTake = takes[line.id];
   const currentCaption = busy && !capturing ? pack.lines.find(l => media.time >= l.start && media.time < l.end) : undefined;
+  const captionId = step === 'result' ? currentCaption?.id : line.id;
   const allDone = completed === rolesLines.length;
 
   function saveTake(id: string, take: Take) {
@@ -89,7 +90,7 @@ function Player({ pack, onBack }: { pack: Pack; onBack: () => void }) {
     if (localVideoRef.current) URL.revokeObjectURL(localVideoRef.current);
     const url = URL.createObjectURL(file); localVideoRef.current = url; setLocalVideo(url);
   }
-  function chooseLine(index: number) { media.stop(); media.setError(''); setLineIndex(index); }
+  function chooseLine(index: number) { media.stop(); media.setError(''); setStep('practice'); setLineIndex(index); }
   function nextLine() {
     media.stop(); media.setError('');
     if (!currentTake) setSkipped(previous => new Set(previous).add(line.id));
@@ -136,40 +137,48 @@ function Player({ pack, onBack }: { pack: Pack; onBack: () => void }) {
           <div className="mx-auto mt-5 flex max-w-2xl flex-wrap justify-center gap-3">{practiceRoles.map(r => <ControlButton variant="outline" key={r.id} onClick={() => setRoleId(r.id)} aria-pressed={roleId === r.id} className="group h-auto min-h-17 flex-1 basis-50 justify-start gap-3 whitespace-normal px-4 py-3 text-left aria-pressed:border-primary aria-pressed:bg-accent"><RolePortrait pack={pack} role={r} /><span className="flex-1"><span className="block font-bold">{t(r.name)}</span><span className="mt-0.5 block text-xs text-muted-foreground">{t(r.hint)}</span></span><Icon name="check" className="invisible group-aria-pressed:visible" /></ControlButton>)}</div>
           <Button className="mt-5 w-full" disabled={!videoReady || busy} onClick={startPractice}>{t("开始配音")}<Icon name="arrow" /></Button>
         </div>}
-        {step === 'practice' && <>
+        {step !== 'choose' && <>
           <div className="practice-content">
             <div className="practice-meta flex items-center justify-between gap-2 text-sm">
               <span className="font-display font-extrabold">{t(role.name)}</span><span className="sr-only">{t('已完成 {0} / {1} 句', completed, rolesLines.length)}</span>
               <nav aria-label={t("你的台词")} className="flex justify-center">{rolesLines.map((l, i) => <button key={l.id} disabled={busy} onClick={() => chooseLine(i)} aria-label={t("第 {0} 句：{1}", i + 1, l.text)} aria-current={i === lineIndex ? 'step' : undefined} className="flex h-11 min-w-11 items-center justify-center rounded-full text-sm text-muted-foreground aria-[current=step]:bg-brand/10 aria-[current=step]:font-extrabold aria-[current=step]:text-ink focus-visible:outline-3 focus-visible:outline-brand">{takes[l.id] ? <Icon name="check" /> : i + 1}{skipped.has(l.id) && <span className="sr-only">{t("原声")}</span>}</button>)}</nav>
             </div>
-            <VoiceWaveform pack={pack} start={line.start} end={line.end} time={media.time} recordings={graphRecordings} recording={media.phase === 'recording'} />
+            <VoiceWaveform pack={pack} start={step === 'result' ? 0 : line.start} end={step === 'result' ? pack.duration : line.end} time={media.time} recordings={graphRecordings} recording={media.phase === 'recording'} />
             <p className="sr-only">{t('第 {0} / {1} 句', lineIndex + 1, rolesLines.length)}</p>
             <div className="practice-caption text-center" role="group" aria-label={t('台词')}>
-              {rolesLines.map((l, i) => <div key={l.id} aria-hidden={i !== lineIndex} className={i === lineIndex ? undefined : 'invisible'}><p className="text-balance font-display font-extrabold tracking-tight" lang="en">{l.text}</p><p lang="zh-CN" className="mt-1 text-base text-muted-foreground">{l.hint}</p></div>)}
+              {pack.lines.map(l => <div key={l.id} aria-hidden={l.id !== captionId} className={l.id === captionId ? undefined : 'invisible'}><p className="text-balance font-medium" lang="en">{l.text}</p><p lang="zh-CN" className="mt-1 text-base text-muted-foreground">{l.hint}</p></div>)}
             </div>
             <p className="sr-only" role="status">{media.phase === 'recording' ? t("正在录音，跟着指针说。") : media.phase === 'saving' ? t("正在整理这次录音…") : currentTake ? t("录音已保存，可听录音或继续下一句。") : t("先听原声，再录音。")}</p>
           </div>
-          <div className="practice-actions" role="group" aria-label={t("配音操作")}>
-            <Button tone="quiet" aria-label={t("听这一句原声")} disabled={busy || !videoReady} onClick={() => void media.preview(line)}><Icon name="sound" />{t("听原声")}</Button>
-            {media.phase === 'recording' ? <Button tone="danger" onClick={media.finish}><Icon name="stop" />{t("停止录音")}</Button> : busy ? <Button tone="quiet" onClick={media.stop}><Icon name="stop" />{capturing || media.phase === 'loading' ? t("取消") : t("停止播放")}</Button> : <Button tone={currentTake ? 'quiet' : 'record'} aria-label={currentTake ? t("重新录这一句") : t("开始录音")} disabled={!videoReady} onClick={() => void media.record(line)}><Icon name="mic" />{currentTake ? t("重录") : t("开始录音")}</Button>}
-            <Button tone={currentTake ? 'primary' : 'quiet'} aria-label={t("听我的录音")} disabled={busy || !currentTake} onClick={() => { if (currentTake) void media.listen(currentTake, line); }}><Icon name="play" />{t("听我的录音")}</Button>
-            <Button tone={currentTake || skipped.has(line.id) ? 'primary' : 'quiet'} disabled={busy} onClick={nextLine}>{lineIndex === rolesLines.length - 1 && allDone ? t("看我的配音") : t("下一步")}<Icon name="arrow" /></Button>
-            <div className="practice-secondary">
-              <Button tone="quiet" onClick={() => { media.stop(); setReturnToLibrary(false); setModal('reset'); }}><Icon name="repeat" />{t("重新开始")}</Button>
-              {media.phase === 'recording' ? <Button tone="quiet" onClick={media.stop}>{t("取消")}</Button> : <Button tone="quiet" onClick={() => { media.stop(); setModal('details'); }}>{t("片段与来源")}</Button>}
+          <div className="player-controls">
+            <div className={`practice-actions ${step !== 'practice' ? 'invisible' : ''}`} inert={step !== 'practice'} aria-hidden={step !== 'practice'} role="group" aria-label={t("配音操作")}>
+              <Button tone="quiet" aria-label={t("听这一句原声")} disabled={busy || !videoReady} onClick={() => void media.preview(line)}><Icon name="sound" />{t("听原声")}</Button>
+              {media.phase === 'recording' ? <Button tone="danger" onClick={media.finish}><Icon name="stop" />{t("停止录音")}</Button> : busy ? <Button tone="quiet" onClick={media.stop}><Icon name="stop" />{capturing || media.phase === 'loading' ? t("取消") : t("停止播放")}</Button> : <Button tone={currentTake ? 'quiet' : 'record'} aria-label={currentTake ? t("重新录这一句") : t("开始录音")} disabled={!videoReady} onClick={() => void media.record(line)}><Icon name="mic" />{currentTake ? t("重录") : t("开始录音")}</Button>}
+              <Button tone={currentTake ? 'primary' : 'quiet'} aria-label={t("听我的录音")} disabled={busy || !currentTake} onClick={() => { if (currentTake) void media.listen(currentTake, line); }}><Icon name="play" />{t("听我的录音")}</Button>
+              <Button tone={currentTake || skipped.has(line.id) ? 'primary' : 'quiet'} disabled={busy} onClick={nextLine}>{lineIndex === rolesLines.length - 1 && allDone ? t("看我的配音") : t("下一步")}<Icon name="arrow" /></Button>
+              <div className="practice-secondary">
+                <Button tone="quiet" onClick={() => { media.stop(); setReturnToLibrary(false); setModal('reset'); }}><Icon name="repeat" />{t("重新开始")}</Button>
+                {media.phase === 'recording' ? <Button tone="quiet" onClick={media.stop}>{t("取消")}</Button> : <Button tone="quiet" onClick={() => { media.stop(); setModal('details'); }}>{t("片段与来源")}</Button>}
+              </div>
+            </div>
+            <div className={`player-result text-center ${step !== 'result' ? 'invisible' : ''}`} inert={step !== 'result'} aria-hidden={step !== 'result'}>
+              <h1 className="text-lg font-semibold">{t("你的配音，完成啦！")}</h1>
+              <p className="result-summary text-xs text-muted-foreground">{t('录了 {0} 句台词。', recorded)}{!recorded && t("这一次先听原声，下次试着录一句。")}</p>
+              <div className="result-actions">
+                <Button tone="primary" disabled={!videoReady} onClick={() => busy ? media.stop() : void media.replay(takes)}><Icon name={busy ? 'stop' : 'play'} />{busy ? t("停止播放") : t("播放我的配音")}</Button>
+                <Button tone="quiet" disabled={busy} onClick={() => chooseLine(0)}><Icon name="repeat" />{t("再改一句")}</Button>
+              </div>
+              <div className="practice-secondary">
+                <Button tone="quiet" onClick={() => { media.stop(); setReturnToLibrary(false); setModal('reset'); }}><Icon name="repeat" />{t("重新开始")}</Button>
+                <Button tone="quiet" onClick={() => { media.stop(); setModal('details'); }}>{t("片段与来源")}</Button>
+              </div>
             </div>
           </div>
         </>}
-        {step === 'result' && <div className="player-result text-center">
-          <h1 className="font-display text-2xl font-extrabold">{t("你的配音，完成啦！")}</h1><p className="mt-2 text-sm text-muted-foreground">{t('录了 {0} 句台词。', recorded)}{!recorded && t("这一次先听原声，下次试着录一句。")}</p>
-          <div className="mt-5 text-left"><VoiceWaveform pack={pack} start={0} end={pack.duration} time={media.time} recordings={graphRecordings} /></div>
-          {currentCaption && <p lang="en" className="mt-4 font-display text-lg font-bold">{currentCaption.text}</p>}
-          <div className="mt-5 flex flex-wrap justify-center gap-3"><Button tone="primary" disabled={!videoReady} onClick={() => busy ? media.stop() : void media.replay(takes)}><Icon name={busy ? 'stop' : 'play'} />{busy ? t("停止播放") : t("播放我的配音")}</Button><Button tone="quiet" disabled={busy} onClick={() => { media.stop(); setStep('practice'); setLineIndex(0); }}><Icon name="repeat" />{t("再改一句")}</Button><Button tone="quiet" onClick={() => { media.stop(); setReturnToLibrary(false); setModal('reset'); }}><Icon name="repeat" />{t("重新开始")}</Button></div>
-        </div>}
         {media.error && <div role="alert" className="player-error rounded-xl border border-danger/25 bg-destructive/10 p-3 text-sm leading-6 text-destructive"><p>{t(media.error)}</p>{!videoReady && <button onClick={() => { media.setError(''); video.current?.load(); }} className="mt-2 min-h-11 rounded-lg px-2 font-bold underline">{t("重新加载视频")}</button>}</div>}
       </section>
     </main>
-    {step !== 'practice' && <footer className="player-footer text-xs text-muted-foreground">
+    {step === 'choose' && <footer className="player-footer text-xs text-muted-foreground">
       <button onClick={() => { media.stop(); setModal('details'); }} className="min-h-11 rounded-lg focus-visible:outline-3 focus-visible:outline-brand">{t("片段与来源")}</button>
     </footer>}
 
