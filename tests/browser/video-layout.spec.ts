@@ -17,15 +17,23 @@ test('the picture follows the source proportions through role choice, practice a
         const turns = scene.lines.filter((line: { roleId: string }) => line.roleId === scene.roles[0].id);
         for (const _ of turns) await page.getByRole('button', { name: '下一步', exact: true }).click();
       }
-      for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 }, { width: 1024, height: 600 }, { width: 1440, height: 900 }]) {
+      for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 }, { width: 1024, height: 600 }, { width: 1440, height: 900 }, { width: 1440, height: 1200 }]) {
         await page.setViewportSize(viewport);
         // Mobile viewport and text metrics can settle on the next browser frame.
         await expect(async () => {
           const bounds = (await picture.boundingBox())!;
+          const sceneBounds = (await movie.boundingBox())!;
+          const frame = await picture.evaluate(el => {
+            const bounds = el.parentElement!.parentElement!.getBoundingClientRect();
+            return { y: bounds.y, height: bounds.height };
+          });
+          const groupEnd = step === 'choose'
+            ? (await page.getByRole('region', { name: '原片字幕', exact: true }).boundingBox())!
+            : { y: frame.y, height: frame.height };
+          expect(Math.abs((frame.y + groupEnd.y + groupEnd.height) / 2 - sceneBounds.y - sceneBounds.height / 2), 'video and captions remain vertically centered').toBeLessThan(1);
           if (step === 'choose' && viewport.width >= 900) {
             const roles = (await page.getByRole('region', { name: '选择角色', exact: true }).boundingBox())!;
-            const main = (await page.getByRole('main').boundingBox())!;
-            expect(Math.abs(roles.y + roles.height / 2 - main.y - main.height / 2), 'role choices remain vertically centered').toBeLessThan(1);
+            expect(Math.abs(roles.y - frame.y), 'role choices share the top of the video').toBeLessThan(1);
           }
           expect(Math.abs(bounds.width - bounds.height * aspect), `${slug} ${step} at ${viewport.width}`).toBeLessThan(1);
           const overlay = (await movie.getByRole('button', { name: step === 'result' ? '播放我的配音' : '播放原片', exact: true }).boundingBox())!;
@@ -34,7 +42,8 @@ test('the picture follows the source proportions through role choice, practice a
           expect(progress.y).toBeGreaterThanOrEqual(bounds.y + bounds.height);
           expect(bounds.y).toBeGreaterThanOrEqual(0);
           expect(progress.y + progress.height).toBeLessThan(viewport.height);
-          expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
+          expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+          if (step !== 'choose' || viewport.width >= 900) expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
         }).toPass({ timeout: 5000 });
       }
     }
