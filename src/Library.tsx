@@ -1,6 +1,7 @@
 import { useLanguage } from './i18n';
 import { useEffect, useRef, useState } from 'react';
 import { clips, mediaRoot, type ClipSlug } from './catalog';
+import { searchScenes } from './scene-search';
 import { AppHeader } from './app/AppHeader';
 import { Icon } from './shared/ui';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,7 @@ export function Library({ onChoose, folder, onFolderChange }: { onChoose: (slug:
   useEffect(() => setQuery(''), [folder]);
   const search = useRef<HTMLInputElement>(null);
   const clearSearch = () => { setQuery(''); search.current?.focus(); };
-  const visible = clips.filter(clip => clip.cohort === folder).filter(clip => [clip.title, t(clip.title), clip.english, clip.note, clip.slug.replaceAll('-', ' ')].join(' ').toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
+  const visible = searchScenes(clips.filter(clip => clip.cohort === folder), query, clip => t(clip.title));
   const featured = clips.find(clip => clip.cohort === folder)!;
   return <div className="library-shell min-h-dvh bg-paper text-ink">
     <AppHeader />
@@ -32,11 +33,11 @@ export function Library({ onChoose, folder, onFolderChange }: { onChoose: (slug:
           <div className="library-scope"><h2>{t('片段库')}</h2><span>{t('{0} 个片段', visible.length)}</span></div>
           <InputGroup className="library-search h-12 bg-card">
             <InputGroupAddon><Icon name="search" /></InputGroupAddon>
-            <InputGroupInput ref={search} type="search" aria-label={t('查找片段')} placeholder={t('找片段或台词')} value={query} onChange={e => setQuery(e.target.value)} className="h-11 text-base sm:text-sm" />
+            <InputGroupInput ref={search} type="search" aria-label={t('查找片段')} placeholder={t('片名、角色、标签或台词')} value={query} onChange={e => setQuery(e.target.value)} className="h-11 text-base sm:text-sm" />
             {query && <InputGroupAddon align="inline-end"><InputGroupButton onClick={clearSearch} aria-label={t('清除搜索')} size="icon-sm" className="size-11"><Icon name="close" /></InputGroupButton></InputGroupAddon>}
           </InputGroup>
         </div>
-        {!visible.length && <Card className="library-empty"><p role="status">{t('没有找到片段。')}</p><p>{t('换个片名，或试试记得的那句台词。')}</p><Button onClick={clearSearch} className="mx-auto mt-5 h-12">{t('查看全部片段')}<Icon name="arrow" /></Button></Card>}
+        {!visible.length && <Card className="library-empty"><p role="status">{t('没有找到片段。')}</p><p>{t('试试片名、角色、标签，或记得的那句台词。')}</p><Button onClick={clearSearch} className="mx-auto mt-5 h-12">{t('查看全部片段')}<Icon name="arrow" /></Button></Card>}
         <ul role="list" className="scene-shelf">{visible.map(clip => <li key={clip.slug}>
           <button onClick={() => onChoose(clip.slug)} aria-label={t('选择片段：{0}', t(clip.title))} className="scene-select">
             <img src={clip.poster ?? `${mediaRoot}${clip.slug}/${clip.slug}-poster-v1.jpg`} alt="" loading="lazy" decoding="async" />

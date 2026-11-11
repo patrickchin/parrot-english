@@ -72,7 +72,7 @@ test('audience folders keep the younger scenes separate and survive playback, la
   await expect(translatedYounger).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('listitem')).toHaveCount(youngerCount);
   await films.click();
-  await page.getByRole('searchbox').fill('banana');
+  await page.getByRole('searchbox').fill('floor');
   await expect(page.getByRole('button', { name: 'Choose scene: What about the floor?', exact: true })).toBeVisible();
 });
 
