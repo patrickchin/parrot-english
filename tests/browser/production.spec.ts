@@ -41,3 +41,17 @@ for (const path of ['/en/', '/zh/', '/en/library/teens', '/zh/library/younger-ag
   else if (path.includes('/dubs')) await expect(page.getByRole('heading', { level: 1 })).toHaveText(english ? 'My dubs' : '我的配音');
   else await expect(page.getByRole('searchbox', { name: english ? 'Find a scene' : '查找片段', exact: true })).toBeVisible();
 });
+
+for (const [language, heading, search, start] of [
+  ['es', 'Mis doblajes', 'Buscar una escena', 'Empezar a doblar'],
+  ['ja', '自分の吹き替え', 'シーンを探す', '吹き替えを始める'],
+  ['ko', '내 더빙', '장면 찾기', '더빙 시작'],
+]) for (const route of ['/', '/library/teens', '/dubs', '/scenes/patrick']) test(`production ${language}${route} opens in its requested language`, async ({ page }) => {
+  const response = await page.goto('/' + language + route);
+  expect(response?.status()).toBe(200);
+  await expect(page.locator('html')).toHaveAttribute('lang', language);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+  if (route.includes('/scenes/')) await expect(page.getByRole('button', { name: start, exact: true })).toBeEnabled();
+  else if (route === '/dubs') await expect(page.getByRole('heading', { level: 1 })).toHaveText(heading);
+  else await expect(page.getByRole('searchbox', { name: search, exact: true })).toBeVisible();
+});

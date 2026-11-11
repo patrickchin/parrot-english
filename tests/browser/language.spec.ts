@@ -5,7 +5,7 @@ import { join } from 'node:path';
 
 test.use({ sampleScene: true });
 
-const selector = (page: import('@playwright/test').Page) => page.getByRole('combobox', { name: 'UI language / 界面语言' });
+const selector = (page: import('@playwright/test').Page) => page.getByRole('combobox');
 
 test('the styled language popup supports keyboard selection, Escape and phone-sized touch targets', async ({ page }, info) => {
   await page.goto('/');
@@ -16,7 +16,7 @@ test('the styled language popup supports keyboard selection, Escape and phone-si
   await expect(page.getByRole('option', { name: '简体中文', exact: true })).toHaveAttribute('aria-selected', 'true');
   await page.keyboard.press('End');
   await page.keyboard.press('Enter');
-  await expect(trigger).toContainText('English');
+  await expect(trigger).toContainText('한국어');
   await expect(trigger).toBeFocused();
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });

@@ -1,3 +1,4 @@
+import { languages, type Language } from '../../src/locale';
 import { test as base, expect, type Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { extname } from 'node:path';
@@ -32,9 +33,9 @@ export const test = base.extend<{ sampleScene: boolean }>({
 });
 export { expect };
 
-export async function setLanguage(page: Page, language: 'en' | 'zh-CN') {
-  await page.getByRole('combobox', { name: 'UI language / 界面语言', exact: true }).click();
-  await page.getByRole('option', { name: language === 'en' ? 'English' : '简体中文', exact: true }).click();
+export async function setLanguage(page: Page, language: Language) {
+  await page.getByRole('combobox').click();
+  await page.getByRole('option', { name: languages.find(item => item.value === language)!.label, exact: true }).click();
 }
 
 

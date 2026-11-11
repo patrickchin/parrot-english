@@ -4,6 +4,9 @@ import { readFileSync } from 'node:fs';
 import { i18n } from '../src/i18n-engine.ts';
 import en from '../src/locales/en/translation.json' with { type: 'json' };
 import zhCN from '../src/locales/zh-CN/translation.json' with { type: 'json' };
+import es from '../src/locales/es/translation.json' with { type: 'json' };
+import ja from '../src/locales/ja/translation.json' with { type: 'json' };
+import ko from '../src/locales/ko/translation.json' with { type: 'json' };
 import clips from '../src/review-clips.json' with { type: 'json' };
 
 function messages(resource, prefix = '') {
@@ -12,14 +15,23 @@ function messages(resource, prefix = '') {
 }
 
 test('locale resources have matching keys and named interpolation variables', () => {
-  const english = new Map(messages(en)), chinese = new Map(messages(zhCN));
-  assert.deepEqual([...english.keys()].sort(), [...chinese.keys()].sort());
-  for (const [key, value] of english) {
-    assert.doesNotMatch(key, /[\p{Script=Han}]/u);
-    assert.doesNotMatch(value, /[\p{Script=Han}]/u, key);
-    const variables = text => [...text.matchAll(/{{(\w+)}}/g)].map(match => match[1]).sort();
-    assert.deepEqual(variables(value), variables(chinese.get(key)), key);
-    assert.doesNotMatch(value, /{\d+}/, key);
+  const english = new Map(messages(en));
+  for (const resource of [zhCN, es, ja, ko]) {
+    const translated = new Map(messages(resource));
+    assert.deepEqual([...english.keys()].sort(), [...translated.keys()].sort());
+    for (const [key, value] of english) {
+      assert.doesNotMatch(key, /[\p{Script=Han}]/u);
+      assert.doesNotMatch(value, /[\p{Script=Han}]/u, key);
+      const variables = text => [...text.matchAll(/{{(\w+)}}/g)].map(match => match[1]).sort();
+      assert.deepEqual(variables(value), variables(translated.get(key)), key);
+      assert.doesNotMatch(translated.get(key), /{\d+}/, key);
+    }
+  }
+});
+
+test('i18next renders the added languages with named variables', () => {
+  for (const [language, expected] of [['es', 'Frase 2: Hello, Sam.'], ['ja', 'セリフ2：Hello, Sam.'], ['ko', '대사 2: Hello, Sam.']]) {
+    assert.equal(i18n.t('recording.lineLabel', { lng: language, number: 2, text: 'Hello, Sam.' }), expected);
   }
 });
 
@@ -30,11 +42,11 @@ test('i18next renders semantic keys and named variables in either language', () 
   assert.equal(i18n.t('errors.microphoneDenied', { lng: 'en' }), 'Microphone access is off. Allow it in your browser’s site settings, then press record.');
 });
 
-test('every catalogued scene and role has bilingual content using its record ID', () => {
+test('every catalogued scene and role has localized content using its record ID', () => {
   for (const clip of clips) {
     const scene = JSON.parse(readFileSync(new URL(`../public/scenes/${clip.slug}/scene.json`, import.meta.url)));
     assert.equal(clip.id, scene.id);
-    for (const language of ['en', 'zh-CN']) {
+    for (const language of ['en', 'zh-CN', 'es', 'ja', 'ko']) {
       for (const field of ['title', 'licence', 'changes']) assert.equal(i18n.exists(`scenes.${scene.id}.${field}`, { lng: language }), true);
       for (const role of scene.roles) {
         for (const field of ['name', 'hint']) assert.equal(i18n.exists(`roles.${role.id}.${field}`, { lng: language }), true);

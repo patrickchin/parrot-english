@@ -1,0 +1,1247 @@
+{
+  "errors": {
+    "sceneLoad": "No se pudo cargar la escena. Inténtalo de nuevo.",
+    "sceneLoadFailed": "No se pudo cargar la escena.",
+    "invalidVideoFile": "Elige un vídeo MP4, WebM o MOV de menos de 100 MB.",
+    "videoDuration": "Elige el archivo de vídeo preparado con la misma duración que la referencia.",
+    "videoBuffering": "El vídeo se está cargando. Espera un momento y vuelve a intentarlo. Tus grabaciones anteriores siguen aquí.",
+    "videoLoad": "No se pudo cargar el vídeo. Comprueba tu conexión y vuelve a cargarlo.",
+    "waveformUnavailable": "La forma de onda original no está disponible. Puedes seguir escuchando y grabando.",
+    "exportFailed": "No se pudo crear el vídeo. Inténtalo de nuevo.",
+    "dubsRead": "No se pudieron leer los doblajes guardados. Inténtalo de nuevo. No se borrará ningún doblaje.",
+    "dubDelete": "No se pudo borrar este doblaje. Inténtalo de nuevo.",
+    "storageBlocked": "Cierra las otras pestañas de Parrotbook y vuelve a intentarlo.",
+    "dubMissing": "Este doblaje se ha borrado o no se ha podido encontrar.",
+    "sceneChanged": "La escena ha cambiado y no se puede continuar este doblaje. Tus grabaciones siguen guardadas en este dispositivo.",
+    "dubDamaged": "Este doblaje está incompleto o dañado y no se puede abrir.",
+    "storageFull": "El almacenamiento de este dispositivo está lleno. Los últimos cambios no se han guardado. Borra los doblajes que no necesites y vuelve a intentarlo.",
+    "dubSave": "No se pudo guardar en este dispositivo. Los últimos cambios solo están en esta página. Mantenla abierta y vuelve a intentarlo.",
+    "exportUnsupported": "Este navegador no puede exportar MP4. Prueba con una versión reciente de Safari o Chrome.",
+    "exportAssets": "No se pudieron cargar los archivos de vídeo. Inténtalo de nuevo.",
+    "sceneInvalid": "El archivo de la escena está incompleto. Vuelve a cargarlo.",
+    "rolesInvalid": "La información de los personajes no es válida.",
+    "timingsInvalid": "Los tiempos de las frases no son válidos.",
+    "creditsInvalid": "La información de los créditos está incompleta.",
+    "videoPlayback": "No se puede reproducir el vídeo ahora. Vuelve a cargar la escena.",
+    "mediaInterrupted": "La reproducción o la grabación se ha interrumpido. Inténtalo de nuevo.",
+    "recordingUnsupported": "Este navegador no admite grabaciones. Abre esta página en una versión reciente de Safari o Chrome.",
+    "quietRecording": "No hemos oído tu voz con claridad. Acércate al micrófono y vuelve a intentarlo.",
+    "recordingInterrupted": "La grabación se ha interrumpido. Inténtalo de nuevo. Tu toma anterior sigue aquí.",
+    "microphoneDisconnected": "Se ha desconectado el micrófono. Conéctalo y vuelve a intentarlo.",
+    "microphoneTimeout": "El micrófono está tardando demasiado en prepararse. Inténtalo de nuevo.",
+    "backingLoad": "No se pudo cargar el audio de fondo. Inténtalo de nuevo.",
+    "microphoneDenied": "El micrófono no tiene permiso. Permite su uso en la configuración del sitio de tu navegador y pulsa Grabar.",
+    "microphoneMissing": "No se ha encontrado un micrófono. Conecta uno y vuelve a intentarlo.",
+    "microphoneBusy": "Otra aplicación está usando el micrófono. Ciérrala y vuelve a intentarlo.",
+    "seekTimeout": "El vídeo está tardando demasiado en cambiar de posición. Inténtalo de nuevo.",
+    "unexpected": "Algo ha fallado. Inténtalo de nuevo."
+  },
+  "dubs": {
+    "deleteDescription": "Se borrarán para siempre las grabaciones y el progreso de este intento en este navegador. Los demás doblajes y los vídeos descargados se conservarán.",
+    "storageNotice": "Solo se guarda en este navegador. Borrar los datos del sitio elimina tus doblajes. Descarga los vídeos importantes como copia de seguridad.",
+    "loadingSavedDubs": "Cargando doblajes guardados…",
+    "noDubsYet": "Todavía no hay doblajes",
+    "emptyDescription": "Elige una escena y graba tu primera frase.",
+    "browseScenes": "Ver escenas",
+    "retry": "Reintentar",
+    "continueLabel": "Continuar doblaje: {{title}}, {{role}}",
+    "complete": "Completado",
+    "inProgress": "En curso",
+    "recordedLines": "{{recorded}} de {{total}} frases grabadas",
+    "deleteLabel": "Borrar doblaje: {{title}}",
+    "deleteThisDub": "¿Borrar este doblaje?",
+    "deleteDub": "Borrar doblaje",
+    "keepDub": "Conservar doblaje"
+  },
+  "player": {
+    "loading": "Preparando tu escena…",
+    "reload": "Volver a cargar",
+    "startANewDub": "Empezar otro doblaje",
+    "movieScene": "Escena de película",
+    "dialogueScene": "Escena de diálogo de {{title}}",
+    "loadTheVideoFromYourDevice": "Carga el vídeo desde tu dispositivo",
+    "chooseALocalVideo": "Elegir un vídeo local",
+    "fileStaysOnYourDevice": "· El archivo se queda en tu dispositivo",
+    "playMyDub": "Reproducir mi doblaje",
+    "playOriginalScene": "Reproducir escena original",
+    "recording": "Grabando",
+    "gettingReady": "Preparando…",
+    "stopPlaybackOrRecording": "Detener reproducción o grabación",
+    "playDub": "Reproducir doblaje",
+    "playReferenceScene": "Reproducir escena de referencia",
+    "scenePlaybackProgress": "Progreso de reproducción",
+    "chooseARole": "Elegir un personaje",
+    "dubComplete": "Doblaje completado",
+    "recordYourLines": "Graba tus frases",
+    "chooseRolePrompt": "¿Quién quieres ser?",
+    "startDubbing": "Empezar a doblar",
+    "savedOnThisDevice": "Guardado en este dispositivo",
+    "saving": "Guardando…",
+    "notSavedYet": "Aún no se ha guardado",
+    "savedOnThisDeviceOnly": "Solo se guarda en este dispositivo",
+    "yourLines": "Tus frases",
+    "original": "Original",
+    "dialogue": "Diálogo",
+    "preparingYourRecording": "Preparando tu grabación…",
+    "dubbingControls": "Controles de doblaje",
+    "listenToTheOriginalLine": "Escuchar la frase original",
+    "stopRecording": "Detener grabación",
+    "cancel": "Cancelar",
+    "stopPlayback": "Detener reproducción",
+    "recordThisLineAgain": "Volver a grabar esta frase",
+    "record": "Grabar",
+    "recordAgain": "Volver a grabar",
+    "myRecording": "Mi grabación",
+    "watchMyDub": "Ver mi doblaje",
+    "next": "Siguiente",
+    "startOver": "Empezar de nuevo",
+    "sceneCredits": "Escena y créditos",
+    "resultTitle": "¡Tu doblaje está listo!",
+    "emptyResult": "La próxima vez, prueba a grabar una frase.",
+    "editALine": "Cambiar una frase",
+    "reloadVideo": "Volver a cargar el vídeo",
+    "retrySaving": "Volver a guardar",
+    "manageSavedDubsInANewTab": "Gestionar doblajes guardados en otra pestaña",
+    "gotIt": "Entendido",
+    "watchTheOriginal": "Ver el original",
+    "close": "Cerrar",
+    "leaveThisDub": "¿Salir de este doblaje?",
+    "startANewSession": "¿Empezar otra sesión?",
+    "unsavedChangesWarning": "Los últimos cambios no se han guardado. Si continúas, se perderán. Los doblajes guardados anteriormente se conservarán.",
+    "savedDubNotice": "Este intento se queda en Mis doblajes. Puedes continuarlo cuando quieras.",
+    "discardUnsavedChanges": "Descartar cambios sin guardar",
+    "leaveScene": "Salir de la escena",
+    "keepRecordingsAndContinue": "Conservar grabaciones y continuar",
+    "previewSubtitles": "Subtítulos del original"
+  },
+  "recording": {
+    "speakingGuidance": "Grabando. Habla siguiendo el cursor.",
+    "takeReady": "Tu toma está lista. Escúchala o pasa a la siguiente frase.",
+    "listenFirst": "Escucha el original y luego graba.",
+    "completedLines": "{{completed}} de {{total}} frases completadas",
+    "lineLabel": "Frase {{number}}: {{text}}",
+    "lineNumber": "Frase {{number}} de {{total}}",
+    "listenOriginal": "Original",
+    "recordedLines": "Frases grabadas: {{count}}."
+  },
+  "help": {
+    "title": "Ponle tu voz a la escena.",
+    "chooseRoleTitle": "1. Elige un personaje.",
+    "chooseRoleDescription": "Mira la escena y elige a quién quieres interpretar.",
+    "recordTitle": "2. Graba cada frase.",
+    "recordDescription": "Escucha el original, pulsa Grabar y habla. Pulsa Detener cuando termines.",
+    "watchTitle": "3. Mira tu versión.",
+    "watchDescription": "Tu grabación sustituye las frases de tu personaje. Los demás conservan sus voces originales.",
+    "recordingAdvice": "Es mejor usar auriculares. El verde muestra el audio original; el naranja, tu voz. El cursor marca el momento actual. Las formas de onda muestran el volumen, no puntúan la pronunciación; el original incluye música y efectos. Los doblajes se guardan en este navegador. Puedes continuarlos o borrarlos en Mis doblajes. No se suben a ningún servidor. En el móvil, usa Safari o Chrome; la grabación dentro de WeChat no se ha verificado.",
+    "guardianConsent": "Por ahora es para que tú y tus compañeros hagáis pruebas. Antes de que lo use un niño, su tutor debe conocer y aceptar la finalidad de la grabación."
+  },
+  "credits": {
+    "localVideoNotice": "Este vídeo se lee desde tu dispositivo y no se sube. Confirma los permisos antes de publicarlo.",
+    "prototypeNotice": "Esta escena es para pruebas del prototipo con adultos. La película completa no es material de iniciación para niños.",
+    "noEndorsement": "Los creadores no respaldan este producto."
+  },
+  "navigation": {
+    "library": "Escenas",
+    "backToScenes": "Volver a las escenas",
+    "home": "Inicio de Parrotbook",
+    "main": "Navegación principal",
+    "howToDub": "Cómo doblar",
+    "language": "Idioma de la interfaz",
+    "dubs": "Mis doblajes"
+  },
+  "library": {
+    "sceneCount": "{{count}} escenas",
+    "findAScene": "Buscar una escena",
+    "titleCharacterTagOrLine": "Título, personaje, etiqueta o frase",
+    "clearSearch": "Borrar búsqueda",
+    "noScenesFound": "No se han encontrado escenas.",
+    "searchSuggestion": "Prueba con un título, personaje, etiqueta o una frase que recuerdes.",
+    "showAllScenes": "Ver todas las escenas",
+    "chooseScene": "Elegir escena: {{title}}",
+    "prototypeNotice": "Pruebas del prototipo con adultos · Los doblajes se guardan en este navegador y no se suben. No se ha confirmado el permiso de redistribución de estos fragmentos.",
+    "sceneCategories": "Categorías de escenas"
+  },
+  "waveform": {
+    "voiceWaveformComparison": "Comparación de las ondas de voz",
+    "yourVoiceRecording": "Tu voz · Grabando",
+    "yourVoice": "Tu voz",
+    "targetLineTiming": "Tiempo de la frase",
+    "originalAudioWaveform": "Onda del audio original",
+    "yourVoiceWaveform": "Onda de tu voz",
+    "loadingTheOriginalWaveform": "Cargando la onda original…",
+    "dubbingPlayhead": "Indicador de tiempo del doblaje",
+    "elapsed": "{{elapsed}} / {{duration}} segundos",
+    "unavailable": "No hay onda original disponible. Puedes seguir escuchando y grabando."
+  },
+  "theme": {
+    "light": "Cambiar al modo claro",
+    "dark": "Cambiar al modo oscuro"
+  },
+  "download": {
+    "cancelExport": "Cancelar exportación",
+    "keepThisPageOpen": "Mantén esta página abierta",
+    "downloadAgain": "Volver a descargar",
+    "privacyNotice": "Se crea en este dispositivo. No se sube.",
+    "downloadVideo": "Descargar vídeo",
+    "progress": "Creando vídeo: {{percent}} %. Mantén esta página abierta.",
+    "ready": "Tu vídeo está listo para guardarlo y compartirlo."
+  },
+  "categories": {
+    "films": "Cine y animación",
+    "younger": "Primeros pasos en inglés",
+    "older": "De 10 a 12 años",
+    "teens": "Adolescentes"
+  },
+  "scenes": {
+    "scene_KHUVKWak": {
+      "title": "¡No, soy Patricio!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Fragmentos de 00:00–00:08 y 00:17–00:23.2, unidos y comprimidos con marcas de tiempo para el doblaje."
+    },
+    "scene_LnSPbYi0": {
+      "title": "¡¿Chocolate?!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Fragmento de 00:10.8–00:22.2, comprimido con marcas de tiempo para el doblaje."
+    },
+    "scene_1eCjBRKF": {
+      "title": "¡Ponlo en Wumbo!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 2.55–21.95 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+    },
+    "scene_BeIAKV4J": {
+      "title": "Los ogros son como las cebollas",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Fragmento de 00:19.4–00:35.1 de un vídeo horizontal de la conversación de la cebolla, comprimido con marcas de tiempo para el doblaje."
+    },
+    "scene_oq1hQgYa": {
+      "title": "¡Sigue nadando!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 4.5–15.6 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+    },
+    "scene_EI_7V5r9": {
+      "title": "¡Los peces son amigos!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 15.4–25.65 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+    },
+    "scene_fEAVzgFh": {
+      "title": "¡Hasta el infinito y más allá!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 25.15–50.05 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+    },
+    "scene_txYTl2tq": {
+      "title": "¡Eres un juguete!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 45.05–63.65 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+    },
+    "scene_Ciq_cd4H": {
+      "title": "¡Caer con estilo!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 189.45–213.25 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+    },
+    "scene_oSd4bYiR": {
+      "title": "¡Soy la velocidad!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 28.95–40.65 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+    },
+    "scene_p5BgIG-b": {
+      "title": "¡Ka-chow!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 13.1–27.65 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+    },
+    "scene_RPXXEtjf": {
+      "title": "¡Es tan blandito!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 23.3–54 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+    },
+    "scene_CZ0bp6VC": {
+      "title": "¿Y el suelo?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 10.9–29.8 del vídeo original. La frase original en el idioma de los Minions se sustituye por un diálogo en inglés entre Gru y los niños de la misma saga."
+    },
+    "scene_nJ9pMesA": {
+      "title": "¡Una ardilla!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 95–109.5 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+    },
+    "scene_IuDLtAby": {
+      "title": "¡Acabo de conocerte!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 83.75–95.05 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+    },
+    "scene_y50gF2Cn": {
+      "title": "¡Cualquiera puede cocinar!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 11.8–26.5 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+    },
+    "scene_wr2NM2nf": {
+      "title": "¡No hay ingrediente secreto!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 27.45–50.55 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+    },
+    "scene_kuOni4tB": {
+      "title": "¡No estoy enfadado!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 0.25–12.3 del vídeo original. La frase aislada se sustituye por un breve diálogo de preguntas y respuestas entre Po y Oogway de la misma escena."
+    },
+    "scene_4ds3OMdO": {
+      "title": "¡Haz el rugido!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 14.5–30.9 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+    },
+    "scene_HY-tFxVL": {
+      "title": "¿Ya hemos llegado?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 14.5–24.95 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+    },
+    "scene_XFfwULcF": {
+      "title": "¿Quién os ha mandado aquí?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 96.4–109.6 del vídeo original. Se usa la conversación sobre el desalojo justo después del grito en el pantano, en lugar de alargarlo con reacciones de la multitud."
+    },
+    "scene_MkR1_VOc": {
+      "title": "¡Estoy listo!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 18.2–28.7 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+    },
+    "scene_F9ob5jiT": {
+      "title": "¿La mayonesa es un instrumento?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 9.15–24.4 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+    },
+    "scene_uDawiVCK": {
+      "title": "¡Sonreíd y saludad!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 2.7–29.4 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+    },
+    "scene_gCp7ClczBfE": {
+      "title": "¿Qué tal me queda?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 564.65–589.7 del vídeo original."
+    },
+    "scene_oHKH4UW2j7Q": {
+      "title": "¡Los elfos nunca tienen miedo!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 194–211.35 del vídeo original."
+    },
+    "scene_ue_rpVpccbk": {
+      "title": "¿Puedo jugar con Ben?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 12.2–33.85 del vídeo original."
+    },
+    "scene_9aW-AUNHyhc": {
+      "title": "¡Estabas sentado encima!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 243.15–258.15 del vídeo original."
+    },
+    "scene_y5A8q-8McdQ": {
+      "title": "¡Adivina qué hemos hecho!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 189.2–214.05 del vídeo original."
+    },
+    "scene_dJ3aIJ7VuJ0": {
+      "title": "¿Te ayudamos a buscar las gafas?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 108.15–130.5 del vídeo original."
+    },
+    "scene_I2NmYZZ4ICk": {
+      "title": "¿Puede recibir visitas el paciente?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 216.3–239.7 del vídeo original."
+    },
+    "scene_bxQM0S-Xsn4": {
+      "title": "¿Eso es un dinosaurio?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 371.8–395.55 del vídeo original."
+    },
+    "scene_F6ws6xrH7b0": {
+      "title": "Un libro para aprender a hacer amigos",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 29.7–60.3 del vídeo original. Un niño siente que no encaja en el colegio. La bibliotecaria bromea sobre su propia falta de popularidad."
+    },
+    "scene_K-EnMBJWy2E": {
+      "title": "Probando los consejos de un libro",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 108.2–135.45 del vídeo original. Sarcasmo familiar. El fragmento termina tras la última repetición del nombre y antes de la pantalla final del canal."
+    },
+    "scene_qs532GUZz7E": {
+      "title": "Pedirle a papá que hable con un profesor",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 16.5–51.45 del vídeo original. El contexto son los deberes universitarios, pero el diálogo elegido es entre padre e hijo. Hay una crítica leve al profesor. Se excluye el diálogo vulgar posterior para adultos."
+    },
+    "scene_pywI3ZgiZ-Y": {
+      "title": "Un sofá que no gira",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 165.9–198.4 del vídeo original. Voces elevadas y una orden grosera de callarse repetida. Se excluyen las insinuaciones de la escena anterior."
+    },
+    "scene_lPxb4HHQVrQ": {
+      "title": "Joey descubre un diccionario de sinónimos",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 0–37.2 del vídeo original. El contexto es una recomendación para una adopción. Se excluyen las insinuaciones posteriores sobre citas."
+    },
+    "scene__ZPXHnc-PuE": {
+      "title": "Elegir la mitad de la tarta de queso",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 55.7–85.4 del vídeo original. Discusión por comida; la historia incluye llevarse la tarta de otra persona. Se excluyen las bromas posteriores sobre bodas y sexo de la recopilación original."
+    },
+    "scene_kNsWCUYPVwU": {
+      "title": "Una clase de conducir muy nerviosa",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 92.5–115.38 del vídeo original. Conducción peligrosa y pánico con fines cómicos, no una clase de conducir. Se excluyen los comentarios sexistas anteriores y la broma posterior sobre un accidente. Incluye una palabrota leve. Zitch-dog es un juego de coche inventado en la serie, no una palabra normal del inglés."
+    },
+    "scene_ON8p1LWII74": {
+      "title": "¿Qué animal es la mejor comparación?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 0–32.7 del vídeo original. Escena en un bar con bebidas, una metáfora sobre citas y un insulto leve a los patos. Termina antes del narrador y de la posterior sugerencia de peleas de animales."
+    },
+    "scene_yjYJv1eTPR4": {
+      "title": "El pelo de Einstein y un carácter conocido",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 19.15–42.45 del vídeo original. Anécdota histórica novelada y bromas sobre el comportamiento infantil. No es una lección médica ni biográfica."
+    },
+    "scene_eMvqUxta4mg": {
+      "title": "¿Puedes mover la cámara?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 158.55–182 del vídeo original. Preferencias de aspecto para el día de la foto. Se excluye la broma posterior para adultos sobre el cuerpo."
+    },
+    "scene_hua0i_EVO5o": {
+      "title": "El desayuno y una diferencia de significado",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 29.05–53.05 del vídeo original. Sarcasmo familiar sobre hablar como su madre. Se excluyen las insinuaciones posteriores sobre embarazo y colchones."
+    },
+    "scene_VgEVwH_D_ZM": {
+      "title": "Todos tienen una tarea",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 139.85–158.7 del vídeo original. Negociación y sarcasmo familiar. Se excluye el diálogo vulgar anterior."
+    },
+    "scene_cgQRAEx-Czo": {
+      "title": "¿Adónde se ha ido el de la foto?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 14.65–26.35 del vídeo original. Fantasía: una imagen en movimiento en una tarjeta coleccionable. Procede de la primera película; no afirma que las imágenes se comporten así."
+    },
+    "scene_3YCRbWX5VTE": {
+      "title": "Un nuevo amigo en el tren",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 1.1–30.45 del vídeo original. Entorno fantástico y un breve vistazo a la cicatriz curada de Harry. Termina antes de la conversación sobre el carrito de dulces."
+    },
+    "scene_ib-oCCujJSU": {
+      "title": "Devolver medio sofá",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 239.1–277.65 del vídeo original. Intento cómico de devolución deshonesta, no un consejo para consumidores. No incluye las insinuaciones de la escena anterior."
+    },
+    "scene_VcyyHi5Kk4A": {
+      "title": "¿Para qué sirve ese accesorio de la aspiradora?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 4.1–24.05 del vídeo original. Sarcasmo seco. El título original menciona el TOC, pero este fragmento trata de limpieza y no enseña a diagnosticar."
+    },
+    "scene_U4HGHLNvT3k": {
+      "title": "Imagina no pagar la factura enseguida",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 103.35–123.72 del vídeo original. Bromas sobre hábitos rígidos y una expresión coloquial. Es una situación hipotética cómica, no un consejo financiero. Se excluyen los insultos familiares posteriores."
+    },
+    "scene_s8bVKn-BMFI": {
+      "title": "¿Un regalo o el presente?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 29.75–59.82 del vídeo original. Sarcasmo competitivo. El comentario final sobre ganar es figurado. Se excluye la jerga técnica posterior."
+    },
+    "scene_guZULjk7gGk": {
+      "title": "Para la clase hace falta un cuaderno",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 0.2–29.15 del vídeo original. Sarcasmo condescendiente y un juego de palabras sobre un cuaderno de rayado universitario. Termina antes del largo monólogo de física."
+    },
+    "scene_d6ZZqjpfSfA": {
+      "title": "¿En sentido literal o figurado?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 17.4–34.45 del vídeo original. Los amigos discuten. Termina antes del estereotipo canadiense, las amenazas, la canción y la celebración posterior con alcohol."
+    },
+    "scene_ow8KQy0Ni_U": {
+      "title": "¿Nos das unas monedas de verdad?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 9.65–32.35 del vídeo original. Máquina de mentira y negociación de la paga en casa. No invita a los niños pequeños a trabajar fuera del hogar. Inglés australiano original."
+    },
+    "scene_rWVQAIy-SYw": {
+      "title": "¡Papá, no es justo!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 84.8–106.44 del vídeo original. El juego de ficción, deliberadamente injusto, es una comedia familiar. Los sonidos mecánicos y el intento completo se mantienen en el audio original; los efectos no son ejercicios de vocabulario."
+    },
+    "scene_pZDW-Ao5SAw": {
+      "title": "¡La tortita ha volado demasiado alto!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 0–29.75 del vídeo original. Accidente de cocina animado con una sartén caliente. Es una actividad de adultos, no una demostración para que los niños la imiten. Hay bromas familiares leves."
+    },
+    "scene_kSciHakPXA0": {
+      "title": "Deja que George vuelva a intentarlo",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 145.4–166.12 del vídeo original. Comparación suave entre hermanos. Termina antes de que Peppa empiece a contar otra vez. El narrador no es un personaje practicable."
+    },
+    "scene_dc581WltScU": {
+      "title": "Mi magia ha salido un poco mal",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 119.15–138.85 del vídeo original. Fantasía: Ben se ha convertido en un sombrero. No se usan hechizos ni palabras mágicas inventadas como ejercicios de inglés."
+    },
+    "scene_ljYOYpWoouw": {
+      "title": "Tengo un plan muy sencillo",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 310.55–336.3 del vídeo original. Solo hay un objeto fantástico; el diálogo trata de resolver un problema cotidiano. Se excluyen el comentario despectivo posterior y la secuencia del pájaro y la escalada."
+    },
+    "scene_v-EwUnOY6rw": {
+      "title": "Así no se agradece a los anfitriones",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 0.4–26.1 del vídeo original. Se describe y se rechaza una broma con espuma de afeitar; no se lleva a cabo. Se excluyen la conversación posterior sobre escozor de ojos y los estereotipos culturales."
+    },
+    "scene_LiOGfPU3EPE": {
+      "title": "Puedes prepararte el desayuno",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 114.4–137.3 del vídeo original. Sarcasmo familiar. Se excluye el diálogo familiar vulgar anterior. La escena del cuadro de tareas, publicada por separado, empieza después."
+    },
+    "scene_W-m8Y8JwqZc": {
+      "title": "¿Me van a cronometrar?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 110.78–134.6 del vídeo original. Los nombres de las pruebas son nombres propios, no una evaluación médica. Hay una broma leve sobre leer en el baño; se evitan los comentarios posteriores sobre la apariencia o el cuerpo."
+    },
+    "scene_h81smyBB8mI": {
+      "title": "¿Qué había en ese tarro marrón?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 7.2–23.25 del vídeo original. Broma de comida desagradable y una decisión deliberadamente mala sobre seguridad alimentaria; no es un consejo. Termina antes de la discusión sobre el pago, el empujón violento y la trama para adultos."
+    },
+    "scene_Jjy8Z_ovOQI": {
+      "title": "¿Así funciona el agua?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 1.45–16.95 del vídeo original. Procede de una comedia para adultos, pero solo se habla de agua. La breve broma de Marshall se conserva como intervención no seleccionable. Termina antes del diálogo ya publicado sobre el sentido literal y figurado."
+    },
+    "scene_5XN5XS_M_Mw": {
+      "title": "No puedo aguantar dos mil seiscientos años",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 106.55–120.45 del vídeo original. Sarcasmo en forma de clase y una petición para ir al baño. Se excluyen la explicación técnica y la acusación sobre la investigación de Leonard."
+    },
+    "scene_X42Wva5CnXM": {
+      "title": "¡Buenos días! ¿Cómo estás?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 4.35–16.2 del vídeo original. Saludo en el aula; la respuesta en coro se conserva como un personaje practicable. No hay bromas, cambios de tiempo verbal ni significados implícitos."
+    },
+    "scene_nvIB2uFTLc8": {
+      "title": "Encantado de conocerte",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 16.6–34 del vídeo original. El nombre original Kate se conserva en el texto y el audio. La clase responde en grupo y el personaje de azul ofrece un asiento. Todos los personajes tienen una frase completa y reutilizable."
+    },
+    "scene_cjkZKJp7Wq0": {
+      "title": "¿Qué es esto? ¡Un libro!",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 14.9–35.95 del vídeo original. Habla un perro de dibujos animados. Termina después de mostrar la caja y la reacción, antes de mostrar el siguiente lápiz. Se conservan los subtítulos originales en inglés."
+    },
+    "scene_xF5xlXcwdvw": {
+      "title": "¿Sabes nadar?",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 28.7–39.2 del vídeo original. Los niños hablan de una invitación a una fiesta en la piscina y se ven sus gestos. Es práctica de idiomas, no una clase de natación. Se excluye la secuencia posterior en la piscina."
+    },
+    "scene_soM_ejjEqc0": {
+      "title": "Esto es para ti",
+      "licence": "Permiso de redistribución sin confirmar",
+      "changes": "Prueba interna del prototipo; fragmento de los segundos 45.7–56.5 del vídeo original. Escena de cumpleaños junto a una piscina vigilada. No se nada durante el diálogo elegido. Termina antes de la canción y el montaje posterior."
+    }
+  },
+  "roles": {
+    "role_GMoleWKV": {
+      "name": "Patricio",
+      "hint": "2 frases · Prueba dos tonos"
+    },
+    "role_VMR9ThiJ": {
+      "name": "Persona que llama",
+      "hint": "2 frases · Haz la misma pregunta"
+    },
+    "role_-pse1q5d": {
+      "name": "Cliente",
+      "hint": "2 frases · Expresa un cambio de emoción"
+    },
+    "role_S1FPrc0B": {
+      "name": "Patricio",
+      "hint": "1 frase · Con o sin"
+    },
+    "role_v-seIUIJ": {
+      "name": "Patricio",
+      "hint": "3 frases"
+    },
+    "role_llrWB6OVSyA": {
+      "name": "Bob Esponja",
+      "hint": "2 frases"
+    },
+    "role_aBTF2CU4": {
+      "name": "Shrek",
+      "hint": "2 frases · Prueba a explicarlo"
+    },
+    "role_1xuLJg1A": {
+      "name": "Asno",
+      "hint": "1 frase · Expresa que acabas de entenderlo"
+    },
+    "role_k7e1KRth": {
+      "name": "Dory",
+      "hint": "3 frases"
+    },
+    "role_y7mBEj-GiRI": {
+      "name": "Marlin",
+      "hint": "2 frases"
+    },
+    "role_gkU-I3wxM6c": {
+      "name": "Tiburones",
+      "hint": "1 frase"
+    },
+    "role_gp1z-ZLSL6Y": {
+      "name": "Chum",
+      "hint": "1 frase"
+    },
+    "role_74zNIJOZO7U": {
+      "name": "Ancla",
+      "hint": "1 frase"
+    },
+    "role_jPzYR5J6EIU": {
+      "name": "Woody",
+      "hint": "3 frases"
+    },
+    "role_a9_OwCFQ": {
+      "name": "Buzz Lightyear",
+      "hint": "4 frases"
+    },
+    "role_f58ELG8A": {
+      "name": "Woody",
+      "hint": "2 frases"
+    },
+    "role_q1JOcg9gD7M": {
+      "name": "Buzz Lightyear",
+      "hint": "1 frase"
+    },
+    "role_PbbqOHSVd2c": {
+      "name": "Woody",
+      "hint": "2 frases"
+    },
+    "role_dG7FU8MF": {
+      "name": "Buzz Lightyear",
+      "hint": "3 frases"
+    },
+    "role_MA9SyNmW": {
+      "name": "Mate",
+      "hint": "1 frase"
+    },
+    "role_t3AskixQqcI": {
+      "name": "Rayo McQueen",
+      "hint": "2 frases"
+    },
+    "role_G8GuFY_TB7c": {
+      "name": "Locutor de velocidad",
+      "hint": "1 frase"
+    },
+    "role_NauR2jpl": {
+      "name": "Rayo McQueen",
+      "hint": "3 frases"
+    },
+    "role_wyV97y-qVtA": {
+      "name": "Chick Hicks",
+      "hint": "2 frases"
+    },
+    "role_ac_suThrxnA": {
+      "name": "Margo",
+      "hint": "1 frase"
+    },
+    "role_mZOwX2ys": {
+      "name": "Agnes",
+      "hint": "1 frase"
+    },
+    "role_2YM2UXibtNQ": {
+      "name": "Encargado de la feria",
+      "hint": "1 frase"
+    },
+    "role_AmEQPuK-wqk": {
+      "name": "Gru",
+      "hint": "3 frases"
+    },
+    "role_6qGKlj0DGGU": {
+      "name": "Gru",
+      "hint": "4 frases"
+    },
+    "role_ttD2BhSD_aQ": {
+      "name": "Margo",
+      "hint": "2 frases"
+    },
+    "role_Y1QH7lsWlSU": {
+      "name": "Edith",
+      "hint": "2 frases"
+    },
+    "role_i_3nIjrN": {
+      "name": "Dug",
+      "hint": "4 frases"
+    },
+    "role_tD36hMnXUVc": {
+      "name": "Carl",
+      "hint": "1 frase"
+    },
+    "role_LMfavnX8qAw": {
+      "name": "Russell",
+      "hint": "1 frase"
+    },
+    "role_AkxqSDuU": {
+      "name": "Dug",
+      "hint": "2 frases"
+    },
+    "role_D1aZwWlTtkk": {
+      "name": "Carl",
+      "hint": "1 frase"
+    },
+    "role_CwTyhoLe": {
+      "name": "Gusteau",
+      "hint": "3 frases"
+    },
+    "role_43NdYGbMURo": {
+      "name": "Remy",
+      "hint": "2 frases"
+    },
+    "role_q93mX0oX": {
+      "name": "Sr. Ping",
+      "hint": "3 frases"
+    },
+    "role_KLqdqSbZHmw": {
+      "name": "Po",
+      "hint": "2 frases"
+    },
+    "role__OrFsrNE": {
+      "name": "Maestro Oogway",
+      "hint": "2 frases"
+    },
+    "role_-aBSnmfkqjk": {
+      "name": "Po",
+      "hint": "1 frase"
+    },
+    "role_fQeXDxQ7A-I": {
+      "name": "Padre del niño",
+      "hint": "1 frase"
+    },
+    "role_Kx8gM4db": {
+      "name": "Niño",
+      "hint": "2 frases"
+    },
+    "role_HxBpf2F4gNA": {
+      "name": "Shrek",
+      "hint": "2 frases"
+    },
+    "role_c6niQ-oI2rA": {
+      "name": "Fiona",
+      "hint": "1 frase"
+    },
+    "role_OhnCGoVU": {
+      "name": "Asno",
+      "hint": "5 frases"
+    },
+    "role__qQJ8UfC": {
+      "name": "Shrek",
+      "hint": "4 frases"
+    },
+    "role_YoD156O5n0s": {
+      "name": "Fiona",
+      "hint": "1 frase"
+    },
+    "role_Rp4xE21Pv6o": {
+      "name": "Asno",
+      "hint": "1 frase"
+    },
+    "role_stZNsPqJ3SU": {
+      "name": "Pinocho",
+      "hint": "3 frases"
+    },
+    "role_VNG5X2g-": {
+      "name": "Shrek",
+      "hint": "2 frases"
+    },
+    "role_WP8iVeXihIk": {
+      "name": "Cerdito",
+      "hint": "2 frases"
+    },
+    "role_K490suAd": {
+      "name": "Bob Esponja",
+      "hint": "4 frases"
+    },
+    "role_ZsxADi00XhU": {
+      "name": "Calamardo",
+      "hint": "2 frases"
+    },
+    "role_-6cZmGav": {
+      "name": "Calamardo",
+      "hint": "4 frases"
+    },
+    "role_biDyZtCKZuA": {
+      "name": "Plancton",
+      "hint": "1 frase"
+    },
+    "role_cGjaFVM0": {
+      "name": "Patricio",
+      "hint": "1 frase"
+    },
+    "role_y89zbrnV": {
+      "name": "Skipper",
+      "hint": "5 frases"
+    },
+    "role_csUjXkRdbuM": {
+      "name": "Kowalski",
+      "hint": "2 frases"
+    },
+    "role_48Y-QZ9fhhE": {
+      "name": "Cabo",
+      "hint": "1 frase"
+    },
+    "role_YMmMf1wkkD0": {
+      "name": "Nana Ciruela",
+      "hint": "2 frases"
+    },
+    "role_DJntnoCh-CI": {
+      "name": "Ben",
+      "hint": "2 frases"
+    },
+    "role_VcebY2wPqqI": {
+      "name": "Holly",
+      "hint": "3 frases"
+    },
+    "role_1eyadGyaZ-U": {
+      "name": "Holly",
+      "hint": "3 frases"
+    },
+    "role_gYy8dSWMk40": {
+      "name": "Ben",
+      "hint": "2 frases"
+    },
+    "role_iNuzpzccAUs": {
+      "name": "Holly",
+      "hint": "3 frases"
+    },
+    "role_BIwW3pMFQ_o": {
+      "name": "Nana Ciruela",
+      "hint": "2 frases"
+    },
+    "role_JbjeUfpdQeo": {
+      "name": "Mamá Pig",
+      "hint": "1 frase"
+    },
+    "role_kG1Vhx3plc4": {
+      "name": "Papá Pig",
+      "hint": "2 frases"
+    },
+    "role_Uivz-A7quiE": {
+      "name": "Peppa",
+      "hint": "1 frase"
+    },
+    "role_nsjPD0zHc9g": {
+      "name": "Peppa",
+      "hint": "4 frases"
+    },
+    "role_vzHo-mLf8QQ": {
+      "name": "Papá Pig",
+      "hint": "3 frases"
+    },
+    "role_GZ118819nuE": {
+      "name": "Papá Pig",
+      "hint": "3 frases"
+    },
+    "role_zYkp26hxuB0": {
+      "name": "Mamá Pig",
+      "hint": "2 frases"
+    },
+    "role_SAm7j7Q6lfE": {
+      "name": "Peppa",
+      "hint": "1 frase"
+    },
+    "role_TqcAfKZEoEo": {
+      "name": "Papá Pig",
+      "hint": "2 frases"
+    },
+    "role_ORPImTlyeZM": {
+      "name": "Peppa",
+      "hint": "3 frases"
+    },
+    "role_5uI-c2fNuK0": {
+      "name": "Suzy Sheep",
+      "hint": "1 frase"
+    },
+    "role_iEFhkfUkYtY": {
+      "name": "Mamá Pig",
+      "hint": "1 frase"
+    },
+    "role__8jMontcRkc": {
+      "name": "Danny Dog",
+      "hint": "5 frases"
+    },
+    "role_MGcwyTjk6fU": {
+      "name": "Peppa",
+      "hint": "1 frase"
+    },
+    "role_J5K-PqReqUY": {
+      "name": "George",
+      "hint": "2 frases"
+    },
+    "role_sC6qozH6L3I": {
+      "name": "Señora Gazelle",
+      "hint": "1 frase"
+    },
+    "role_0BkC3THi_I8": {
+      "name": "Sheldon",
+      "hint": "2 frases"
+    },
+    "role_QUPzEFZwnEw": {
+      "name": "Bibliotecaria",
+      "hint": "4 frases"
+    },
+    "role_tc1hthFv9GM": {
+      "name": "Sheldon",
+      "hint": "3 frases"
+    },
+    "role_80084y8FUOo": {
+      "name": "George Cooper padre",
+      "hint": "2 frases"
+    },
+    "role_9VX0JklGCdk": {
+      "name": "George Cooper padre",
+      "hint": "7 frases"
+    },
+    "role_mPMtxEzSrfc": {
+      "name": "Sheldon",
+      "hint": "7 frases"
+    },
+    "role_2N9MYrRXSfA": {
+      "name": "Rachel",
+      "hint": "1 frase"
+    },
+    "role_63qAU3MP3yo": {
+      "name": "Ross",
+      "hint": "2 frases"
+    },
+    "role_4x8NV4PfgqM": {
+      "name": "Chandler",
+      "hint": "1 frase"
+    },
+    "role_JcuuVsaRRGI": {
+      "name": "Rachel y Chandler",
+      "hint": "1 frase"
+    },
+    "role_XaaU0DIckP8": {
+      "name": "Ross",
+      "hint": "5 frases"
+    },
+    "role_9o381Ya55Qo": {
+      "name": "Joey",
+      "hint": "3 frases"
+    },
+    "role_taz3h1D5Pw4": {
+      "name": "Rachel",
+      "hint": "4 frases"
+    },
+    "role_Jy_lg0MhfG4": {
+      "name": "Chandler",
+      "hint": "2 frases"
+    },
+    "role_fZjB1iall7g": {
+      "name": "Barney",
+      "hint": "3 frases"
+    },
+    "role_a0XqqgzuhVA": {
+      "name": "Ted",
+      "hint": "3 frases"
+    },
+    "role_crBU1TtFewA": {
+      "name": "Marshall",
+      "hint": "3 frases"
+    },
+    "role_8H5N8-HWEJc": {
+      "name": "Ted",
+      "hint": "1 frase"
+    },
+    "role_SDdf7QMVejg": {
+      "name": "Robin",
+      "hint": "1 frase"
+    },
+    "role_L7o4_XurX_4": {
+      "name": "Lily",
+      "hint": "1 frase"
+    },
+    "role_zZ-586P-_DY": {
+      "name": "Dr. Sturgis",
+      "hint": "2 frases"
+    },
+    "role_OMjL-BEtZ3M": {
+      "name": "Missy",
+      "hint": "2 frases"
+    },
+    "role_e-_eXKF-0UY": {
+      "name": "Sheldon",
+      "hint": "1 frase"
+    },
+    "role_5uKRB1qozDw": {
+      "name": "Missy",
+      "hint": "5 frases"
+    },
+    "role_2NFZc18LwH0": {
+      "name": "Investigador",
+      "hint": "5 frases"
+    },
+    "role_alEoy-ZA9Xc": {
+      "name": "Missy",
+      "hint": "5 frases"
+    },
+    "role_XWR3eWbv6BY": {
+      "name": "Georgie",
+      "hint": "4 frases"
+    },
+    "role_4InIxg67GRk": {
+      "name": "Mandy",
+      "hint": "2 frases"
+    },
+    "role_PD9C_E7Icic": {
+      "name": "George Cooper padre",
+      "hint": "4 frases"
+    },
+    "role_G1aMm5UAPYw": {
+      "name": "Missy",
+      "hint": "4 frases"
+    },
+    "role_fbJuCJMGfVg": {
+      "name": "Harry",
+      "hint": "2 frases"
+    },
+    "role_F4XSF4Edmng": {
+      "name": "Ron",
+      "hint": "2 frases"
+    },
+    "role_OK4t0IU4neI": {
+      "name": "Ron",
+      "hint": "5 frases"
+    },
+    "role_yc3TOAmqHEU": {
+      "name": "Harry",
+      "hint": "4 frases"
+    },
+    "role_YET3ltc6fQU": {
+      "name": "Dependiente",
+      "hint": "4 frases"
+    },
+    "role_Oo3yWRIKTU0": {
+      "name": "Ross",
+      "hint": "4 frases"
+    },
+    "role_rTn_pxCsnxc": {
+      "name": "Rachel",
+      "hint": "3 frases"
+    },
+    "role_h_9HmVzsQ1E": {
+      "name": "Chandler",
+      "hint": "2 frases"
+    },
+    "role_VQ73BCpz9sk": {
+      "name": "Ross",
+      "hint": "2 frases"
+    },
+    "role_hl4hEF54S8A": {
+      "name": "Monica",
+      "hint": "2 frases"
+    },
+    "role_diR5NHLuXjg": {
+      "name": "Penny",
+      "hint": "2 frases"
+    },
+    "role_aq9wnwNPoEw": {
+      "name": "Amy",
+      "hint": "1 frase"
+    },
+    "role_NpF-EvAghCU": {
+      "name": "Sheldon",
+      "hint": "2 frases"
+    },
+    "role_ZGo8poyoQiY": {
+      "name": "Leonard",
+      "hint": "1 frase"
+    },
+    "role_ThTu0ZZV87U": {
+      "name": "Sheldon",
+      "hint": "5 frases"
+    },
+    "role_Euuq4k13lbM": {
+      "name": "Penny",
+      "hint": "4 frases"
+    },
+    "role_eZTUQldp_mA": {
+      "name": "Ted",
+      "hint": "3 frases"
+    },
+    "role_GfE4n2EIVkQ": {
+      "name": "Robin",
+      "hint": "2 frases"
+    },
+    "role_UJ50J1mgRbA": {
+      "name": "Barney y Marshall",
+      "hint": "1 frase"
+    },
+    "role_7weef38VGuI": {
+      "name": "Bandit",
+      "hint": "2 frases"
+    },
+    "role_L2VcbrWL4bA": {
+      "name": "Bluey",
+      "hint": "2 frases"
+    },
+    "role_YETwbI6_lYI": {
+      "name": "Chilli",
+      "hint": "2 frases"
+    },
+    "role_qv1zScGHWaw": {
+      "name": "Bluey",
+      "hint": "2 frases"
+    },
+    "role_3OkXi5CB_xA": {
+      "name": "Bandit",
+      "hint": "2 frases"
+    },
+    "role_hUKB1yRtZXw": {
+      "name": "Papá Pig",
+      "hint": "5 frases"
+    },
+    "role_ivc93Nvkxm8": {
+      "name": "Peppa",
+      "hint": "1 frase"
+    },
+    "role_k125HlEUqb8": {
+      "name": "Mamá Pig",
+      "hint": "1 frase"
+    },
+    "role_shoymM1aoQM": {
+      "name": "Peppa",
+      "hint": "2 frases"
+    },
+    "role_mUwDImJFuLo": {
+      "name": "Papá Pig",
+      "hint": "2 frases"
+    },
+    "role_60DwRWhXHns": {
+      "name": "Nana Ciruela",
+      "hint": "2 frases"
+    },
+    "role_vRt7TOzwQLI": {
+      "name": "Holly",
+      "hint": "2 frases"
+    },
+    "role_Wyexw2YGEUw": {
+      "name": "Holly",
+      "hint": "4 frases"
+    },
+    "role_6um5do5ReBs": {
+      "name": "Ben",
+      "hint": "4 frases"
+    },
+    "role_g5_sn-Abuf0": {
+      "name": "George Cooper padre",
+      "hint": "4 frases"
+    },
+    "role_K78BsqE_7Yc": {
+      "name": "Sheldon",
+      "hint": "3 frases"
+    },
+    "role_zuTeBzcMsTI": {
+      "name": "George Cooper padre",
+      "hint": "3 frases"
+    },
+    "role_fBXr-KJbR5s": {
+      "name": "Missy",
+      "hint": "3 frases"
+    },
+    "role_OOU1lIZ-hMw": {
+      "name": "Dr. Sturgis",
+      "hint": "4 frases"
+    },
+    "role_tSxcC_9Ky4g": {
+      "name": "Sheldon",
+      "hint": "4 frases"
+    },
+    "role_aR1LFDLlZOg": {
+      "name": "Chandler",
+      "hint": "2 frases"
+    },
+    "role_eUgVQq3TJ18": {
+      "name": "Joey",
+      "hint": "3 frases"
+    },
+    "role_wdNMXASdk5c": {
+      "name": "Ted",
+      "hint": "2 frases"
+    },
+    "role_KfPCH2pob7g": {
+      "name": "Robin",
+      "hint": "3 frases"
+    },
+    "role_XyMomtlHVYE": {
+      "name": "Marshall",
+      "hint": "1 frase"
+    },
+    "role_oerHj7CpZxs": {
+      "name": "Penny",
+      "hint": "3 frases"
+    },
+    "role_9ZB7SS6ZoTs": {
+      "name": "Sheldon",
+      "hint": "3 frases"
+    },
+    "role_9C7GkSJ3GZ4": {
+      "name": "Clase",
+      "hint": "3 frases"
+    },
+    "role_z7O3Brz5bTs": {
+      "name": "Profesor",
+      "hint": "2 frases"
+    },
+    "role_NbJyPNcbblM": {
+      "name": "Profesor",
+      "hint": "1 frase"
+    },
+    "role_aj7joqDnZyA": {
+      "name": "Kate",
+      "hint": "3 frases"
+    },
+    "role_sWh9h03ep24": {
+      "name": "Clase",
+      "hint": "1 frase"
+    },
+    "role_JbyyfeuB93Q": {
+      "name": "Niño de azul",
+      "hint": "1 frase"
+    },
+    "role_HDH0Ul9i7F8": {
+      "name": "Sally",
+      "hint": "2 frases"
+    },
+    "role_biGkzogETqI": {
+      "name": "Niño de azul",
+      "hint": "1 frase"
+    },
+    "role_Hh6xcW9eG7g": {
+      "name": "Niño de morado",
+      "hint": "1 frase"
+    },
+    "role_MXwPkAvrD98": {
+      "name": "Perro",
+      "hint": "1 frase"
+    },
+    "role_Ex6aSXisvvs": {
+      "name": "Niño de azul",
+      "hint": "2 frases"
+    },
+    "role_-0NxEbZrU68": {
+      "name": "Niño de morado",
+      "hint": "1 frase"
+    },
+    "role_VTNuIGSirwY": {
+      "name": "Perro",
+      "hint": "1 frase"
+    },
+    "role_qMDOxsX3cME": {
+      "name": "Sally",
+      "hint": "2 frases"
+    },
+    "role_c20cLSGQdAQ": {
+      "name": "Niño de azul",
+      "hint": "2 frases"
+    }
+  },
+  "app": {
+    "title": "Parrotbook · Doblaje en inglés"
+  }
+}

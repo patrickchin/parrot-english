@@ -142,7 +142,7 @@ test('navigation shares the language-selector row and its phone menu supports th
       await page.setViewportSize({ width, height: 900 });
       const menu = page.getByRole('button', { name: 'Main navigation', exact: true });
       const control = width < 768 ? menu : page.getByRole('link', { name: 'My dubs', exact: true });
-      const language = page.getByRole('combobox', { name: 'UI language / 界面语言', exact: true });
+      const language = page.getByRole('combobox');
       await expect(control).toBeInViewport();
       const navigationBox = (await control.boundingBox())!;
       const languageBox = (await language.boundingBox())!;
