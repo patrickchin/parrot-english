@@ -5,7 +5,7 @@ import { AppHeader } from './app/AppHeader';
 import { Icon } from './shared/ui';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { CategorySelect } from './app/CategorySelect';
+import { CategoryTabs } from './app/CategoryTabs';
 import { SavedDubs } from './app/SavedDubs';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group';
 
@@ -35,7 +35,7 @@ export function Library({ onChoose, folder, onFolderChange }: { onChoose: (slug:
         <p>{t('绿色波形是原声，橙色是你的声音，指针跟着播放和录音移动。配音会自动保存在此浏览器，不会上传。')}</p>
       </aside>}
       <section aria-label={t('片段库')}>
-        <CategorySelect value={folder} onValueChange={onFolderChange} />
+        <CategoryTabs value={folder} onValueChange={onFolderChange} />
         <div className="library-toolbar">
           <div className="library-scope"><h2>{t('片段库')}</h2><span>{t('{0} 个片段', visible.length)}</span></div>
           <InputGroup className="library-search h-12 bg-card">
