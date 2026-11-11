@@ -1,0 +1,325 @@
+{
+  "version": 1,
+  "id": "pack_pywI3ZgiZ-Y",
+  "title": "转不过弯的沙发",
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 32.532,
+  "video": "friends-moving-couch-review-e23b414e4b24.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/friends-moving-couch/",
+  "poster": "friends-moving-couch-poster-e23b414e4b24.jpg",
+  "waveform": "waveform-e23b414e4b24.json",
+  "roles": [
+    {
+      "id": "role_2N9MYrRXSfA",
+      "name": "瑞秋",
+      "label": "瑞秋",
+      "hint": "1 句台词"
+    },
+    {
+      "id": "role_63qAU3MP3yo",
+      "name": "罗斯",
+      "label": "罗斯",
+      "hint": "2 句台词"
+    },
+    {
+      "id": "role_4x8NV4PfgqM",
+      "name": "钱德勒",
+      "label": "钱德勒",
+      "hint": "1 句台词"
+    },
+    {
+      "id": "role_JcuuVsaRRGI",
+      "name": "瑞秋和钱德勒",
+      "label": "瑞秋和钱德勒",
+      "hint": "1 句台词",
+      "selectable": false
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_WY_rTfd9kd8",
+      "roleId": "role_2N9MYrRXSfA",
+      "start": 0.952,
+      "end": 2.319,
+      "text": "I just don't think it's gonna fit.",
+      "hint": "我觉得这根本放不进去。",
+      "words": [
+        {
+          "text": "I",
+          "start": 0.992,
+          "end": 1.012
+        },
+        {
+          "text": "just",
+          "start": 1.092,
+          "end": 1.253
+        },
+        {
+          "text": "don't",
+          "start": 1.293,
+          "end": 1.454
+        },
+        {
+          "text": "think",
+          "start": 1.475,
+          "end": 1.595
+        },
+        {
+          "text": "it's",
+          "start": 1.636,
+          "end": 1.736
+        },
+        {
+          "text": "gonna",
+          "start": 1.756,
+          "end": 1.937
+        },
+        {
+          "text": "fit.",
+          "start": 2.098,
+          "end": 2.219
+        }
+      ]
+    },
+    {
+      "id": "line_1jdl02x2pSY",
+      "roleId": "role_63qAU3MP3yo",
+      "start": 2.42,
+      "end": 21.8,
+      "text": "Oh, yeah, it will! Come on. Up, up, up, up, up! Yes! Here we go! Pivot! Pivot! Pivot! Pivot! Pivot! Pivot!",
+      "hint": "能放进去的！来，往上、往上、往上、往上、往上！对了！来吧。转！转！转！转！转！转！",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 2.46,
+          "end": 2.56
+        },
+        {
+          "text": "yeah,",
+          "start": 2.58,
+          "end": 2.7
+        },
+        {
+          "text": "it",
+          "start": 2.72,
+          "end": 2.78
+        },
+        {
+          "text": "will!",
+          "start": 2.86,
+          "end": 3.02
+        },
+        {
+          "text": "Come",
+          "start": 3.04,
+          "end": 3.14
+        },
+        {
+          "text": "on.",
+          "start": 3.2,
+          "end": 3.32
+        },
+        {
+          "text": "Up,",
+          "start": 3.38,
+          "end": 3.421
+        },
+        {
+          "text": "up,",
+          "start": 3.601,
+          "end": 3.641
+        },
+        {
+          "text": "up,",
+          "start": 3.781,
+          "end": 3.821
+        },
+        {
+          "text": "up,",
+          "start": 3.961,
+          "end": 4.001
+        },
+        {
+          "text": "up!",
+          "start": 5.742,
+          "end": 5.822
+        },
+        {
+          "text": "Yes!",
+          "start": 6.642,
+          "end": 6.842
+        },
+        {
+          "text": "Here",
+          "start": 7.182,
+          "end": 8.043
+        },
+        {
+          "text": "we",
+          "start": 8.123,
+          "end": 8.183
+        },
+        {
+          "text": "go!",
+          "start": 8.243,
+          "end": 8.343
+        },
+        {
+          "text": "Pivot!",
+          "start": 8.58,
+          "end": 9.04
+        },
+        {
+          "text": "Pivot!",
+          "start": 10.82,
+          "end": 11.28
+        },
+        {
+          "text": "Pivot!",
+          "start": 13.7,
+          "end": 14.16
+        },
+        {
+          "text": "Pivot!",
+          "start": 15.62,
+          "end": 16.08
+        },
+        {
+          "text": "Pivot!",
+          "start": 18.58,
+          "end": 19.04
+        },
+        {
+          "text": "Pivot!",
+          "start": 21.14,
+          "end": 21.6
+        }
+      ]
+    },
+    {
+      "id": "line_GaFF4I7yleE",
+      "roleId": "role_4x8NV4PfgqM",
+      "start": 22.2,
+      "end": 24.379,
+      "text": "Shut up! Shut up! Shut up!",
+      "hint": "闭嘴！闭嘴！闭嘴！",
+      "words": [
+        {
+          "text": "Shut",
+          "start": 22.2,
+          "end": 22.422
+        },
+        {
+          "text": "up!",
+          "start": 22.543,
+          "end": 22.624
+        },
+        {
+          "text": "Shut",
+          "start": 22.927,
+          "end": 23.169
+        },
+        {
+          "text": "up!",
+          "start": 23.31,
+          "end": 23.391
+        },
+        {
+          "text": "Shut",
+          "start": 23.653,
+          "end": 23.875
+        },
+        {
+          "text": "up!",
+          "start": 24.218,
+          "end": 24.279
+        }
+      ]
+    },
+    {
+      "id": "line_yWsgKhgYcIk",
+      "roleId": "role_63qAU3MP3yo",
+      "start": 29.231,
+      "end": 31.52,
+      "text": "Okay. I don't think it's gonna pivot anymore.",
+      "hint": "好吧，我觉得它转不动了。",
+      "words": [
+        {
+          "text": "Okay.",
+          "start": 29.271,
+          "end": 29.612
+        },
+        {
+          "text": "I",
+          "start": 29.853,
+          "end": 29.873
+        },
+        {
+          "text": "don't",
+          "start": 29.913,
+          "end": 30.034
+        },
+        {
+          "text": "think",
+          "start": 30.054,
+          "end": 30.154
+        },
+        {
+          "text": "it's",
+          "start": 30.194,
+          "end": 30.275
+        },
+        {
+          "text": "gonna",
+          "start": 30.295,
+          "end": 30.496
+        },
+        {
+          "text": "pivot",
+          "start": 30.676,
+          "end": 30.958
+        },
+        {
+          "text": "anymore.",
+          "start": 31.038,
+          "end": 31.5
+        }
+      ]
+    },
+    {
+      "id": "line_2-UagJpi78Y",
+      "roleId": "role_JcuuVsaRRGI",
+      "start": 31.602,
+      "end": 32.254,
+      "text": "You think?",
+      "hint": "你才发现啊？",
+      "words": [
+        {
+          "text": "You",
+          "start": 31.642,
+          "end": 31.724
+        },
+        {
+          "text": "think?",
+          "start": 31.826,
+          "end": 32.154
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment with original-source caption review for repeated directions",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Friends — S5 E16",
+    "attribution": "Warner Bros. Television",
+    "source": "https://www.youtube.com/watch?v=UJHa8Bjjy1k&t=165s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 165.9–198.4 秒的连续节选。Raised voices and a repeated rude command to be quiet. The earlier sketch innuendo is excluded."
+  }
+}

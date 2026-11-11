@@ -1,13 +1,8 @@
 import { Select } from '@base-ui/react/select';
 import { ChevronDown, FolderOpen } from 'lucide-react';
-import { clips, mediaRoot } from '../catalog';
+import { clips, folders, mediaRoot } from '../catalog';
 import { useLanguage } from '../i18n';
 import { Icon } from '../shared/ui';
-
-const folders = [
-  { value: 'older-audience', title: '较大孩子' },
-  { value: 'younger-age-5', title: '较小孩子' },
-];
 
 export function CategorySelect({ value, onValueChange }: { value: string; onValueChange: (value: string) => void }) {
   const { t } = useLanguage();

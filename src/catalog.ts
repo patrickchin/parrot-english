@@ -4,3 +4,10 @@ export const clips = reviewClips;
 export const memeClips = clips.filter(clip => clip.cohort === 'older-audience');
 export const youngerClips = clips.filter(clip => clip.cohort === 'younger-age-5');
 export type ClipSlug = typeof clips[number]['slug'];
+
+export const folders = [
+  { value: 'older-audience', title: '电影与动画' },
+  { value: 'younger-age-5', title: '较小孩子' },
+  { value: 'older-children', title: '10–12岁' },
+  { value: 'teens', title: '青少年' },
+];
