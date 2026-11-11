@@ -40,7 +40,7 @@ for (const [cohort,file] of [['older-audience','content/meme-review-scenes.json'
   for (const r of overlay.roles) {const prior=working?.roles.find(old=>old.id===r.id);if(prior?.portrait)r.portrait=prior.portrait;}
   await mkdir(`public/scenes/${slug}`,{recursive:true});await writeFile(`public/scenes/${slug}/scene.json`,JSON.stringify(overlay,null,2)+'\n');await writeFile(`${canonical}/${slug}.json`,JSON.stringify(scene,null,2)+'\n');
   changed.push(slug);media.push({file:`${local}/${video}`,key:`clips/${slug}/${video}`},{file:`${local}/${scene.poster}`,key:`clips/${slug}/${scene.poster}`});
-  generated.push({id:scene.id,slug,title,english:summaries[slug]??(cohort==='younger-age-5'?entry.title:entry.editType==='replacement'?entry.title:head.lines[0].text),note:scene.credit.title,source:scene.credit.source,cohort,poster:scene.mediaBase+scene.poster});
+  generated.push({id:scene.id,slug,title,english:summaries[slug]??(cohort==='younger-age-5'?entry.title:entry.editType==='replacement'?entry.title:head.lines[0].text),note:scene.credit.title,source:scene.credit.source,cohort:libraryFolder,poster:scene.mediaBase+scene.poster});
  }
  await writeFile(file,JSON.stringify(recipe,null,2)+'\n');
 }
