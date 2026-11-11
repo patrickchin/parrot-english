@@ -41,7 +41,7 @@ export function Library({ onChoose, folder, onFolderChange }: { onChoose: (slug:
         <ul role="list" className="scene-shelf">{visible.map(clip => <li key={clip.slug}>
           <button onClick={() => onChoose(clip.slug)} aria-label={t('选择片段：{0}', t(clip.title))} className="scene-select">
             <img src={clip.poster ?? `${mediaRoot}${clip.slug}/${clip.slug}-poster-v1.jpg`} alt="" loading="lazy" decoding="async" />
-            <span className="scene-copy"><span role="heading" aria-level={2} className="scene-title font-display">{t(clip.title)}</span><span lang="en" className="scene-line">{clip.english}</span></span>
+            <span className="scene-copy"><span role="heading" aria-level={2} className="scene-title font-display">{t(clip.title)}</span></span>
           </button>
         </li>)}</ul>
       </section>
