@@ -61,6 +61,15 @@ Five scenes per franchise, including existing scenes. Sequels share the same lib
 - `npm test`, `content:validate` and deterministic staging pass. Browser checks passed for all ten five-scene filters, all 29 real-media play/seek/portrait flows, and recording/save/reload/replay in one new scene per franchise. The existing film-search regression also passes.
 - Staged content revision: `94ba621618092eda67842621`; 4 packs, 108 scenes, 220 referenced JSON files.
 - Upload manifest: `content/local-dubbing/review-release/media.json`, 124 media objects (139,600,549 bytes).
-- Publication is pending the main merge and final OSS verification. Automatic approval review initially rejected a new upload identity; the user explicitly approved a scoped upload user on 2026-11-12. No existing deployment role was modified.
-- A proposed temporary upload identity would have only GetObject/PutObject/multipart-cleanup permissions for the 29 new clip prefixes and four staged content release prefixes plus `content/catalog.json`. It must be detached, its key and user deleted, and its policy deleted after upload. No bucket configuration or deletion permissions are proposed.
+- Published and verified on 2026-11-12. Automatic approval review initially rejected a new upload identity; the user explicitly approved a scoped upload user. No existing deployment role was modified.
+- The temporary identity had only GetObject/PutObject/multipart-cleanup permissions for the 29 new clip prefixes, four staged content release prefixes, `content/catalog.json`, and the empty `content/releases/` folder marker required by ossutil. The key, user and both policy versions were deleted after publication; follow-up user/policy queries returned empty lists. The local key file was removed. No bucket configuration or deletion permissions were granted.
 - Content remains internal prototype material with `redistribution-not-cleared` metadata. Public release clearance has not been asserted.
+
+## Live release evidence
+
+- Main implementation commit: `e5bbb38a66814717852b9f5d1b7f46cc06a6b36f`.
+- [GitHub deployment run](https://github.com/patrickchin/parrot-english/actions/runs/43192262072) succeeded. ESA build `188677728002176` succeeded with both source and production branches `release/player`, at that same commit. Live `/api/health` reports the matching revision.
+- The live OSS catalogue has `Cache-Control: no-store` and matches the staged catalogue. All 220 published JSON objects match the staged bytes; all 124 new media objects match expected lengths and immutable caching headers.
+- A fresh browser without request overrides played and sought through all 29 new scenes and loaded their character portraits. Live recording/save/reload/replay passed for new Cars and Harry Potter scenes, covering both changed packs.
+- The Cars collection shows five scenes at desktop and mobile sizes, with loaded images and no horizontal overflow. Screenshots are under `~/Pictures/Screenshots/Codex/parrot-english/franchise-cars-{desktop,mobile}.png`.
+- The publisher now uses OSS 2.0 `--cache-control` and `--content-type` options, including immutable release objects and a non-cached discovery catalogue.
