@@ -83,10 +83,14 @@ try {
     prepared[key] = filename
 
 uploads = []
-catalogue = json.loads((repo / 'src/review-clips.json').read_text())
+catalogue = []
+for reference in json.loads((repo / 'content/catalog.json').read_text())['packs']:
+    pack_path = repo / 'content' / reference['manifest']
+    pack = json.loads(pack_path.read_text())
+    catalogue.extend({**scene, 'path': pack_path.parent / scene['manifest']} for scene in pack['scenes'])
 for entry in catalogue:
     slug = entry['slug']
-    path = repo / f'public/scenes/{slug}/scene.json'
+    path = entry['path']
     scene = json.loads(path.read_text())
     for role in scene['roles']:
         if role.get('selectable') is False or role['name'] == '\u6765\u7535\u8005':

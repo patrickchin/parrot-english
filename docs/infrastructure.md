@@ -208,3 +208,48 @@ MIME types; the original dialogue and moving waveform cursor worked. The live
 phones use an icon-only back control, retaining its accessible name. Prior warm
 player version `1793209560272835322` remains available for rollback. The final
 header adjustment also passed the three-browser layout check.
+
+
+## Independent content packs — 2026-11-12
+
+The content-pack change preserves the existing Alibaba services and storage
+boundaries. ESA holds the React/Vite application, interface translations, and
+health endpoint. The existing `parrotbook-media-f6e09412` bucket in `cn-hongkong`
+holds the content catalog, pack metadata, scene manifests, subtitles and timed
+words, scene/role translations, waveforms, and audiovisual assets. Learner
+recordings remain in browser IndexedDB; no database or new cloud service is
+introduced.
+
+The 79 existing scenes are separated into four authored packs under
+`content/packs/`. Their 158 scene/waveform files and all five-language scene and
+role translations are preserved. Existing public media objects remain under
+`clips/`; pack manifests reference them without copying or deleting media.
+
+Content discovery uses
+`https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/content/catalog.json`.
+The content publisher uploads immutable `content/releases/<revision>/` objects
+first and replaces the catalog last. Catalog responses use `no-store`; refreshes
+discover updates independently of the player build. The application build no
+longer includes pack metadata or waveforms and rejects content or media copied
+into the application output.
+
+`npm run content:publish` publishes content only.
+`npm run content:remove -- pack_ID` withdraws a catalog entry and preserves stored
+objects and browser recordings; direct URLs to retained objects can still work.
+Permanent object deletion is a separate operation. See
+[the content-pack guide](content-packs.md) for the format and workflow.
+
+Publishing the initial content objects does not release the updated player.
+Application production changes still follow the connected GitHub `main` build
+and require matching the build commit to the live `/api/health` revision.
+
+Initial content publication verified on 2026-11-12: release
+`07d6fab25c13829369a51c4d` contains four packs and 79 scenes. All 162 pack,
+scene, and waveform JSON objects matched local SHA-256 checksums; all 320
+existing media references returned successful HEAD responses with CORS.
+The public catalog returned HTTP 200, `application/json`, `Cache-Control:
+no-store`, and `Access-Control-Allow-Origin: *`. The runtime loader discovered
+all 79 scenes and loaded one manifest from each pack against actual OSS.
+The built player also played one scene from each of the four packs against
+actual OSS without fixture interception or browser errors. Temporary transfer
+objects were deleted. No application code was deployed.

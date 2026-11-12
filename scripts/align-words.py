@@ -23,8 +23,14 @@ torch.set_num_threads(4)
 bundle = torchaudio.pipelines.WAV2VEC2_ASR_BASE_960H
 model = bundle.get_model(dl_kwargs={'progress': False}).eval()
 labels = {char: index for index, char in enumerate(bundle.get_labels())}
-for slug in sys.argv[1:] or sorted(p.name for p in Path('public/scenes').iterdir() if p.is_dir()):
-    folder = Path('public/scenes') / slug
+catalog = json.loads(Path('content/catalog.json').read_text())
+scene_paths = {}
+for entry in catalog['packs']:
+    pack_path = Path('content') / entry['manifest']
+    pack = json.loads(pack_path.read_text())
+    scene_paths.update({scene['slug']: pack_path.parent / scene['manifest'] for scene in pack['scenes']})
+for slug in sys.argv[1:] or sorted(scene_paths):
+    folder = scene_paths[slug].parent
     scene = json.loads((folder / 'scene.json').read_text())
     source = Path('content/media/sintel' if slug == 'sintel' else 'content/local-dubbing') / scene['video']
     audio = subprocess.check_output(['ffmpeg', '-v', 'error', '-i', str(source), '-vn', '-ac', '1', '-ar', str(bundle.sample_rate), '-f', 'f32le', 'pipe:1'])

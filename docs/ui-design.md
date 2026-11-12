@@ -97,10 +97,12 @@ Role selection, recording, and the finished result are steps within the player.
 
 Navigation uses React Router data routing, route matching, redirects, and
 navigation blockers. Translations use i18next and react-i18next directly, with
-separate JSON resources under `src/locales` for English, Chinese, Spanish, Japanese, and Korean. Use stable
-semantic keys and named `{{variables}}`; scene and role content is keyed by record
-ID. `useTranslation()` renders messages, while `useLanguage()` exposes only the
-URL language and language selector action. The navigation adapter preserves the
+separate interface resources under `src/locales` for English, Chinese, Spanish,
+Japanese, and Korean. Scene/role translations and pack-specific notices load from
+content packs into i18next's `content` namespace, keyed by record ID. Use stable
+semantic keys and named `{{variables}}` for interface messages. `useTranslation()`
+renders messages, while `useLanguage()` exposes only the URL language and language
+selector action. The navigation adapter preserves the
 running recording session when a language or autosave URL changes.
 
 Language switching changes only the prefix, preserving the scene, saved-dub ID,
@@ -183,9 +185,11 @@ voice is muted for that turn; stopping or reaching the padded window's end pause
 
 ## Storage and authoring
 
-ESA holds app code and manifests plus small numeric waveform metadata. Video,
-audio, and thumbnails remain in the existing OSS bucket. Live audio stays in
-memory; accepted recordings and waveform envelopes autosave locally in IndexedDB
+ESA holds application code, interface translations, and HTML/CSS assets. The
+existing OSS bucket holds the catalog, packs, scene manifests, scene/role
+translations, numeric waveform metadata, video, audio, and thumbnails. Content
+publishes independently of the application; see [content packs](content-packs.md).
+Live audio stays in memory; accepted recordings and waveform envelopes autosave locally in IndexedDB
 and are never uploaded. A metadata store lists attempts without reading every
 audio file, and a separate media store holds binary audio buffers and optional
 selected source video. Binary buffers avoid WebKit's Blob preparation failures.
@@ -216,10 +220,13 @@ without the required MP4 encoder get a readable error. A downloaded file remains
 on the tester's device after the session is cleared.
 
 After preparing a source clip, run `node scripts/prepare-waveforms.mjs`. It writes
-`public/scenes/<slug>/waveform-v2.json` and updates each manifest. Scene thumbnail
-JPEGs are prepared outside public/ under ignored content/local-dubbing/ and uploaded
-separately to the corresponding OSS clip folders. The retired Sintel sample is
-kept only as an internal test fixture. The function build continues rejecting media files.
+the waveform file referenced by
+`content/packs/<pack_id>/scenes/<slug>/scene.json` and updates each manifest. Scene
+thumbnail JPEGs are prepared under ignored `content/local-dubbing/` and uploaded
+separately to the corresponding OSS clip folders. Validate and publish the changed
+packs after uploading media; no application build is needed for content edits.
+The retired Sintel sample is kept only as an internal test fixture. The function
+build rejects content packs, scene metadata, waveforms, and media files.
 
 If the reference envelope is absent or invalid, show a readable fallback while
 leaving original playback and microphone recording available.
@@ -244,9 +251,10 @@ The model's frame grid is approximately 20 ms; accents, music, and stylized voic
 can affect boundaries. Review generated timing against the source before release.
 Word labels use the speech onset, not an evenly spaced layout or character count.
 
-The authoring model and source audio stay outside the app build. Only numeric
-waveform and timing metadata ship through ESA; audio/video stays in OSS. There
-is no learner transcription, voice upload, or runtime model dependency. The
+The authoring model and source audio stay outside the app build. Numeric
+waveform and timing metadata publish with their packs in OSS, alongside
+audiovisual assets; ESA serves the player. There is no learner transcription,
+voice upload, or runtime model dependency. The
 microphone overlay follows the original script timeline; it does not infer which
 words the learner said. Regenerating unchanged meme scenes preserves word timings.
 

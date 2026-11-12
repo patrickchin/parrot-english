@@ -1,4 +1,4 @@
-import { test, expect, setLanguage, headerDestination } from './fixtures';
+import { test, expect, setLanguage, headerDestination, routeContent } from './fixtures';
 import { readFile, mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -89,6 +89,7 @@ test('partial dubs survive reload and a new tab with exact audio, waveform, role
   await page.getByRole('button', { name: '停止播放', exact: true }).click(); await saved(page);
   // A fresh page in the same browser has the same IndexedDB, not the old JS state.
   const second = await context.newPage();
+  await routeContent(second, true);
   await second.routeWebSocket('ws://127.0.0.1:4317/**', socket => socket.close());
   await second.route('**/scenes/patrick/*.json', async route => route.fulfill({ body: await readFile('tests/fixtures/sintel/' + new URL(route.request().url()).pathname.split('/').pop()), contentType: 'application/json' }));
   await second.route('**/scenes/patrick/scene.json', async route => route.fulfill({ json: await shortScene() }));
@@ -186,7 +187,7 @@ test('unavailable storage keeps recording usable and retry can save the current 
     (window as unknown as { restoreStorage: () => void }).restoreStorage = () => { indexedDB.open = open; };
     indexedDB.open = () => { throw new DOMException('Storage disabled', 'SecurityError'); };
   });
-  await page.getByRole('button', { name: '选择片段：不，这是派大星！', exact: true }).click();
+  await page.getByRole('button', { name: '选择片段：你在找谁？', exact: true }).click();
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('无法保存到本机');
   await page.getByRole('button', { name: '开始录音', exact: true }).click();

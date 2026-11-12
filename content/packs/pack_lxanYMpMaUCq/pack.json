@@ -1,0 +1,1395 @@
+{
+  "version": 1,
+  "id": "pack_lxanYMpMaUCq",
+  "title": "Ages 10–12",
+  "description": "Conversations for older children, for internal prototype testing.",
+  "author": "Parrotbook",
+  "scenes": [
+    {
+      "id": "scene_F6ws6xrH7b0",
+      "slug": "young-sheldon-library",
+      "title": "找一本教人交朋友的书",
+      "english": "A book about making friends",
+      "note": "Young Sheldon",
+      "source": "https://www.youtube.com/watch?v=RlQzUX-UOW4&t=29s",
+      "cohort": "older-children",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/young-sheldon-library/young-sheldon-library-poster-9f9d2305ab2b.jpg",
+      "tags": [
+        "Young Sheldon",
+        "小谢尔顿",
+        "少年谢尔顿",
+        "Sheldon",
+        "Librarian",
+        "谢尔顿",
+        "图书管理员",
+        "library",
+        "图书馆",
+        "books",
+        "书",
+        "friendship",
+        "交朋友"
+      ],
+      "quotes": [
+        "Hey there, Sheldon. What can I get for you today? Chemistry? Quantum mechanics? Astronomy?",
+        "嗨，谢尔顿。今天想找什么？化学？量子力学？天文学？",
+        "No, nothing fun today. I need to learn how to make a friend.",
+        "不，今天不找有趣的东西。我得学学怎么交朋友。",
+        "Oh, honey. You having a hard time adjusting to high school?",
+        "哦，亲爱的。你还不太适应高中吗？",
+        "I'm having a hard time adjusting to Earth.",
+        "我还不太适应地球。",
+        "Yeah, you and me both.",
+        "是啊，咱俩都一样。",
+        "Try this. It's been around a while, but it's still quite popular. Unlike me, who's just been around a while.",
+        "试试这本。它出版很久了，但依然很受欢迎。不像我，只有年头长。"
+      ],
+      "manifest": "scenes/young-sheldon-library/scene.json"
+    },
+    {
+      "id": "scene_K-EnMBJWy2E",
+      "slug": "young-sheldon-compliments",
+      "title": "试着照书上说的做",
+      "english": "Trying out a book’s advice",
+      "note": "Young Sheldon",
+      "source": "https://www.youtube.com/watch?v=RlQzUX-UOW4&t=108s",
+      "cohort": "older-children",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/young-sheldon-compliments/young-sheldon-compliments-poster-5f417636adff.jpg",
+      "tags": [
+        "Young Sheldon",
+        "小谢尔顿",
+        "少年谢尔顿",
+        "Sheldon",
+        "George Cooper Sr.",
+        "谢尔顿",
+        "乔治爸爸",
+        "compliments",
+        "赞美",
+        "books",
+        "书",
+        "advice",
+        "建议"
+      ],
+      "quotes": [
+        "Do you feel complimented when I say your name, George? The book says you should. George.",
+        "我叫你的名字时，你觉得受到赞美了吗，乔治？书上说你会的。乔治。",
+        "I suppose. Kind of overdoing it a little. Sheldon.",
+        "算是吧。你有点做过头了。谢尔顿。",
+        "Well, thank you for your criticism. It also says I should praise any improvements that you've made.",
+        "谢谢你的批评。书上还说，我应该表扬你的进步。",
+        "Okay.",
+        "好啊。",
+        "I'll get back to you. George.",
+        "有了我再告诉你。乔治。"
+      ],
+      "manifest": "scenes/young-sheldon-compliments/scene.json"
+    },
+    {
+      "id": "scene_qs532GUZz7E",
+      "slug": "young-sheldon-homework",
+      "title": "请爸爸和老师谈一谈",
+      "english": "Asking Dad to talk to a teacher",
+      "note": "Young Sheldon",
+      "source": "https://www.youtube.com/watch?v=GJ0y2haVfFI&t=16s",
+      "cohort": "older-children",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/young-sheldon-homework/young-sheldon-homework-poster-30a45d7c9537.jpg",
+      "tags": [
+        "Young Sheldon",
+        "小谢尔顿",
+        "少年谢尔顿",
+        "George Cooper Sr.",
+        "Sheldon",
+        "乔治爸爸",
+        "谢尔顿",
+        "homework",
+        "作业",
+        "engineering",
+        "工程",
+        "school",
+        "学校"
+      ],
+      "quotes": [
+        "What's going on?",
+        "怎么了？",
+        "I can't figure out this engineering project, and every time I turn it in, my professor just rips it up.",
+        "我做不明白这个工程作业，每次交上去，教授都直接把它撕了。",
+        "Well, ain't this the fella you liked?",
+        "这不是你挺喜欢的那个老师吗？",
+        "I did when I thought he was pushing me to be all I could be, but it turns out all he can be is mean.",
+        "我以为他在激发我的潜能时是挺喜欢他。结果他只会刻薄。",
+        "I'm sure you'll figure it out.",
+        "你肯定能想明白的。",
+        "Could you talk to him?",
+        "你能跟他谈谈吗？",
+        "You're in college now. Don't you think you should fight your own battles?",
+        "你都上大学了，不该自己解决问题了吗？",
+        "Does telling on him to the president of the university count?",
+        "那向大学校长告状算不算？",
+        "Did it work?",
+        "管用了吗？",
+        "No.",
+        "没有。",
+        "Then no.",
+        "那就不算。",
+        "Will you please talk to him?",
+        "拜托你跟他谈谈好吗？",
+        "What if your mom does it?",
+        "让你妈妈去怎么样？",
+        "But you were both in the army, and you're both crabby and impatient. There's a lot of common ground.",
+        "可你们都当过兵，都脾气暴躁、没耐心。共同点可多了。"
+      ],
+      "manifest": "scenes/young-sheldon-homework/scene.json"
+    },
+    {
+      "id": "scene_yjYJv1eTPR4",
+      "slug": "young-sheldon-einstein",
+      "title": "爱因斯坦的头发和熟悉的性格",
+      "english": "Einstein’s hair and a familiar personality",
+      "note": "Young Sheldon",
+      "source": "https://www.youtube.com/watch?v=Twb47ynU4lw&t=19s",
+      "cohort": "older-children",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/young-sheldon-einstein/young-sheldon-einstein-poster-4ecb5b8418ae.jpg",
+      "tags": [
+        "Young Sheldon",
+        "小谢尔顿",
+        "少年谢尔顿",
+        "Dr. Sturgis",
+        "Missy",
+        "Sheldon",
+        "斯特吉斯博士",
+        "米茜",
+        "谢尔顿",
+        "Einstein",
+        "爱因斯坦",
+        "science",
+        "科学",
+        "family",
+        "家庭"
+      ],
+      "quotes": [
+        "Did you know that when Albert Einstein was a little boy, his parents worried there was something wrong with him?",
+        "你知道吗？爱因斯坦小时候，父母担心他是不是有什么问题。",
+        "Because he couldn't comb his hair?",
+        "因为他不会梳头吗？",
+        "No, that was a choice he made later in life. When he was young, he wanted nothing to do with other children, and would often have extreme temper tantrums.",
+        "不，那是他后来自己选的发型。他小时候不愿跟其他孩子交往，还经常大发脾气。",
+        "He sounds like you.",
+        "听起来挺像你的。",
+        "I know. Isn't it great?",
+        "我知道，是不是很棒？"
+      ],
+      "manifest": "scenes/young-sheldon-einstein/scene.json"
+    },
+    {
+      "id": "scene_eMvqUxta4mg",
+      "slug": "young-sheldon-camera",
+      "title": "可以挪一下摄像机吗？",
+      "english": "Could you move the camera?",
+      "note": "Young Sheldon",
+      "source": "https://www.youtube.com/watch?v=Twb47ynU4lw&t=158s",
+      "cohort": "older-children",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/young-sheldon-camera/young-sheldon-camera-poster-64fb2098128d.jpg",
+      "tags": [
+        "Young Sheldon",
+        "小谢尔顿",
+        "少年谢尔顿",
+        "Missy",
+        "Researcher",
+        "米茜",
+        "研究员",
+        "camera",
+        "摄像机",
+        "research",
+        "研究"
+      ],
+      "quotes": [
+        "Is that camera gonna be on?",
+        "那台摄像机会开着吗？",
+        "Yes.",
+        "会的。",
+        "Can you move it over to that side?",
+        "你能把它挪到那边吗？",
+        "Why?",
+        "为什么？",
+        "If I've learned one thing from school picture day, it's that I look better from that side.",
+        "学校拍照日让我明白了一件事：从那边拍我更好看。",
+        "Sure, I'll move it. Okay...",
+        "当然，我来挪。好了……",
+        "And bring it a little closer.",
+        "再拿近一点。",
+        "How's that?",
+        "这样怎么样？",
+        "Great.",
+        "很好。",
+        "Okay.",
+        "好。"
+      ],
+      "manifest": "scenes/young-sheldon-camera/scene.json"
+    },
+    {
+      "id": "scene_hua0i_EVO5o",
+      "slug": "young-sheldon-breakfast",
+      "title": "早餐和一句话的不同含义",
+      "english": "Breakfast and a difference in meaning",
+      "note": "Young Sheldon",
+      "source": "https://www.youtube.com/watch?v=KzjNc5A25_A&t=29s",
+      "cohort": "older-children",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/young-sheldon-breakfast/young-sheldon-breakfast-poster-c3e45f2bbdeb.jpg",
+      "tags": [
+        "Young Sheldon",
+        "小谢尔顿",
+        "少年谢尔顿",
+        "Missy",
+        "Georgie",
+        "Mandy",
+        "米茜",
+        "小乔治",
+        "曼迪",
+        "breakfast",
+        "早餐",
+        "wordplay",
+        "文字游戏"
+      ],
+      "quotes": [
+        "Eggs are on the table. Here's some toast. Bacon's coming up.",
+        "鸡蛋在桌上。这是吐司，培根马上就好。",
+        "Wow. Look at you being Mom.",
+        "哇，你都当起咱妈了。",
+        "Say that again and you can make your own lunch.",
+        "再说一遍，午饭就自己做。",
+        "Oh, you're touchy like Mom too.",
+        "哦，你连容易生气这点都像咱妈。",
+        "Oh, that smells good.",
+        "哦，闻着真香。",
+        "Help yourself.",
+        "自己拿吧。",
+        "You know, you're gonna make a really good mom one day.",
+        "你以后一定会是个好妈妈。",
+        "Thank you.",
+        "谢谢。",
+        "How's that different from what I said?",
+        "她说的和我说的有什么区别？",
+        "You said our mom. She said a mom. Totally different.",
+        "你说的是“咱妈”，她说的是“一位妈妈”。完全不同。",
+        "No, it ain't.",
+        "哪有不同。"
+      ],
+      "manifest": "scenes/young-sheldon-breakfast/scene.json"
+    },
+    {
+      "id": "scene_VgEVwH_D_ZM",
+      "slug": "young-sheldon-chore-chart",
+      "title": "每个人都有家务",
+      "english": "Everyone gets a chore",
+      "note": "Young Sheldon",
+      "source": "https://www.youtube.com/watch?v=sSd7LrihSik&t=139s",
+      "cohort": "older-children",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/young-sheldon-chore-chart/young-sheldon-chore-chart-poster-2fd865e93926.jpg",
+      "tags": [
+        "Young Sheldon",
+        "小谢尔顿",
+        "少年谢尔顿",
+        "George Cooper Sr.",
+        "Missy",
+        "乔治爸爸",
+        "米茜",
+        "chores",
+        "家务",
+        "family",
+        "家庭"
+      ],
+      "quotes": [
+        "Chore chart?",
+        "家务表？",
+        "That's right.",
+        "没错。",
+        "You realize it's my job to pay for all this?",
+        "你知道这些都是我挣钱买的吧？",
+        "That is true. Thank you.",
+        "确实如此。谢谢你。",
+        "You're welcome.",
+        "不用谢。",
+        "And thank you in advance for doing the laundry and taking out the garbage.",
+        "也先谢谢你洗衣服、倒垃圾。",
+        "What about Georgie?",
+        "那小乔治呢？",
+        "Look at the chart. Georgie mows the lawn and cleans the toilet.",
+        "看表格。小乔治割草、打扫厕所。"
+      ],
+      "manifest": "scenes/young-sheldon-chore-chart/scene.json"
+    },
+    {
+      "id": "scene_cgQRAEx-Czo",
+      "slug": "harry-potter-moving-card",
+      "title": "照片里的人去哪儿了？",
+      "english": "Where did the picture go?",
+      "note": "Harry Potter and the Philosopher’s Stone",
+      "source": "https://www.youtube.com/watch?v=phdwdrPs3Bo&t=14s",
+      "cohort": "older-children",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/harry-potter-moving-card/harry-potter-moving-card-poster-e2a719acfbb1.jpg",
+      "tags": [
+        "Harry Potter and the Philosopher’s Stone",
+        "Harry Potter",
+        "Harry Potter and the Sorcerer's Stone",
+        "哈利波特",
+        "哈利·波特",
+        "魔法石",
+        "Harry",
+        "Ron",
+        "哈利",
+        "罗恩",
+        "magic",
+        "魔法",
+        "Dumbledore",
+        "邓布利多",
+        "chocolate frog",
+        "巧克力蛙"
+      ],
+      "quotes": [
+        "I've got Dumbledore!",
+        "我抽到邓布利多了！",
+        "I've got about six of him.",
+        "我大概已经有六张他了。",
+        "Hey, he's gone!",
+        "嘿，他不见了！",
+        "Well, you can't expect him to hang around all day, can you?",
+        "你总不能指望他整天都待在那儿吧？"
+      ],
+      "manifest": "scenes/harry-potter-moving-card/scene.json"
+    },
+    {
+      "id": "scene_3YCRbWX5VTE",
+      "slug": "harry-potter-new-friend",
+      "title": "在火车上认识新朋友",
+      "english": "Meeting a new friend on the train",
+      "note": "Harry Potter and the Philosopher’s Stone",
+      "source": "https://www.youtube.com/watch?v=Pr0U9CgneZ8&t=1s",
+      "cohort": "older-children",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/harry-potter-new-friend/harry-potter-new-friend-poster-9e4fb2b0d217.jpg",
+      "tags": [
+        "Harry Potter and the Philosopher’s Stone",
+        "Harry Potter",
+        "Harry Potter and the Sorcerer's Stone",
+        "哈利波特",
+        "哈利·波特",
+        "魔法石",
+        "Ron",
+        "Harry",
+        "罗恩",
+        "哈利",
+        "friendship",
+        "交朋友",
+        "train",
+        "火车",
+        "greetings",
+        "打招呼"
+      ],
+      "quotes": [
+        "Excuse me. Do you mind? Everywhere else is full.",
+        "不好意思，我能坐这儿吗？别的地方都坐满了。",
+        "Not at all.",
+        "当然可以。",
+        "I'm Ron, by the way. Ron Weasley.",
+        "对了，我叫罗恩，罗恩·韦斯莱。",
+        "I'm Harry. Harry Potter.",
+        "我叫哈利，哈利·波特。",
+        "So, so it's true? I mean, do you really have the... the...",
+        "所以，那些都是真的？我是说，你真的有那个……那个……",
+        "The what?",
+        "什么？",
+        "The scar.",
+        "那道伤疤。",
+        "Oh, yeah.",
+        "哦，有啊。",
+        "Wicked!",
+        "太酷了！"
+      ],
+      "manifest": "scenes/harry-potter-new-friend/scene.json"
+    },
+    {
+      "id": "scene_v-EwUnOY6rw",
+      "slug": "young-sheldon-good-guest",
+      "routeSlug": "that-is-no-way-to-thank-our-hosts",
+      "title": "这样可不好感谢主人",
+      "english": "That is no way to thank our hosts",
+      "note": "Young Sheldon",
+      "source": "https://www.youtube.com/watch?v=VSrdPFnxYNA&t=0s",
+      "cohort": "older-children",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/young-sheldon-good-guest/young-sheldon-good-guest-poster-8c3477d1dd5d.jpg",
+      "tags": [
+        "Young Sheldon",
+        "Sheldon",
+        "George Cooper",
+        "sleepover",
+        "kindness",
+        "谢尔顿",
+        "做客",
+        "礼貌"
+      ],
+      "quotes": [
+        "Hey, here's a funny prank you can try tonight. When Tam falls asleep, put some shaving cream in his hand and then tickle his nose.",
+        "嘿，今晚你可以试个好玩的恶作剧。等谭睡着，在他手上放点剃须膏，再挠挠他的鼻子。",
+        "Why?",
+        "为什么？",
+        "Because then he'll go to scratch his nose and get shaving cream on his face.",
+        "这样他去挠鼻子，就会把剃须膏弄到脸上。",
+        "And then what?",
+        "然后呢？",
+        "Well, that's it.",
+        "呃，就这样。",
+        "But I'm a guest in their home, and that doesn't seem like a very good way to repay their kindness.",
+        "可我是他们家的客人，这样似乎不太能报答他们的好意。",
+        "Never mind.",
+        "算了，当我没说。"
+      ],
+      "manifest": "scenes/young-sheldon-good-guest/scene.json"
+    },
+    {
+      "id": "scene_LiOGfPU3EPE",
+      "slug": "young-sheldon-own-breakfast",
+      "routeSlug": "you-can-make-your-own-breakfast",
+      "title": "你可以自己做早餐",
+      "english": "You can make your own breakfast",
+      "note": "Young Sheldon",
+      "source": "https://www.youtube.com/watch?v=sSd7LrihSik&t=114s",
+      "cohort": "older-children",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/young-sheldon-own-breakfast/young-sheldon-own-breakfast-poster-55c94eb1bc0b.jpg",
+      "tags": [
+        "Young Sheldon",
+        "Missy",
+        "George Cooper",
+        "breakfast",
+        "chores",
+        "米茜",
+        "早餐",
+        "家务"
+      ],
+      "quotes": [
+        "Well, you didn't make a big old breakfast?",
+        "咦，你没给大家做一顿丰盛的早餐吗？",
+        "I did, and I'm eating it. And when I'm done, I'm gonna go watch TV while you make your own breakfast and do the dishes.",
+        "做了呀，我正吃着呢。吃完我要去看电视，你就自己做早餐，再把碗洗了吧。",
+        "But you were doing great. So grown up, cooking and cleaning.",
+        "可你之前做得很好啊，像个大人一样，又做饭又打扫。",
+        "Mm-hmm. Pass the syrup.",
+        "嗯哼。把糖浆递给我。",
+        "I thought we had a whole thing going here.",
+        "我还以为咱们已经安排得挺好了呢。",
+        "Now I have a new thing. Look at the fridge.",
+        "现在我有新安排了。看看冰箱上吧。"
+      ],
+      "manifest": "scenes/young-sheldon-own-breakfast/scene.json"
+    },
+    {
+      "id": "scene_W-m8Y8JwqZc",
+      "slug": "young-sheldon-timed-test",
+      "routeSlug": "will-i-be-timed",
+      "title": "会给我计时吗？",
+      "english": "Will I be timed?",
+      "note": "Young Sheldon",
+      "source": "https://www.youtube.com/watch?v=Twb47ynU4lw&t=110s",
+      "cohort": "older-children",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/young-sheldon-timed-test/young-sheldon-timed-test-poster-077d0593185c.jpg",
+      "tags": [
+        "Young Sheldon",
+        "Sheldon",
+        "Dr. Sturgis",
+        "test",
+        "questions",
+        "谢尔顿",
+        "测试",
+        "计时"
+      ],
+      "quotes": [
+        "Okay, Sheldon, this first battery of tests measures basic problem-solving abilities.",
+        "好，谢尔顿，第一组测试衡量的是基本的问题解决能力。",
+        "Is this the Kaufman test or the Wechsler intelligence scale?",
+        "这是考夫曼测试，还是韦氏智力量表？",
+        "Are you familiar with those?",
+        "你了解这些吗？",
+        "It's embarrassing, but I enjoy a little light reading in the bathroom.",
+        "说来不好意思，我喜欢在洗手间读点轻松的东西。",
+        "Okay. Are you ready?",
+        "好吧，你准备好了吗？",
+        "Will I be timed?",
+        "会给我计时吗？",
+        "Yes.",
+        "会的。",
+        "Fantastic!",
+        "太棒了！"
+      ],
+      "manifest": "scenes/young-sheldon-timed-test/scene.json"
+    }
+  ],
+  "locales": {
+    "en": {
+      "scenes": {
+        "scene_F6ws6xrH7b0": {
+          "title": "A book about making friends",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 29.7–60.3 seconds of the original upload. A child feels out of place at school; the librarian makes a self-deprecating joke about being unpopular."
+        },
+        "scene_K-EnMBJWy2E": {
+          "title": "Trying out a book’s advice",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 108.2–135.45 seconds of the original upload. Family sarcasm. The cut ends after the final name repetition and before the channel end card."
+        },
+        "scene_qs532GUZz7E": {
+          "title": "Asking Dad to talk to a teacher",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 16.5–51.45 seconds of the original upload. College homework is the setting; the selected exchange uses parent/child language. Mild criticism of the professor. Later crude adult dialogue is excluded."
+        },
+        "scene_yjYJv1eTPR4": {
+          "title": "Einstein’s hair and a familiar personality",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 19.15–42.45 seconds of the original upload. Fictionalised historical anecdote and teasing about childhood behaviour; not a medical or biographical lesson."
+        },
+        "scene_eMvqUxta4mg": {
+          "title": "Could you move the camera?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 158.55–182 seconds of the original upload. Picture-day appearance preference; the later adult/body joke in the source is excluded."
+        },
+        "scene_hua0i_EVO5o": {
+          "title": "Breakfast and a difference in meaning",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 29.05–53.05 seconds of the original upload. Family sarcasm about sounding like their mother. Later pregnancy and mattress innuendo are excluded."
+        },
+        "scene_VgEVwH_D_ZM": {
+          "title": "Everyone gets a chore",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 139.85–158.7 seconds of the original upload. Family bargaining and sarcasm. The earlier crude dialogue is excluded."
+        },
+        "scene_cgQRAEx-Czo": {
+          "title": "Where did the picture go?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 14.65–26.35 seconds of the original upload. Fantasy: a moving picture on a collectible card. Source is the first film, not a claim that pictures behave this way."
+        },
+        "scene_3YCRbWX5VTE": {
+          "title": "Meeting a new friend on the train",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 1.1–30.45 seconds of the original upload. Fantasy setting and a brief look at Harry’s healed scar. Stops before the sweets trolley conversation."
+        },
+        "scene_v-EwUnOY6rw": {
+          "title": "That is no way to thank our hosts",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 0.4–26.1 seconds of the original upload. A shaving-cream prank is described and rejected; it is not performed. The later eye-stinging discussion and cultural stereotypes are excluded."
+        },
+        "scene_LiOGfPU3EPE": {
+          "title": "You can make your own breakfast",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 114.4–137.3 seconds of the original upload. Family sarcasm. The earlier crude family dialogue is excluded; the separate existing chore-chart scene begins later."
+        },
+        "scene_W-m8Y8JwqZc": {
+          "title": "Will I be timed?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 110.78–134.6 seconds of the original upload. Test names are proper nouns, not a medical assessment. Mild bathroom-reading joke; source avoids later appearance/body comments."
+        }
+      },
+      "roles": {
+        "role_0BkC3THi_I8": {
+          "name": "Sheldon",
+          "hint": "2 lines"
+        },
+        "role_QUPzEFZwnEw": {
+          "name": "Librarian",
+          "hint": "4 lines"
+        },
+        "role_tc1hthFv9GM": {
+          "name": "Sheldon",
+          "hint": "3 lines"
+        },
+        "role_80084y8FUOo": {
+          "name": "George Cooper Sr.",
+          "hint": "2 lines"
+        },
+        "role_9VX0JklGCdk": {
+          "name": "George Cooper Sr.",
+          "hint": "7 lines"
+        },
+        "role_mPMtxEzSrfc": {
+          "name": "Sheldon",
+          "hint": "7 lines"
+        },
+        "role_zZ-586P-_DY": {
+          "name": "Dr. Sturgis",
+          "hint": "2 lines"
+        },
+        "role_OMjL-BEtZ3M": {
+          "name": "Missy",
+          "hint": "2 lines"
+        },
+        "role_e-_eXKF-0UY": {
+          "name": "Sheldon",
+          "hint": "1 line"
+        },
+        "role_5uKRB1qozDw": {
+          "name": "Missy",
+          "hint": "5 lines"
+        },
+        "role_2NFZc18LwH0": {
+          "name": "Researcher",
+          "hint": "5 lines"
+        },
+        "role_alEoy-ZA9Xc": {
+          "name": "Missy",
+          "hint": "5 lines"
+        },
+        "role_XWR3eWbv6BY": {
+          "name": "Georgie",
+          "hint": "4 lines"
+        },
+        "role_4InIxg67GRk": {
+          "name": "Mandy",
+          "hint": "2 lines"
+        },
+        "role_PD9C_E7Icic": {
+          "name": "George Cooper Sr.",
+          "hint": "4 lines"
+        },
+        "role_G1aMm5UAPYw": {
+          "name": "Missy",
+          "hint": "4 lines"
+        },
+        "role_fbJuCJMGfVg": {
+          "name": "Harry",
+          "hint": "2 lines"
+        },
+        "role_F4XSF4Edmng": {
+          "name": "Ron",
+          "hint": "2 lines"
+        },
+        "role_OK4t0IU4neI": {
+          "name": "Ron",
+          "hint": "5 lines"
+        },
+        "role_yc3TOAmqHEU": {
+          "name": "Harry",
+          "hint": "4 lines"
+        },
+        "role_g5_sn-Abuf0": {
+          "name": "George Cooper Sr.",
+          "hint": "4 lines"
+        },
+        "role_K78BsqE_7Yc": {
+          "name": "Sheldon",
+          "hint": "3 lines"
+        },
+        "role_zuTeBzcMsTI": {
+          "name": "George Cooper Sr.",
+          "hint": "3 lines"
+        },
+        "role_fBXr-KJbR5s": {
+          "name": "Missy",
+          "hint": "3 lines"
+        },
+        "role_OOU1lIZ-hMw": {
+          "name": "Dr. Sturgis",
+          "hint": "4 lines"
+        },
+        "role_tSxcC_9Ky4g": {
+          "name": "Sheldon",
+          "hint": "4 lines"
+        }
+      },
+      "notices": {
+        "library": "Adult prototype testing · Dubs save in this browser. No uploads. Redistribution permission for the meme clips is unconfirmed.",
+        "scene": "This scene is for adult prototype testing. The full film is not beginner learning material for children.The creators do not endorse this product."
+      }
+    },
+    "zh-CN": {
+      "scenes": {
+        "scene_F6ws6xrH7b0": {
+          "title": "找一本教人交朋友的书",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 29.7–60.3 秒的连续节选。A child feels out of place at school; the librarian makes a self-deprecating joke about being unpopular."
+        },
+        "scene_K-EnMBJWy2E": {
+          "title": "试着照书上说的做",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 108.2–135.45 秒的连续节选。Family sarcasm. The cut ends after the final name repetition and before the channel end card."
+        },
+        "scene_qs532GUZz7E": {
+          "title": "请爸爸和老师谈一谈",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 16.5–51.45 秒的连续节选。College homework is the setting; the selected exchange uses parent/child language. Mild criticism of the professor. Later crude adult dialogue is excluded."
+        },
+        "scene_yjYJv1eTPR4": {
+          "title": "爱因斯坦的头发和熟悉的性格",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 19.15–42.45 秒的连续节选。Fictionalised historical anecdote and teasing about childhood behaviour; not a medical or biographical lesson."
+        },
+        "scene_eMvqUxta4mg": {
+          "title": "可以挪一下摄像机吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 158.55–182 秒的连续节选。Picture-day appearance preference; the later adult/body joke in the source is excluded."
+        },
+        "scene_hua0i_EVO5o": {
+          "title": "早餐和一句话的不同含义",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 29.05–53.05 秒的连续节选。Family sarcasm about sounding like their mother. Later pregnancy and mattress innuendo are excluded."
+        },
+        "scene_VgEVwH_D_ZM": {
+          "title": "每个人都有家务",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 139.85–158.7 秒的连续节选。Family bargaining and sarcasm. The earlier crude dialogue is excluded."
+        },
+        "scene_cgQRAEx-Czo": {
+          "title": "照片里的人去哪儿了？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 14.65–26.35 秒的连续节选。Fantasy: a moving picture on a collectible card. Source is the first film, not a claim that pictures behave this way."
+        },
+        "scene_3YCRbWX5VTE": {
+          "title": "在火车上认识新朋友",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 1.1–30.45 秒的连续节选。Fantasy setting and a brief look at Harry’s healed scar. Stops before the sweets trolley conversation."
+        },
+        "scene_v-EwUnOY6rw": {
+          "title": "这样可不好感谢主人",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 0.4–26.1 秒的连续节选。A shaving-cream prank is described and rejected; it is not performed. The later eye-stinging discussion and cultural stereotypes are excluded."
+        },
+        "scene_LiOGfPU3EPE": {
+          "title": "你可以自己做早餐",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 114.4–137.3 秒的连续节选。Family sarcasm. The earlier crude family dialogue is excluded; the separate existing chore-chart scene begins later."
+        },
+        "scene_W-m8Y8JwqZc": {
+          "title": "会给我计时吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 110.78–134.6 秒的连续节选。Test names are proper nouns, not a medical assessment. Mild bathroom-reading joke; source avoids later appearance/body comments."
+        }
+      },
+      "roles": {
+        "role_0BkC3THi_I8": {
+          "name": "谢尔顿",
+          "hint": "2 句台词"
+        },
+        "role_QUPzEFZwnEw": {
+          "name": "图书管理员",
+          "hint": "4 句台词"
+        },
+        "role_tc1hthFv9GM": {
+          "name": "谢尔顿",
+          "hint": "3 句台词"
+        },
+        "role_80084y8FUOo": {
+          "name": "乔治爸爸",
+          "hint": "2 句台词"
+        },
+        "role_9VX0JklGCdk": {
+          "name": "乔治爸爸",
+          "hint": "7 句台词"
+        },
+        "role_mPMtxEzSrfc": {
+          "name": "谢尔顿",
+          "hint": "7 句台词"
+        },
+        "role_zZ-586P-_DY": {
+          "name": "斯特吉斯博士",
+          "hint": "2 句台词"
+        },
+        "role_OMjL-BEtZ3M": {
+          "name": "米茜",
+          "hint": "2 句台词"
+        },
+        "role_e-_eXKF-0UY": {
+          "name": "谢尔顿",
+          "hint": "1 句台词"
+        },
+        "role_5uKRB1qozDw": {
+          "name": "米茜",
+          "hint": "5 句台词"
+        },
+        "role_2NFZc18LwH0": {
+          "name": "研究员",
+          "hint": "5 句台词"
+        },
+        "role_alEoy-ZA9Xc": {
+          "name": "米茜",
+          "hint": "5 句台词"
+        },
+        "role_XWR3eWbv6BY": {
+          "name": "小乔治",
+          "hint": "4 句台词"
+        },
+        "role_4InIxg67GRk": {
+          "name": "曼迪",
+          "hint": "2 句台词"
+        },
+        "role_PD9C_E7Icic": {
+          "name": "乔治爸爸",
+          "hint": "4 句台词"
+        },
+        "role_G1aMm5UAPYw": {
+          "name": "米茜",
+          "hint": "4 句台词"
+        },
+        "role_fbJuCJMGfVg": {
+          "name": "哈利",
+          "hint": "2 句台词"
+        },
+        "role_F4XSF4Edmng": {
+          "name": "罗恩",
+          "hint": "2 句台词"
+        },
+        "role_OK4t0IU4neI": {
+          "name": "罗恩",
+          "hint": "5 句台词"
+        },
+        "role_yc3TOAmqHEU": {
+          "name": "哈利",
+          "hint": "4 句台词"
+        },
+        "role_g5_sn-Abuf0": {
+          "name": "乔治爸爸",
+          "hint": "4 句台词"
+        },
+        "role_K78BsqE_7Yc": {
+          "name": "谢尔顿",
+          "hint": "3 句台词"
+        },
+        "role_zuTeBzcMsTI": {
+          "name": "乔治爸爸",
+          "hint": "3 句台词"
+        },
+        "role_fBXr-KJbR5s": {
+          "name": "米茜",
+          "hint": "3 句台词"
+        },
+        "role_OOU1lIZ-hMw": {
+          "name": "斯特吉斯博士",
+          "hint": "4 句台词"
+        },
+        "role_tSxcC_9Ky4g": {
+          "name": "谢尔顿",
+          "hint": "4 句台词"
+        }
+      },
+      "notices": {
+        "library": "成人原型测试 · 配音保存在此浏览器，不会上传。影视梗片段尚未确认再分发许可。",
+        "scene": "本片段用于成人原型测试；完整电影并非儿童入门教材。创作者未对本产品作出背书。"
+      }
+    },
+    "es": {
+      "scenes": {
+        "scene_F6ws6xrH7b0": {
+          "title": "Un libro para aprender a hacer amigos",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 29.7–60.3 del vídeo original. Un niño siente que no encaja en el colegio. La bibliotecaria bromea sobre su propia falta de popularidad."
+        },
+        "scene_K-EnMBJWy2E": {
+          "title": "Probando los consejos de un libro",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 108.2–135.45 del vídeo original. Sarcasmo familiar. El fragmento termina tras la última repetición del nombre y antes de la pantalla final del canal."
+        },
+        "scene_qs532GUZz7E": {
+          "title": "Pedirle a papá que hable con un profesor",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 16.5–51.45 del vídeo original. El contexto son los deberes universitarios, pero el diálogo elegido es entre padre e hijo. Hay una crítica leve al profesor. Se excluye el diálogo vulgar posterior para adultos."
+        },
+        "scene_yjYJv1eTPR4": {
+          "title": "El pelo de Einstein y un carácter conocido",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 19.15–42.45 del vídeo original. Anécdota histórica novelada y bromas sobre el comportamiento infantil. No es una lección médica ni biográfica."
+        },
+        "scene_eMvqUxta4mg": {
+          "title": "¿Puedes mover la cámara?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 158.55–182 del vídeo original. Preferencias de aspecto para el día de la foto. Se excluye la broma posterior para adultos sobre el cuerpo."
+        },
+        "scene_hua0i_EVO5o": {
+          "title": "El desayuno y una diferencia de significado",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 29.05–53.05 del vídeo original. Sarcasmo familiar sobre hablar como su madre. Se excluyen las insinuaciones posteriores sobre embarazo y colchones."
+        },
+        "scene_VgEVwH_D_ZM": {
+          "title": "Todos tienen una tarea",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 139.85–158.7 del vídeo original. Negociación y sarcasmo familiar. Se excluye el diálogo vulgar anterior."
+        },
+        "scene_cgQRAEx-Czo": {
+          "title": "¿Adónde se ha ido el de la foto?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 14.65–26.35 del vídeo original. Fantasía: una imagen en movimiento en una tarjeta coleccionable. Procede de la primera película; no afirma que las imágenes se comporten así."
+        },
+        "scene_3YCRbWX5VTE": {
+          "title": "Un nuevo amigo en el tren",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 1.1–30.45 del vídeo original. Entorno fantástico y un breve vistazo a la cicatriz curada de Harry. Termina antes de la conversación sobre el carrito de dulces."
+        },
+        "scene_v-EwUnOY6rw": {
+          "title": "Así no se agradece a los anfitriones",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 0.4–26.1 del vídeo original. Se describe y se rechaza una broma con espuma de afeitar; no se lleva a cabo. Se excluyen la conversación posterior sobre escozor de ojos y los estereotipos culturales."
+        },
+        "scene_LiOGfPU3EPE": {
+          "title": "Puedes prepararte el desayuno",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 114.4–137.3 del vídeo original. Sarcasmo familiar. Se excluye el diálogo familiar vulgar anterior. La escena del cuadro de tareas, publicada por separado, empieza después."
+        },
+        "scene_W-m8Y8JwqZc": {
+          "title": "¿Me van a cronometrar?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 110.78–134.6 del vídeo original. Los nombres de las pruebas son nombres propios, no una evaluación médica. Hay una broma leve sobre leer en el baño; se evitan los comentarios posteriores sobre la apariencia o el cuerpo."
+        }
+      },
+      "roles": {
+        "role_0BkC3THi_I8": {
+          "name": "Sheldon",
+          "hint": "2 frases"
+        },
+        "role_QUPzEFZwnEw": {
+          "name": "Bibliotecaria",
+          "hint": "4 frases"
+        },
+        "role_tc1hthFv9GM": {
+          "name": "Sheldon",
+          "hint": "3 frases"
+        },
+        "role_80084y8FUOo": {
+          "name": "George Cooper padre",
+          "hint": "2 frases"
+        },
+        "role_9VX0JklGCdk": {
+          "name": "George Cooper padre",
+          "hint": "7 frases"
+        },
+        "role_mPMtxEzSrfc": {
+          "name": "Sheldon",
+          "hint": "7 frases"
+        },
+        "role_zZ-586P-_DY": {
+          "name": "Dr. Sturgis",
+          "hint": "2 frases"
+        },
+        "role_OMjL-BEtZ3M": {
+          "name": "Missy",
+          "hint": "2 frases"
+        },
+        "role_e-_eXKF-0UY": {
+          "name": "Sheldon",
+          "hint": "1 frase"
+        },
+        "role_5uKRB1qozDw": {
+          "name": "Missy",
+          "hint": "5 frases"
+        },
+        "role_2NFZc18LwH0": {
+          "name": "Investigador",
+          "hint": "5 frases"
+        },
+        "role_alEoy-ZA9Xc": {
+          "name": "Missy",
+          "hint": "5 frases"
+        },
+        "role_XWR3eWbv6BY": {
+          "name": "Georgie",
+          "hint": "4 frases"
+        },
+        "role_4InIxg67GRk": {
+          "name": "Mandy",
+          "hint": "2 frases"
+        },
+        "role_PD9C_E7Icic": {
+          "name": "George Cooper padre",
+          "hint": "4 frases"
+        },
+        "role_G1aMm5UAPYw": {
+          "name": "Missy",
+          "hint": "4 frases"
+        },
+        "role_fbJuCJMGfVg": {
+          "name": "Harry",
+          "hint": "2 frases"
+        },
+        "role_F4XSF4Edmng": {
+          "name": "Ron",
+          "hint": "2 frases"
+        },
+        "role_OK4t0IU4neI": {
+          "name": "Ron",
+          "hint": "5 frases"
+        },
+        "role_yc3TOAmqHEU": {
+          "name": "Harry",
+          "hint": "4 frases"
+        },
+        "role_g5_sn-Abuf0": {
+          "name": "George Cooper padre",
+          "hint": "4 frases"
+        },
+        "role_K78BsqE_7Yc": {
+          "name": "Sheldon",
+          "hint": "3 frases"
+        },
+        "role_zuTeBzcMsTI": {
+          "name": "George Cooper padre",
+          "hint": "3 frases"
+        },
+        "role_fBXr-KJbR5s": {
+          "name": "Missy",
+          "hint": "3 frases"
+        },
+        "role_OOU1lIZ-hMw": {
+          "name": "Dr. Sturgis",
+          "hint": "4 frases"
+        },
+        "role_tSxcC_9Ky4g": {
+          "name": "Sheldon",
+          "hint": "4 frases"
+        }
+      },
+      "notices": {
+        "library": "Pruebas del prototipo con adultos · Los doblajes se guardan en este navegador y no se suben. No se ha confirmado el permiso de redistribución de estos fragmentos.",
+        "scene": "Esta escena es para pruebas del prototipo con adultos. La película completa no es material de iniciación para niños.Los creadores no respaldan este producto."
+      }
+    },
+    "ja": {
+      "scenes": {
+        "scene_F6ws6xrH7b0": {
+          "title": "友だちの作り方の本",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の29.7–60.3秒の抜粋です。 学校になじめない子どもと、人気がない自分を冗談にする図書館の司書の会話です。"
+        },
+        "scene_K-EnMBJWy2E": {
+          "title": "本のアドバイスを試してみる",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の108.2–135.45秒の抜粋です。 家族間の皮肉があります。最後に名前を繰り返すところまでで、チャンネルの終了画面の前で終わります。"
+        },
+        "scene_qs532GUZz7E": {
+          "title": "先生と話してとパパに頼む",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の16.5–51.45秒の抜粋です。 大学の宿題が背景ですが、選んだ会話は親子のやり取りです。教授への軽い批判があります。その後の大人向けの下品な会話は含みません。"
+        },
+        "scene_yjYJv1eTPR4": {
+          "title": "アインシュタインの髪と、よく知る性格",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の19.15–42.45秒の抜粋です。 脚色された歴史の逸話と、幼いころの行動をからかう場面です。医学や伝記の授業ではありません。"
+        },
+        "scene_eMvqUxta4mg": {
+          "title": "カメラを動かしてもらえる？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の158.55–182秒の抜粋です。 写真撮影の日の見た目についての好みです。その後の大人向けの体に関する冗談は含みません。"
+        },
+        "scene_hua0i_EVO5o": {
+          "title": "朝ごはんと言葉の意味の違い",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の29.05–53.05秒の抜粋です。 母親のような言い方をすることへの家族の皮肉です。その後の妊娠やマットレスに関する含みのある話は含みません。"
+        },
+        "scene_VgEVwH_D_ZM": {
+          "title": "みんなに家事の分担",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の139.85–158.7秒の抜粋です。 家族の交渉や皮肉があります。それ以前の下品な会話は含みません。"
+        },
+        "scene_cgQRAEx-Czo": {
+          "title": "写真の人はどこに行ったの？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の14.65–26.35秒の抜粋です。 コレクションカードの絵が動くファンタジーです。第1作の映画の場面であり、実際の絵が動くという説明ではありません。"
+        },
+        "scene_3YCRbWX5VTE": {
+          "title": "電車で新しい友だちに出会う",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の1.1–30.45秒の抜粋です。 ファンタジーの場面で、ハリーの治った傷跡を少し見せます。お菓子のワゴンについての会話の前で終わります。"
+        },
+        "scene_v-EwUnOY6rw": {
+          "title": "それはお礼の言い方じゃないよ",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の0.4–26.1秒の抜粋です。 シェービングクリームを使ういたずらを説明しますが、実行せず却下します。その後の目の痛みの話や文化的な決めつけは含みません。"
+        },
+        "scene_LiOGfPU3EPE": {
+          "title": "自分で朝ごはんを作れるでしょ",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の114.4–137.3秒の抜粋です。 家族間の皮肉があります。それ以前の下品な会話は含みません。別に公開している家事分担表のシーンは、この後から始まります。"
+        },
+        "scene_W-m8Y8JwqZc": {
+          "title": "時間を計るんですか？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の110.78–134.6秒の抜粋です。 テスト名は固有名詞であり、医学的な評価ではありません。トイレでの読書に関する軽い冗談があります。その後の見た目や体についての発言は含みません。"
+        }
+      },
+      "roles": {
+        "role_0BkC3THi_I8": {
+          "name": "シェルドン",
+          "hint": "セリフ2行"
+        },
+        "role_QUPzEFZwnEw": {
+          "name": "図書館の司書",
+          "hint": "セリフ4行"
+        },
+        "role_tc1hthFv9GM": {
+          "name": "シェルドン",
+          "hint": "セリフ3行"
+        },
+        "role_80084y8FUOo": {
+          "name": "ジョージ・クーパー（父）",
+          "hint": "セリフ2行"
+        },
+        "role_9VX0JklGCdk": {
+          "name": "ジョージ・クーパー（父）",
+          "hint": "セリフ7行"
+        },
+        "role_mPMtxEzSrfc": {
+          "name": "シェルドン",
+          "hint": "セリフ7行"
+        },
+        "role_zZ-586P-_DY": {
+          "name": "スタージス博士",
+          "hint": "セリフ2行"
+        },
+        "role_OMjL-BEtZ3M": {
+          "name": "ミッシー",
+          "hint": "セリフ2行"
+        },
+        "role_e-_eXKF-0UY": {
+          "name": "シェルドン",
+          "hint": "セリフ1行"
+        },
+        "role_5uKRB1qozDw": {
+          "name": "ミッシー",
+          "hint": "セリフ5行"
+        },
+        "role_2NFZc18LwH0": {
+          "name": "研究員",
+          "hint": "セリフ5行"
+        },
+        "role_alEoy-ZA9Xc": {
+          "name": "ミッシー",
+          "hint": "セリフ5行"
+        },
+        "role_XWR3eWbv6BY": {
+          "name": "ジョージー",
+          "hint": "セリフ4行"
+        },
+        "role_4InIxg67GRk": {
+          "name": "マンディ",
+          "hint": "セリフ2行"
+        },
+        "role_PD9C_E7Icic": {
+          "name": "ジョージ・クーパー（父）",
+          "hint": "セリフ4行"
+        },
+        "role_G1aMm5UAPYw": {
+          "name": "ミッシー",
+          "hint": "セリフ4行"
+        },
+        "role_fbJuCJMGfVg": {
+          "name": "ハリー",
+          "hint": "セリフ2行"
+        },
+        "role_F4XSF4Edmng": {
+          "name": "ロン",
+          "hint": "セリフ2行"
+        },
+        "role_OK4t0IU4neI": {
+          "name": "ロン",
+          "hint": "セリフ5行"
+        },
+        "role_yc3TOAmqHEU": {
+          "name": "ハリー",
+          "hint": "セリフ4行"
+        },
+        "role_g5_sn-Abuf0": {
+          "name": "ジョージ・クーパー（父）",
+          "hint": "セリフ4行"
+        },
+        "role_K78BsqE_7Yc": {
+          "name": "シェルドン",
+          "hint": "セリフ3行"
+        },
+        "role_zuTeBzcMsTI": {
+          "name": "ジョージ・クーパー（父）",
+          "hint": "セリフ3行"
+        },
+        "role_fBXr-KJbR5s": {
+          "name": "ミッシー",
+          "hint": "セリフ3行"
+        },
+        "role_OOU1lIZ-hMw": {
+          "name": "スタージス博士",
+          "hint": "セリフ4行"
+        },
+        "role_tSxcC_9Ky4g": {
+          "name": "シェルドン",
+          "hint": "セリフ4行"
+        }
+      },
+      "notices": {
+        "library": "大人向け試作版テスト・吹き替えはこのブラウザに保存され、アップロードされません。使用している映像の再配布許諾は未確認です。",
+        "scene": "このシーンは大人による試作版のテスト用です。映画全編は、子ども向けの入門教材ではありません。作品の制作者がこの製品を推奨しているわけではありません。"
+      }
+    },
+    "ko": {
+      "scenes": {
+        "scene_F6ws6xrH7b0": {
+          "title": "친구 사귀는 법을 알려 주는 책",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 29.7–60.3초 구간을 발췌했어요. 아이는 학교에서 어울리지 못한다고 느끼고, 사서는 자신이 인기가 없다는 자조적인 농담을 해요."
+        },
+        "scene_K-EnMBJWy2E": {
+          "title": "책의 조언을 따라 해 보기",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 108.2–135.45초 구간을 발췌했어요. 가족 간 비꼼이 있어요. 마지막 이름 반복 후, 채널 마무리 화면 전에 끝나요."
+        },
+        "scene_qs532GUZz7E": {
+          "title": "아빠에게 선생님과 이야기해 달라고 부탁하기",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 16.5–51.45초 구간을 발췌했어요. 대학 과제가 배경이지만 선택한 대화는 부모와 자녀 사이의 표현을 사용해요. 교수에 대한 가벼운 비판이 있으며 이후의 저속한 성인 대화는 제외했어요."
+        },
+        "scene_yjYJv1eTPR4": {
+          "title": "아인슈타인의 머리와 익숙한 성격",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 19.15–42.45초 구간을 발췌했어요. 각색된 역사 일화와 어린 시절 행동에 대한 놀림이 있어요. 의학이나 전기 수업이 아니에요."
+        },
+        "scene_eMvqUxta4mg": {
+          "title": "카메라 좀 옮겨 줄래?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 158.55–182초 구간을 발췌했어요. 사진 촬영 날 외모에 대한 취향을 이야기해요. 이후의 성인용 신체 농담은 제외했어요."
+        },
+        "scene_hua0i_EVO5o": {
+          "title": "아침 식사와 말뜻의 차이",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 29.05–53.05초 구간을 발췌했어요. 엄마처럼 말한다는 가족 간 비꼼이 있어요. 이후의 임신과 매트리스 관련 암시는 제외했어요."
+        },
+        "scene_VgEVwH_D_ZM": {
+          "title": "모두에게 집안일이 있어요",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 139.85–158.7초 구간을 발췌했어요. 가족 간 흥정과 비꼼이 있어요. 앞부분의 저속한 대화는 제외했어요."
+        },
+        "scene_cgQRAEx-Czo": {
+          "title": "사진 속 사람은 어디로 갔지?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 14.65–26.35초 구간을 발췌했어요. 수집용 카드의 그림이 움직이는 판타지 장면이에요. 첫 번째 영화의 내용이며 실제 그림이 이렇게 움직인다는 뜻이 아니에요."
+        },
+        "scene_3YCRbWX5VTE": {
+          "title": "기차에서 새 친구 만나기",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 1.1–30.45초 구간을 발췌했어요. 판타지 배경이며 해리의 아문 흉터를 잠깐 보여 줘요. 간식 카트에 관한 대화 전에 끝나요."
+        },
+        "scene_v-EwUnOY6rw": {
+          "title": "대접해 준 분께 그러면 안 되지",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 0.4–26.1초 구간을 발췌했어요. 면도 거품 장난을 설명하지만 하지 않기로 해요. 실제로 실행하지 않아요. 이후의 눈 따가움 이야기와 문화적 고정관념은 제외했어요."
+        },
+        "scene_LiOGfPU3EPE": {
+          "title": "아침은 직접 만들 수 있잖아",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 114.4–137.3초 구간을 발췌했어요. 가족 간 비꼼이 있어요. 앞부분의 저속한 가족 대화는 제외했어요. 별도로 공개된 집안일 표 장면은 이 뒤에서 시작해요."
+        },
+        "scene_W-m8Y8JwqZc": {
+          "title": "시간도 재나요?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 110.78–134.6초 구간을 발췌했어요. 시험 이름은 고유명사이며 의학적 평가가 아니에요. 화장실에서 책 읽기에 관한 가벼운 농담이 있으며 이후 외모나 신체에 관한 발언은 제외했어요."
+        }
+      },
+      "roles": {
+        "role_0BkC3THi_I8": {
+          "name": "셸던",
+          "hint": "대사 2개"
+        },
+        "role_QUPzEFZwnEw": {
+          "name": "사서",
+          "hint": "대사 4개"
+        },
+        "role_tc1hthFv9GM": {
+          "name": "셸던",
+          "hint": "대사 3개"
+        },
+        "role_80084y8FUOo": {
+          "name": "조지 쿠퍼 아빠",
+          "hint": "대사 2개"
+        },
+        "role_9VX0JklGCdk": {
+          "name": "조지 쿠퍼 아빠",
+          "hint": "대사 7개"
+        },
+        "role_mPMtxEzSrfc": {
+          "name": "셸던",
+          "hint": "대사 7개"
+        },
+        "role_zZ-586P-_DY": {
+          "name": "스터지스 박사",
+          "hint": "대사 2개"
+        },
+        "role_OMjL-BEtZ3M": {
+          "name": "미시",
+          "hint": "대사 2개"
+        },
+        "role_e-_eXKF-0UY": {
+          "name": "셸던",
+          "hint": "대사 1개"
+        },
+        "role_5uKRB1qozDw": {
+          "name": "미시",
+          "hint": "대사 5개"
+        },
+        "role_2NFZc18LwH0": {
+          "name": "연구원",
+          "hint": "대사 5개"
+        },
+        "role_alEoy-ZA9Xc": {
+          "name": "미시",
+          "hint": "대사 5개"
+        },
+        "role_XWR3eWbv6BY": {
+          "name": "조지 주니어",
+          "hint": "대사 4개"
+        },
+        "role_4InIxg67GRk": {
+          "name": "맨디",
+          "hint": "대사 2개"
+        },
+        "role_PD9C_E7Icic": {
+          "name": "조지 쿠퍼 아빠",
+          "hint": "대사 4개"
+        },
+        "role_G1aMm5UAPYw": {
+          "name": "미시",
+          "hint": "대사 4개"
+        },
+        "role_fbJuCJMGfVg": {
+          "name": "해리",
+          "hint": "대사 2개"
+        },
+        "role_F4XSF4Edmng": {
+          "name": "론",
+          "hint": "대사 2개"
+        },
+        "role_OK4t0IU4neI": {
+          "name": "론",
+          "hint": "대사 5개"
+        },
+        "role_yc3TOAmqHEU": {
+          "name": "해리",
+          "hint": "대사 4개"
+        },
+        "role_g5_sn-Abuf0": {
+          "name": "조지 쿠퍼 아빠",
+          "hint": "대사 4개"
+        },
+        "role_K78BsqE_7Yc": {
+          "name": "셸던",
+          "hint": "대사 3개"
+        },
+        "role_zuTeBzcMsTI": {
+          "name": "조지 쿠퍼 아빠",
+          "hint": "대사 3개"
+        },
+        "role_fBXr-KJbR5s": {
+          "name": "미시",
+          "hint": "대사 3개"
+        },
+        "role_OOU1lIZ-hMw": {
+          "name": "스터지스 박사",
+          "hint": "대사 4개"
+        },
+        "role_tSxcC_9Ky4g": {
+          "name": "셸던",
+          "hint": "대사 4개"
+        }
+      },
+      "notices": {
+        "library": "성인 대상 시제품 테스트 · 더빙은 이 브라우저에 저장되며 업로드되지 않아요. 영상 클립의 재배포 허가는 확인되지 않았어요.",
+        "scene": "이 장면은 성인을 대상으로 한 시제품 테스트용이에요. 영화 전체가 어린이 입문 학습 자료인 것은 아니에요.원작 제작자가 이 제품을 보증하는 것은 아니에요."
+      }
+    }
+  }
+}

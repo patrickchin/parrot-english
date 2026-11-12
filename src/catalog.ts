@@ -1,8 +1,4 @@
-import reviewClips from './review-clips.json' with { type: 'json' };
-import searchIndex from './scene-search-index.json' with { type: 'json' };
-const sceneText: Record<string, { tags: string[]; quotes: string[] }> = searchIndex;
-export const clips = reviewClips.map(clip => ({ ...clip, ...sceneText[clip.slug] }));
-export type ClipSlug = typeof clips[number]['slug'];
+export const contentCatalogUrl = import.meta.env?.VITE_CONTENT_CATALOG_URL ?? 'https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/content/catalog.json';
 
 export const folders = [
   { value: 'older-audience', title: "categories.films" },

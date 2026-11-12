@@ -4,7 +4,8 @@ import { useEffect, useMemo, useReducer, useRef, useState, type CSSProperties } 
 import { AppHeader } from './app/AppHeader';
 import { DubDownload } from './app/DubDownload';
 import { Button, Icon } from './shared/ui';
-import { asset, validateScene, type Scene, type Role } from './scene';
+import { asset, type Scene, type Role } from './scene';
+import { loadScene } from './content-pack';
 import { useDubbing, type Take } from './useDubbing';
 import { Library } from './Library';
 import { SavedDubs } from './app/SavedDubs';
@@ -12,7 +13,7 @@ import { dubsPath } from './app/routes';
 import { VoiceWaveform } from './VoiceWaveform';
 import { PreviewSubtitles } from './PreviewSubtitles';
 import { lineWindow } from './line-window';
-import { clips } from './catalog';
+import { useContent } from './app/ContentProvider';
 import { createLesson, lessonTakes, transitionLesson, type LessonEvent, type LessonState } from './lesson-state';
 import { useSceneNavigation } from './app/useSceneNavigation';
 import { loadDub, type RestoredDub } from './dub-store';
@@ -23,6 +24,8 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 
 export default function App() {
   const { t } = useTranslation();
+  const content = useContent();
+  const { clips } = content;
   const navigation = useSceneNavigation();
   const [loadedScene, setLoadedScene] = useState<{ revision: number; attempt: number; load: LoadState<{ scene: Scene; draft?: RestoredDub }> }>({ revision: -1, attempt: 0, load: { status: 'loading' } });
   const [attempt, setAttempt] = useState(0);
@@ -34,11 +37,8 @@ export default function App() {
     const request = { revision: navigation.revision, attempt };
     setLoadedScene({ ...request, load: { status: 'loading' } });
     if (!selected) return;
-    const base = `/scenes/${selected.slug}/`;
-    fetch(base + 'scene.json', { signal: abort.signal, cache: 'no-cache' })
-      .then(r => { if (!r.ok) throw new Error("errors.sceneLoad"); return r.json(); })
-      .then(async data => {
-        const scene = validateScene(data, base);
+    loadScene(selected, abort.signal)
+      .then(async scene => {
         const draft = navigation.draftId ? await loadDub(navigation.draftId, scene) : undefined;
         if (!abort.signal.aborted) setLoadedScene({ ...request, load: { status: 'ready', value: { scene, draft } } });
       })
@@ -48,15 +48,17 @@ export default function App() {
   }, [attempt, selected, navigation.revision]);
   if (navigation.page === 'not-found') return <div className="min-h-dvh bg-paper text-ink"><AppHeader /><main className="mx-auto max-w-md px-6 py-16 text-center"><h1 className="mb-6 font-display text-3xl font-bold">{t('errors.pageNotFound')}</h1><Button onClick={back}>{t('navigation.library')}</Button></main></div>;
   if (navigation.page === 'dubs') return <SavedDubs onChoose={choose} />;
+  if (content.state.status !== 'ready') return <div className="min-h-dvh bg-paper text-ink"><AppHeader /><main className="mx-auto max-w-md px-6 py-16 text-center"><h1 className="mb-6 font-display text-3xl font-bold">{t('navigation.library')}</h1><p role={content.state.status === 'error' ? 'alert' : 'status'} className="my-6 text-muted-foreground">{t(content.state.status === 'error' ? 'errors.contentLoad' : 'library.loading')}</p>{content.state.status === 'error' && <Button onClick={content.reload}>{t('player.reload')}</Button>}</main></div>;
+  if (navigation.page === 'scene' && !selected) return <div className="min-h-dvh bg-paper text-ink"><AppHeader /><main className="mx-auto max-w-md px-6 py-16 text-center"><h1 className="mb-6 font-display text-3xl font-bold">{t('errors.pageNotFound')}</h1><p role="status" className="my-6 text-muted-foreground">{t('library.unavailable')}</p><Button onClick={back}>{t('navigation.library')}</Button></main></div>;
   if (!selected) return <Library onChoose={choose} folder={navigation.folder} onFolderChange={navigation.chooseFolder} />;
   const load = loadedScene.revision === navigation.revision && loadedScene.attempt === attempt ? loadedScene.load : { status: 'loading' } as const;
   const error = load.status === 'error' ? load.error : '';
   if (load.status !== 'ready') return <div className="min-h-dvh bg-paper text-ink"><AppHeader onBack={back} /><main className="flex min-h-[70dvh] items-center justify-center px-6"><div className="max-w-md text-center"><h1 className="font-display text-3xl font-extrabold">Parrotbook</h1><p role={error ? 'alert' : 'status'} className="my-6 text-muted-foreground">{error ? t(error, { defaultValue: t('errors.unexpected') }) : t("player.loading")}</p>{error && <><Button onClick={() => setAttempt(n => n + 1)}>{t("player.reload")}</Button>{navigation.draftId && <Button tone="quiet" onClick={() => choose(selected.slug)}>{t("player.startANewDub")}</Button>}</>}</div></main></div>;
-  return <Player key={load.value.scene.id + (load.value.draft?.saved.id ?? '')} scene={load.value.scene} slug={selected.slug} initial={load.value.draft} rememberDraft={navigation.rememberDraft} onBack={back} leaving={navigation.pending} onConfirmLeave={navigation.confirm} onCancelLeave={navigation.cancel} onDirtyChange={navigation.protect} />;
+  return <Player key={load.value.scene.id + (load.value.draft?.saved.id ?? '')} scene={load.value.scene} slug={selected.slug} notice={selected.notices?.[navigation.language]?.scene} initial={load.value.draft} rememberDraft={navigation.rememberDraft} onBack={back} leaving={navigation.pending} onConfirmLeave={navigation.confirm} onCancelLeave={navigation.cancel} onDirtyChange={navigation.protect} />;
 }
 
-function Player({ scene, slug, initial, rememberDraft, onBack, leaving, onConfirmLeave, onCancelLeave, onDirtyChange }: {
-  scene: Scene; slug: string; initial?: RestoredDub; rememberDraft: (id?: string) => void; onBack: () => void; leaving: boolean; onConfirmLeave: () => void; onCancelLeave: () => void; onDirtyChange: (dirty: boolean) => void;
+function Player({ scene, slug, notice, initial, rememberDraft, onBack, leaving, onConfirmLeave, onCancelLeave, onDirtyChange }: {
+  scene: Scene; slug: string; notice?: string; initial?: RestoredDub; rememberDraft: (id?: string) => void; onBack: () => void; leaving: boolean; onConfirmLeave: () => void; onCancelLeave: () => void; onDirtyChange: (dirty: boolean) => void;
 }) {
   const { language } = useLanguage();
   const { t } = useTranslation();
@@ -135,7 +137,7 @@ function Player({ scene, slug, initial, rememberDraft, onBack, leaving, onConfir
   return <div className="player-shell bg-paper text-ink">
     <AppHeader onHelp={() => { media.stop(); setModal('help'); }} onBack={() => { media.stop(); onBack(); }} />
     <main className="player-main" data-step={step}>
-      {step === 'practice' && <h1 className="sr-only">{t(`scenes.${scene.id}.title`, { defaultValue: scene.title })}</h1>}
+      {step === 'practice' && <h1 className="sr-only">{t(`content:scenes.${scene.id}.title`, { defaultValue: scene.title })}</h1>}
       <section aria-label={t("player.movieScene")} className="player-video" style={{ '--video-aspect': videoAspect } as CSSProperties}>
         <div className="player-frame overflow-hidden rounded-xl">
           <div className="player-screen relative">
@@ -159,15 +161,15 @@ function Player({ scene, slug, initial, rememberDraft, onBack, leaving, onConfir
       </section>
       <section aria-label={step === 'choose' ? t("player.chooseARole") : step === 'result' ? t("player.dubComplete") : t("player.recordYourLines")} className="player-workspace">
         {step === 'choose' && <div className="player-choose text-center">
-          <h1 className="font-display text-2xl font-extrabold">{t(`scenes.${scene.id}.title`, { defaultValue: scene.title })}</h1>
+          <h1 className="font-display text-2xl font-extrabold">{t(`content:scenes.${scene.id}.title`, { defaultValue: scene.title })}</h1>
           <h2 className="mt-3 text-base font-semibold text-muted-foreground">{t("player.chooseRolePrompt")}</h2>
-          <div className="mx-auto mt-5 flex max-w-2xl flex-wrap justify-center gap-3">{practiceRoles.map(r => <ControlButton variant="outline" key={r.id} onClick={() => send({ type: 'SELECT_ROLE', roleId: r.id })} aria-pressed={roleId === r.id} className="group h-auto min-h-17 flex-1 basis-50 justify-start gap-3 whitespace-normal px-4 py-3 text-left aria-pressed:border-primary aria-pressed:bg-accent"><RolePortrait scene={scene} role={r} /><span className="flex-1 font-bold">{t(`roles.${r.id}.name`, { defaultValue: r.name })}</span><Icon name="check" className="invisible group-aria-pressed:visible" /></ControlButton>)}</div>
+          <div className="mx-auto mt-5 flex max-w-2xl flex-wrap justify-center gap-3">{practiceRoles.map(r => <ControlButton variant="outline" key={r.id} onClick={() => send({ type: 'SELECT_ROLE', roleId: r.id })} aria-pressed={roleId === r.id} className="group h-auto min-h-17 flex-1 basis-50 justify-start gap-3 whitespace-normal px-4 py-3 text-left aria-pressed:border-primary aria-pressed:bg-accent"><RolePortrait scene={scene} role={r} /><span className="flex-1 font-bold">{t(`content:roles.${r.id}.name`, { defaultValue: r.name })}</span><Icon name="check" className="invisible group-aria-pressed:visible" /></ControlButton>)}</div>
           <Button className="mt-5 w-full" disabled={!videoReady || busy} onClick={startPractice}>{t("player.startDubbing")}<Icon name="arrow" /></Button>
         </div>}
         {step !== 'choose' && <>
           <div className="practice-content">
             <div className="practice-meta flex items-center justify-between gap-2 text-sm">
-              <span><span className="block font-display font-extrabold">{t(`roles.${role.id}.name`, { defaultValue: role.name })}</span><span role="status" className="block text-xs text-muted-foreground">{t(autosave.status === 'saved' ? "player.savedOnThisDevice" : autosave.status === 'saving' ? "player.saving" : autosave.status === 'error' ? "player.notSavedYet" : "player.savedOnThisDeviceOnly")}</span></span><span className="sr-only">{t("recording.completedLines", { completed, total: rolesLines.length })}</span>
+              <span><span className="block font-display font-extrabold">{t(`content:roles.${role.id}.name`, { defaultValue: role.name })}</span><span role="status" className="block text-xs text-muted-foreground">{t(autosave.status === 'saved' ? "player.savedOnThisDevice" : autosave.status === 'saving' ? "player.saving" : autosave.status === 'error' ? "player.notSavedYet" : "player.savedOnThisDeviceOnly")}</span></span><span className="sr-only">{t("recording.completedLines", { completed, total: rolesLines.length })}</span>
               <nav aria-label={t("player.yourLines")} className="flex justify-center">{rolesLines.map((l, i) => <button key={l.id} disabled={busy} onClick={() => chooseLine(i)} aria-label={t("recording.lineLabel", { number: i + 1, text: l.text })} aria-current={i === lineIndex ? 'step' : undefined} className="flex h-11 min-w-11 items-center justify-center rounded-full text-sm text-muted-foreground aria-[current=step]:bg-brand/10 aria-[current=step]:font-extrabold aria-[current=step]:text-ink focus-visible:outline-3 focus-visible:outline-brand">{takes[l.id] ? <Icon name="check" /> : i + 1}{skipped.has(l.id) && <span className="sr-only">{t("player.original")}</span>}</button>)}</nav>
             </div>
             <VoiceWaveform scene={scene} start={step === 'result' ? 0 : window.start} end={step === 'result' ? scene.duration : window.end} target={step === 'result' ? undefined : line} time={media.time} recordings={graphRecordings} recording={media.phase === 'recording'} />
@@ -214,7 +216,7 @@ function Player({ scene, slug, initial, rememberDraft, onBack, leaving, onConfir
     <Dialog open={modal !== null} onOpenChange={open => { if (!open) setModal(null); }}>
       <DialogContent showCloseButton={false} className="block max-h-[90dvh] overflow-y-auto p-6 sm:max-w-md">
       {modal === 'help' && <><DialogTitle className="font-display text-2xl leading-tight font-bold">{t("help.title")}</DialogTitle><ol className="mt-5 space-y-4 text-sm leading-7 text-muted-foreground"><li><strong className="text-ink">{t("help.chooseRoleTitle")}</strong>{t("help.chooseRoleDescription")}</li><li><strong className="text-ink">{t("help.recordTitle")}</strong>{t("help.recordDescription")}</li><li><strong className="text-ink">{t("help.watchTitle")}</strong>{t("help.watchDescription")}</li></ol><p className="mt-5 text-xs leading-6 text-muted-foreground">{t("help.recordingAdvice")}</p><p className="mt-3 text-xs leading-6 text-muted-foreground">{t("help.guardianConsent")}</p><Button className="mt-6 w-full" onClick={() => setModal(null)}>{t("player.gotIt")}</Button></>}
-      {modal === 'details' && <><DialogTitle className="font-display text-2xl leading-tight font-bold">{t("player.sceneCredits")}</DialogTitle><div className="mt-4 space-y-3 text-sm leading-7 text-muted-foreground"><p>{scene.credit.title}</p><p>{scene.credit.attribution} · <a href={scene.credit.licenceUrl} target="_blank" rel="noreferrer" className="underline">{t(`scenes.${scene.id}.licence`, { defaultValue: scene.credit.licence })}</a> · <a href={scene.credit.source} target="_blank" rel="noreferrer" className="underline">{t("player.watchTheOriginal")}</a></p><p>{t(`scenes.${scene.id}.changes`, { defaultValue: scene.credit.changes })}</p><p>{scene.mode === 'local' ? t("credits.localVideoNotice") : t("credits.prototypeNotice")}{t("credits.noEndorsement")}</p></div><Button className="mt-6 w-full" onClick={() => setModal(null)}>{t("player.close")}</Button></>}
+      {modal === 'details' && <><DialogTitle className="font-display text-2xl leading-tight font-bold">{t("player.sceneCredits")}</DialogTitle><div className="mt-4 space-y-3 text-sm leading-7 text-muted-foreground"><p>{scene.credit.title}</p><p>{scene.credit.attribution} · <a href={scene.credit.licenceUrl} target="_blank" rel="noreferrer" className="underline">{t(`content:scenes.${scene.id}.licence`, { defaultValue: scene.credit.licence })}</a> · <a href={scene.credit.source} target="_blank" rel="noreferrer" className="underline">{t("player.watchTheOriginal")}</a></p><p>{t(`content:scenes.${scene.id}.changes`, { defaultValue: scene.credit.changes })}</p>{scene.mode === 'local' && <p>{t("credits.localVideoNotice")}</p>}{notice && <p>{notice}</p>}</div><Button className="mt-6 w-full" onClick={() => setModal(null)}>{t("player.close")}</Button></>}
       {modal === 'reset' && <><DialogTitle className="font-display text-2xl leading-tight font-bold">{t(leaving ? "player.leaveThisDub" : "player.startANewSession")}</DialogTitle><DialogDescription className="mt-4 text-sm leading-7 text-muted-foreground">{t(autosave.status === 'error' ? "player.unsavedChangesWarning" : "player.savedDubNotice")}</DialogDescription><Button className="mt-6 w-full" disabled={autosave.status === 'saving'} onClick={() => leaving ? onConfirmLeave() : reset()}>{t(autosave.status === 'error' ? "player.discardUnsavedChanges" : leaving ? "player.leaveScene" : "player.startANewDub")}</Button><Button tone="quiet" className="mt-3 w-full" onClick={() => setModal(null)}>{t("player.keepRecordingsAndContinue")}</Button></>}
     </DialogContent>
     </Dialog>
@@ -225,5 +227,5 @@ function clock(time: number) { const seconds = Math.max(0, Math.floor(time)); re
 
 function RolePortrait({ scene, role }: { scene: Scene; role: Role }) {
   const [failed, setFailed] = useState(false);
-  return <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted text-muted-foreground" aria-hidden="true">{role.portrait && !failed ? <img src={asset(scene, role.portrait)} alt="" width={192} height={192} onError={() => setFailed(true)} className="h-full w-full object-cover" /> : <Icon name={role.name === '来电者' ? 'phone' : 'person'} className="size-7" />}</span>;
+  return <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-muted text-muted-foreground" aria-hidden="true">{role.portrait && !failed ? <img src={asset(scene, role.portrait)} alt="" width={192} height={192} onError={() => setFailed(true)} className="h-full w-full object-cover" /> : <Icon name="person" className="size-7" />}</span>;
 }

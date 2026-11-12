@@ -1,4 +1,5 @@
-import { scenePath } from '../../src/app/routes';
+import { readScene } from '../content-fixtures';
+import { scenePath } from './scene-path';
 import { test, expect, documentBoxes } from './fixtures';
 import type { Line } from '../../src/scene';
 import { mkdir } from 'node:fs/promises';
@@ -8,7 +9,7 @@ import { join } from 'node:path';
 test('reference, live take, and saved take share a moving timeline; cancelling keeps the previous trace', async ({ page, browserName }, info) => {
   test.skip(browserName !== 'chromium', 'Synthetic microphone capture is configured for Chromium.');
   await page.goto('/scenes/patrick');
-  const scene = await (await page.request.get('/scenes/patrick/scene.json')).json();
+  const scene = readScene('patrick');
   const turn: Line = scene.lines.find((l: Line) => l.roleId === scene.roles[0].id);
   const nextTurn: Line | undefined = scene.lines[scene.lines.findIndex((l: Line) => l.id === turn.id) + 1];
   const windowEnd = Math.min(scene.duration, turn.end + 0.5, nextTurn?.start ?? scene.duration);
@@ -110,8 +111,18 @@ test('scene, caption, waveforms and every main action remain reachable across th
       const words = await page.getByRole('group', { name: '台词', exact: true }).boundingBox();
       expect(words!.y).toBeGreaterThanOrEqual(waveform!.y + waveform!.height);
       expect(words!.y - waveform!.y - waveform!.height).toBeLessThanOrEqual(10);
-      const entry = await page.getByRole('region', { name: '电影片段' }).boundingBox();
-      expect(entry!.height).toBeGreaterThanOrEqual(140);
+      const movie = page.getByRole('region', { name: '电影片段' });
+      const picture = movie.getByLabel(/对话片段$/);
+      await expect(picture).toBeVisible();
+      const entry = (await movie.boundingBox())!;
+      const image = (await picture.boundingBox())!;
+      // Compact screens reserve 120px for the picture and its transport.
+      expect(entry.height).toBeGreaterThanOrEqual(120);
+      expect(image.x).toBeGreaterThanOrEqual(entry.x - 1);
+      expect(image.y).toBeGreaterThanOrEqual(entry.y - 1);
+      expect(image.x + image.width).toBeLessThanOrEqual(entry.x + entry.width + 1);
+      expect(image.y + image.height).toBeLessThanOrEqual(entry.y + entry.height + 1);
+      expect(entry.y + entry.height).toBeLessThanOrEqual(waveform!.y + 1);
       if (slug === 'onions' && info.project.name === 'chromium' && [375, 1280].includes(viewport.width)) {
         const folder = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english');
         await mkdir(folder, { recursive: true });
@@ -125,7 +136,7 @@ test('scene, caption, waveforms and every main action remain reachable across th
 test('plain dialogue and controls stay fixed when switching lines and skipping to the result', async ({ page }, info) => {
   for (const slug of ['onions', 'patrick', 'wumbo', 'infinity']) {
     await page.goto(scenePath(slug));
-    const scene = await (await page.request.get(`/scenes/${slug}/scene.json`)).json();
+    const scene = readScene(slug);
     const lines: Line[] = scene.lines.filter((line: Line) => line.roleId === scene.roles[0].id);
     await page.getByRole('button', { name: '开始配音', exact: true }).click();
     for (const viewport of [{ width: 360, height: 640 }, { width: 768, height: 1024 }, { width: 1280, height: 720 }]) {
@@ -172,7 +183,7 @@ test('plain dialogue and controls stay fixed when switching lines and skipping t
 // Sample what was actually painted, rather than relying on an occasional poll.
 test('playhead advances on animation frames and stays on the video clock', async ({ page }) => {
   await page.goto('/scenes/onions');
-  const scene = await (await page.request.get('/scenes/onions/scene.json')).json();
+  const scene = readScene('onions');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   const cursor = page.getByRole('progressbar', { name: '配音时间指针' });
   await page.getByRole('button', { name: '听这一句原声', exact: true }).click();

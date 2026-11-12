@@ -65,39 +65,55 @@ npm test
 npm run test:browser
 ```
 
-Scene manifests support optional `tags` (up to 32 nonempty strings, 80 characters
-each). Keep authored tags in the review recipe as well so scene regeneration
-preserves them. `npm run prepare:search` rebuilds the lightweight library index
-from the shipped manifests; dev startup and production builds run it automatically.
-Run it after editing tags or dialogue during an existing dev session.
+Content is authored separately under `content/packs/`. The existing 79 scenes
+are grouped into four packs, each containing its scene manifests, subtitles,
+word timings, search data, credits, and five-language scene/role text.
+`content/catalog.json` lists the available packs. The player fetches that catalog
+and its packs at runtime; adding or withdrawing content does not rebuild the app.
+See [the pack format and publishing guide](docs/content-packs.md).
 
-Application code and scene metadata belong in ESA; video, audio, and scene
-images belong in Alibaba OSS. `mediaBase` in each scene identifies its media
-location. Original downloads and meme authoring outputs remain ignored under
-`content/local-dubbing/`; the earlier licensed sample remains an internal test fixture only. No learner recording upload,
-account, database, voice generation, or speech scoring is involved. Microphone
-capture uses native browser APIs; actual iPhone/Android
-hardware and WeChat still need manual checks before a child pilot.
+```sh
+npm run content:validate
+npm run content:stage
+npm run content:publish
+npm run content:remove -- pack_ID
+```
 
-`npm run build` emits application code, HTML/CSS, and scene metadata in
-`build/edge-worker.mjs` for Alibaba ESA. It rejects media in the public build
-instead of embedding it in the function. Only the waveform named by each scene
-manifest is bundled; obsolete `waveform-*.json` files from earlier edits are
-omitted. The build reports embedded sizes for app assets, manifests, and waveforms,
-plus remaining space under the 4 MiB code limit.
-The retained [account smoke test](prototype/README.md)
-records the earlier deployment proof. The [infrastructure record](docs/infrastructure.md)
+Publishing requires an authenticated OSS CLI. It uploads a versioned release
+first, then replaces the discovery catalog. Removing a pack withdraws it from
+the catalog; it preserves the stored files. Videos and images already in OSS
+keep their current URLs.
+
+Alibaba ESA holds application code, HTML/CSS, and interface translations.
+Alibaba OSS holds content catalogs, packs, scene manifests, waveforms, video,
+audio, and scene images. `npm run build` emits only the application in
+`build/edge-worker.mjs` and rejects content packs or media in the public build.
+No content upload runs as part of an application build or deployment.
+
+Original downloads and authoring outputs remain ignored under
+`content/local-dubbing/`; the earlier licensed sample remains an internal test
+fixture only. Learner recordings remain in browser storage. No account,
+database, voice generation, or speech scoring is involved. Microphone capture
+uses native browser APIs; actual iPhone/Android hardware and WeChat still need
+manual checks before a child pilot. The [infrastructure record](docs/infrastructure.md)
 describes the current service and previous services parked with data retained.
 
 ## Scene manifests
 
 One playable activity is a **scene**: a video, roles, timed dialogue, and optional
 backing audio, portraits, and waveforms. Its manifest is
-`public/scenes/<slug>/scene.json`, validated by the `Scene` model in `src/scene.ts`.
-Authoring commands use the same name, such as `scripts/prepare-meme-scenes.mjs`.
-Folders in the library group multiple scenes.
+`content/packs/<pack_id>/scenes/<slug>/scene.json`, validated by the `Scene` model
+in `src/scene.ts`. A pack's `pack.json` groups scenes and owns their discovery and
+localized text. The player uses the same format for founder and community packs;
+this does not add a public marketplace or automatic community upload service.
 
-Scene IDs and authoring recipes use `scene_…` IDs. Media URLs in OSS are unchanged.
+Scene manifests support optional `tags` (up to 32 nonempty strings, 80 characters
+each). Keep tags in the authoring recipe as well. Authoring commands resolve
+pack paths through `scripts/content-paths.mjs` and refresh pack search data when
+regenerating scenes. Review all changed pack text and translations before publishing.
+
+Scene IDs retain their `scene_…` values; new pack IDs use opaque `pack_…` IDs.
+Media URLs in OSS are unchanged.
 
 ## Research archive
 
@@ -131,4 +147,4 @@ Alibaba ESA connects directly to `patrickchin/parrot-english`. Only pushes to
 24, `npm ci`, then `npm test && npm run build`; `esa.jsonc` versions these settings.
 Do not upload local bundles or ZIPs, or publish feature branches to production.
 Check the ESA build's commit and `/api/health`'s `revision` against GitHub `main`
-after deployment. Media stays in OSS; the app build never uploads recordings.
+after deployment. Content publishing is separate from this application deployment. Packs and media stay in OSS; the app build never uploads recordings.

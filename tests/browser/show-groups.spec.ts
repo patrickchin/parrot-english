@@ -1,5 +1,5 @@
 import { test, expect, setLanguage } from './fixtures';
-import { clips } from '../../src/catalog';
+import { clips } from '../content-fixtures';
 import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';

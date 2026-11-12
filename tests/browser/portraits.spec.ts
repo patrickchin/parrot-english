@@ -1,7 +1,8 @@
-import { scenePath } from '../../src/app/routes';
+import { readScene } from '../content-fixtures';
+import { scenePath } from './scene-path';
 import { test, expect } from './fixtures';
-import { clips } from '../../src/catalog';
-import { readFile, mkdir } from 'node:fs/promises';
+import { clips } from '../content-fixtures';
+import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
@@ -10,7 +11,7 @@ test('each authored character avatar loads in the role picker', async ({ page },
   const avatars = new Map<string, string>();
   let authoredScenes = 0;
   for (const clip of clips) {
-    const scene = JSON.parse(await readFile(`public/scenes/${clip.slug}/scene.json`, 'utf8'));
+    const scene = readScene(clip.slug);
     if (!scene.roles.some((role: { portrait?: string }) => role.portrait)) continue;
     authoredScenes++;
     await page.goto(scenePath(clip.slug));

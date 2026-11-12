@@ -1,8 +1,8 @@
-import { scenePath } from '../../src/app/routes';
+import { scenePath } from './scene-path';
 import { test, expect } from './fixtures';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { clips } from '../../src/catalog';
+import { clips } from '../content-fixtures';
 
 for (const clip of clips) test(`hosted ${clip.slug} opens and plays without a device file`, async ({ page }) => {
   await page.goto(scenePath(clip.slug));
@@ -18,6 +18,7 @@ test('the public build reads a selected device file without uploading it or requ
   // Keep device-local scene support covered independently of the hosted scenes.
   await page.route('**/scenes/patrick/scene.json', async route => {
     const scene = JSON.parse(await readFile('tests/fixtures/sintel/scene.json', 'utf8'));
+    scene.id = clips.find(clip => clip.slug === 'patrick')!.id;
     scene.mode = 'local'; delete scene.mediaBase;
     await route.fulfill({ json: scene });
   });

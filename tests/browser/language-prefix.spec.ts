@@ -34,7 +34,7 @@ test('an unprefixed entry uses the saved preference without adding a Back entry'
 
 test('language history preserves the running player, saved dub and selected line', async ({ page }) => {
   let loads = 0;
-  page.on('request', request => { if (new URL(request.url()).pathname === '/scenes/patrick/scene.json') loads++; });
+  page.on('request', request => { if (new URL(request.url()).pathname.endsWith('/scenes/patrick/scene.json')) loads++; });
   await page.goto('/zh/scenes/patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '下一步', exact: true }).click();

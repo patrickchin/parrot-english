@@ -7,7 +7,7 @@ import zhCN from '../src/locales/zh-CN/translation.json' with { type: 'json' };
 import es from '../src/locales/es/translation.json' with { type: 'json' };
 import ja from '../src/locales/ja/translation.json' with { type: 'json' };
 import ko from '../src/locales/ko/translation.json' with { type: 'json' };
-import clips from '../src/review-clips.json' with { type: 'json' };
+import { clips, packs, sceneFile } from './content-fixtures.ts';
 
 function messages(resource, prefix = '') {
   return Object.entries(resource).flatMap(([key, value]) => typeof value === 'string'
@@ -44,12 +44,14 @@ test('i18next renders semantic keys and named variables in either language', () 
 
 test('every catalogued scene and role has localized content using its record ID', () => {
   for (const clip of clips) {
-    const scene = JSON.parse(readFileSync(new URL(`../public/scenes/${clip.slug}/scene.json`, import.meta.url)));
+    const scene = JSON.parse(readFileSync(sceneFile(clip.slug)));
     assert.equal(clip.id, scene.id);
+    const pack = packs.find(pack => pack.entry.id === clip.packId).data;
     for (const language of ['en', 'zh-CN', 'es', 'ja', 'ko']) {
-      for (const field of ['title', 'licence', 'changes']) assert.equal(i18n.exists(`scenes.${scene.id}.${field}`, { lng: language }), true);
+      const content = pack.locales[language];
+      for (const field of ['title', 'licence', 'changes']) assert.equal(typeof content.scenes[scene.id][field], 'string');
       for (const role of scene.roles) {
-        for (const field of ['name', 'hint']) assert.equal(i18n.exists(`roles.${role.id}.${field}`, { lng: language }), true);
+        for (const field of ['name', 'hint']) assert.equal(typeof content.roles[role.id][field], 'string');
       }
     }
   }

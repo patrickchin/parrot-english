@@ -40,9 +40,9 @@ source clip permit it. Existing windows are never shortened to create a gap.
 
 The So fluffy source file itself ends at 54.054 s; its “It’s so fluffy!” payoff
 is already complete in the saved source transcript. No synthetic silence or
-repeated video frames were added. Existing media/audio remain in Alibaba OSS;
-ESA holds code and structured scene/waveform metadata. Learner takes remain in
-browser memory.
+repeated video frames were added. Existing media/audio, scene manifests, and
+waveforms now publish in [OSS content packs](content-packs.md); ESA holds the
+application code. Learner takes autosave locally in browser IndexedDB.
 
 ## Authoring checks
 

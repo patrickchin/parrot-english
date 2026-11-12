@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "packs": [
+    {
+      "id": "pack_YRpBbSh-Pqnw",
+      "manifest": "packs/pack_YRpBbSh-Pqnw/pack.json"
+    },
+    {
+      "id": "pack_-gi9JmjuIfy5",
+      "manifest": "packs/pack_-gi9JmjuIfy5/pack.json"
+    },
+    {
+      "id": "pack_lxanYMpMaUCq",
+      "manifest": "packs/pack_lxanYMpMaUCq/pack.json"
+    },
+    {
+      "id": "pack_-1fxy3PBdgXT",
+      "manifest": "packs/pack_-1fxy3PBdgXT/pack.json"
+    }
+  ]
+}

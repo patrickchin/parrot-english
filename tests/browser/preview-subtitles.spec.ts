@@ -1,3 +1,4 @@
+import { readScene } from '../content-fixtures';
 import { test, expect, setLanguage } from './fixtures';
 import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
@@ -5,7 +6,7 @@ import { join } from 'node:path';
 
 test.beforeEach(async ({ page }) => {
   await page.route('**/scenes/onions/scene.json', async route => {
-    const scene = await (await route.fetch()).json();
+    const scene = readScene('onions');
     scene.lines = [
       { id: 'line_preview_a', roleId: scene.roles[0].id, start: 0, end: 0.8, text: 'Onions have layers.', hint: '洋葱有层次。' },
       { id: 'line_preview_b', roleId: scene.roles[1].id, start: 1.2, end: 3.2, text: 'Ogres have layers.', hint: '怪物也有层次。' },
@@ -171,7 +172,7 @@ test('long subtitles remain readable and a finished preview returns to role choi
   const longText = 'Onions have layers. Ogres have layers. '.repeat(7).trim();
   await page.unroute('**/scenes/onions/scene.json');
   await page.route('**/scenes/onions/scene.json', async route => {
-    const scene = await (await route.fetch()).json();
+    const scene = readScene('onions');
     scene.lines[0].text = longText;
     delete scene.lines[0].words;
     await route.fulfill({ json: scene });

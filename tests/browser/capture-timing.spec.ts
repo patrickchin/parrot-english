@@ -1,3 +1,4 @@
+import { readScene } from '../content-fixtures';
 import { test, expect } from './fixtures';
 
 // Exercise real encoder output, including the first sound after the picture starts.
@@ -44,7 +45,7 @@ test('capture is ready before the picture and preserves the opening sound throug
     } } });
   });
   await page.goto('/scenes/onions');
-  const scene = await (await page.request.get('/scenes/onions/scene.json')).json();
+  const scene = readScene('onions');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   const stop = page.getByRole('button', { name: '停止录音', exact: true });
