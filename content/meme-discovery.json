@@ -65,7 +65,7 @@
       "title": "Corn Kid / A corntastic day",
       "priority": "high",
       "trendStatus": "evergreen-candidate",
-      "status": "playable-pack-prepared",
+      "status": "published",
       "originalLanguage": "en",
       "source": {
         "url": "https://www.youtube.com/watch?v=1VbZE6YhjKk",
@@ -101,10 +101,13 @@
       "englishPractice": "Food, wishes, repetition, and a pun; use the spoken interview, separate from the song.",
       "contentNotes": "A child appears in the source. Source permissions and suitability need review; do not infer consent to reuse from a public upload. Corntastic is a pun, not standard vocabulary.",
       "rightsStatus": "redistribution-not-cleared",
-      "publicationStatus": "not-published",
-      "nextAction": "Publish the prepared media and staged catalog through the authenticated OSS publisher, then verify the live scene. Alibaba Cloud publishing is not connected in this remote chat.",
+      "publicationStatus": "published",
+      "nextAction": "Collect adult prototype feedback while continuing discovery for the next batch; source reuse permissions remain unconfirmed.",
       "reviewRecipe": "content/social-meme-review-scenes.json",
-      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/corn-corntastic-day/scene.json"
+      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/corn-corntastic-day/scene.json",
+      "publishedOn": "2026-11-12",
+      "contentRevision": "8e1059c38d166d68a31ef7e7",
+      "sceneUrl": "https://parrotbook.com/en/scenes/corn-corntastic-day"
     },
     {
       "id": "candidate_0aZMDCHRU2s9",
@@ -112,7 +115,7 @@
       "title": "Emotional Damage",
       "priority": "high",
       "trendStatus": "evergreen-candidate",
-      "status": "playable-pack-prepared",
+      "status": "published",
       "originalLanguage": "en",
       "source": {
         "url": "https://www.youtube.com/watch?v=miD_TWmdGIY",
@@ -153,10 +156,13 @@
       "englishPractice": "Expressive reaction with surrounding creator-sketch dialogue; inspect the full sketch for a complete exchange.",
       "contentNotes": "Parental put-downs, ethnic stereotypes, threats, and profanity in the wider sketch. Adult review; no child suitability claim.",
       "rightsStatus": "redistribution-not-cleared",
-      "publicationStatus": "not-published",
-      "nextAction": "Publish the prepared media and staged catalog through the authenticated OSS publisher, then verify the live scene. Alibaba Cloud publishing is not connected in this remote chat.",
+      "publicationStatus": "published",
+      "nextAction": "Collect adult prototype feedback while continuing discovery for the next batch; source reuse permissions remain unconfirmed.",
       "reviewRecipe": "content/social-meme-review-scenes.json",
-      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/emotional-damage/scene.json"
+      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/emotional-damage/scene.json",
+      "publishedOn": "2026-11-12",
+      "contentRevision": "8e1059c38d166d68a31ef7e7",
+      "sceneUrl": "https://parrotbook.com/en/scenes/emotional-damage"
     },
     {
       "id": "candidate_Cydaa18op7a7",
@@ -164,7 +170,7 @@
       "title": "Apparently Kid",
       "priority": "high",
       "trendStatus": "evergreen-candidate",
-      "status": "playable-pack-prepared",
+      "status": "published",
       "originalLanguage": "en",
       "source": {
         "url": "https://www.youtube.com/watch?v=rz5TGN7eUcM",
@@ -196,10 +202,13 @@
       "englishPractice": "Interview questions and an enthusiastic answer; preserve spontaneous English rather than treating fillers as a grammar model.",
       "contentNotes": "A child appears in the source. Automatic subtitle download returned HTTP 429; no verified transcript or cut yet.",
       "rightsStatus": "redistribution-not-cleared",
-      "publicationStatus": "not-published",
-      "nextAction": "Publish the prepared media and staged catalog through the authenticated OSS publisher, then verify the live scene. Alibaba Cloud publishing is not connected in this remote chat.",
+      "publicationStatus": "published",
+      "nextAction": "Collect adult prototype feedback while continuing discovery for the next batch; source reuse permissions remain unconfirmed.",
       "reviewRecipe": "content/social-meme-review-scenes.json",
-      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/apparently-get-dizzy/scene.json"
+      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/apparently-get-dizzy/scene.json",
+      "publishedOn": "2026-11-12",
+      "contentRevision": "8e1059c38d166d68a31ef7e7",
+      "sceneUrl": "https://parrotbook.com/en/scenes/apparently-get-dizzy"
     },
     {
       "id": "candidate_r41ygan5y3BZ",

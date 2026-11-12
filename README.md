@@ -54,7 +54,7 @@ See [the latest 12 scenes](docs/clip-expansion-2026-11-11-c.md) and
 exchanges; Patrick, Chocolate, and Onions retain their original edits.
 The category tabs show scene previews and counts, and keep the selected folder
 across playback, language changes, and reloads.
-Three social-video additions are prepared in [the social meme batch](docs/social-meme-scenes.md); OSS publication is pending.
+Three social-video additions are live in [the social meme batch](docs/social-meme-scenes.md): Corn Kid, Apparently Kid, and Emotional Damage.
 See [the meme re-edits](docs/meme-review.md) and
 [the younger scenes](docs/preschool-review.md) for the current cuts.
 Browse the thumbnail grid or search within the selected folder by title, series,

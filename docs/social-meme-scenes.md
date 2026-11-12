@@ -1,6 +1,6 @@
 # Three playable internet meme scenes — 2026-11-12
 
-Prepared for the existing adult prototype: original spoken performances from
+Published for the existing adult prototype: original spoken performances from
 Recess Therapy, WNEP, and Steven He. The library has 111 authored scenes: 67 in
 Memes & clips, 15 First English, 15 Ages 10–12, and 14 Teenagers. Existing scene
 manifests and media references are unchanged.
@@ -13,8 +13,8 @@ manifests and media references are unchanged.
 
 Each scene has original video/audio, Chinese meaning hints, five-language title,
 role and credit metadata, CTC word timing, a 5 ms waveform, a poster, and actual
-speaker crops. Media remains in ignored local authoring storage for explicit
-OSS publication. ESA holds code and interface translations; OSS holds media and
+speaker crops. Media is served from OSS; local authoring copies remain ignored.
+ESA holds code and interface translations; OSS holds media and
 structured content. Learner recordings stay on-device. No infrastructure change
 is required.
 
@@ -82,12 +82,25 @@ use a new content-derived filename if an image changes.
   `8e1059c38d166d68a31ef7e7`.
 - Upload manifest: `content/local-dubbing/social-release/media.json`, 13 media
   objects, 9,621,509 bytes, each with a recorded SHA-256 checksum.
-- **OSS publication is pending**: this remote chat has no Alibaba Cloud MCP
-  connection or authenticated uploader. The latest checked live catalog has
-  108 scenes. These three additions are prepared and tested, not live yet.
+- **Published and live-verified on 2026-11-12**: the catalog contains 111 scenes.
+  All 226 staged JSON objects and 13 media objects matched expected SHA-256
+  checksums; all 457 external media references were available before activation.
+  Catalog activation happened last with `Cache-Control: no-store`.
+- The authenticated Alibaba MCP connection issued short-lived PUT URLs for the
+  exact existing OSS object keys. This used the same staged release and catalog-
+  last publication sequence as the CLI publisher. Alibaba signing rate limits
+  were respected. No upload identity or bucket setting was changed.
+- Nine live scene/surface checks passed against actual production and OSS:
+  desktop Chromium, phone Chromium, and WebKit for all three scenes. Both
+  Chromium layouts also passed recording, save, reload, and replay. The browser
+  flows made no upload requests. Video byte-range requests and CORS passed.
+- App workflow 43197333288 succeeded; `/api/health` reports its actual build
+  commit `55e3a7a14446b9477d67fad96056de33d01944d8`. The content catalog has
+  its independent revision above.
 
-Upload the 13 media objects to their exact manifest keys, verify their sizes and
-hashes, then run `npm run content:publish` from the merged source. The publisher
+For future publication, upload media to its exact manifest keys, verify sizes
+and hashes, then use the authenticated OSS content publisher from merged source.
+The publisher
 checks every external media reference, uploads immutable release objects first,
 and replaces the catalog last. Verify all three live links and playback before
 changing the publication status. Re-read the live catalog before activating an
