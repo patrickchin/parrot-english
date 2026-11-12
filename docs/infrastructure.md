@@ -305,5 +305,16 @@ authored content. `npm test` retains all app, content, typecheck, and boundary
 checks. OSS storage and the explicit `npm run content:publish` workflow are
 unchanged: committing content does not publish it.
 
-This records the selected release-ref configuration. Its positive app-deployment
-and negative content-only checks will be recorded after the workflow is exercised.
+Verified on 2026-11-12: [application PR 256](https://github.com/patrickchin/parrot-english/pull/256)
+and [workflow 43178351760](https://github.com/patrickchin/parrot-english/actions/runs/43178351760)
+advanced `release/player` to `7af050dea91736af7ab87d4c5a5f486db92ac2d4`.
+ESA build `188665396033648` succeeded with both build and production branches
+set to `release/player`; `/api/health` returned that exact source revision.
+
+The subsequent content-only [PR 257](https://github.com/patrickchin/parrot-english/pull/257)
+produced [workflow 43179035647](https://github.com/patrickchin/parrot-english/actions/runs/43179035647):
+the changes job succeeded and deployment skipped. Main advanced to
+`14a1bb34c479e94a3e6726a160a8c18525379bd6`; the release pointer and health stayed
+at `7af050dea91736af7ab87d4c5a5f486db92ac2d4`. ESA's build count remained 50,
+with `188665396033648` still the latest successful build. OSS discovery still
+returned all 79 scenes.
