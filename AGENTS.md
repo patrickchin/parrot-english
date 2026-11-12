@@ -13,11 +13,12 @@
 - GitHub `main` pushes pass through the `Deploy player` workflow's full-diff
   path gate. Changes limited to `content/`, `docs/`, `README.md`, or known
   authoring scripts skip player deployment; content publication remains an
-  explicit `npm run content:publish`.
-  App changes request the connected ESA source build of `main`. Never publish a
-  local bundle, ZIP, or feature branch to production. Verify `/api/health` against
-  the actual successful ESA build commit; content-only commits may leave the
-  deployed revision behind `main`.
+  explicit `npm run content:publish`. Qualifying main changes fast-forward
+  `release/player` to an already merged main commit. This ref is a deployment
+  pointer, not a development branch; ESA builds and publishes its Git source.
+  Never publish unmerged feature code, local bundles, or ZIPs to production.
+  Verify `/api/health` against the actual successful ESA build commit;
+  content-only commits may leave that revision behind `main`.
 
 ## Implementation
 

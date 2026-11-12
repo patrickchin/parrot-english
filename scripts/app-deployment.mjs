@@ -35,20 +35,76 @@ function aliyun(action, parameters) {
 }
 
 const terminal = status => ['succeed', 'failed', 'canceled'].includes(status);
+const active = status => ['int', 'pending', 'building'].includes(status);
+const releaseBranch = 'release/player';
+const releaseRef = `refs/heads/${releaseBranch}`;
+
+export function advanceRelease(expectedCommit, run = git) {
+  if (!commit(expectedCommit)) throw new Error('Invalid main event revision.');
+  run(['fetch', '--no-tags', 'origin', '+refs/heads/main:refs/remotes/origin/main']);
+  const selected = run(['rev-parse', 'refs/remotes/origin/main']).trim();
+  if (!commit(selected)) throw new Error('Unable to select a valid main revision.');
+  run(['merge-base', '--is-ancestor', expectedCommit, selected]);
+  const remote = run(['ls-remote', '--heads', 'origin', releaseRef]).trim();
+  let previous = '';
+  if (remote) {
+    const entries = remote.split('\n');
+    const fields = entries[0].split(/\s+/);
+    if (entries.length !== 1 || !commit(fields[0]) || fields[1] !== releaseRef) throw new Error('Unexpected release ref response.');
+    run(['fetch', '--no-tags', 'origin', `${releaseRef}:refs/remotes/origin/${releaseBranch}`]);
+    previous = run(['rev-parse', `refs/remotes/origin/${releaseBranch}`]).trim();
+    if (!commit(previous)) throw new Error('Unable to read the release revision.');
+    run(['merge-base', '--is-ancestor', previous, selected]);
+  }
+  // No force option: a competing update must pass Git's fast-forward check too.
+  if (previous !== selected) run(['push', 'origin', `${selected}:${releaseRef}`]);
+  return { selected, updated: previous !== selected };
+}
 
 export async function deployApp({ expectedCommit, ref = process.env.GITHUB_REF, call = aliyun, run = git,
   fetchHealth = () => fetch('https://parrotbook.com/api/health', { cache: 'no-store', signal: AbortSignal.timeout(15000) }),
   wait = sleep, now = Date.now, log = console.log, buildTimeout = 10 * 60 * 1000,
-  cleanupTimeout = 2 * 60 * 1000, healthTimeout = 2 * 60 * 1000, interval = 15000,
+  cleanupTimeout = 2 * 60 * 1000, healthTimeout = 2 * 60 * 1000, discoveryTimeout = 45000, interval = 15000,
 }) {
   if (ref !== 'refs/heads/main' || !commit(expectedCommit)) throw new Error('Only a valid main commit can request a production build.');
-  const refreshMain = () => run(['fetch', '--no-tags', 'origin', '+refs/heads/main:refs/remotes/origin/main']);
-  refreshMain();
-  run(['merge-base', '--is-ancestor', expectedCommit, 'refs/remotes/origin/main']);
-  const created = await call('CreateRoutineBuild', { RoutineName: 'parrotbook-prototype', Branch: 'main' });
-  const buildId = String(created.RoutineBuildId ?? '');
+  const { selected, updated } = advanceRelease(expectedCommit, run);
+  const liveRevision = async () => {
+    const response = await fetchHealth();
+    const health = response.ok ? await response.json() : undefined;
+    return health?.ok === true ? health.revision : undefined;
+  };
+  if (!updated) {
+    try {
+      if (await liveRevision() === selected) {
+        log(`Production already serves selected main revision ${selected}.`);
+        return { buildId: null, revision: selected };
+      }
+    } catch { /* A failed health request must not suppress recovery. */ }
+  }
+  // Updating the release ref normally starts ESA's native Git build. Reuse it
+  // instead of requesting a duplicate; an unchanged ref needs explicit recovery.
+  let buildId = '';
+  const discoveryDeadline = now() + (updated ? discoveryTimeout : 0);
+  do {
+    try {
+      const recent = await call('ListRoutineBuilds', { RoutineName: 'parrotbook-prototype', PageIndex: 1, PageSize: 100, SortBy: 'CreateTime', SortOrder: 'desc' });
+      if (!Array.isArray(recent.Data)) throw new Error('ESA returned an invalid recent-build list.');
+      const matches = recent.Data.filter(build => build.RoutineName === 'parrotbook-prototype' && build.Branch === releaseBranch && build.ProductionBranch === releaseBranch && build.CommitId === selected);
+      const matching = matches.find(build => active(build.Status)) ?? (updated ? matches.find(build => terminal(build.Status)) : undefined);
+      if (matching) { buildId = String(matching.RoutineBuildId ?? ''); break; }
+    } catch (error) {
+      if (now() >= discoveryDeadline) throw error;
+      log('ESA build discovery temporarily unavailable; retrying.');
+    }
+    if (now() >= discoveryDeadline) break;
+    await wait(interval);
+  } while (now() <= discoveryDeadline);
+  if (!buildId) {
+    const created = await call('CreateRoutineBuild', { RoutineName: 'parrotbook-prototype', Branch: releaseBranch });
+    buildId = String(created.RoutineBuildId ?? '');
+  }
   if (!/^[1-9][0-9]{0,19}$/.test(buildId)) throw new Error('ESA did not return a valid build ID.');
-  log(`ESA build ${buildId} requested from main.`);
+  log(`Monitoring ESA production build ${buildId} for selected main revision ${selected}.`);
   const deadline = now() + buildTimeout;
   let build;
   while (now() < deadline) {
@@ -60,7 +116,7 @@ export async function deployApp({ expectedCommit, ref = process.env.GITHUB_REF, 
     await wait(interval);
   }
   if (!terminal(build?.Status)) {
-    // Stop only the task this dispatcher created, then keep the deployment lock
+    // Stop only this selected release task, then keep the deployment lock
     // while checking that it actually stopped.
     const cleanupDeadline = now() + cleanupTimeout;
     try { await call('StopRoutineBuild', { RoutineBuildId: buildId }); }
@@ -75,18 +131,13 @@ export async function deployApp({ expectedCommit, ref = process.env.GITHUB_REF, 
     throw new Error(`ESA build ${buildId} timed out${terminal(build?.Status) ? ` (${build.Status})` : '; unable to confirm that it stopped'}.`);
   }
   if (build.Status !== 'succeed') throw new Error(`ESA build ${buildId} ${build.Status}.`);
-  if (build.RoutineName !== 'parrotbook-prototype' || build.Branch !== 'main' || build.ProductionBranch !== 'main' || !commit(build.CommitId)) throw new Error('ESA returned an unexpected production build.');
-  // ESA selects the branch head when it clones, not a caller-supplied commit.
-  // A queued push can therefore build a newer main commit containing the event.
-  refreshMain();
-  run(['merge-base', '--is-ancestor', expectedCommit, build.CommitId]);
-  run(['merge-base', '--is-ancestor', build.CommitId, 'refs/remotes/origin/main']);
+  if (build.RoutineName !== 'parrotbook-prototype' || build.Branch !== releaseBranch || build.ProductionBranch !== releaseBranch || build.CommitId !== selected) throw new Error('ESA returned an unexpected production build.');
+  run(['fetch', '--no-tags', 'origin', '+refs/heads/main:refs/remotes/origin/main']);
+  run(['merge-base', '--is-ancestor', selected, 'refs/remotes/origin/main']);
   const healthDeadline = now() + healthTimeout;
   while (now() < healthDeadline) {
     try {
-      const response = await fetchHealth();
-      const health = response.ok ? await response.json() : undefined;
-      if (health?.ok === true && health.revision === build.CommitId) {
+      if (await liveRevision() === selected) {
         log(`Verified production revision ${build.CommitId} from ESA build ${buildId}.`);
         return { buildId, revision: build.CommitId };
       }

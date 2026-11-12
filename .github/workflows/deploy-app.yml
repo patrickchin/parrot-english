@@ -31,11 +31,11 @@ jobs:
     needs: changes
     if: github.ref == 'refs/heads/main' && needs.changes.outputs.app_changed == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       ALIBABA_CLOUD_REGION_ID: cn-hangzhou
     permissions:
-      contents: read
+      contents: write
       id-token: write
     concurrency:
       group: parrotbook-production-player
@@ -58,7 +58,7 @@ jobs:
           role-session-name: parrotbook-${{ github.run_id }}
           role-session-expiration: 1800
           audience: sts.aliyuncs.com
-      - name: Build main in ESA and verify production
+      - name: Release selected main revision through ESA
         env:
           EXPECTED_COMMIT: ${{ github.sha }}
         run: node scripts/app-deployment.mjs deploy
