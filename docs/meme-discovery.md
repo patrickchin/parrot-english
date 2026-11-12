@@ -22,9 +22,9 @@ scans look for emerging material.
 
 | Priority | Moment | Evidence and English fit | Next step |
 | --- | --- | --- | --- |
-| High | Emotional Damage | [Steven He original](https://www.youtube.com/watch?v=miD_TWmdGIY): 73,001,395 views returned. [Bilibili explainer](https://www.bilibili.com/video/BV1ZZ4y1f7eP/): rounded 3.1M views, evidence of Chinese recognition. | Playable reaction exchange prepared with the insulting support line retained but not selectable; adult prototype only. |
-| High | Corn Kid | [Original interview](https://www.youtube.com/watch?v=1VbZE6YhjKk): 14,109,446 views. [Creator’s Instagram reel](https://www.instagram.com/reel/Cg14y_1Ilq0/): 2,165,042 likes returned. | Playable spoken exchange prepared; publication pending. The interview is separate from the musical remix. |
-| High | Apparently Kid | [WNEP original](https://www.youtube.com/watch?v=rz5TGN7eUcM): 73,377,142 views returned. | Playable ride interview prepared after source/speaker checks and independent recognition; publication pending. |
+| High | Emotional Damage | [Steven He original](https://www.youtube.com/watch?v=miD_TWmdGIY): 73,001,395 views returned. [Bilibili explainer](https://www.bilibili.com/video/BV1ZZ4y1f7eP/): rounded 3.1M views, evidence of Chinese recognition. | Playable reaction exchange published with the insulting support line retained but not selectable; adult prototype only. |
+| High | Corn Kid | [Original interview](https://www.youtube.com/watch?v=1VbZE6YhjKk): 14,109,446 views. [Creator’s Instagram reel](https://www.instagram.com/reel/Cg14y_1Ilq0/): 2,165,042 likes returned. | Playable spoken exchange published and live-verified. The interview is separate from the musical remix. |
+| High | Apparently Kid | [WNEP original](https://www.youtube.com/watch?v=rz5TGN7eUcM): 73,377,142 views returned. | Playable ride interview published and live-verified after source/speaker checks and independent recognition. |
 | Medium | Can I pet that dog? | [Family-upload lead](https://www.youtube.com/shorts/YYx51ZrSn3g). Simple request and escalating emphasis. | Verify uploader and adult responses; distinguish the original family footage from bear/dog remixes. |
 | Medium | Weather boy | [Source history](https://knowyourmeme.com/memes/wouldnt-you-like-to-know-weather-boy). Question, evasive answer, comic reaction. | Find the rights-holder footage. It is a staged father/son exchange, not an authentic hostile interview. |
 | Medium | Very demure, very mindful | [Jools Lebron original-post lead](https://www.tiktok.com/@joolieannie/video/7399736793119247662), corroborated by [reuse discussion](https://www.reddit.com/r/OutOfTheLoop/comments/1f05iwy/). | Verify playback and a self-contained spoken passage; counts UNKNOWN. Solo performance needs an explicit format decision before changing the current exchange-oriented review tool. |
@@ -39,12 +39,13 @@ scans look for emerging material.
 No comparable current platform-wide ranking or trend velocity was verified.
 High priority means promising for review, not cleared or suitable for all ages.
 
-The first three playable additions are prepared: Corn Kid, Apparently Kid, and
+The first three playable additions are published: Corn Kid, Apparently Kid, and
 Emotional Damage. Their manifests, timed words, Chinese hints, five-language
 metadata, source credits, waveforms, and role portraits are in the pack. See
 [the scene batch](social-meme-scenes.md) for source ranges and verification.
-Publication is pending authenticated OSS access in this remote chat. They are
-not live merely because their metadata is committed.
+The live catalog now contains 111 scenes. All three additions passed live
+playback checks on desktop Chromium, phone Chromium, and WebKit, plus
+recording/save/reload/replay on both Chromium layouts.
 
 ## Coverage and evidence
 
