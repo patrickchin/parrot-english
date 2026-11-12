@@ -7,6 +7,32 @@ import { join } from 'node:path';
 
 const filmCount = clips.filter(clip => clip.cohort === 'older-audience').length;
 
+test('hovering the scene title highlights the whole scene and keyboard focus does too', async ({ page }, info) => {
+  await page.goto('/en/library/older-audience');
+  const scene = page.getByRole('button', { name: 'Choose scene: No, this is Patrick!', exact: true });
+  const title = scene.getByRole('heading');
+  await expect(title).toBeVisible();
+  const background = () => scene.evaluate(element => getComputedStyle(element).backgroundColor);
+  const resting = await background();
+  await title.hover();
+  await expect.poll(background).not.toBe(resting);
+  await expect.poll(() => scene.evaluate(element => getComputedStyle(element).outlineColor)).not.toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
+  if (info.project.name === 'chromium') {
+    const folder = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english');
+    await mkdir(folder, { recursive: true });
+    await expect.poll(() => scene.locator('img').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0);
+    const box = (await scene.boundingBox())!;
+    await page.screenshot({ path: join(folder, 'scene-hover.png'), clip: { x: box.x - 8, y: box.y - 8, width: box.width + 16, height: box.height + 16 } });
+  }
+  await page.mouse.move(0, 0);
+  await page.keyboard.press('Tab');
+  await scene.focus();
+  await expect(scene).toBeFocused();
+  await expect.poll(background).not.toBe(resting);
+  await scene.press('Enter');
+  await expect(page.getByRole('button', { name: 'Start dubbing', exact: true })).toBeEnabled();
+});
+
 test('the simplified shelf keeps scenes, privacy and source details accessible without a Help button', async ({ page }, info) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1, name: '片段已就位。 轮到你发声。' })).toBeVisible();
