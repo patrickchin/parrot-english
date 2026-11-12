@@ -2,7 +2,9 @@
 
 Application releases and content releases are independent. ESA serves the player;
 OSS serves the discovery catalog, packs, scene JSON, waveforms, and media. Learner
-recordings remain in the browser. No database or new service is introduced.
+recordings remain in the browser. Both sources stay in this repository. Content
+publication remains an explicit OSS operation; committing content alone does not
+publish it. No database or new service is introduced.
 
 The existing 79 scenes are packaged into Films & animation, First English,
 Ages 10–12, and Teenagers. Each pack owns its library summaries, searchable text,
@@ -121,6 +123,12 @@ When adding a new scene, supply the scene summary and its pack translations as
 well as the manifest and media. Existing recipe scripts are authoring tools,
 not a public contribution interface.
 
+`npm run test:content` runs authored-content and publishing checks. `npm test`
+also runs app contracts, the full typecheck, and the app/content boundary check.
+The ESA app gate uses `npm run test:app && npm run build`, with test-only pack
+fixtures and application-only TypeScript/Tailwind inputs. It works with authored
+content missing or invalid.
+
 ## Publish independently
 
 Configure an authenticated Alibaba Cloud CLI with ossutil 2.0 integration
@@ -139,7 +147,13 @@ Publishing validates and uploads a revisioned release before replacing the
 catalog. The catalog uses `Cache-Control: no-store` so refreshes discover changes;
 versioned objects can be cached. Upload new external `mediaBase` files before
 publishing references to them. The command does not build, commit, push, or
-deploy the player.
+deploy the player. A Git commit or push does not replace this publication step.
+
+The `Deploy player` GitHub workflow checks the complete diff of each `main` push.
+Changes limited to `content/`, `docs/`, `README.md`, and known authoring scripts
+skip the ESA deployment job. Other paths, including package and unknown files,
+request the connected ESA source build of `main`; content stays in OSS. A content-only commit can therefore
+advance `main` without changing the app revision returned by `/api/health`.
 
 Publish the initial pack catalog before releasing the player change that reads
 it. Afterward, changing only content requires this publishing workflow and a
@@ -155,8 +169,9 @@ npm run content:remove -- pack_ID
 This updates the remote catalog only. New page loads and browser refreshes stop
 discovering that pack. It does not delete pack files, shared media, recordings,
 or local authoring sources. An already open tab keeps its loaded catalog until
-refreshed; an open player may also retain its loaded scene data. Local dubs remain visible and deletable; resuming a withdrawn
-scene reports that it is unavailable.
+refreshed; an open player may also retain its loaded scene data. Local dubs
+remain visible and deletable; resuming a withdrawn scene reports that it is
+unavailable.
 
 Withdrawal and permanent object removal are different operations. Direct URLs
 to retained public objects can still work after withdrawal. A complete media

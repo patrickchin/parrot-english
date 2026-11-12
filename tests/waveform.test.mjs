@@ -1,4 +1,3 @@
-import { sceneFile } from './content-fixtures.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { runInNewContext } from 'node:vm';
@@ -6,12 +5,7 @@ import { readFile } from 'node:fs/promises';
 import { encodePcmWav } from '../src/pcm-recording.ts';
 import { validateWaveform, waveformHeight, waveformPath } from '../src/waveform.ts';
 
-test('reference waveforms retain changing 5 ms audio peaks on a shared scale', async () => {
-  for (const slug of ['patrick', 'chocolate', 'wumbo', 'onions']) {
-    const scene = JSON.parse(await readFile(sceneFile(slug), 'utf8'));
-    const wave = validateWaveform(JSON.parse(await readFile(sceneFile(slug, scene.waveform), 'utf8')));
-    assert.ok(Math.max(...wave.peaks) - Math.min(...wave.peaks) > 0.05);
-  }
+test('waveform validation enforces peak windows on a shared scale', () => {
   assert.equal(waveformHeight(0), 0);
   assert.ok(waveformHeight(0.02) < waveformHeight(0.2));
   const valid = { version: 2, duration: 0.01, step: 0.005, peaks: [0.1, 0.2] };

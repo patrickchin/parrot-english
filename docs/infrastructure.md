@@ -8,11 +8,14 @@ not a completed deletion or a promise of zero ongoing cost.
 ## Current prototype
 
 - Alibaba ESA routine: `parrotbook-prototype`.
-- Deployment source: GitHub `patrickchin/parrot-english`, build and production
-  branch `main`. Build configuration `186152823240924` uses the existing GitHub
-  connection, Node 24, `npm ci`, and `npm test && npm run build`.
-  `esa.jsonc` versions the build commands and `build/edge-worker.mjs` entry.
-  `/api/health` includes the source Git revision for live verification.
+- Deployment source: GitHub `patrickchin/parrot-english`, source-build and
+  production branch `main`. The `Deploy player` GitHub workflow gates ESA builds
+  by changed paths. Native `BuildBranches` is parked on
+  `codex/esa-auto-build-disabled`; `ProductionBranch` remains `main`.
+  Build configuration `186152823240924` keeps the existing GitHub connection,
+  Node 24, `npm ci`, and `npm run test:app && npm run build`. `esa.jsonc` versions
+  the commands and `build/edge-worker.mjs` entry. `/api/health` reports the actual
+  built source revision, which may trail `main` after content-only commits.
 - The manual versions below are retained deployment history, not the current
   publication procedure. Do not upload local bundles or ZIPs to release changes.
 - First automatic GitHub deployment verified on 2026-10-29: build
@@ -240,8 +243,8 @@ Permanent object deletion is a separate operation. See
 [the content-pack guide](content-packs.md) for the format and workflow.
 
 Publishing the initial content objects does not release the updated player.
-Application production changes still follow the connected GitHub `main` build
-and require matching the build commit to the live `/api/health` revision.
+Application production changes use the path-gated connected GitHub `main` build
+and require matching the actual build commit to the live `/api/health` revision.
 
 Initial content publication verified on 2026-11-12: release
 `07d6fab25c13829369a51c4d` contains four packs and 79 scenes. All 162 pack,
@@ -253,3 +256,40 @@ all 79 scenes and loaded one manifest from each pack against actual OSS.
 The built player also played one scene from each of the four packs against
 actual OSS without fixture interception or browser errors. Temporary transfer
 objects were deleted. No application code was deployed.
+
+
+## Path-gated application builds — 2026-11-12
+
+The selected trigger is `.github/workflows/deploy-app.yml`, with
+`scripts/app-deployment.mjs` checking a full local Git diff for each `main` push.
+The workflow still runs its changes job for content-only pushes; it skips the
+deployment job when every changed path is under `content/` or `docs/`, is
+`README.md`, or belongs to the known authoring-script list. Runtime, package,
+build, workflow, and unknown paths request a build. Missing history also requests a build. This avoids the
+300-file limit of GitHub's native changed-path filters.
+
+ESA's native push-build selection is parked at
+`BuildBranches: codex/esa-auto-build-disabled`, with `ProductionBranch: main`.
+The dispatcher calls `CreateRoutineBuild` for `main` on the existing
+`parrotbook-prototype` routine, then checks build status and production health.
+ESA fetches and builds GitHub source; the workflow uploads no local bundle or
+ZIP. A queued request may build a newer `main` commit containing the requested
+change, so health is compared with the successful build's actual `CommitId`.
+Content-only commits can advance `main` beyond the deployed revision by design.
+
+The workflow reuses OIDC provider `parrot-github-actions` and assumes the
+`parrotbook-esa-github-main` RAM role. Its trust is restricted to the exact GitHub
+subject `repo:patrickchin/parrot-english:ref:refs/heads/main`, with audience
+`sts.aliyuncs.com`. The role permits `CreateRoutineBuild`, `GetRoutineBuild`, and
+`StopRoutineBuild`. Repository variables `ESA_OIDC_PROVIDER_ARN` and
+`ESA_DEPLOY_ROLE_ARN` identify the provider and role; the workflow obtains
+short-lived credentials without introducing long-lived secrets.
+
+The application build gate is `npm run test:app && npm run build`. App contract
+tests use test-only packs; production TypeScript and Tailwind inputs exclude
+authored content. `npm test` retains all app, content, typecheck, and boundary
+checks. OSS storage and the explicit `npm run content:publish` workflow are
+unchanged: a content-only commit does not publish it or request a player build.
+
+This records the selected configuration; live deployment and content-only skip
+verification will be recorded after the workflow is exercised.

@@ -21,7 +21,7 @@ test('authoring refreshes search text and moves scenes and translations between 
     references.push({ id, manifest: `packs/${id}/pack.json` });
   }
   await writeFile(join(root, 'content/catalog.json'), JSON.stringify({ version: 1, packs: references }));
-  const script = new URL('../scripts/content-paths.mjs', import.meta.url).href;
+  const script = new URL('../../scripts/content-paths.mjs', import.meta.url).href;
   const program = `const {catalog, writeCatalog} = await import(process.argv[1]);
     await writeCatalog(catalog.map(entry => ({...entry, cohort: 'younger-age-5'})));`;
   execFileSync(process.execPath, ['--input-type=module', '-e', program, script], { cwd: root });

@@ -88,7 +88,8 @@ Alibaba ESA holds application code, HTML/CSS, and interface translations.
 Alibaba OSS holds content catalogs, packs, scene manifests, waveforms, video,
 audio, and scene images. `npm run build` emits only the application in
 `build/edge-worker.mjs` and rejects content packs or media in the public build.
-No content upload runs as part of an application build or deployment.
+No content upload runs as part of an application build or deployment. Committing
+content changes does not publish them; run `npm run content:publish` explicitly.
 
 Original downloads and authoring outputs remain ignored under
 `content/local-dubbing/`; the earlier licensed sample remains an internal test
@@ -142,9 +143,23 @@ Use the shared `main` checkout at `/Users/patchin/Workspace/parrot-english` and
 pull with `git pull --ff-only` before editing. The owner selected this shared
 workflow on 2026-10-29; old feature worktrees are not the current application.
 
-Alibaba ESA connects directly to `patrickchin/parrot-english`. Only pushes to
-`main` build and deploy `parrotbook-prototype` to production. The build uses Node
-24, `npm ci`, then `npm test && npm run build`; `esa.jsonc` versions these settings.
+The [Deploy player workflow](.github/workflows/deploy-app.yml) runs on `main`
+pushes and checks the complete Git diff through `scripts/app-deployment.mjs`.
+Changes limited to `content/`, `docs/`, `README.md`, or known authoring scripts
+skip player deployment. Runtime, package, build, and unknown paths request a build;
+the filter has no 300-file limit. Manual workflow runs can request a main build.
+
+ESA still fetches source from the connected `patrickchin/parrot-english` GitHub
+repository and builds `main` for production. Its native push trigger is parked
+on `codex/esa-auto-build-disabled`, while `ProductionBranch` remains `main`.
+The build uses Node 24, `npm ci`, then `npm run test:app && npm run build`;
+`esa.jsonc` versions those commands. The app gate works independently of authored
+content. `npm test` runs all app, content, typecheck, and boundary checks.
+
+The workflow obtains short-lived Alibaba credentials through GitHub OIDC; see
+[the infrastructure record](docs/infrastructure.md) for its provider and role.
 Do not upload local bundles or ZIPs, or publish feature branches to production.
-Check the ESA build's commit and `/api/health`'s `revision` against GitHub `main`
-after deployment. Content publishing is separate from this application deployment. Packs and media stay in OSS; the app build never uploads recordings.
+When an app deployment runs, compare the successful ESA build's actual source
+commit with `/api/health`'s `revision`. Content-only commits intentionally leave
+the deployed app revision behind `main`. Pack publication remains the explicit
+OSS workflow above, with no player build or learner-recording upload.

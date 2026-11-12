@@ -1,0 +1,62 @@
+name: Deploy player
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    if: github.ref == 'refs/heads/main' && github.event.deleted != true
+    runs-on: ubuntu-latest
+    outputs:
+      app_changed: ${{ steps.changes.outputs.app_changed }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - name: Check all changed paths
+        id: changes
+        env:
+          BEFORE_COMMIT: ${{ github.event.before }}
+        run: node scripts/app-deployment.mjs changes
+
+  deploy:
+    needs: changes
+    if: github.ref == 'refs/heads/main' && needs.changes.outputs.app_changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+    concurrency:
+      group: parrotbook-production-player
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - uses: aliyun/setup-aliyun-cli-action@09a5f86915bb556e27bf050e9a5e339aeb073df5
+        with:
+          version: '3.5.3'
+      - uses: aliyun/configure-aliyun-credentials-action@1e5248c8d5d93a8781ac344a68e19a43341e79e6 # v1.1.0
+        with:
+          oidc-provider-arn: ${{ vars.ESA_OIDC_PROVIDER_ARN }}
+          role-to-assume: ${{ vars.ESA_DEPLOY_ROLE_ARN }}
+          role-session-name: parrotbook-${{ github.run_id }}
+          role-session-expiration: 1800
+          audience: sts.aliyuncs.com
+      - name: Build main in ESA and verify production
+        env:
+          EXPECTED_COMMIT: ${{ github.sha }}
+        run: node scripts/app-deployment.mjs deploy
