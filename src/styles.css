@@ -126,6 +126,11 @@ button:disabled { cursor: not-allowed; }
 .preview-subtitles [lang=en] { max-width: 38ch; margin-inline: auto; font-size: clamp(18px, 1.8vw, 22px); line-height: 1.35; font-weight: 500; text-wrap: balance; }
 .preview-subtitles [lang=zh-CN] { margin-top: 4px; font-size: 14px; line-height: 20px; color: var(--muted-foreground); }
 .practice-meta { min-height: 44px; }
+@media (max-width: 639px) {
+  .practice-meta { flex-wrap: nowrap; align-items: flex-start; }
+  .line-picker { max-width: 65%; row-gap: 0; }
+  .line-picker-label { flex-basis: 100%; font-size: 12px; line-height: 16px; }
+}
 .practice-caption { display: grid; align-items: start; padding-block: 8px 6px; }
 /* Reserve every scene line so practice and full-scene playback share a frame. */
 .practice-caption > div { grid-area: 1 / 1; }
@@ -134,7 +139,9 @@ button:disabled { cursor: not-allowed; }
 .player-controls { display: grid; margin-top: 12px; }
 .player-controls > div { grid-area: 1 / 1; min-width: 0; }
 .practice-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.practice-actions > button { min-height: 56px; padding: 10px 8px; font-size: 18px; gap: 8px; }
+.practice-actions > button, .practice-navigation > button { min-height: 56px; padding: 10px 8px; font-size: 18px; gap: 8px; }
+.practice-navigation { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; }
+.practice-navigation > button { white-space: normal; }
 .practice-secondary { grid-column: 1 / -1; display: flex; gap: 10px; height: 44px; margin-bottom: max(4px, env(safe-area-inset-bottom)); }
 .practice-secondary > button { flex: 1; min-height: 44px; padding: 8px; font-size: 16px; }
 .player-choose { padding: 16px; border-radius: var(--radius); background: var(--card); }
@@ -168,7 +175,7 @@ button:disabled { cursor: not-allowed; }
   .player-controls { grid-column: 2; grid-row: 1 / 3; align-self: start; margin: 0; }
   .practice-actions { display: flex; flex-direction: column; justify-content: flex-start; gap: 12px; margin: 0; }
   .practice-actions > button { min-height: 56px; font-size: 18px; }
-  .practice-actions > button:nth-child(4) { margin-top: 12px; }
+  .practice-navigation { margin-top: 12px; }
   .player-main[data-step=choose] { grid-template-rows: minmax(160px, 1fr); }
   .player-main[data-step=choose] .player-workspace { align-self: start; }
   .player-result { align-self: start; gap: 12px; }
@@ -214,13 +221,12 @@ button:disabled { cursor: not-allowed; }
 .show-heading > span { color: var(--muted-foreground); font-size: 13px; font-variant-numeric: tabular-nums; }
 .scene-shelf { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
 .scene-shelf > li { min-width: 0; }
-.scene-select { display: flex; flex-direction: column; width: 100%; height: 100%; text-align: left; border-radius: var(--radius); }
+.scene-select { display: flex; flex-direction: column; width: 100%; height: 100%; text-align: left; border-radius: var(--radius); outline: 2px solid transparent; outline-offset: 3px; transition: background-color 150ms ease, outline-color 150ms ease; }
+.scene-select:is(:hover, :focus-visible) { background: var(--accent); outline-color: var(--primary); }
 .scene-select:focus-visible { outline: 3px solid var(--ring); outline-offset: 5px; }
-.scene-select > img { display: block; aspect-ratio: 16/9; width: 100%; object-fit: cover; background: var(--muted); border-radius: 10px; transition: outline-color 150ms ease; outline: 2px solid transparent; outline-offset: 3px; }
-.scene-select:is(:hover, :focus-visible) > img { outline-color: var(--primary); }
-.scene-copy { display: block; flex: 1; min-width: 0; padding: 12px 0 8px; }
+.scene-select > img { display: block; aspect-ratio: 16/9; width: 100%; object-fit: cover; background: var(--muted); border-radius: var(--radius) var(--radius) 0 0; }
+.scene-copy { display: block; flex: 1; min-width: 0; padding: 12px 12px 8px; }
 .scene-title { display: block; font-size: 16px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
-.scene-select:is(:hover, :focus-visible) .scene-title { color: var(--primary); text-decoration: underline; text-underline-offset: 4px; }
 .app-navigation { display: flex; flex: none; }
 .app-wordmark { display: flex; align-items: center; gap: 8px; min-height: 44px; }
 .app-brand-mark { width: 28px; height: 28px; flex: none; color: var(--primary); }
