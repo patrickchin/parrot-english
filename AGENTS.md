@@ -10,9 +10,14 @@
 
 ## Git
 
-- Production deploys automatically from GitHub `main` through the connected
-  Alibaba ESA build. Never publish a local bundle, ZIP, or feature branch to
-  production. Verify the build commit and live `/api/health` revision after a push.
+- GitHub `main` pushes pass through the `Deploy player` workflow's full-diff
+  path gate. Changes limited to `content/`, `docs/`, `README.md`, or known
+  authoring scripts skip player deployment; content publication remains an
+  explicit `npm run content:publish`.
+  App changes request the connected ESA source build of `main`. Never publish a
+  local bundle, ZIP, or feature branch to production. Verify `/api/health` against
+  the actual successful ESA build commit; content-only commits may leave the
+  deployed revision behind `main`.
 
 ## Implementation
 
