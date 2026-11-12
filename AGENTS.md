@@ -2,9 +2,9 @@
 
 ## Product direction
 
-- Follow `docs/product-plan.md`. Build for children using the dubbing player
-  independently; teacher dashboards and classroom management are outside the
-  initial scope.
+- Follow `docs/product-plan.md`. Build for independent learners across ages,
+  including children, teens, and adults. Retain guardian guidance for child use;
+  teacher dashboards and classroom management are outside the initial scope.
 - The earlier product is research preserved under the tags in `README.md`.
   Recover specific code only when it fits the new scope.
 

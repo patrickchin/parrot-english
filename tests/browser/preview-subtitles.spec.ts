@@ -202,6 +202,7 @@ test('long subtitles remain readable and a finished preview returns to role choi
 test('preview stays below the picture, fits responsive screens and supports reduced motion', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/scenes/onions');
+  await expect(page.getByRole('button', { name: '开始配音', exact: true })).toBeEnabled();
   await setLanguage(page, 'en');
   for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 }, { width: 1024, height: 600 }, { width: 1440, height: 900 }, { width: 1440, height: 1200 }]) {
     await page.setViewportSize(viewport);

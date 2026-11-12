@@ -37,10 +37,14 @@ export function Library({ onChoose, folder, onFolderChange }: { onChoose: (slug:
     <main className="library-main">
       {featured ? <section className="library-feature" aria-labelledby="featured-scene-title">
         <div className="library-feature-copy">
-          <h1 id="featured-scene-title" className="font-display">{t(`content:scenes.${featured.id}.title`, { defaultValue: featured.title })}</h1>
-          <Button onClick={() => onChoose(featured.slug)} className="h-12 gap-3 px-6 text-base font-semibold">{t("player.startDubbing")}<Icon name="arrow" /></Button>
+          <h1 className="font-display"><span>{t('library.headlineLead')}</span>{' '}<span>{t('library.headlineEnd')}</span></h1>
+          <p>{t('library.introduction')}</p>
+          <Button variant="highlight" onClick={() => onChoose(featured.slug)} className="library-feature-action h-12 gap-3 px-6 text-base font-semibold">{t("player.startDubbing")}<Icon name="arrow" /></Button>
         </div>
-        <img src={featured.poster} alt="" fetchPriority="high" />
+        <div className="library-feature-media">
+          <img src={featured.poster} alt="" fetchPriority="high" />
+          <div className="library-feature-caption"><h2 id="featured-scene-title">{t(`content:scenes.${featured.id}.title`, { defaultValue: featured.title })}</h2><p>{featured.note}</p></div>
+        </div>
       </section> : <h1 className="font-display text-3xl font-bold">{t('navigation.library')}</h1>}
       <section aria-label={t("navigation.library")}>
         <CategoryTabs value={folder} onValueChange={onFolderChange} />

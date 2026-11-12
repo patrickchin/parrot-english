@@ -1,59 +1,98 @@
-# Quiet media studio
+# Green Pop Studio
 
-Taste-skill design pass, 2026-11-11: **Accent ladder**, seed `1986612481`.
-The product's film stills, character portraits, and actual voice traces supply
-its identity. Forest green marks primary actions, selection, and original voice;
-coral identifies recording and the learner's voice. Large surfaces stay neutral.
-Keep the existing system/CJK typography and rounded wordmark; use tabular
-figures in the playback clock rather than introducing a third typeface.
+Approved direction, 2026-11-12: a vibrant media studio for independent learners
+across ages. Keep a small outline parrot beside the wordmark; scene posters and
+character portraits carry the activities rather than a child-specific mascot.
+The film still, the learner’s voice, and the sentence being performed are the
+product’s visual identity. Keep the existing React, Tailwind, Base UI controls,
+content packs, routes, and recording flow.
 
-The library answers “Which scene shall I dub?” with real film artwork and an
-immediate start action. The player answers “What do I hear or say next?” with
-the picture, actual waveform, current sentence, and large actions. My dubs
-answers “Where can I continue?” with the learner's real saved attempts and
-honest loading, empty, storage-error, and deletion states.
+Use the shared tokens in `src/styles.css` as the authority. Light mode uses
+`#f1f7ed` for the page, `#123d2c` forest ink, `#087d4c` for selections and original
+waveforms, `#21c878` for the featured green field, and `#c9f1a2` for mint panels.
+Yellow `#f8e34c` marks primary actions; pink `#ffa6b5` marks starting a recording.
+Keep destructive red for stopping capture, deletion, and errors. Original and
+learner waveforms retain their distinct green/coral signal colors, shared scale,
+real data, and labels. Never create decorative waveform samples.
 
-Use `#f3f5f2` for the light page, white for working surfaces, `#202a24` for ink,
-`#214e3a` for the primary, and `#e0ebe2` for selected tints. Surface borders use
-`#dce2dc`; interactive outlines use `#7b897e`. Dark mode uses neutral `#171717`
-and `#222222` surfaces, light text, and restrained green highlights. Keep the
-shared tokens authoritative, including the browser theme color. Panels use
-8px corners and controls approximately 6px; menus alone carry a shadow.
-Disabled shared controls retain readable text on a quiet neutral fill.
+Dark mode uses `#14251d` for the page, `#1f3529` for working surfaces, pale forest
+text, and mint selection. The green hero, yellow actions, and pink recording
+controls keep their legible dark foregrounds in either appearance. Start in light
+mode and retain the existing explicit appearance preference across navigation.
+The browser theme color follows the actual page background.
 
-The desktop library keeps its 1100px content grid: four 263px scene columns
-and three 16px gaps. Its featured scene is a white bordered panel. Phones use
-a compact title/start row, with the real artwork in the scene shelf beneath
-the four visible category controls. The player keeps its existing action rail
-on desktop and four large actions in two rows on phones. Its practice surface
-has the same white fill and fine border as the other routes. Preserve video
-aspect ratios, role choice, skipping, retry, replay, errors, and session reset.
+Use Avenir Next where installed, with the existing CJK/system fallbacks. Display
+and body type share this family; avoid the former rounded preschool typography.
+Panels use 16px corners, scene artwork uses 10px corners, and controls use the
+shared button geometry. Separate panels with flat fills; only menus and dialogs
+carry a shadow. Dialogs use a plain dim backdrop. Keep touch targets at least
+44px, visible keyboard focus, selection labels, and readable disabled controls.
 
-The dealt creator-home blueprint requires greetings and metric tiles that do
-not belong to this product. Compose the library and saved attempts as media
-lists and the player as an object detail, following the skill's app rules.
-One shell redraw still produced a sidebar layout; retain the documented
-no-sidebar shell because the product has two top-level destinations and the
-video needs the width. Keep touch controls at least 44px, above the skill's
-desktop administrative-control sizes. Use real catalog and saved data only.
+The library answers “Which scene shall I dub?” with a split green introduction
+and an actual featured poster plus its title and series. Phones stack these
+parts and keep the poster visible. The introduction is translated in every
+interface language. Retain four visible category controls, show filters,
+search, scene counts, group headings, empty states, and source/privacy notices.
+The existing four-column desktop, three-column tablet, and two-column phone
+shelves keep their established behavior. Posters use their 16:9 frame.
 
-Waveform traces retain solid green/coral outlines at 1.2 viewBox units and
-35% fills. Their shapes, timing and amplitude remain actual signal data.
+The player keeps its space-efficient desktop action rail and phone action grid,
+video fitting, timed captions, role choices, and real waveforms. Use a white or
+dark working panel for role selection and dialogue. Yellow marks the next
+primary action, pink starts recording, and recording/stop/error states remain
+explicit. On narrow player headers, the parrot mark carries the home link while
+language, appearance, Help, and Back retain full touch targets.
 
-Review status: the library, role-selection and saved-dub previews were inspected
-at 1440, 768 and 390px with no measured text-contrast or horizontal-overflow
-failures. Library colored area fell from 25.8% to 7.8% on desktop. Tablet color
-share comes mainly from the film stills; the empty saved-dubs page deliberately
-keeps empty space rather than inventing attempts. Practice actions were checked
-at the same widths in light mode and at 1440/390px in dark mode. Source lint has
-no failures; the remaining recording pulse, clock formatting and menu-shadow
-warnings have functional purposes.
+My dubs uses the same shell and flat surfaces. The empty state uses mint and a
+yellow browse action; existing saved attempts keep continue/delete controls,
+progress, dates, unavailable-scene information, storage notices, loading, retry,
+and deletion confirmation. Help and guardian guidance remain available.
 
-Implementation is isolated on `codex/taste-studio`, based on current GitHub
-`main`. The source build passes. The development preview uses port 4322 and
-browser verification uses ports 4322/4323, separate from the shared checkout.
-The focused appearance and library checks pass all 12 cases across desktop
-Chromium, mobile Chromium and WebKit.
+This is an application appearance change. ESA still serves code, OSS still
+serves content and media, and recordings remain in this browser’s IndexedDB.
+
+## Visual review, 2026-11-12
+
+Final validation: `npm run build` and all 40 unit tests pass. The final focused
+Playwright run passes 89 checks across Chromium, mobile Chromium, and WebKit,
+with one existing hardware-only WebKit microphone case skipped. All 19
+localized production-route checks pass, for 108 passing browser checks. Tests
+used isolated ports 4326/4327. The earlier full-suite exploration was stopped
+after 160 passes to fix loading-shell readiness races; the affected language
+and subtitle checks pass in the final focused run. The complete 408-case suite
+was not rerun to completion.
+
+The final production build was inspected at 1440, 768, and 390px with zero
+measured layout or contrast failures. Source style lint reports zero failures
+and zero warnings. Screenshots live under
+`~/Pictures/Screenshots/Codex/parrot-english/`, including the before/after
+library, role selection, light/dark practice, and saved-dub states.
+
+Compared with the preceding library, the hero moves from a 28px rounded scene
+title to a 40px Avenir Next introduction; its two lines fit every checked width.
+The phone poster is visible instead of omitted. Both versions have zero
+horizontal overflow. The final first screen has 22% strong color versus 18%
+before, including film artwork.
+
+Three inspector warnings are intentional: the substantial green field and 40px
+introduction follow the approved Pop Studio direction; the near-edge show
+label is inside its own horizontal filter strip, whose focused controls scroll
+into view. Retain those decisions rather than applying the administrative
+screen color and type limits to this media browser.
+
+```text
+ROUND 2
+Seen in one second: a green media library with an immediate dubbing action.
+Idea (one sentence): familiar film scenes become invitations to perform in English.
+Live thing: choose a scene, perform a character, and replay the actual recording.
+Layout words by section: hero=split color and film / discovery=categories and search / scenes=grouped media shelves.
+Scores: design 7.6 · usability 8.0 · creativity 7.0 · content 8.0 → overall 7.6
+Caps applied: creativity capped at 7 because the studio composition also fits adjacent media products.
+Top three problems (most visible first), each with the screenshot and fix:
+1. The first typography pass was too heavy in desktop-fold.jpg; reduced the introduction and brand to weight 700.
+2. The old phone header forced the wordmark to a tiny size; practice-light-390.png now uses a 44px-tall parrot home link with full-sized adjacent controls.
+3. Age-only discovery labels still narrow the apparent audience in mobile-fold.jpg; keep them for this visual change and review level/interest browsing as a separate product decision.
+```
 
 Record starts microphone capture directly, without an app permission dialog on
 each scene or reset. The browser handles microphone access when needed. Keep

@@ -163,7 +163,10 @@
     "allShowsAndFilms": "모든 프로그램과 영화",
     "loading": "장면 라이브러리를 불러오는 중…",
     "empty": "이 카테고리에는 아직 장면이 없어요.",
-    "unavailable": "이 장면은 더 이상 이용할 수 없어요. 저장한 더빙은 이 기기에 남아 있어요."
+    "unavailable": "이 장면은 더 이상 이용할 수 없어요. 저장한 더빙은 이 기기에 남아 있어요.",
+    "headlineLead": "장면은 준비 끝.",
+    "headlineEnd": "이제 당신의 목소리.",
+    "introduction": "좋아하는 장면으로 영어를 연습하세요."
   },
   "waveform": {
     "voiceWaveformComparison": "음성 파형 비교",

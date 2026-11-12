@@ -163,7 +163,10 @@
     "allShowsAndFilms": "すべての番組と映画",
     "loading": "シーンライブラリを読み込み中…",
     "empty": "このカテゴリにはまだシーンがありません。",
-    "unavailable": "このシーンは現在利用できません。保存した吹き替えはこの端末に残っています。"
+    "unavailable": "このシーンは現在利用できません。保存した吹き替えはこの端末に残っています。",
+    "headlineLead": "シーンはそろった。",
+    "headlineEnd": "次は、あなたの声。",
+    "introduction": "好きなシーンで英語を練習しよう。"
   },
   "waveform": {
     "voiceWaveformComparison": "声の波形を比べる",
