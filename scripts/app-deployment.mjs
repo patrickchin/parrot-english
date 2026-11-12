@@ -29,7 +29,8 @@ export function appChanged(before, after, run = git) {
 }
 
 function aliyun(action, parameters) {
-  const args = ['esa', action, ...Object.entries(parameters).flatMap(([key, value]) => ['--' + key, String(value)]), '--region', 'cn-hangzhou', '--mode', 'StsToken'];
+  // The CLI detects STS from the credentials action's temporary environment.
+  const args = ['esa', action, ...Object.entries(parameters).flatMap(([key, value]) => ['--' + key, String(value)]), '--region', 'cn-hangzhou'];
   return JSON.parse(execFileSync('aliyun', args, { encoding: 'utf8', timeout: 30000, maxBuffer: 4 * 1024 * 1024 }));
 }
 
