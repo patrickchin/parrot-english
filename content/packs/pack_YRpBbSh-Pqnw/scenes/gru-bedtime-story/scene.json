@@ -1,0 +1,395 @@
+{
+  "version": 1,
+  "id": "scene_FL_WvS6Yrg4",
+  "title": "求求你啦",
+  "tags": [
+    "Despicable Me",
+    "求求你啦",
+    "Agnes",
+    "Gru",
+    "Margo",
+    "Edith",
+    "艾格尼丝",
+    "格鲁",
+    "玛戈",
+    "伊迪丝"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 25.68,
+  "video": "gru-bedtime-story-review-bd5b6f18f0a4.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gru-bedtime-story/",
+  "poster": "gru-bedtime-story-poster-bd5b6f18f0a4.jpg",
+  "waveform": "waveform-bd5b6f18f0a4.json",
+  "roles": [
+    {
+      "id": "role_T84qUgqhJWs",
+      "name": "艾格尼丝",
+      "label": "艾格尼丝",
+      "hint": "2 句台词",
+      "portrait": "agnes-avatar-0e0649781100.jpg"
+    },
+    {
+      "id": "role_1riy0R0QHso",
+      "name": "格鲁",
+      "label": "格鲁",
+      "hint": "3 句台词",
+      "portrait": "gru-avatar-f040917be194.jpg"
+    },
+    {
+      "id": "role_i5Z0lX1OKRk",
+      "name": "玛戈",
+      "label": "玛戈",
+      "hint": "1 句台词",
+      "portrait": "margo-avatar-e7dfb1b37895.jpg"
+    },
+    {
+      "id": "role_8j5eoCcBDKg",
+      "name": "伊迪丝",
+      "label": "伊迪丝",
+      "hint": "1 句台词",
+      "portrait": "edith-avatar-fba574a89dd0.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_KeRgxGiu6gk",
+      "roleId": "role_T84qUgqhJWs",
+      "start": 0.232,
+      "end": 2.08,
+      "text": "Will you read us a bedtime story?",
+      "hint": "你能给我们讲睡前故事吗？",
+      "words": [
+        {
+          "text": "Will",
+          "start": 0.262,
+          "end": 0.424
+        },
+        {
+          "text": "you",
+          "start": 0.444,
+          "end": 0.545
+        },
+        {
+          "text": "read",
+          "start": 0.686,
+          "end": 0.888
+        },
+        {
+          "text": "us",
+          "start": 0.969,
+          "end": 1.07
+        },
+        {
+          "text": "a",
+          "start": 1.171,
+          "end": 1.192
+        },
+        {
+          "text": "bedtime",
+          "start": 1.252,
+          "end": 1.656
+        },
+        {
+          "text": "story?",
+          "start": 1.737,
+          "end": 2.04
+        }
+      ]
+    },
+    {
+      "id": "line_oM20-RKC-m8",
+      "roleId": "role_1riy0R0QHso",
+      "start": 6.548,
+      "end": 6.759,
+      "text": "No.",
+      "hint": "不行。",
+      "words": [
+        {
+          "text": "No.",
+          "start": 6.578,
+          "end": 6.719
+        }
+      ]
+    },
+    {
+      "id": "line_sB6k_P3lBdg",
+      "roleId": "role_T84qUgqhJWs",
+      "start": 7.834,
+      "end": 8.559,
+      "text": "Pretty please?",
+      "hint": "求求你啦。",
+      "words": [
+        {
+          "text": "Pretty",
+          "start": 7.864,
+          "end": 8.089
+        },
+        {
+          "text": "please?",
+          "start": 8.233,
+          "end": 8.519
+        }
+      ]
+    },
+    {
+      "id": "line_fNYn5Idns3Q",
+      "roleId": "role_1riy0R0QHso",
+      "start": 9.151,
+      "end": 15.22,
+      "text": "The physical appearance of the please makes no difference. It is still no, so go to sleep.",
+      "hint": "求我的样子再好看也没有用。还是不行，睡觉去。",
+      "words": [
+        {
+          "text": "The",
+          "start": 9.181,
+          "end": 9.261
+        },
+        {
+          "text": "physical",
+          "start": 9.341,
+          "end": 9.662
+        },
+        {
+          "text": "appearance",
+          "start": 9.723,
+          "end": 10.164
+        },
+        {
+          "text": "of",
+          "start": 10.465,
+          "end": 10.525
+        },
+        {
+          "text": "the",
+          "start": 10.806,
+          "end": 10.886
+        },
+        {
+          "text": "please",
+          "start": 10.967,
+          "end": 11.488
+        },
+        {
+          "text": "makes",
+          "start": 11.789,
+          "end": 11.99
+        },
+        {
+          "text": "no",
+          "start": 12.07,
+          "end": 12.15
+        },
+        {
+          "text": "difference.",
+          "start": 12.251,
+          "end": 12.732
+        },
+        {
+          "text": "It",
+          "start": 12.913,
+          "end": 12.953
+        },
+        {
+          "text": "is",
+          "start": 13.073,
+          "end": 13.133
+        },
+        {
+          "text": "still",
+          "start": 13.234,
+          "end": 13.595
+        },
+        {
+          "text": "no,",
+          "start": 13.715,
+          "end": 13.916
+        },
+        {
+          "text": "so",
+          "start": 14.518,
+          "end": 14.618
+        },
+        {
+          "text": "go",
+          "start": 14.678,
+          "end": 14.739
+        },
+        {
+          "text": "to",
+          "start": 14.859,
+          "end": 14.939
+        },
+        {
+          "text": "sleep.",
+          "start": 14.999,
+          "end": 15.2
+        }
+      ]
+    },
+    {
+      "id": "line_bFOPtVFYgY8",
+      "roleId": "role_i5Z0lX1OKRk",
+      "start": 15.22,
+      "end": 21.14,
+      "text": "But we can't. We're all hyper. And without a bedtime story, we'll just keep getting up and bugging you.",
+      "hint": "我们睡不着，都太兴奋了。不讲故事，我们就会不停起床烦你。",
+      "words": [
+        {
+          "text": "But",
+          "start": 15.24,
+          "end": 15.361
+        },
+        {
+          "text": "we",
+          "start": 15.521,
+          "end": 15.622
+        },
+        {
+          "text": "can't.",
+          "start": 15.702,
+          "end": 16.003
+        },
+        {
+          "text": "We're",
+          "start": 16.183,
+          "end": 16.384
+        },
+        {
+          "text": "all",
+          "start": 16.404,
+          "end": 16.505
+        },
+        {
+          "text": "hyper.",
+          "start": 16.625,
+          "end": 17.026
+        },
+        {
+          "text": "And",
+          "start": 17.568,
+          "end": 17.688
+        },
+        {
+          "text": "without",
+          "start": 17.809,
+          "end": 18.15
+        },
+        {
+          "text": "a",
+          "start": 18.21,
+          "end": 18.23
+        },
+        {
+          "text": "bedtime",
+          "start": 18.27,
+          "end": 18.752
+        },
+        {
+          "text": "story,",
+          "start": 18.812,
+          "end": 19.113
+        },
+        {
+          "text": "we'll",
+          "start": 19.254,
+          "end": 19.434
+        },
+        {
+          "text": "just",
+          "start": 19.474,
+          "end": 19.635
+        },
+        {
+          "text": "keep",
+          "start": 19.715,
+          "end": 19.856
+        },
+        {
+          "text": "getting",
+          "start": 19.936,
+          "end": 20.157
+        },
+        {
+          "text": "up",
+          "start": 20.257,
+          "end": 20.317
+        },
+        {
+          "text": "and",
+          "start": 20.437,
+          "end": 20.498
+        },
+        {
+          "text": "bugging",
+          "start": 20.558,
+          "end": 20.859
+        },
+        {
+          "text": "you.",
+          "start": 20.919,
+          "end": 21.1
+        }
+      ]
+    },
+    {
+      "id": "line_gArpcEzHx3Y",
+      "roleId": "role_8j5eoCcBDKg",
+      "start": 22.157,
+      "end": 22.658,
+      "text": "All night long.",
+      "hint": "一整晚。",
+      "words": [
+        {
+          "text": "All",
+          "start": 22.187,
+          "end": 22.269
+        },
+        {
+          "text": "night",
+          "start": 22.29,
+          "end": 22.454
+        },
+        {
+          "text": "long.",
+          "start": 22.474,
+          "end": 22.618
+        }
+      ]
+    },
+    {
+      "id": "line_bctOaddzBiE",
+      "roleId": "role_1riy0R0QHso",
+      "start": 24.795,
+      "end": 25.153,
+      "text": "Oh, fine.",
+      "hint": "好吧。",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 24.825,
+          "end": 24.948
+        },
+        {
+          "text": "fine.",
+          "start": 25.01,
+          "end": 25.113
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Despicable Me — Pretty please?",
+    "attribution": "Binge Society",
+    "source": "https://www.youtube.com/watch?v=-smMKRBdxD0&t=0s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 0–25.65 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

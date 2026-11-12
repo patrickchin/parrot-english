@@ -1,0 +1,258 @@
+{
+  "version": 1,
+  "id": "scene_-bEhHhm-l1U",
+  "title": "这样好多了吧？",
+  "tags": [
+    "Harry Potter",
+    "Harry Potter and the Philosopher's Stone",
+    "这样好多了吧？",
+    "Hermione",
+    "Ron",
+    "赫敏",
+    "罗恩"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 27.486,
+  "video": "harry-potter-repaired-glasses-review-9944d3f045fa.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/harry-potter-repaired-glasses/",
+  "poster": "harry-potter-repaired-glasses-poster-9944d3f045fa.jpg",
+  "waveform": "waveform-9944d3f045fa.json",
+  "roles": [
+    {
+      "id": "role_Wh-V6sGRYLw",
+      "name": "赫敏",
+      "label": "赫敏",
+      "hint": "2 句台词",
+      "portrait": "hermione-avatar-3cafc2d9e7fc.jpg"
+    },
+    {
+      "id": "role_UtsDkbZP_SA",
+      "name": "罗恩",
+      "label": "罗恩",
+      "hint": "1 句台词",
+      "portrait": "ron-avatar-12a7b89fb3f8.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_5fy5RMCiO9o",
+      "roleId": "role_Wh-V6sGRYLw",
+      "start": 0.671,
+      "end": 19.279,
+      "text": "For example. Oculus Reparo. That's better, isn't it? Holy cricket, you're Harry Potter. I'm Hermione Granger. And you are?",
+      "hint": "比如这样。恢复如初。这样好多了吧？天哪，你是哈利·波特。我是赫敏·格兰杰。你呢？",
+      "words": [
+        {
+          "text": "For",
+          "start": 0.701,
+          "end": 0.781
+        },
+        {
+          "text": "example.",
+          "start": 0.821,
+          "end": 1.341
+        },
+        {
+          "text": "Oculus",
+          "start": 3.023,
+          "end": 3.383
+        },
+        {
+          "text": "Reparo.",
+          "start": 3.864,
+          "end": 4.344
+        },
+        {
+          "text": "That's",
+          "start": 8.108,
+          "end": 8.328
+        },
+        {
+          "text": "better,",
+          "start": 8.408,
+          "end": 8.628
+        },
+        {
+          "text": "isn't",
+          "start": 8.708,
+          "end": 8.889
+        },
+        {
+          "text": "it?",
+          "start": 9.009,
+          "end": 9.049
+        },
+        {
+          "text": "Holy",
+          "start": 11.952,
+          "end": 12.212
+        },
+        {
+          "text": "cricket,",
+          "start": 12.532,
+          "end": 13.013
+        },
+        {
+          "text": "you're",
+          "start": 13.573,
+          "end": 13.873
+        },
+        {
+          "text": "Harry",
+          "start": 13.974,
+          "end": 14.254
+        },
+        {
+          "text": "Potter.",
+          "start": 14.394,
+          "end": 14.894
+        },
+        {
+          "text": "I'm",
+          "start": 15.956,
+          "end": 16.076
+        },
+        {
+          "text": "Hermione",
+          "start": 16.136,
+          "end": 16.456
+        },
+        {
+          "text": "Granger.",
+          "start": 16.496,
+          "end": 16.896
+        },
+        {
+          "text": "And",
+          "start": 17.857,
+          "end": 17.998
+        },
+        {
+          "text": "you",
+          "start": 18.758,
+          "end": 18.878
+        },
+        {
+          "text": "are?",
+          "start": 19.159,
+          "end": 19.239
+        }
+      ]
+    },
+    {
+      "id": "line_bO4d3GrDLRg",
+      "roleId": "role_UtsDkbZP_SA",
+      "start": 20.375,
+      "end": 21.22,
+      "text": "Um, Ron Weasley.",
+      "hint": "我叫罗恩·韦斯莱。",
+      "words": [
+        {
+          "text": "Um,",
+          "start": 20.405,
+          "end": 20.487
+        },
+        {
+          "text": "Ron",
+          "start": 20.507,
+          "end": 20.589
+        },
+        {
+          "text": "Weasley.",
+          "start": 20.956,
+          "end": 21.18
+        }
+      ]
+    },
+    {
+      "id": "line__3rf3n_X_pU",
+      "roleId": "role_Wh-V6sGRYLw",
+      "start": 22.131,
+      "end": 27.16,
+      "text": "Pleasure. You two better change into robes. I expect we'll be arriving soon.",
+      "hint": "很高兴认识你。你们最好换上校袍，我们应该快到了。",
+      "words": [
+        {
+          "text": "Pleasure.",
+          "start": 22.161,
+          "end": 22.542
+        },
+        {
+          "text": "You",
+          "start": 23.767,
+          "end": 23.908
+        },
+        {
+          "text": "two",
+          "start": 24.008,
+          "end": 24.108
+        },
+        {
+          "text": "better",
+          "start": 24.189,
+          "end": 24.41
+        },
+        {
+          "text": "change",
+          "start": 24.45,
+          "end": 24.671
+        },
+        {
+          "text": "into",
+          "start": 24.731,
+          "end": 24.891
+        },
+        {
+          "text": "robes.",
+          "start": 24.992,
+          "end": 25.333
+        },
+        {
+          "text": "I",
+          "start": 25.694,
+          "end": 25.715
+        },
+        {
+          "text": "expect",
+          "start": 25.775,
+          "end": 25.996
+        },
+        {
+          "text": "we'll",
+          "start": 26.016,
+          "end": 26.176
+        },
+        {
+          "text": "be",
+          "start": 26.196,
+          "end": 26.257
+        },
+        {
+          "text": "arriving",
+          "start": 26.317,
+          "end": 26.718
+        },
+        {
+          "text": "soon.",
+          "start": 26.839,
+          "end": 27.12
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Harry Potter and the Philosopher's Stone — That is better, is it not?",
+    "attribution": "WizardingWorld",
+    "source": "https://www.youtube.com/watch?v=Gs7SIiRHQfs&t=37s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 37.45–64.9 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

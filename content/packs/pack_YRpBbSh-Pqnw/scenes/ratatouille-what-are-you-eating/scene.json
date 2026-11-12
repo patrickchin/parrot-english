@@ -1,0 +1,267 @@
+{
+  "version": 1,
+  "id": "scene_qwQnpt21fAY",
+  "title": "你在吃那个？",
+  "tags": [
+    "Ratatouille",
+    "你在吃那个？",
+    "Remy",
+    "Emile",
+    "小米",
+    "大米"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 14.667,
+  "video": "ratatouille-what-are-you-eating-review-31cab998c746.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/ratatouille-what-are-you-eating/",
+  "poster": "ratatouille-what-are-you-eating-poster-31cab998c746.jpg",
+  "waveform": "waveform-31cab998c746.json",
+  "roles": [
+    {
+      "id": "role_Y_wPsynZvd8",
+      "name": "小米",
+      "label": "小米",
+      "hint": "2 句台词",
+      "portrait": "remy-avatar-f22873b7892b.jpg"
+    },
+    {
+      "id": "role_CIjvzYuv4W4",
+      "name": "大米",
+      "label": "大米",
+      "hint": "2 句台词",
+      "portrait": "emile-avatar-b32834fb6d05.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_YORTCyx-M1w",
+      "roleId": "role_Y_wPsynZvd8",
+      "start": 0.751,
+      "end": 1.85,
+      "text": "What is that?",
+      "hint": "那是什么？",
+      "words": [
+        {
+          "text": "What",
+          "start": 0.781,
+          "end": 1.003
+        },
+        {
+          "text": "is",
+          "start": 1.286,
+          "end": 1.346
+        },
+        {
+          "text": "that?",
+          "start": 1.528,
+          "end": 1.81
+        }
+      ]
+    },
+    {
+      "id": "line_4n2M9li75oo",
+      "roleId": "role_CIjvzYuv4W4",
+      "start": 4.383,
+      "end": 5.44,
+      "text": "I don't really know.",
+      "hint": "我也不太清楚。",
+      "words": [
+        {
+          "text": "I",
+          "start": 4.413,
+          "end": 4.433
+        },
+        {
+          "text": "don't",
+          "start": 4.513,
+          "end": 4.695
+        },
+        {
+          "text": "really",
+          "start": 4.755,
+          "end": 5.017
+        },
+        {
+          "text": "know.",
+          "start": 5.098,
+          "end": 5.4
+        }
+      ]
+    },
+    {
+      "id": "line_7ovpsA96dGQ",
+      "roleId": "role_Y_wPsynZvd8",
+      "start": 5.612,
+      "end": 8.159,
+      "text": "You don't know, and you're eating it?",
+      "hint": "你都不知道，还吃？",
+      "words": [
+        {
+          "text": "You",
+          "start": 5.642,
+          "end": 5.742
+        },
+        {
+          "text": "don't",
+          "start": 5.803,
+          "end": 6.004
+        },
+        {
+          "text": "know,",
+          "start": 6.065,
+          "end": 6.266
+        },
+        {
+          "text": "and",
+          "start": 7.273,
+          "end": 7.394
+        },
+        {
+          "text": "you're",
+          "start": 7.495,
+          "end": 7.696
+        },
+        {
+          "text": "eating",
+          "start": 7.797,
+          "end": 7.998
+        },
+        {
+          "text": "it?",
+          "start": 8.059,
+          "end": 8.119
+        }
+      ]
+    },
+    {
+      "id": "line_bU2UxBF7l7w",
+      "roleId": "role_CIjvzYuv4W4",
+      "start": 8.191,
+      "end": 14.22,
+      "text": "You know, if you can sort of muscle your way past the gag reflex, all kinds of food possibilities open up.",
+      "hint": "只要设法忍过想吐的感觉，各种食物都能接受了。",
+      "words": [
+        {
+          "text": "You",
+          "start": 8.221,
+          "end": 8.301
+        },
+        {
+          "text": "know,",
+          "start": 8.341,
+          "end": 8.441
+        },
+        {
+          "text": "if",
+          "start": 8.602,
+          "end": 8.642
+        },
+        {
+          "text": "you",
+          "start": 8.682,
+          "end": 8.762
+        },
+        {
+          "text": "can",
+          "start": 8.843,
+          "end": 8.963
+        },
+        {
+          "text": "sort",
+          "start": 9.043,
+          "end": 9.264
+        },
+        {
+          "text": "of",
+          "start": 9.344,
+          "end": 9.384
+        },
+        {
+          "text": "muscle",
+          "start": 9.585,
+          "end": 9.966
+        },
+        {
+          "text": "your",
+          "start": 10.047,
+          "end": 10.187
+        },
+        {
+          "text": "way",
+          "start": 10.267,
+          "end": 10.468
+        },
+        {
+          "text": "past",
+          "start": 10.628,
+          "end": 10.889
+        },
+        {
+          "text": "the",
+          "start": 10.97,
+          "end": 11.03
+        },
+        {
+          "text": "gag",
+          "start": 11.11,
+          "end": 11.371
+        },
+        {
+          "text": "reflex,",
+          "start": 11.471,
+          "end": 11.832
+        },
+        {
+          "text": "all",
+          "start": 12.174,
+          "end": 12.274
+        },
+        {
+          "text": "kinds",
+          "start": 12.394,
+          "end": 12.695
+        },
+        {
+          "text": "of",
+          "start": 12.775,
+          "end": 12.816
+        },
+        {
+          "text": "food",
+          "start": 12.876,
+          "end": 13.056
+        },
+        {
+          "text": "possibilities",
+          "start": 13.137,
+          "end": 13.879
+        },
+        {
+          "text": "open",
+          "start": 13.979,
+          "end": 14.12
+        },
+        {
+          "text": "up.",
+          "start": 14.14,
+          "end": 14.18
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Ratatouille — You are eating that?",
+    "attribution": "Ethan T. Schuster (30 Days of Disney 2026)",
+    "source": "https://www.youtube.com/watch?v=1S5s7oozviU&t=14s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 14.8–29.45 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

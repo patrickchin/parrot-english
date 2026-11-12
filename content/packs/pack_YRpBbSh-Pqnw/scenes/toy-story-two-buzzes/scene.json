@@ -1,0 +1,488 @@
+{
+  "version": 1,
+  "id": "scene_ILkvhup_YFY",
+  "title": "我有激光",
+  "tags": [
+    "Toy Story",
+    "Toy Story 2",
+    "我有激光",
+    "Buzz Lightyear",
+    "Utility Belt Buzz",
+    "巴斯光年",
+    "腰带巴斯"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 26.15,
+  "video": "toy-story-two-buzzes-review-85cddfc985c4.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/toy-story-two-buzzes/",
+  "poster": "toy-story-two-buzzes-poster-85cddfc985c4.jpg",
+  "waveform": "waveform-85cddfc985c4.json",
+  "roles": [
+    {
+      "id": "role_EBCAuBAeMgQ",
+      "name": "巴斯光年",
+      "label": "巴斯光年",
+      "hint": "4 句台词",
+      "portrait": "buzz-avatar-52c4aa58fd7d.jpg"
+    },
+    {
+      "id": "role_NYvRYCuAHCc",
+      "name": "腰带巴斯",
+      "label": "腰带巴斯",
+      "hint": "3 句台词",
+      "portrait": "utility-belt-buzz-avatar-cdd577b6b92c.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_5IzoB9aI41c",
+      "roleId": "role_EBCAuBAeMgQ",
+      "start": 0.376,
+      "end": 1.39,
+      "text": "Ow! What are you doing?",
+      "hint": "哎哟！你在干什么？",
+      "words": [
+        {
+          "text": "Ow!",
+          "start": 0.406,
+          "end": 0.467
+        },
+        {
+          "text": "What",
+          "start": 0.812,
+          "end": 0.913
+        },
+        {
+          "text": "are",
+          "start": 0.934,
+          "end": 0.995
+        },
+        {
+          "text": "you",
+          "start": 1.015,
+          "end": 1.076
+        },
+        {
+          "text": "doing?",
+          "start": 1.198,
+          "end": 1.36
+        }
+      ]
+    },
+    {
+      "id": "line_V539734TfKg",
+      "roleId": "role_NYvRYCuAHCc",
+      "start": 1.39,
+      "end": 9.08,
+      "text": "You're in direct violation of code six four zero four point five, stating all Space Rangers are to be in hypersleep until awakened by authorized personnel.",
+      "hint": "你违反了条例6404.5：所有太空骑警必须休眠，直到获授权人员唤醒。",
+      "words": [
+        {
+          "text": "You're",
+          "start": 1.42,
+          "end": 1.541
+        },
+        {
+          "text": "in",
+          "start": 1.561,
+          "end": 1.601
+        },
+        {
+          "text": "direct",
+          "start": 1.661,
+          "end": 1.881
+        },
+        {
+          "text": "violation",
+          "start": 1.922,
+          "end": 2.463
+        },
+        {
+          "text": "of",
+          "start": 2.503,
+          "end": 2.543
+        },
+        {
+          "text": "code",
+          "start": 2.663,
+          "end": 2.844
+        },
+        {
+          "text": "six",
+          "start": 2.964,
+          "end": 3.105
+        },
+        {
+          "text": "four",
+          "start": 3.285,
+          "end": 3.506
+        },
+        {
+          "text": "zero",
+          "start": 3.546,
+          "end": 3.806
+        },
+        {
+          "text": "four",
+          "start": 3.867,
+          "end": 4.047
+        },
+        {
+          "text": "point",
+          "start": 4.147,
+          "end": 4.368
+        },
+        {
+          "text": "five,",
+          "start": 4.468,
+          "end": 4.749
+        },
+        {
+          "text": "stating",
+          "start": 4.849,
+          "end": 5.17
+        },
+        {
+          "text": "all",
+          "start": 5.23,
+          "end": 5.33
+        },
+        {
+          "text": "Space",
+          "start": 5.411,
+          "end": 5.731
+        },
+        {
+          "text": "Rangers",
+          "start": 5.832,
+          "end": 6.152
+        },
+        {
+          "text": "are",
+          "start": 6.273,
+          "end": 6.373
+        },
+        {
+          "text": "to",
+          "start": 6.413,
+          "end": 6.493
+        },
+        {
+          "text": "be",
+          "start": 6.554,
+          "end": 6.634
+        },
+        {
+          "text": "in",
+          "start": 6.734,
+          "end": 6.774
+        },
+        {
+          "text": "hypersleep",
+          "start": 6.834,
+          "end": 7.376
+        },
+        {
+          "text": "until",
+          "start": 7.496,
+          "end": 7.717
+        },
+        {
+          "text": "awakened",
+          "start": 7.777,
+          "end": 8.098
+        },
+        {
+          "text": "by",
+          "start": 8.138,
+          "end": 8.218
+        },
+        {
+          "text": "authorized",
+          "start": 8.358,
+          "end": 8.759
+        },
+        {
+          "text": "personnel.",
+          "start": 8.799,
+          "end": 9.04
+        }
+      ]
+    },
+    {
+      "id": "line__Ik7VoWAEGY",
+      "roleId": "role_EBCAuBAeMgQ",
+      "start": 10.18,
+      "end": 10.538,
+      "text": "Buzz!",
+      "hint": "巴斯！",
+      "words": [
+        {
+          "text": "Buzz!",
+          "start": 10.21,
+          "end": 10.498
+        }
+      ]
+    },
+    {
+      "id": "line_SFrzVAFnCs4",
+      "roleId": "role_NYvRYCuAHCc",
+      "start": 11.291,
+      "end": 17.4,
+      "text": "You're breaking ranks, Ranger. Buzz Lightyear to Star Command. I've got an AWOL Space Ranger.",
+      "hint": "你擅离岗位了，骑警。巴斯光年呼叫星际总部，有太空骑警逃离岗位。",
+      "words": [
+        {
+          "text": "You're",
+          "start": 11.321,
+          "end": 11.502
+        },
+        {
+          "text": "breaking",
+          "start": 11.642,
+          "end": 11.983
+        },
+        {
+          "text": "ranks,",
+          "start": 12.084,
+          "end": 12.344
+        },
+        {
+          "text": "Ranger.",
+          "start": 12.485,
+          "end": 12.746
+        },
+        {
+          "text": "Buzz",
+          "start": 14.09,
+          "end": 14.27
+        },
+        {
+          "text": "Lightyear",
+          "start": 14.371,
+          "end": 14.631
+        },
+        {
+          "text": "to",
+          "start": 14.692,
+          "end": 14.752
+        },
+        {
+          "text": "Star",
+          "start": 14.772,
+          "end": 14.952
+        },
+        {
+          "text": "Command.",
+          "start": 14.993,
+          "end": 15.314
+        },
+        {
+          "text": "I've",
+          "start": 15.675,
+          "end": 15.795
+        },
+        {
+          "text": "got",
+          "start": 15.835,
+          "end": 15.956
+        },
+        {
+          "text": "an",
+          "start": 16.016,
+          "end": 16.056
+        },
+        {
+          "text": "AWOL",
+          "start": 16.236,
+          "end": 16.537
+        },
+        {
+          "text": "Space",
+          "start": 16.738,
+          "end": 17.039
+        },
+        {
+          "text": "Ranger.",
+          "start": 17.119,
+          "end": 17.36
+        }
+      ]
+    },
+    {
+      "id": "line_F8uqMcf03Z4",
+      "roleId": "role_EBCAuBAeMgQ",
+      "start": 17.412,
+      "end": 18.959,
+      "text": "Tell me I wasn't this delusional.",
+      "hint": "我以前没有这么糊涂吧。",
+      "words": [
+        {
+          "text": "Tell",
+          "start": 17.442,
+          "end": 17.624
+        },
+        {
+          "text": "me",
+          "start": 17.726,
+          "end": 17.786
+        },
+        {
+          "text": "I",
+          "start": 17.908,
+          "end": 17.928
+        },
+        {
+          "text": "wasn't",
+          "start": 18.07,
+          "end": 18.373
+        },
+        {
+          "text": "this",
+          "start": 18.454,
+          "end": 18.596
+        },
+        {
+          "text": "delusional.",
+          "start": 18.697,
+          "end": 18.919
+        }
+      ]
+    },
+    {
+      "id": "line_ARlQK-62j3o",
+      "roleId": "role_NYvRYCuAHCc",
+      "start": 18.99,
+      "end": 22.69,
+      "text": "No back talk. I have a laser, and I will use it.",
+      "hint": "不许顶嘴。我有激光，而且我会使用它。",
+      "words": [
+        {
+          "text": "No",
+          "start": 19.02,
+          "end": 19.1
+        },
+        {
+          "text": "back",
+          "start": 19.563,
+          "end": 19.724
+        },
+        {
+          "text": "talk.",
+          "start": 19.784,
+          "end": 19.965
+        },
+        {
+          "text": "I",
+          "start": 20.427,
+          "end": 20.468
+        },
+        {
+          "text": "have",
+          "start": 20.548,
+          "end": 20.669
+        },
+        {
+          "text": "a",
+          "start": 20.729,
+          "end": 20.749
+        },
+        {
+          "text": "laser,",
+          "start": 20.809,
+          "end": 21.191
+        },
+        {
+          "text": "and",
+          "start": 21.433,
+          "end": 21.533
+        },
+        {
+          "text": "I",
+          "start": 21.694,
+          "end": 21.714
+        },
+        {
+          "text": "will",
+          "start": 21.955,
+          "end": 22.257
+        },
+        {
+          "text": "use",
+          "start": 22.458,
+          "end": 22.579
+        },
+        {
+          "text": "it.",
+          "start": 22.659,
+          "end": 22.69
+        }
+      ]
+    },
+    {
+      "id": "line_nPYSiU02RuE",
+      "roleId": "role_EBCAuBAeMgQ",
+      "start": 22.69,
+      "end": 24.32,
+      "text": "You mean the laser that's a light bulb?",
+      "hint": "你说的是那个小灯泡激光？",
+      "words": [
+        {
+          "text": "You",
+          "start": 22.69,
+          "end": 22.782
+        },
+        {
+          "text": "mean",
+          "start": 22.803,
+          "end": 22.924
+        },
+        {
+          "text": "the",
+          "start": 22.964,
+          "end": 23.045
+        },
+        {
+          "text": "laser",
+          "start": 23.086,
+          "end": 23.41
+        },
+        {
+          "text": "that's",
+          "start": 23.511,
+          "end": 23.632
+        },
+        {
+          "text": "a",
+          "start": 23.713,
+          "end": 23.733
+        },
+        {
+          "text": "light",
+          "start": 23.774,
+          "end": 23.956
+        },
+        {
+          "text": "bulb?",
+          "start": 24.017,
+          "end": 24.28
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Toy Story 2 — I have a laser",
+    "attribution": "Disney¡Fan!",
+    "source": "https://www.youtube.com/watch?v=BpcGI_IgbQM&t=85s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 85.35–111.5 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

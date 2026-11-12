@@ -1,0 +1,443 @@
+{
+  "version": 1,
+  "id": "scene_R0UWEZ7AuGI",
+  "title": "这盏灯是什么意思？",
+  "tags": [
+    "Madagascar",
+    "Madagascar: Escape 2 Africa",
+    "这盏灯是什么意思？",
+    "Kowalski",
+    "Skipper",
+    "科瓦斯基",
+    "老大"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 25.776,
+  "video": "madagascar-warning-light-review-516fd16fc8ce.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/madagascar-warning-light/",
+  "poster": "madagascar-warning-light-poster-516fd16fc8ce.jpg",
+  "waveform": "waveform-516fd16fc8ce.json",
+  "roles": [
+    {
+      "id": "role_yJFA4SClcgo",
+      "name": "科瓦斯基",
+      "label": "科瓦斯基",
+      "hint": "5 句台词",
+      "portrait": "kowalski-avatar-e906f8aadee5.jpg"
+    },
+    {
+      "id": "role_h5Q-n0Lb1CM",
+      "name": "队长",
+      "label": "队长",
+      "hint": "4 句台词",
+      "portrait": "skipper-avatar-75fd06aec68b.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_2N4uqtMaPfs",
+      "roleId": "role_yJFA4SClcgo",
+      "start": 0.659,
+      "end": 1.459,
+      "text": "Skipper, look.",
+      "hint": "老大，快看。",
+      "words": [
+        {
+          "text": "Skipper,",
+          "start": 0.689,
+          "end": 1.013
+        },
+        {
+          "text": "look.",
+          "start": 1.257,
+          "end": 1.419
+        }
+      ]
+    },
+    {
+      "id": "line_34PJEs6DhNg",
+      "roleId": "role_h5Q-n0Lb1CM",
+      "start": 2.838,
+      "end": 3.28,
+      "text": "Analysis.",
+      "hint": "分析一下。",
+      "words": [
+        {
+          "text": "Analysis.",
+          "start": 2.868,
+          "end": 3.24
+        }
+      ]
+    },
+    {
+      "id": "line_rOj2KlZvEJQ",
+      "roleId": "role_yJFA4SClcgo",
+      "start": 3.731,
+      "end": 7.54,
+      "text": "It looks like a small incandescent bulb designed to indicate something out of the ordinary, like a malfunction.",
+      "hint": "看起来是个小灯泡，用来指示异常情况，比如故障。",
+      "words": [
+        {
+          "text": "It",
+          "start": 3.761,
+          "end": 3.801
+        },
+        {
+          "text": "looks",
+          "start": 3.821,
+          "end": 3.982
+        },
+        {
+          "text": "like",
+          "start": 4.002,
+          "end": 4.103
+        },
+        {
+          "text": "a",
+          "start": 4.143,
+          "end": 4.163
+        },
+        {
+          "text": "small",
+          "start": 4.203,
+          "end": 4.424
+        },
+        {
+          "text": "incandescent",
+          "start": 4.485,
+          "end": 4.907
+        },
+        {
+          "text": "bulb",
+          "start": 4.927,
+          "end": 5.128
+        },
+        {
+          "text": "designed",
+          "start": 5.389,
+          "end": 5.671
+        },
+        {
+          "text": "to",
+          "start": 5.691,
+          "end": 5.731
+        },
+        {
+          "text": "indicate",
+          "start": 5.751,
+          "end": 6.013
+        },
+        {
+          "text": "something",
+          "start": 6.053,
+          "end": 6.274
+        },
+        {
+          "text": "out",
+          "start": 6.314,
+          "end": 6.374
+        },
+        {
+          "text": "of",
+          "start": 6.394,
+          "end": 6.435
+        },
+        {
+          "text": "the",
+          "start": 6.455,
+          "end": 6.515
+        },
+        {
+          "text": "ordinary,",
+          "start": 6.555,
+          "end": 6.877
+        },
+        {
+          "text": "like",
+          "start": 6.977,
+          "end": 7.078
+        },
+        {
+          "text": "a",
+          "start": 7.118,
+          "end": 7.138
+        },
+        {
+          "text": "malfunction.",
+          "start": 7.178,
+          "end": 7.5
+        }
+      ]
+    },
+    {
+      "id": "line_874gYIsvFv4",
+      "roleId": "role_h5Q-n0Lb1CM",
+      "start": 8.171,
+      "end": 10.509,
+      "text": "I find it pretty and somewhat hypnotic.",
+      "hint": "我觉得它挺漂亮，还有点催眠。",
+      "words": [
+        {
+          "text": "I",
+          "start": 8.201,
+          "end": 8.221
+        },
+        {
+          "text": "find",
+          "start": 8.422,
+          "end": 8.663
+        },
+        {
+          "text": "it",
+          "start": 8.763,
+          "end": 8.803
+        },
+        {
+          "text": "pretty",
+          "start": 8.944,
+          "end": 9.205
+        },
+        {
+          "text": "and",
+          "start": 9.325,
+          "end": 9.386
+        },
+        {
+          "text": "somewhat",
+          "start": 9.526,
+          "end": 9.867
+        },
+        {
+          "text": "hypnotic.",
+          "start": 9.968,
+          "end": 10.469
+        }
+      ]
+    },
+    {
+      "id": "line_QAR9cvxZF7E",
+      "roleId": "role_yJFA4SClcgo",
+      "start": 10.615,
+      "end": 11.237,
+      "text": "That too, sir.",
+      "hint": "也有这个作用，长官。",
+      "words": [
+        {
+          "text": "That",
+          "start": 10.645,
+          "end": 10.788
+        },
+        {
+          "text": "too,",
+          "start": 10.829,
+          "end": 10.951
+        },
+        {
+          "text": "sir.",
+          "start": 11.033,
+          "end": 11.197
+        }
+      ]
+    },
+    {
+      "id": "line_NBYXR3C7FIk",
+      "roleId": "role_h5Q-n0Lb1CM",
+      "start": 11.332,
+      "end": 13.337,
+      "text": "Right. Rico. Manual. Problem solved.",
+      "hint": "好，瑞哥，手册。问题解决了。",
+      "words": [
+        {
+          "text": "Right.",
+          "start": 11.362,
+          "end": 11.544
+        },
+        {
+          "text": "Rico.",
+          "start": 12.007,
+          "end": 12.209
+        },
+        {
+          "text": "Manual.",
+          "start": 12.249,
+          "end": 12.39
+        },
+        {
+          "text": "Problem",
+          "start": 12.41,
+          "end": 12.834
+        },
+        {
+          "text": "solved.",
+          "start": 13.056,
+          "end": 13.297
+        }
+      ]
+    },
+    {
+      "id": "line_rTALQ7jmQEc",
+      "roleId": "role_yJFA4SClcgo",
+      "start": 17.794,
+      "end": 19.279,
+      "text": "Sir, we may be out of fuel.",
+      "hint": "长官，我们可能没油了。",
+      "words": [
+        {
+          "text": "Sir,",
+          "start": 17.824,
+          "end": 17.965
+        },
+        {
+          "text": "we",
+          "start": 18.531,
+          "end": 18.592
+        },
+        {
+          "text": "may",
+          "start": 18.653,
+          "end": 18.733
+        },
+        {
+          "text": "be",
+          "start": 18.794,
+          "end": 18.855
+        },
+        {
+          "text": "out",
+          "start": 18.875,
+          "end": 18.956
+        },
+        {
+          "text": "of",
+          "start": 18.996,
+          "end": 19.037
+        },
+        {
+          "text": "fuel.",
+          "start": 19.077,
+          "end": 19.239
+        }
+      ]
+    },
+    {
+      "id": "line_veleJ2UwiM0",
+      "roleId": "role_h5Q-n0Lb1CM",
+      "start": 19.293,
+      "end": 20.339,
+      "text": "What makes you think that?",
+      "hint": "你怎么知道？",
+      "words": [
+        {
+          "text": "What",
+          "start": 19.323,
+          "end": 19.425
+        },
+        {
+          "text": "makes",
+          "start": 19.486,
+          "end": 19.628
+        },
+        {
+          "text": "you",
+          "start": 19.648,
+          "end": 19.75
+        },
+        {
+          "text": "think",
+          "start": 19.831,
+          "end": 19.974
+        },
+        {
+          "text": "that?",
+          "start": 20.055,
+          "end": 20.299
+        }
+      ]
+    },
+    {
+      "id": "line_SQO_Oci2fOw",
+      "roleId": "role_yJFA4SClcgo",
+      "start": 20.371,
+      "end": 25.24,
+      "text": "We've lost engine one. And engine two is no longer on fire.",
+      "hint": "一号发动机停了，二号发动机也不冒火了。",
+      "words": [
+        {
+          "text": "We've",
+          "start": 20.401,
+          "end": 20.521
+        },
+        {
+          "text": "lost",
+          "start": 20.561,
+          "end": 20.762
+        },
+        {
+          "text": "engine",
+          "start": 20.843,
+          "end": 21.043
+        },
+        {
+          "text": "one.",
+          "start": 21.124,
+          "end": 21.224
+        },
+        {
+          "text": "And",
+          "start": 23.674,
+          "end": 23.754
+        },
+        {
+          "text": "engine",
+          "start": 23.814,
+          "end": 24.055
+        },
+        {
+          "text": "two",
+          "start": 24.116,
+          "end": 24.256
+        },
+        {
+          "text": "is",
+          "start": 24.397,
+          "end": 24.457
+        },
+        {
+          "text": "no",
+          "start": 24.537,
+          "end": 24.658
+        },
+        {
+          "text": "longer",
+          "start": 24.798,
+          "end": 25.039
+        },
+        {
+          "text": "on",
+          "start": 25.059,
+          "end": 25.1
+        },
+        {
+          "text": "fire.",
+          "start": 25.12,
+          "end": 25.2
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Madagascar: Escape 2 Africa — What does the light mean?",
+    "attribution": "Movieclips",
+    "source": "https://www.youtube.com/watch?v=9F3iBMYvQOs&t=49s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 49.85–75.6 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

@@ -139,7 +139,8 @@
       "channel": "Warner Bros. Entertainment",
       "officialChannel": true,
       "attribution": "Warner Bros. Pictures",
-      "duration": 254
+      "duration": 254,
+      "franchise": "Harry Potter"
     },
     {
       "id": "Pr0U9CgneZ8",
@@ -151,7 +152,8 @@
       "channel": "Spellbound",
       "officialChannel": false,
       "attribution": "Warner Bros. Pictures",
-      "duration": 112
+      "duration": 112,
+      "franchise": "Harry Potter"
     },
     {
       "id": "fOcYm9udNQA",

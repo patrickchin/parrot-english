@@ -1,0 +1,292 @@
+{
+  "version": 1,
+  "id": "scene_tbGsw9t4_kI",
+  "title": "它们喜欢巧克力吗？",
+  "tags": [
+    "Up",
+    "它们喜欢巧克力吗？",
+    "Russell",
+    "Carl",
+    "罗素",
+    "卡尔"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 16.7,
+  "video": "up-found-the-snipe-review-eae30660d72a.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/up-found-the-snipe/",
+  "poster": "up-found-the-snipe-poster-eae30660d72a.jpg",
+  "waveform": "waveform-eae30660d72a.json",
+  "roles": [
+    {
+      "id": "role_iF2a-6KO_e0",
+      "name": "罗素",
+      "label": "罗素",
+      "hint": "4 句台词",
+      "portrait": "russell-avatar-05d62abe14ee.jpg"
+    },
+    {
+      "id": "role_kYO5OsI8PP4",
+      "name": "卡尔",
+      "label": "卡尔",
+      "hint": "4 句台词",
+      "portrait": "carl-avatar-e8c66060b5e7.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_epr13w7oanQ",
+      "roleId": "role_iF2a-6KO_e0",
+      "start": 0.414,
+      "end": 1.699,
+      "text": "I found the snipe!",
+      "hint": "我找到沙锥鸟了！",
+      "words": [
+        {
+          "text": "I",
+          "start": 0.444,
+          "end": 0.464
+        },
+        {
+          "text": "found",
+          "start": 0.586,
+          "end": 0.849
+        },
+        {
+          "text": "the",
+          "start": 0.91,
+          "end": 0.991
+        },
+        {
+          "text": "snipe!",
+          "start": 1.052,
+          "end": 1.659
+        }
+      ]
+    },
+    {
+      "id": "line_xw6TprsCojg",
+      "roleId": "role_kYO5OsI8PP4",
+      "start": 2.335,
+      "end": 3.478,
+      "text": "Oh, did you?",
+      "hint": "是吗？",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 2.365,
+          "end": 2.446
+        },
+        {
+          "text": "did",
+          "start": 2.993,
+          "end": 3.215
+        },
+        {
+          "text": "you?",
+          "start": 3.276,
+          "end": 3.438
+        }
+      ]
+    },
+    {
+      "id": "line_xIzK7PEevEQ",
+      "roleId": "role_iF2a-6KO_e0",
+      "start": 3.815,
+      "end": 4.679,
+      "text": "Are they tall?",
+      "hint": "它们很高吗？",
+      "words": [
+        {
+          "text": "Are",
+          "start": 3.845,
+          "end": 3.947
+        },
+        {
+          "text": "they",
+          "start": 4.028,
+          "end": 4.171
+        },
+        {
+          "text": "tall?",
+          "start": 4.313,
+          "end": 4.639
+        }
+      ]
+    },
+    {
+      "id": "line_Bxm5vK2XCpQ",
+      "roleId": "role_kYO5OsI8PP4",
+      "start": 5.035,
+      "end": 6.38,
+      "text": "Oh, yes, they're very tall.",
+      "hint": "是的，非常高。",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 5.065,
+          "end": 5.166
+        },
+        {
+          "text": "yes,",
+          "start": 5.267,
+          "end": 5.611
+        },
+        {
+          "text": "they're",
+          "start": 5.672,
+          "end": 5.894
+        },
+        {
+          "text": "very",
+          "start": 5.935,
+          "end": 6.137
+        },
+        {
+          "text": "tall.",
+          "start": 6.218,
+          "end": 6.34
+        }
+      ]
+    },
+    {
+      "id": "line_tqkaXXSdfrw",
+      "roleId": "role_iF2a-6KO_e0",
+      "start": 6.792,
+      "end": 8.03,
+      "text": "Do they have a lot of colors?",
+      "hint": "它们有很多颜色吗？",
+      "words": [
+        {
+          "text": "Do",
+          "start": 6.822,
+          "end": 6.862
+        },
+        {
+          "text": "they",
+          "start": 6.922,
+          "end": 7.043
+        },
+        {
+          "text": "have",
+          "start": 7.103,
+          "end": 7.224
+        },
+        {
+          "text": "a",
+          "start": 7.285,
+          "end": 7.305
+        },
+        {
+          "text": "lot",
+          "start": 7.385,
+          "end": 7.526
+        },
+        {
+          "text": "of",
+          "start": 7.587,
+          "end": 7.627
+        },
+        {
+          "text": "colors?",
+          "start": 7.708,
+          "end": 7.99
+        }
+      ]
+    },
+    {
+      "id": "line_eGeX0CMtBgk",
+      "roleId": "role_kYO5OsI8PP4",
+      "start": 8.434,
+      "end": 9.48,
+      "text": "They do indeed.",
+      "hint": "确实有。",
+      "words": [
+        {
+          "text": "They",
+          "start": 8.464,
+          "end": 8.708
+        },
+        {
+          "text": "do",
+          "start": 8.789,
+          "end": 9.013
+        },
+        {
+          "text": "indeed.",
+          "start": 9.155,
+          "end": 9.44
+        }
+      ]
+    },
+    {
+      "id": "line_0tP45B1wQG8",
+      "roleId": "role_iF2a-6KO_e0",
+      "start": 9.975,
+      "end": 10.979,
+      "text": "Do they like chocolate?",
+      "hint": "它们喜欢巧克力吗？",
+      "words": [
+        {
+          "text": "Do",
+          "start": 10.005,
+          "end": 10.086
+        },
+        {
+          "text": "they",
+          "start": 10.147,
+          "end": 10.31
+        },
+        {
+          "text": "like",
+          "start": 10.35,
+          "end": 10.533
+        },
+        {
+          "text": "chocolate?",
+          "start": 10.655,
+          "end": 10.939
+        }
+      ]
+    },
+    {
+      "id": "line_ytKkRRMm4yE",
+      "roleId": "role_kYO5OsI8PP4",
+      "start": 11.373,
+      "end": 13.1,
+      "text": "Oh, yeah. Chocolate.",
+      "hint": "当然喜欢巧克力。",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 11.403,
+          "end": 11.464
+        },
+        {
+          "text": "yeah.",
+          "start": 11.544,
+          "end": 11.868
+        },
+        {
+          "text": "Chocolate.",
+          "start": 12.615,
+          "end": 13.06
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Up — Do they like chocolate?",
+    "attribution": "JoBlo Animation 4K",
+    "source": "https://www.youtube.com/watch?v=PocShNsZjPE&t=49s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 49.9–66.6 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

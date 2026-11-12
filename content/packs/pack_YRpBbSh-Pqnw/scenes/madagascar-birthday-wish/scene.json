@@ -1,0 +1,491 @@
+{
+  "version": 1,
+  "id": "scene_iEHU4pcNbz8",
+  "title": "你许了什么愿？",
+  "tags": [
+    "Madagascar",
+    "你许了什么愿？",
+    "Alex",
+    "Marty",
+    "Gloria",
+    "艾力狮",
+    "马蒂",
+    "格洛丽亚"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 27.125,
+  "video": "madagascar-birthday-wish-review-fe8174a43ce6.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/madagascar-birthday-wish/",
+  "poster": "madagascar-birthday-wish-poster-fe8174a43ce6.jpg",
+  "waveform": "waveform-fe8174a43ce6.json",
+  "roles": [
+    {
+      "id": "role_dhHEnAF3xc8",
+      "name": "艾力狮",
+      "label": "艾力狮",
+      "hint": "3 句台词",
+      "portrait": "alex-avatar-a4b62d6777a5.jpg"
+    },
+    {
+      "id": "role_zMIbPZPaoZE",
+      "name": "马蒂",
+      "label": "马蒂",
+      "hint": "4 句台词",
+      "portrait": "marty-avatar-2193b19d0243.jpg"
+    },
+    {
+      "id": "role_5hTvr_4qtsY",
+      "name": "格洛丽亚",
+      "label": "格洛丽亚",
+      "hint": "1 句台词",
+      "portrait": "gloria-avatar-c24c2b38fc1b.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_Jgb4fK6Uu4E",
+      "roleId": "role_dhHEnAF3xc8",
+      "start": 1.197,
+      "end": 2.079,
+      "text": "Come on, what'd you wish for?",
+      "hint": "快说，你许了什么愿？",
+      "words": [
+        {
+          "text": "Come",
+          "start": 1.227,
+          "end": 1.328
+        },
+        {
+          "text": "on,",
+          "start": 1.389,
+          "end": 1.43
+        },
+        {
+          "text": "what'd",
+          "start": 1.47,
+          "end": 1.592
+        },
+        {
+          "text": "you",
+          "start": 1.612,
+          "end": 1.673
+        },
+        {
+          "text": "wish",
+          "start": 1.714,
+          "end": 1.795
+        },
+        {
+          "text": "for?",
+          "start": 1.856,
+          "end": 2.039
+        }
+      ]
+    },
+    {
+      "id": "line_cOk_HFLnIDM",
+      "roleId": "role_zMIbPZPaoZE",
+      "start": 2.152,
+      "end": 3.839,
+      "text": "No, can't tell you that.",
+      "hint": "不能告诉你。",
+      "words": [
+        {
+          "text": "No,",
+          "start": 2.182,
+          "end": 2.324
+        },
+        {
+          "text": "can't",
+          "start": 3.071,
+          "end": 3.294
+        },
+        {
+          "text": "tell",
+          "start": 3.314,
+          "end": 3.455
+        },
+        {
+          "text": "you",
+          "start": 3.496,
+          "end": 3.576
+        },
+        {
+          "text": "that.",
+          "start": 3.637,
+          "end": 3.799
+        }
+      ]
+    },
+    {
+      "id": "line_21gCTw1SpoU",
+      "roleId": "role_dhHEnAF3xc8",
+      "start": 3.914,
+      "end": 4.78,
+      "text": "Come on, tell.",
+      "hint": "说嘛。",
+      "words": [
+        {
+          "text": "Come",
+          "start": 3.944,
+          "end": 4.066
+        },
+        {
+          "text": "on,",
+          "start": 4.25,
+          "end": 4.332
+        },
+        {
+          "text": "tell.",
+          "start": 4.474,
+          "end": 4.74
+        }
+      ]
+    },
+    {
+      "id": "line_TXpr6QAp_zo",
+      "roleId": "role_zMIbPZPaoZE",
+      "start": 5.03,
+      "end": 11.71,
+      "text": "No siree, I'm telling you, it's bad luck. You want some bad luck? I'll blab it out. But if you want to be safe, I'll keep...",
+      "hint": "不行，说出来会倒霉的。你想倒霉的话，我就说。要想平安的话……",
+      "words": [
+        {
+          "text": "No",
+          "start": 5.06,
+          "end": 5.16
+        },
+        {
+          "text": "siree,",
+          "start": 5.281,
+          "end": 5.741
+        },
+        {
+          "text": "I'm",
+          "start": 5.942,
+          "end": 6.002
+        },
+        {
+          "text": "telling",
+          "start": 6.062,
+          "end": 6.342
+        },
+        {
+          "text": "you,",
+          "start": 6.362,
+          "end": 6.482
+        },
+        {
+          "text": "it's",
+          "start": 6.683,
+          "end": 6.783
+        },
+        {
+          "text": "bad",
+          "start": 6.863,
+          "end": 7.063
+        },
+        {
+          "text": "luck.",
+          "start": 7.143,
+          "end": 7.384
+        },
+        {
+          "text": "You",
+          "start": 7.624,
+          "end": 7.724
+        },
+        {
+          "text": "want",
+          "start": 7.764,
+          "end": 7.904
+        },
+        {
+          "text": "some",
+          "start": 7.965,
+          "end": 8.065
+        },
+        {
+          "text": "bad",
+          "start": 8.105,
+          "end": 8.265
+        },
+        {
+          "text": "luck?",
+          "start": 8.345,
+          "end": 8.565
+        },
+        {
+          "text": "I'll",
+          "start": 9.166,
+          "end": 9.307
+        },
+        {
+          "text": "blab",
+          "start": 9.347,
+          "end": 9.567
+        },
+        {
+          "text": "it",
+          "start": 9.627,
+          "end": 9.667
+        },
+        {
+          "text": "out.",
+          "start": 9.767,
+          "end": 9.887
+        },
+        {
+          "text": "But",
+          "start": 10.048,
+          "end": 10.128
+        },
+        {
+          "text": "if",
+          "start": 10.168,
+          "end": 10.208
+        },
+        {
+          "text": "you",
+          "start": 10.248,
+          "end": 10.308
+        },
+        {
+          "text": "want",
+          "start": 10.368,
+          "end": 10.488
+        },
+        {
+          "text": "to",
+          "start": 10.508,
+          "end": 10.548
+        },
+        {
+          "text": "be",
+          "start": 10.608,
+          "end": 10.669
+        },
+        {
+          "text": "safe,",
+          "start": 10.729,
+          "end": 10.989
+        },
+        {
+          "text": "I'll",
+          "start": 11.129,
+          "end": 11.269
+        },
+        {
+          "text": "keep...",
+          "start": 11.309,
+          "end": 11.67
+        }
+      ]
+    },
+    {
+      "id": "line_fU84PmsGCbw",
+      "roleId": "role_5hTvr_4qtsY",
+      "start": 12.512,
+      "end": 15.399,
+      "text": "Would you just tell us? I mean, really, what could happen?",
+      "hint": "告诉我们吧，到底能发生什么？",
+      "words": [
+        {
+          "text": "Would",
+          "start": 12.542,
+          "end": 12.642
+        },
+        {
+          "text": "you",
+          "start": 12.683,
+          "end": 12.743
+        },
+        {
+          "text": "just",
+          "start": 12.844,
+          "end": 12.985
+        },
+        {
+          "text": "tell",
+          "start": 13.065,
+          "end": 13.286
+        },
+        {
+          "text": "us?",
+          "start": 13.387,
+          "end": 13.447
+        },
+        {
+          "text": "I",
+          "start": 14.092,
+          "end": 14.112
+        },
+        {
+          "text": "mean,",
+          "start": 14.192,
+          "end": 14.313
+        },
+        {
+          "text": "really,",
+          "start": 14.434,
+          "end": 14.715
+        },
+        {
+          "text": "what",
+          "start": 14.796,
+          "end": 14.897
+        },
+        {
+          "text": "could",
+          "start": 14.957,
+          "end": 15.078
+        },
+        {
+          "text": "happen?",
+          "start": 15.118,
+          "end": 15.359
+        }
+      ]
+    },
+    {
+      "id": "line_rYM3Gq6YjB4",
+      "roleId": "role_zMIbPZPaoZE",
+      "start": 15.551,
+      "end": 20.58,
+      "text": "Okay. I wished I could go to the wild.",
+      "hint": "好吧，我希望能去野外。",
+      "words": [
+        {
+          "text": "Okay.",
+          "start": 15.581,
+          "end": 15.802
+        },
+        {
+          "text": "I",
+          "start": 16.826,
+          "end": 16.866
+        },
+        {
+          "text": "wished",
+          "start": 17.007,
+          "end": 17.308
+        },
+        {
+          "text": "I",
+          "start": 18.271,
+          "end": 18.291
+        },
+        {
+          "text": "could",
+          "start": 18.372,
+          "end": 18.532
+        },
+        {
+          "text": "go",
+          "start": 18.573,
+          "end": 18.733
+        },
+        {
+          "text": "to",
+          "start": 19.797,
+          "end": 19.877
+        },
+        {
+          "text": "the",
+          "start": 19.978,
+          "end": 20.058
+        },
+        {
+          "text": "wild.",
+          "start": 20.159,
+          "end": 20.54
+        }
+      ]
+    },
+    {
+      "id": "line_-0qR0EY07r8",
+      "roleId": "role_dhHEnAF3xc8",
+      "start": 21.053,
+      "end": 21.75,
+      "text": "The wild?",
+      "hint": "野外？",
+      "words": [
+        {
+          "text": "The",
+          "start": 21.083,
+          "end": 21.204
+        },
+        {
+          "text": "wild?",
+          "start": 21.487,
+          "end": 21.71
+        }
+      ]
+    },
+    {
+      "id": "line_9VhNIOwFkBE",
+      "roleId": "role_zMIbPZPaoZE",
+      "start": 24.954,
+      "end": 27.1,
+      "text": "Whoa. I told you it was bad luck.",
+      "hint": "看吧，我就说会倒霉。",
+      "words": [
+        {
+          "text": "Whoa.",
+          "start": 24.984,
+          "end": 25.125
+        },
+        {
+          "text": "I",
+          "start": 25.286,
+          "end": 25.306
+        },
+        {
+          "text": "told",
+          "start": 25.427,
+          "end": 26.395
+        },
+        {
+          "text": "you",
+          "start": 26.435,
+          "end": 26.596
+        },
+        {
+          "text": "it",
+          "start": 26.677,
+          "end": 26.737
+        },
+        {
+          "text": "was",
+          "start": 26.757,
+          "end": 26.858
+        },
+        {
+          "text": "bad",
+          "start": 26.878,
+          "end": 26.939
+        },
+        {
+          "text": "luck.",
+          "start": 26.959,
+          "end": 27.06
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Madagascar — What did you wish for?",
+    "attribution": "20th century Logos",
+    "source": "https://www.youtube.com/watch?v=Zql3EuAYeF0&t=53s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 53–80.1 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

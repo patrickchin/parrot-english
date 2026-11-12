@@ -1,0 +1,426 @@
+{
+  "version": 1,
+  "id": "scene_1M4ndSuAIeM",
+  "title": "找到你的出口伙伴",
+  "tags": [
+    "Finding Nemo",
+    "找到你的出口伙伴",
+    "Crush",
+    "Marlin",
+    "Dory",
+    "龟龟",
+    "马林",
+    "多莉"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 22.356,
+  "video": "nemo-exit-buddy-review-8d456584eff6.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/nemo-exit-buddy/",
+  "poster": "nemo-exit-buddy-poster-8d456584eff6.jpg",
+  "waveform": "waveform-8d456584eff6.json",
+  "roles": [
+    {
+      "id": "role_iSu9D4PqC1A",
+      "name": "龟龟",
+      "label": "龟龟",
+      "hint": "5 句台词",
+      "portrait": "crush-avatar-11fe1d8b5a14.jpg"
+    },
+    {
+      "id": "role_hGL5XBuFwGc",
+      "name": "马林",
+      "label": "马林",
+      "hint": "3 句台词",
+      "portrait": "marlin-avatar-169e500acee4.jpg"
+    },
+    {
+      "id": "role_afmsmZ2bsI8",
+      "name": "多莉",
+      "label": "多莉",
+      "hint": "2 句台词",
+      "portrait": "dory-avatar-3c95c4a20bb0.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_DmiK0pEpFrE",
+      "roleId": "role_iSu9D4PqC1A",
+      "start": 0.09,
+      "end": 5.1,
+      "text": "All right, we're here, dudes. Get ready. Your exit's coming up, man.",
+      "hint": "伙计们，我们到了。准备好，你们的出口快到了。",
+      "words": [
+        {
+          "text": "All",
+          "start": 0.12,
+          "end": 0.221
+        },
+        {
+          "text": "right,",
+          "start": 0.321,
+          "end": 0.622
+        },
+        {
+          "text": "we're",
+          "start": 0.863,
+          "end": 1.405
+        },
+        {
+          "text": "here,",
+          "start": 1.586,
+          "end": 1.887
+        },
+        {
+          "text": "dudes.",
+          "start": 1.948,
+          "end": 2.229
+        },
+        {
+          "text": "Get",
+          "start": 2.57,
+          "end": 2.731
+        },
+        {
+          "text": "ready.",
+          "start": 2.791,
+          "end": 3.112
+        },
+        {
+          "text": "Your",
+          "start": 3.413,
+          "end": 3.534
+        },
+        {
+          "text": "exit's",
+          "start": 3.674,
+          "end": 3.996
+        },
+        {
+          "text": "coming",
+          "start": 4.116,
+          "end": 4.457
+        },
+        {
+          "text": "up,",
+          "start": 4.538,
+          "end": 4.638
+        },
+        {
+          "text": "man.",
+          "start": 4.779,
+          "end": 5.06
+        }
+      ]
+    },
+    {
+      "id": "line_yo7wYsd4t3Y",
+      "roleId": "role_hGL5XBuFwGc",
+      "start": 5.332,
+      "end": 6.898,
+      "text": "Where? I don't see it.",
+      "hint": "哪里？我没看见。",
+      "words": [
+        {
+          "text": "Where?",
+          "start": 5.362,
+          "end": 5.685
+        },
+        {
+          "text": "I",
+          "start": 5.847,
+          "end": 5.867
+        },
+        {
+          "text": "don't",
+          "start": 5.969,
+          "end": 6.171
+        },
+        {
+          "text": "see",
+          "start": 6.373,
+          "end": 6.798
+        },
+        {
+          "text": "it.",
+          "start": 6.818,
+          "end": 6.858
+        }
+      ]
+    },
+    {
+      "id": "line_K0APHXAX_jA",
+      "roleId": "role_iSu9D4PqC1A",
+      "start": 6.956,
+      "end": 7.477,
+      "text": "Right there.",
+      "hint": "就在那儿。",
+      "words": [
+        {
+          "text": "Right",
+          "start": 6.986,
+          "end": 7.15
+        },
+        {
+          "text": "there.",
+          "start": 7.212,
+          "end": 7.437
+        }
+      ]
+    },
+    {
+      "id": "line_jk7gN8gZ02I",
+      "roleId": "role_afmsmZ2bsI8",
+      "start": 7.574,
+      "end": 8.86,
+      "text": "I see it! I see it!",
+      "hint": "我看见了！",
+      "words": [
+        {
+          "text": "I",
+          "start": 7.604,
+          "end": 7.624
+        },
+        {
+          "text": "see",
+          "start": 7.766,
+          "end": 7.888
+        },
+        {
+          "text": "it!",
+          "start": 8.212,
+          "end": 8.313
+        },
+        {
+          "text": "I",
+          "start": 8.415,
+          "end": 8.435
+        },
+        {
+          "text": "see",
+          "start": 8.496,
+          "end": 8.638
+        },
+        {
+          "text": "it!",
+          "start": 8.759,
+          "end": 8.82
+        }
+      ]
+    },
+    {
+      "id": "line_J6lVUhTmSCk",
+      "roleId": "role_hGL5XBuFwGc",
+      "start": 9.896,
+      "end": 12.24,
+      "text": "You mean the swirling vortex of terror?",
+      "hint": "你说的是那个可怕的漩涡？",
+      "words": [
+        {
+          "text": "You",
+          "start": 9.926,
+          "end": 10.007
+        },
+        {
+          "text": "mean",
+          "start": 10.148,
+          "end": 10.268
+        },
+        {
+          "text": "the",
+          "start": 10.329,
+          "end": 10.409
+        },
+        {
+          "text": "swirling",
+          "start": 10.469,
+          "end": 10.993
+        },
+        {
+          "text": "vortex",
+          "start": 11.113,
+          "end": 11.576
+        },
+        {
+          "text": "of",
+          "start": 11.737,
+          "end": 11.777
+        },
+        {
+          "text": "terror?",
+          "start": 11.878,
+          "end": 12.2
+        }
+      ]
+    },
+    {
+      "id": "line_ZMb1cEGCr60",
+      "roleId": "role_iSu9D4PqC1A",
+      "start": 12.393,
+      "end": 13.48,
+      "text": "That's it, dude.",
+      "hint": "就是那里，伙计。",
+      "words": [
+        {
+          "text": "That's",
+          "start": 12.423,
+          "end": 12.728
+        },
+        {
+          "text": "it,",
+          "start": 12.952,
+          "end": 13.054
+        },
+        {
+          "text": "dude.",
+          "start": 13.196,
+          "end": 13.44
+        }
+      ]
+    },
+    {
+      "id": "line_2A7QCdaSK1w",
+      "roleId": "role_hGL5XBuFwGc",
+      "start": 13.855,
+      "end": 14.719,
+      "text": "Of course it is.",
+      "hint": "果然如此。",
+      "words": [
+        {
+          "text": "Of",
+          "start": 13.885,
+          "end": 13.926
+        },
+        {
+          "text": "course",
+          "start": 13.987,
+          "end": 14.211
+        },
+        {
+          "text": "it",
+          "start": 14.333,
+          "end": 14.434
+        },
+        {
+          "text": "is.",
+          "start": 14.638,
+          "end": 14.679
+        }
+      ]
+    },
+    {
+      "id": "line_Yk3EISpzYk4",
+      "roleId": "role_iSu9D4PqC1A",
+      "start": 14.891,
+      "end": 21.24,
+      "text": "Okay, first find your exit buddy. Do you have your exit buddy?",
+      "hint": "先找到你的出口伙伴。找到了吗？",
+      "words": [
+        {
+          "text": "Okay,",
+          "start": 14.921,
+          "end": 15.101
+        },
+        {
+          "text": "first",
+          "start": 15.202,
+          "end": 15.623
+        },
+        {
+          "text": "find",
+          "start": 16.044,
+          "end": 16.365
+        },
+        {
+          "text": "your",
+          "start": 16.465,
+          "end": 16.626
+        },
+        {
+          "text": "exit",
+          "start": 16.847,
+          "end": 17.228
+        },
+        {
+          "text": "buddy.",
+          "start": 17.388,
+          "end": 17.729
+        },
+        {
+          "text": "Do",
+          "start": 18.231,
+          "end": 18.371
+        },
+        {
+          "text": "you",
+          "start": 18.913,
+          "end": 19.113
+        },
+        {
+          "text": "have",
+          "start": 19.475,
+          "end": 19.876
+        },
+        {
+          "text": "your",
+          "start": 20.036,
+          "end": 20.197
+        },
+        {
+          "text": "exit",
+          "start": 20.377,
+          "end": 20.758
+        },
+        {
+          "text": "buddy?",
+          "start": 20.859,
+          "end": 21.24
+        }
+      ]
+    },
+    {
+      "id": "line_vmjvJKb2jOc",
+      "roleId": "role_afmsmZ2bsI8",
+      "start": 21.24,
+      "end": 21.343,
+      "text": "Yes!",
+      "hint": "找到了！",
+      "words": [
+        {
+          "text": "Yes!",
+          "start": 21.24,
+          "end": 21.303
+        }
+      ]
+    },
+    {
+      "id": "line_Qq6AW8p_fxU",
+      "roleId": "role_iSu9D4PqC1A",
+      "start": 22.096,
+      "end": 22.35,
+      "text": "Okay.",
+      "hint": "好。",
+      "words": [
+        {
+          "text": "Okay.",
+          "start": 22.126,
+          "end": 22.33
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Finding Nemo — Find your exit buddy",
+    "attribution": "Walt Disney Studios Canada",
+    "source": "https://www.youtube.com/watch?v=rVpVHI3aloI&t=5s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 5–27.35 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

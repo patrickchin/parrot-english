@@ -1,0 +1,412 @@
+{
+  "version": 1,
+  "id": "scene_n_VK-I9IFbU",
+  "title": "来一点见解",
+  "tags": [
+    "Ratatouille",
+    "来一点见解",
+    "Waiter",
+    "Anton Ego",
+    "服务员",
+    "安东·伊戈"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 29.488,
+  "video": "ratatouille-a-little-perspective-review-05e42d12554e.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/ratatouille-a-little-perspective/",
+  "poster": "ratatouille-a-little-perspective-poster-05e42d12554e.jpg",
+  "waveform": "waveform-05e42d12554e.json",
+  "roles": [
+    {
+      "id": "role_tK6NBFXudoI",
+      "name": "服务员",
+      "label": "服务员",
+      "hint": "2 句台词",
+      "portrait": "waiter-avatar-420ee8ba7ef9.jpg"
+    },
+    {
+      "id": "role_Lbe3H2XSU5Y",
+      "name": "安东·伊戈",
+      "label": "安东·伊戈",
+      "hint": "3 句台词",
+      "portrait": "anton-ego-avatar-d2208a76b456.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_qKRWi51NAKY",
+      "roleId": "role_tK6NBFXudoI",
+      "start": 0.974,
+      "end": 2.899,
+      "text": "Do you know what you would like this evening, sir?",
+      "hint": "先生，今晚您想点些什么？",
+      "words": [
+        {
+          "text": "Do",
+          "start": 1.004,
+          "end": 1.065
+        },
+        {
+          "text": "you",
+          "start": 1.125,
+          "end": 1.206
+        },
+        {
+          "text": "know",
+          "start": 1.266,
+          "end": 1.387
+        },
+        {
+          "text": "what",
+          "start": 1.448,
+          "end": 1.569
+        },
+        {
+          "text": "you",
+          "start": 1.609,
+          "end": 1.67
+        },
+        {
+          "text": "would",
+          "start": 1.73,
+          "end": 1.871
+        },
+        {
+          "text": "like",
+          "start": 1.912,
+          "end": 2.053
+        },
+        {
+          "text": "this",
+          "start": 2.174,
+          "end": 2.335
+        },
+        {
+          "text": "evening,",
+          "start": 2.436,
+          "end": 2.698
+        },
+        {
+          "text": "sir?",
+          "start": 2.799,
+          "end": 2.859
+        }
+      ]
+    },
+    {
+      "id": "line_Lm0r4hcQAns",
+      "roleId": "role_Lbe3H2XSU5Y",
+      "start": 3.63,
+      "end": 17.06,
+      "text": "Yes, I think I do. After reading a lot of overheated puffery about your new cook, you know what I'm craving? A little perspective. That's it.",
+      "hint": "我想好了。读了那么多对你们新厨师夸大的吹捧后，你知道我渴望什么吗？一点见解。",
+      "words": [
+        {
+          "text": "Yes,",
+          "start": 3.66,
+          "end": 3.861
+        },
+        {
+          "text": "I",
+          "start": 4.021,
+          "end": 4.041
+        },
+        {
+          "text": "think",
+          "start": 4.141,
+          "end": 4.301
+        },
+        {
+          "text": "I",
+          "start": 4.442,
+          "end": 4.462
+        },
+        {
+          "text": "do.",
+          "start": 4.582,
+          "end": 4.762
+        },
+        {
+          "text": "After",
+          "start": 5.824,
+          "end": 6.004
+        },
+        {
+          "text": "reading",
+          "start": 6.084,
+          "end": 6.364
+        },
+        {
+          "text": "a",
+          "start": 6.424,
+          "end": 6.444
+        },
+        {
+          "text": "lot",
+          "start": 6.505,
+          "end": 6.665
+        },
+        {
+          "text": "of",
+          "start": 6.745,
+          "end": 6.785
+        },
+        {
+          "text": "overheated",
+          "start": 6.945,
+          "end": 7.466
+        },
+        {
+          "text": "puffery",
+          "start": 7.626,
+          "end": 8.027
+        },
+        {
+          "text": "about",
+          "start": 8.127,
+          "end": 8.327
+        },
+        {
+          "text": "your",
+          "start": 8.407,
+          "end": 8.548
+        },
+        {
+          "text": "new",
+          "start": 8.648,
+          "end": 8.808
+        },
+        {
+          "text": "cook,",
+          "start": 9.068,
+          "end": 9.269
+        },
+        {
+          "text": "you",
+          "start": 9.889,
+          "end": 9.99
+        },
+        {
+          "text": "know",
+          "start": 10.11,
+          "end": 10.25
+        },
+        {
+          "text": "what",
+          "start": 10.35,
+          "end": 10.47
+        },
+        {
+          "text": "I'm",
+          "start": 10.59,
+          "end": 10.711
+        },
+        {
+          "text": "craving?",
+          "start": 10.851,
+          "end": 11.672
+        },
+        {
+          "text": "A",
+          "start": 13.214,
+          "end": 13.234
+        },
+        {
+          "text": "little",
+          "start": 13.334,
+          "end": 13.715
+        },
+        {
+          "text": "perspective.",
+          "start": 14.536,
+          "end": 15.918
+        },
+        {
+          "text": "That's",
+          "start": 16.659,
+          "end": 16.84
+        },
+        {
+          "text": "it.",
+          "start": 16.96,
+          "end": 17.02
+        }
+      ]
+    },
+    {
+      "id": "line_1VhlurNmcws",
+      "roleId": "role_Lbe3H2XSU5Y",
+      "start": 17.951,
+      "end": 23.999,
+      "text": "I'd like some fresh, clear, well-seasoned perspective. Can you suggest a good wine to go with that?",
+      "hint": "没错。我想要新鲜、清楚、调味得当的见解。能推荐一款搭配的葡萄酒吗？",
+      "words": [
+        {
+          "text": "I'd",
+          "start": 17.981,
+          "end": 18.101
+        },
+        {
+          "text": "like",
+          "start": 18.141,
+          "end": 18.302
+        },
+        {
+          "text": "some",
+          "start": 18.382,
+          "end": 18.583
+        },
+        {
+          "text": "fresh,",
+          "start": 18.723,
+          "end": 19.024
+        },
+        {
+          "text": "clear,",
+          "start": 19.305,
+          "end": 19.546
+        },
+        {
+          "text": "well-seasoned",
+          "start": 19.786,
+          "end": 20.529
+        },
+        {
+          "text": "perspective.",
+          "start": 20.669,
+          "end": 21.472
+        },
+        {
+          "text": "Can",
+          "start": 21.773,
+          "end": 21.853
+        },
+        {
+          "text": "you",
+          "start": 21.933,
+          "end": 22.013
+        },
+        {
+          "text": "suggest",
+          "start": 22.074,
+          "end": 22.415
+        },
+        {
+          "text": "a",
+          "start": 22.495,
+          "end": 22.515
+        },
+        {
+          "text": "good",
+          "start": 22.555,
+          "end": 22.696
+        },
+        {
+          "text": "wine",
+          "start": 22.836,
+          "end": 23.157
+        },
+        {
+          "text": "to",
+          "start": 23.257,
+          "end": 23.297
+        },
+        {
+          "text": "go",
+          "start": 23.358,
+          "end": 23.458
+        },
+        {
+          "text": "with",
+          "start": 23.578,
+          "end": 23.719
+        },
+        {
+          "text": "that?",
+          "start": 23.799,
+          "end": 23.959
+        }
+      ]
+    },
+    {
+      "id": "line_tT8G092EXiw",
+      "roleId": "role_tK6NBFXudoI",
+      "start": 24.52,
+      "end": 26.387,
+      "text": "With what, sir?",
+      "hint": "搭配什么，先生？",
+      "words": [
+        {
+          "text": "With",
+          "start": 24.55,
+          "end": 25.438
+        },
+        {
+          "text": "what,",
+          "start": 25.62,
+          "end": 25.802
+        },
+        {
+          "text": "sir?",
+          "start": 26.226,
+          "end": 26.347
+        }
+      ]
+    },
+    {
+      "id": "line_4PW_VCUM0qQ",
+      "roleId": "role_Lbe3H2XSU5Y",
+      "start": 26.671,
+      "end": 29.279,
+      "text": "Perspective. Fresh out, I take it?",
+      "hint": "见解。看来已经没有了？",
+      "words": [
+        {
+          "text": "Perspective.",
+          "start": 26.701,
+          "end": 27.688
+        },
+        {
+          "text": "Fresh",
+          "start": 28.111,
+          "end": 28.333
+        },
+        {
+          "text": "out,",
+          "start": 28.554,
+          "end": 28.695
+        },
+        {
+          "text": "I",
+          "start": 28.816,
+          "end": 28.836
+        },
+        {
+          "text": "take",
+          "start": 28.957,
+          "end": 29.138
+        },
+        {
+          "text": "it?",
+          "start": 29.199,
+          "end": 29.239
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Ratatouille — A little perspective",
+    "attribution": "mservello1",
+    "source": "https://www.youtube.com/watch?v=4BSfWh9uHoY&t=5s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 5.6–35.05 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

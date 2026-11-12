@@ -1,0 +1,546 @@
+{
+  "version": 1,
+  "id": "scene_Y1VpaH0XS9c",
+  "title": "出了点小状况",
+  "tags": [
+    "Madagascar",
+    "出了点小状况",
+    "Melman",
+    "Alex",
+    "Marty",
+    "梅尔曼",
+    "艾力狮",
+    "马蒂"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 26.318,
+  "video": "madagascar-little-situation-review-0e6444727fc9.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/madagascar-little-situation/",
+  "poster": "madagascar-little-situation-poster-0e6444727fc9.jpg",
+  "waveform": "waveform-0e6444727fc9.json",
+  "roles": [
+    {
+      "id": "role_sq5rREP5D1E",
+      "name": "梅尔曼",
+      "label": "梅尔曼",
+      "hint": "1 句台词",
+      "portrait": "melman-avatar-ea8538333fc4.jpg"
+    },
+    {
+      "id": "role_dkpFjwnCRZU",
+      "name": "艾力狮",
+      "label": "艾力狮",
+      "hint": "3 句台词",
+      "portrait": "alex-avatar-a4b62d6777a5.jpg"
+    },
+    {
+      "id": "role_-Zl-OSzuP6Q",
+      "name": "马蒂",
+      "label": "马蒂",
+      "hint": "1 句台词",
+      "portrait": "marty-avatar-2193b19d0243.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_eBXubXzdEdk",
+      "roleId": "role_sq5rREP5D1E",
+      "start": 0.214,
+      "end": 1.299,
+      "text": "Good evening, officers.",
+      "hint": "警官们，晚上好。",
+      "words": [
+        {
+          "text": "Good",
+          "start": 0.244,
+          "end": 0.427
+        },
+        {
+          "text": "evening,",
+          "start": 0.508,
+          "end": 0.914
+        },
+        {
+          "text": "officers.",
+          "start": 1.077,
+          "end": 1.259
+        }
+      ]
+    },
+    {
+      "id": "line_x-5oeyc78VE",
+      "roleId": "role_dkpFjwnCRZU",
+      "start": 1.831,
+      "end": 8.459,
+      "text": "No, no, no. You don't talk now, okay? You're not so good with the putting the words together and they're coming out good thing. You keep it shh.",
+      "hint": "别说了。你不太擅长组织语言，你先安静一下。",
+      "words": [
+        {
+          "text": "No,",
+          "start": 1.861,
+          "end": 1.921
+        },
+        {
+          "text": "no,",
+          "start": 2.182,
+          "end": 2.262
+        },
+        {
+          "text": "no.",
+          "start": 2.703,
+          "end": 2.763
+        },
+        {
+          "text": "You",
+          "start": 3.064,
+          "end": 3.144
+        },
+        {
+          "text": "don't",
+          "start": 3.184,
+          "end": 3.325
+        },
+        {
+          "text": "talk",
+          "start": 3.345,
+          "end": 3.485
+        },
+        {
+          "text": "now,",
+          "start": 3.565,
+          "end": 3.666
+        },
+        {
+          "text": "okay?",
+          "start": 3.886,
+          "end": 4.087
+        },
+        {
+          "text": "You're",
+          "start": 4.267,
+          "end": 4.448
+        },
+        {
+          "text": "not",
+          "start": 4.488,
+          "end": 4.588
+        },
+        {
+          "text": "so",
+          "start": 4.648,
+          "end": 4.749
+        },
+        {
+          "text": "good",
+          "start": 4.829,
+          "end": 4.949
+        },
+        {
+          "text": "with",
+          "start": 4.969,
+          "end": 5.07
+        },
+        {
+          "text": "the",
+          "start": 5.11,
+          "end": 5.17
+        },
+        {
+          "text": "putting",
+          "start": 5.23,
+          "end": 5.431
+        },
+        {
+          "text": "the",
+          "start": 5.471,
+          "end": 5.531
+        },
+        {
+          "text": "words",
+          "start": 5.551,
+          "end": 5.732
+        },
+        {
+          "text": "together",
+          "start": 5.772,
+          "end": 6.073
+        },
+        {
+          "text": "and",
+          "start": 6.093,
+          "end": 6.153
+        },
+        {
+          "text": "they're",
+          "start": 6.173,
+          "end": 6.313
+        },
+        {
+          "text": "coming",
+          "start": 6.333,
+          "end": 6.494
+        },
+        {
+          "text": "out",
+          "start": 6.554,
+          "end": 6.634
+        },
+        {
+          "text": "good",
+          "start": 6.855,
+          "end": 6.995
+        },
+        {
+          "text": "thing.",
+          "start": 7.115,
+          "end": 7.276
+        },
+        {
+          "text": "You",
+          "start": 7.898,
+          "end": 7.958
+        },
+        {
+          "text": "keep",
+          "start": 8.038,
+          "end": 8.138
+        },
+        {
+          "text": "it",
+          "start": 8.199,
+          "end": 8.239
+        },
+        {
+          "text": "shh.",
+          "start": 8.319,
+          "end": 8.419
+        }
+      ]
+    },
+    {
+      "id": "line_G5C4Pm6ej4A",
+      "roleId": "role_dkpFjwnCRZU",
+      "start": 9.72,
+      "end": 22.971,
+      "text": "Hey, how you doing? Yeah, you know what? Everything's cool. We just had a little situation here. Little internal situation. Actually, my friend just went a little crazy. Happens to everybody. The city gets to us all. Just went a little cuckoo in the head.",
+      "hint": "你们好，一切正常。我们只是出了点小状况，内部小状况。我朋友有点失控，这种事谁都会遇到。这座城市让大家都有压力，他只是脑子有点糊涂。",
+      "words": [
+        {
+          "text": "Hey,",
+          "start": 9.75,
+          "end": 9.991
+        },
+        {
+          "text": "how",
+          "start": 10.251,
+          "end": 10.331
+        },
+        {
+          "text": "you",
+          "start": 10.371,
+          "end": 10.431
+        },
+        {
+          "text": "doing?",
+          "start": 10.471,
+          "end": 10.731
+        },
+        {
+          "text": "Yeah,",
+          "start": 11.031,
+          "end": 11.231
+        },
+        {
+          "text": "you",
+          "start": 11.532,
+          "end": 11.592
+        },
+        {
+          "text": "know",
+          "start": 11.652,
+          "end": 11.732
+        },
+        {
+          "text": "what?",
+          "start": 11.792,
+          "end": 11.952
+        },
+        {
+          "text": "Everything's",
+          "start": 12.012,
+          "end": 12.292
+        },
+        {
+          "text": "cool.",
+          "start": 12.372,
+          "end": 12.632
+        },
+        {
+          "text": "We",
+          "start": 12.813,
+          "end": 12.893
+        },
+        {
+          "text": "just",
+          "start": 12.973,
+          "end": 13.193
+        },
+        {
+          "text": "had",
+          "start": 13.893,
+          "end": 13.973
+        },
+        {
+          "text": "a",
+          "start": 14.013,
+          "end": 14.034
+        },
+        {
+          "text": "little",
+          "start": 14.054,
+          "end": 14.234
+        },
+        {
+          "text": "situation",
+          "start": 14.274,
+          "end": 14.794
+        },
+        {
+          "text": "here.",
+          "start": 14.874,
+          "end": 15.054
+        },
+        {
+          "text": "Little",
+          "start": 15.635,
+          "end": 15.835
+        },
+        {
+          "text": "internal",
+          "start": 15.875,
+          "end": 16.195
+        },
+        {
+          "text": "situation.",
+          "start": 16.255,
+          "end": 16.755
+        },
+        {
+          "text": "Actually,",
+          "start": 17.136,
+          "end": 17.376
+        },
+        {
+          "text": "my",
+          "start": 17.416,
+          "end": 17.476
+        },
+        {
+          "text": "friend",
+          "start": 17.556,
+          "end": 17.676
+        },
+        {
+          "text": "just",
+          "start": 17.696,
+          "end": 17.816
+        },
+        {
+          "text": "went",
+          "start": 17.836,
+          "end": 17.936
+        },
+        {
+          "text": "a",
+          "start": 17.956,
+          "end": 17.976
+        },
+        {
+          "text": "little",
+          "start": 17.996,
+          "end": 18.156
+        },
+        {
+          "text": "crazy.",
+          "start": 18.177,
+          "end": 18.537
+        },
+        {
+          "text": "Happens",
+          "start": 18.837,
+          "end": 19.137
+        },
+        {
+          "text": "to",
+          "start": 19.177,
+          "end": 19.237
+        },
+        {
+          "text": "everybody.",
+          "start": 19.317,
+          "end": 19.718
+        },
+        {
+          "text": "The",
+          "start": 19.998,
+          "end": 20.078
+        },
+        {
+          "text": "city",
+          "start": 20.158,
+          "end": 20.398
+        },
+        {
+          "text": "gets",
+          "start": 20.718,
+          "end": 20.898
+        },
+        {
+          "text": "to",
+          "start": 20.959,
+          "end": 21.019
+        },
+        {
+          "text": "us",
+          "start": 21.099,
+          "end": 21.179
+        },
+        {
+          "text": "all.",
+          "start": 21.339,
+          "end": 21.459
+        },
+        {
+          "text": "Just",
+          "start": 21.659,
+          "end": 21.779
+        },
+        {
+          "text": "went",
+          "start": 21.819,
+          "end": 21.919
+        },
+        {
+          "text": "a",
+          "start": 21.939,
+          "end": 21.959
+        },
+        {
+          "text": "little",
+          "start": 21.979,
+          "end": 22.119
+        },
+        {
+          "text": "cuckoo",
+          "start": 22.159,
+          "end": 22.46
+        },
+        {
+          "text": "in",
+          "start": 22.52,
+          "end": 22.56
+        },
+        {
+          "text": "the",
+          "start": 22.62,
+          "end": 22.68
+        },
+        {
+          "text": "head.",
+          "start": 22.72,
+          "end": 22.96
+        }
+      ]
+    },
+    {
+      "id": "line_DKM2M8HnCVo",
+      "roleId": "role_-Zl-OSzuP6Q",
+      "start": 22.971,
+      "end": 24.81,
+      "text": "Hey, don't be calling me cuckoo in the head!",
+      "hint": "别说我脑子糊涂！",
+      "words": [
+        {
+          "text": "Hey,",
+          "start": 22.982,
+          "end": 23.183
+        },
+        {
+          "text": "don't",
+          "start": 23.426,
+          "end": 23.567
+        },
+        {
+          "text": "be",
+          "start": 23.628,
+          "end": 23.688
+        },
+        {
+          "text": "calling",
+          "start": 23.749,
+          "end": 23.991
+        },
+        {
+          "text": "me",
+          "start": 24.011,
+          "end": 24.092
+        },
+        {
+          "text": "cuckoo",
+          "start": 24.193,
+          "end": 24.495
+        },
+        {
+          "text": "in",
+          "start": 24.516,
+          "end": 24.556
+        },
+        {
+          "text": "the",
+          "start": 24.617,
+          "end": 24.697
+        },
+        {
+          "text": "head!",
+          "start": 24.758,
+          "end": 24.81
+        }
+      ]
+    },
+    {
+      "id": "line_LpK96G9zsvY",
+      "roleId": "role_dkpFjwnCRZU",
+      "start": 24.81,
+      "end": 25.818,
+      "text": "Just shh.",
+      "hint": "嘘。",
+      "words": [
+        {
+          "text": "Just",
+          "start": 24.81,
+          "end": 24.903
+        },
+        {
+          "text": "shh.",
+          "start": 25.554,
+          "end": 25.778
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Madagascar — A little situation",
+    "attribution": "Movieclips",
+    "source": "https://www.youtube.com/watch?v=kPE7ZCGjw4o&t=132s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 132.6–158.9 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

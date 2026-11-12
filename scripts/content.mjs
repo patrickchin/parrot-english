@@ -104,7 +104,7 @@ function oss(...args) {
   catch (error) { throw new Error(`Alibaba CLI failed. Install/configure aliyun with ossutil 2.0. ${error.stderr?.toString() ?? error.message}`); }
 }
 function uploadCatalog(path) {
-  oss('cp', path, remoteRoot + 'catalog.json', '--force', '--meta', 'Cache-Control:no-store#Content-Type:application/json');
+  oss('cp', path, remoteRoot + 'catalog.json', '--force', '--cache-control', 'no-store', '--content-type', 'application/json');
 }
 export async function publishDirectory(root = 'content') {
   const release = await stageDirectory(root);
@@ -115,7 +115,7 @@ export async function publishDirectory(root = 'content') {
       if (!response.ok) throw new Error(`Referenced media is unavailable (${response.status}): ${url}`);
     }));
   }
-  oss('cp', join(release.folder, 'objects') + '/', remoteRoot, '--recursive', '--force', '--meta', 'Cache-Control:public,max-age=31536000,immutable');
+  oss('cp', join(release.folder, 'objects') + '/', remoteRoot, '--recursive', '--force', '--cache-control', 'public,max-age=31536000,immutable');
   uploadCatalog(join(release.folder, 'catalog.json'));
   return release;
 }

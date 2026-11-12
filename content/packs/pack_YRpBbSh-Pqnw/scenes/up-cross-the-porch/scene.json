@@ -1,0 +1,472 @@
+{
+  "version": 1,
+  "id": "scene_LtZ9BfnLwbo",
+  "title": "我能帮你过点什么吗？",
+  "tags": [
+    "Up",
+    "我能帮你过点什么吗？",
+    "Russell",
+    "Carl",
+    "罗素",
+    "卡尔"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 28.32,
+  "video": "up-cross-the-porch-review-9108681301fd.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/up-cross-the-porch/",
+  "poster": "up-cross-the-porch-poster-9108681301fd.jpg",
+  "waveform": "waveform-9108681301fd.json",
+  "roles": [
+    {
+      "id": "role_chi9JH8XMY4",
+      "name": "罗素",
+      "label": "罗素",
+      "hint": "5 句台词",
+      "portrait": "russell-avatar-05d62abe14ee.jpg"
+    },
+    {
+      "id": "role_BDRzhE5Z6q8",
+      "name": "卡尔",
+      "label": "卡尔",
+      "hint": "5 句台词",
+      "portrait": "carl-avatar-e8c66060b5e7.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_QSF87CIwHi8",
+      "roleId": "role_chi9JH8XMY4",
+      "start": 0.09,
+      "end": 11.3,
+      "text": "Good afternoon. My name is Russell, and I am a Wilderness Explorer in Tribe fifty-four, Sweat Lodge twelve. Are you in need of any assistance today, sir?",
+      "hint": "下午好，我叫罗素，是54部落12分队的荒野探险家。先生，您需要帮助吗？",
+      "words": [
+        {
+          "text": "Good",
+          "start": 0.12,
+          "end": 0.421
+        },
+        {
+          "text": "afternoon.",
+          "start": 0.601,
+          "end": 1.202
+        },
+        {
+          "text": "My",
+          "start": 1.723,
+          "end": 1.883
+        },
+        {
+          "text": "name",
+          "start": 2.004,
+          "end": 2.244
+        },
+        {
+          "text": "is",
+          "start": 2.364,
+          "end": 2.424
+        },
+        {
+          "text": "Russell,",
+          "start": 2.585,
+          "end": 2.985
+        },
+        {
+          "text": "and",
+          "start": 3.346,
+          "end": 3.426
+        },
+        {
+          "text": "I",
+          "start": 3.626,
+          "end": 3.646
+        },
+        {
+          "text": "am",
+          "start": 3.847,
+          "end": 3.887
+        },
+        {
+          "text": "a",
+          "start": 4.027,
+          "end": 4.047
+        },
+        {
+          "text": "Wilderness",
+          "start": 4.127,
+          "end": 4.748
+        },
+        {
+          "text": "Explorer",
+          "start": 4.869,
+          "end": 5.43
+        },
+        {
+          "text": "in",
+          "start": 5.53,
+          "end": 5.57
+        },
+        {
+          "text": "Tribe",
+          "start": 5.71,
+          "end": 5.99
+        },
+        {
+          "text": "fifty-four,",
+          "start": 6.071,
+          "end": 6.732
+        },
+        {
+          "text": "Sweat",
+          "start": 7.253,
+          "end": 7.513
+        },
+        {
+          "text": "Lodge",
+          "start": 7.613,
+          "end": 7.874
+        },
+        {
+          "text": "twelve.",
+          "start": 7.994,
+          "end": 8.355
+        },
+        {
+          "text": "Are",
+          "start": 8.876,
+          "end": 8.956
+        },
+        {
+          "text": "you",
+          "start": 8.996,
+          "end": 9.096
+        },
+        {
+          "text": "in",
+          "start": 9.236,
+          "end": 9.276
+        },
+        {
+          "text": "need",
+          "start": 9.376,
+          "end": 9.577
+        },
+        {
+          "text": "of",
+          "start": 9.677,
+          "end": 9.717
+        },
+        {
+          "text": "any",
+          "start": 9.837,
+          "end": 9.977
+        },
+        {
+          "text": "assistance",
+          "start": 10.078,
+          "end": 10.639
+        },
+        {
+          "text": "today,",
+          "start": 10.699,
+          "end": 10.979
+        },
+        {
+          "text": "sir?",
+          "start": 11.099,
+          "end": 11.26
+        }
+      ]
+    },
+    {
+      "id": "line_OrxIE0vfQD8",
+      "roleId": "role_BDRzhE5Z6q8",
+      "start": 11.984,
+      "end": 12.197,
+      "text": "No.",
+      "hint": "不需要。",
+      "words": [
+        {
+          "text": "No.",
+          "start": 12.014,
+          "end": 12.157
+        }
+      ]
+    },
+    {
+      "id": "line_KwttVNY-Q0s",
+      "roleId": "role_chi9JH8XMY4",
+      "start": 12.653,
+      "end": 14.8,
+      "text": "I could help you cross the street.",
+      "hint": "我可以扶您过马路。",
+      "words": [
+        {
+          "text": "I",
+          "start": 12.683,
+          "end": 12.703
+        },
+        {
+          "text": "could",
+          "start": 12.804,
+          "end": 13.107
+        },
+        {
+          "text": "help",
+          "start": 13.409,
+          "end": 13.712
+        },
+        {
+          "text": "you",
+          "start": 13.792,
+          "end": 13.853
+        },
+        {
+          "text": "cross",
+          "start": 13.953,
+          "end": 14.195
+        },
+        {
+          "text": "the",
+          "start": 14.256,
+          "end": 14.337
+        },
+        {
+          "text": "street.",
+          "start": 14.417,
+          "end": 14.76
+        }
+      ]
+    },
+    {
+      "id": "line_D3eBijglP3E",
+      "roleId": "role_BDRzhE5Z6q8",
+      "start": 15.418,
+      "end": 15.674,
+      "text": "No.",
+      "hint": "不需要。",
+      "words": [
+        {
+          "text": "No.",
+          "start": 15.448,
+          "end": 15.634
+        }
+      ]
+    },
+    {
+      "id": "line_E7KtgnUNizc",
+      "roleId": "role_chi9JH8XMY4",
+      "start": 16.353,
+      "end": 18.92,
+      "text": "I could help you cross your yard.",
+      "hint": "我可以扶您穿过院子。",
+      "words": [
+        {
+          "text": "I",
+          "start": 16.383,
+          "end": 16.403
+        },
+        {
+          "text": "could",
+          "start": 16.665,
+          "end": 17.631
+        },
+        {
+          "text": "help",
+          "start": 17.752,
+          "end": 17.893
+        },
+        {
+          "text": "you",
+          "start": 17.954,
+          "end": 18.034
+        },
+        {
+          "text": "cross",
+          "start": 18.135,
+          "end": 18.356
+        },
+        {
+          "text": "your",
+          "start": 18.396,
+          "end": 18.537
+        },
+        {
+          "text": "yard.",
+          "start": 18.618,
+          "end": 18.88
+        }
+      ]
+    },
+    {
+      "id": "line_JjS0NY-G7ok",
+      "roleId": "role_BDRzhE5Z6q8",
+      "start": 19.481,
+      "end": 19.736,
+      "text": "No.",
+      "hint": "不需要。",
+      "words": [
+        {
+          "text": "No.",
+          "start": 19.511,
+          "end": 19.696
+        }
+      ]
+    },
+    {
+      "id": "line_WghrkMbq7fU",
+      "roleId": "role_chi9JH8XMY4",
+      "start": 20.132,
+      "end": 23.275,
+      "text": "I could help you cross your porch.",
+      "hint": "我可以扶您走过门廊。",
+      "words": [
+        {
+          "text": "I",
+          "start": 20.162,
+          "end": 20.182
+        },
+        {
+          "text": "could",
+          "start": 20.464,
+          "end": 20.785
+        },
+        {
+          "text": "help",
+          "start": 21.067,
+          "end": 21.308
+        },
+        {
+          "text": "you",
+          "start": 21.469,
+          "end": 21.59
+        },
+        {
+          "text": "cross",
+          "start": 21.811,
+          "end": 22.214
+        },
+        {
+          "text": "your",
+          "start": 22.475,
+          "end": 22.737
+        },
+        {
+          "text": "porch.",
+          "start": 22.978,
+          "end": 23.26
+        }
+      ]
+    },
+    {
+      "id": "line_M0Dt9VsiMR4",
+      "roleId": "role_BDRzhE5Z6q8",
+      "start": 23.275,
+      "end": 23.639,
+      "text": "No.",
+      "hint": "不需要。",
+      "words": [
+        {
+          "text": "No.",
+          "start": 23.289,
+          "end": 23.599
+        }
+      ]
+    },
+    {
+      "id": "line_6pzkGbZAnpY",
+      "roleId": "role_chi9JH8XMY4",
+      "start": 24.073,
+      "end": 26.1,
+      "text": "Well, I gotta help you cross something.",
+      "hint": "我总得扶您过点什么。",
+      "words": [
+        {
+          "text": "Well,",
+          "start": 24.103,
+          "end": 24.466
+        },
+        {
+          "text": "I",
+          "start": 24.587,
+          "end": 24.607
+        },
+        {
+          "text": "gotta",
+          "start": 24.708,
+          "end": 24.97
+        },
+        {
+          "text": "help",
+          "start": 25.031,
+          "end": 25.192
+        },
+        {
+          "text": "you",
+          "start": 25.253,
+          "end": 25.334
+        },
+        {
+          "text": "cross",
+          "start": 25.414,
+          "end": 25.636
+        },
+        {
+          "text": "something.",
+          "start": 25.717,
+          "end": 26.06
+        }
+      ]
+    },
+    {
+      "id": "line_DBpJOcc8KpY",
+      "roleId": "role_BDRzhE5Z6q8",
+      "start": 26.334,
+      "end": 27.96,
+      "text": "Uh, no. I'm doing fine.",
+      "hint": "不用了，我挺好。",
+      "words": [
+        {
+          "text": "Uh,",
+          "start": 26.364,
+          "end": 26.425
+        },
+        {
+          "text": "no.",
+          "start": 26.627,
+          "end": 26.809
+        },
+        {
+          "text": "I'm",
+          "start": 27.091,
+          "end": 27.213
+        },
+        {
+          "text": "doing",
+          "start": 27.293,
+          "end": 27.536
+        },
+        {
+          "text": "fine.",
+          "start": 27.637,
+          "end": 27.92
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Up — Can I help you cross something?",
+    "attribution": "Freeform",
+    "source": "https://www.youtube.com/watch?v=w8NzWsA5188&t=2s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 2.5–30.8 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

@@ -1,0 +1,497 @@
+{
+  "version": 1,
+  "id": "scene_78PngUk4uMA",
+  "title": "奈斯比特太太",
+  "tags": [
+    "Toy Story",
+    "奈斯比特太太",
+    "Woody",
+    "Buzz Lightyear",
+    "胡迪",
+    "巴斯光年"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 35.102,
+  "video": "toy-story-mrs-nesbitt-review-459774f523d5.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/toy-story-mrs-nesbitt/",
+  "poster": "toy-story-mrs-nesbitt-poster-459774f523d5.jpg",
+  "waveform": "waveform-459774f523d5.json",
+  "roles": [
+    {
+      "id": "role_AKeW1fapsu8",
+      "name": "胡迪",
+      "label": "胡迪",
+      "hint": "4 句台词",
+      "portrait": "woody-avatar-0c43e7536f10.jpg"
+    },
+    {
+      "id": "role_fo0NHYDjW7o",
+      "name": "巴斯光年",
+      "label": "巴斯光年",
+      "hint": "3 句台词",
+      "portrait": "buzz-avatar-52c4aa58fd7d.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_jkUuQsKsJf8",
+      "roleId": "role_AKeW1fapsu8",
+      "start": 0.853,
+      "end": 3.08,
+      "text": "Buzz? Hey! Buzz, are you okay?",
+      "hint": "巴斯，你没事吧？",
+      "words": [
+        {
+          "text": "Buzz?",
+          "start": 0.883,
+          "end": 1.125
+        },
+        {
+          "text": "Hey!",
+          "start": 1.488,
+          "end": 1.629
+        },
+        {
+          "text": "Buzz,",
+          "start": 2.133,
+          "end": 2.334
+        },
+        {
+          "text": "are",
+          "start": 2.415,
+          "end": 2.495
+        },
+        {
+          "text": "you",
+          "start": 2.515,
+          "end": 2.576
+        },
+        {
+          "text": "okay?",
+          "start": 2.697,
+          "end": 3.04
+        }
+      ]
+    },
+    {
+      "id": "line_RSRFAPMo62g",
+      "roleId": "role_fo0NHYDjW7o",
+      "start": 3.511,
+      "end": 8.56,
+      "text": "Gone. It's all gone. All of it's gone. Bye-bye. See ya.",
+      "hint": "没了。全没了。再见了。",
+      "words": [
+        {
+          "text": "Gone.",
+          "start": 3.541,
+          "end": 4.224
+        },
+        {
+          "text": "It's",
+          "start": 5.388,
+          "end": 5.529
+        },
+        {
+          "text": "all",
+          "start": 5.749,
+          "end": 5.87
+        },
+        {
+          "text": "gone.",
+          "start": 5.91,
+          "end": 6.312
+        },
+        {
+          "text": "All",
+          "start": 6.954,
+          "end": 7.074
+        },
+        {
+          "text": "of",
+          "start": 7.115,
+          "end": 7.155
+        },
+        {
+          "text": "it's",
+          "start": 7.195,
+          "end": 7.356
+        },
+        {
+          "text": "gone.",
+          "start": 7.456,
+          "end": 7.757
+        },
+        {
+          "text": "Bye-bye.",
+          "start": 7.817,
+          "end": 8.199
+        },
+        {
+          "text": "See",
+          "start": 8.239,
+          "end": 8.4
+        },
+        {
+          "text": "ya.",
+          "start": 8.48,
+          "end": 8.52
+        }
+      ]
+    },
+    {
+      "id": "line_yAyaCqeD7BI",
+      "roleId": "role_AKeW1fapsu8",
+      "start": 9.653,
+      "end": 10.899,
+      "text": "What happened to you?",
+      "hint": "你怎么了？",
+      "words": [
+        {
+          "text": "What",
+          "start": 9.683,
+          "end": 9.825
+        },
+        {
+          "text": "happened",
+          "start": 10.008,
+          "end": 10.413
+        },
+        {
+          "text": "to",
+          "start": 10.474,
+          "end": 10.595
+        },
+        {
+          "text": "you?",
+          "start": 10.697,
+          "end": 10.899
+        }
+      ]
+    },
+    {
+      "id": "line_cCjUxQP84G0",
+      "roleId": "role_fo0NHYDjW7o",
+      "start": 10.899,
+      "end": 20.8,
+      "text": "One minute you're defending the whole galaxy, and suddenly you find yourself sucking down Darjeeling with Marie Antoinette and her little sister.",
+      "hint": "刚才还在保卫整个银河，转眼却在陪玛丽王后和她妹妹喝茶。",
+      "words": [
+        {
+          "text": "One",
+          "start": 10.899,
+          "end": 10.924
+        },
+        {
+          "text": "minute",
+          "start": 10.924,
+          "end": 11.281
+        },
+        {
+          "text": "you're",
+          "start": 11.402,
+          "end": 11.562
+        },
+        {
+          "text": "defending",
+          "start": 11.602,
+          "end": 12.103
+        },
+        {
+          "text": "the",
+          "start": 12.143,
+          "end": 12.243
+        },
+        {
+          "text": "whole",
+          "start": 12.263,
+          "end": 12.383
+        },
+        {
+          "text": "galaxy,",
+          "start": 12.424,
+          "end": 12.965
+        },
+        {
+          "text": "and",
+          "start": 13.606,
+          "end": 13.706
+        },
+        {
+          "text": "suddenly",
+          "start": 13.846,
+          "end": 14.387
+        },
+        {
+          "text": "you",
+          "start": 14.528,
+          "end": 14.608
+        },
+        {
+          "text": "find",
+          "start": 14.728,
+          "end": 14.928
+        },
+        {
+          "text": "yourself",
+          "start": 14.989,
+          "end": 15.429
+        },
+        {
+          "text": "sucking",
+          "start": 15.73,
+          "end": 16.111
+        },
+        {
+          "text": "down",
+          "start": 16.171,
+          "end": 16.471
+        },
+        {
+          "text": "Darjeeling",
+          "start": 16.572,
+          "end": 17.453
+        },
+        {
+          "text": "with",
+          "start": 17.634,
+          "end": 17.854
+        },
+        {
+          "text": "Marie",
+          "start": 18.556,
+          "end": 18.916
+        },
+        {
+          "text": "Antoinette",
+          "start": 18.996,
+          "end": 19.497
+        },
+        {
+          "text": "and",
+          "start": 19.758,
+          "end": 19.938
+        },
+        {
+          "text": "her",
+          "start": 19.958,
+          "end": 20.038
+        },
+        {
+          "text": "little",
+          "start": 20.159,
+          "end": 20.339
+        },
+        {
+          "text": "sister.",
+          "start": 20.479,
+          "end": 20.76
+        }
+      ]
+    },
+    {
+      "id": "line_fZ44cLSOnt0",
+      "roleId": "role_AKeW1fapsu8",
+      "start": 22.812,
+      "end": 26.891,
+      "text": "I think you've had enough tea for today. Let's get you out of here, Buzz.",
+      "hint": "你今天茶喝够了。我们走吧，巴斯。",
+      "words": [
+        {
+          "text": "I",
+          "start": 22.842,
+          "end": 22.862
+        },
+        {
+          "text": "think",
+          "start": 23.083,
+          "end": 23.263
+        },
+        {
+          "text": "you've",
+          "start": 23.344,
+          "end": 23.545
+        },
+        {
+          "text": "had",
+          "start": 23.585,
+          "end": 23.725
+        },
+        {
+          "text": "enough",
+          "start": 23.806,
+          "end": 24.087
+        },
+        {
+          "text": "tea",
+          "start": 24.228,
+          "end": 24.388
+        },
+        {
+          "text": "for",
+          "start": 24.509,
+          "end": 24.69
+        },
+        {
+          "text": "today.",
+          "start": 24.79,
+          "end": 25.071
+        },
+        {
+          "text": "Let's",
+          "start": 25.152,
+          "end": 25.353
+        },
+        {
+          "text": "get",
+          "start": 25.453,
+          "end": 25.614
+        },
+        {
+          "text": "you",
+          "start": 25.714,
+          "end": 25.815
+        },
+        {
+          "text": "out",
+          "start": 26.036,
+          "end": 26.136
+        },
+        {
+          "text": "of",
+          "start": 26.197,
+          "end": 26.237
+        },
+        {
+          "text": "here,",
+          "start": 26.317,
+          "end": 26.518
+        },
+        {
+          "text": "Buzz.",
+          "start": 26.638,
+          "end": 26.891
+        }
+      ]
+    },
+    {
+      "id": "line_GNWvgVEpV-4",
+      "roleId": "role_fo0NHYDjW7o",
+      "start": 26.891,
+      "end": 32.52,
+      "text": "Don't you get it? You see the hat? I am Mrs. Nesbitt!",
+      "hint": "你还不明白吗？看见这顶帽子了吗？我是奈斯比特太太！",
+      "words": [
+        {
+          "text": "Don't",
+          "start": 26.891,
+          "end": 27.142
+        },
+        {
+          "text": "you",
+          "start": 27.182,
+          "end": 27.322
+        },
+        {
+          "text": "get",
+          "start": 27.543,
+          "end": 27.784
+        },
+        {
+          "text": "it?",
+          "start": 27.824,
+          "end": 27.904
+        },
+        {
+          "text": "You",
+          "start": 28.526,
+          "end": 28.607
+        },
+        {
+          "text": "see",
+          "start": 28.707,
+          "end": 28.827
+        },
+        {
+          "text": "the",
+          "start": 28.908,
+          "end": 28.988
+        },
+        {
+          "text": "hat?",
+          "start": 29.068,
+          "end": 29.349
+        },
+        {
+          "text": "I",
+          "start": 30.252,
+          "end": 30.272
+        },
+        {
+          "text": "am",
+          "start": 30.433,
+          "end": 30.493
+        },
+        {
+          "text": "Mrs.",
+          "start": 30.714,
+          "end": 31.256
+        },
+        {
+          "text": "Nesbitt!",
+          "start": 31.818,
+          "end": 32.48
+        }
+      ]
+    },
+    {
+      "id": "line__dOCTHoV-v8",
+      "roleId": "role_AKeW1fapsu8",
+      "start": 33.591,
+      "end": 34.9,
+      "text": "Snap out of it, Buzz!",
+      "hint": "清醒点，巴斯！",
+      "words": [
+        {
+          "text": "Snap",
+          "start": 33.621,
+          "end": 33.987
+        },
+        {
+          "text": "out",
+          "start": 34.169,
+          "end": 34.251
+        },
+        {
+          "text": "of",
+          "start": 34.291,
+          "end": 34.352
+        },
+        {
+          "text": "it,",
+          "start": 34.433,
+          "end": 34.474
+        },
+        {
+          "text": "Buzz!",
+          "start": 34.535,
+          "end": 34.86
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Toy Story — Mrs. Nesbitt",
+    "attribution": "Crazy Buzz fan",
+    "source": "https://www.youtube.com/watch?v=l7u7SAoyF9Y&t=35s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 35.5–70.6 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

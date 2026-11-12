@@ -1,0 +1,277 @@
+{
+  "version": 1,
+  "id": "scene_6oNrdV4y6EM",
+  "title": "纽约巨人",
+  "tags": [
+    "Madagascar",
+    "纽约巨人",
+    "King Julien",
+    "Alex",
+    "朱利安国王",
+    "艾力狮"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 15.92,
+  "video": "madagascar-new-york-giants-review-ee7ecc918af4.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/madagascar-new-york-giants/",
+  "poster": "madagascar-new-york-giants-poster-ee7ecc918af4.jpg",
+  "waveform": "waveform-ee7ecc918af4.json",
+  "roles": [
+    {
+      "id": "role_6Hy35lv2HP4",
+      "name": "朱利安国王",
+      "label": "朱利安国王",
+      "hint": "3 句台词",
+      "portrait": "king-julien-avatar-c37859d6ec3f.jpg"
+    },
+    {
+      "id": "role_Oo7l0olB3Us",
+      "name": "艾力狮",
+      "label": "艾力狮",
+      "hint": "2 句台词",
+      "portrait": "alex-avatar-a4b62d6777a5.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_HEF9LLK4bsw",
+      "roleId": "role_6Hy35lv2HP4",
+      "start": 0.852,
+      "end": 2.918,
+      "text": "You must tell me, who the heck are you?",
+      "hint": "快告诉我，你们究竟是谁？",
+      "words": [
+        {
+          "text": "You",
+          "start": 0.882,
+          "end": 0.963
+        },
+        {
+          "text": "must",
+          "start": 1.003,
+          "end": 1.164
+        },
+        {
+          "text": "tell",
+          "start": 1.225,
+          "end": 1.406
+        },
+        {
+          "text": "me,",
+          "start": 1.487,
+          "end": 1.588
+        },
+        {
+          "text": "who",
+          "start": 2.112,
+          "end": 2.213
+        },
+        {
+          "text": "the",
+          "start": 2.294,
+          "end": 2.374
+        },
+        {
+          "text": "heck",
+          "start": 2.415,
+          "end": 2.556
+        },
+        {
+          "text": "are",
+          "start": 2.677,
+          "end": 2.757
+        },
+        {
+          "text": "you?",
+          "start": 2.798,
+          "end": 2.878
+        }
+      ]
+    },
+    {
+      "id": "line_nvWRLE7-38g",
+      "roleId": "role_Oo7l0olB3Us",
+      "start": 3.153,
+      "end": 6.52,
+      "text": "I'm Alex. The Alex. And this is Gloria, Marty, Melman.",
+      "hint": "我是艾力狮。这是格洛丽亚、马蒂和梅尔曼。",
+      "words": [
+        {
+          "text": "I'm",
+          "start": 3.183,
+          "end": 3.263
+        },
+        {
+          "text": "Alex.",
+          "start": 3.404,
+          "end": 3.605
+        },
+        {
+          "text": "The",
+          "start": 4.47,
+          "end": 4.61
+        },
+        {
+          "text": "Alex.",
+          "start": 4.731,
+          "end": 4.912
+        },
+        {
+          "text": "And",
+          "start": 5.254,
+          "end": 5.334
+        },
+        {
+          "text": "this",
+          "start": 5.394,
+          "end": 5.495
+        },
+        {
+          "text": "is",
+          "start": 5.555,
+          "end": 5.615
+        },
+        {
+          "text": "Gloria,",
+          "start": 5.656,
+          "end": 5.917
+        },
+        {
+          "text": "Marty,",
+          "start": 5.977,
+          "end": 6.158
+        },
+        {
+          "text": "Melman.",
+          "start": 6.259,
+          "end": 6.48
+        }
+      ]
+    },
+    {
+      "id": "line_LyjTdndTD_o",
+      "roleId": "role_6Hy35lv2HP4",
+      "start": 7.112,
+      "end": 9.119,
+      "text": "Just where are you giants from?",
+      "hint": "你们这些巨人从哪里来？",
+      "words": [
+        {
+          "text": "Just",
+          "start": 7.142,
+          "end": 7.344
+        },
+        {
+          "text": "where",
+          "start": 7.485,
+          "end": 7.747
+        },
+        {
+          "text": "are",
+          "start": 7.889,
+          "end": 7.969
+        },
+        {
+          "text": "you",
+          "start": 8.03,
+          "end": 8.151
+        },
+        {
+          "text": "giants",
+          "start": 8.272,
+          "end": 8.736
+        },
+        {
+          "text": "from?",
+          "start": 8.817,
+          "end": 9.079
+        }
+      ]
+    },
+    {
+      "id": "line_v6Y9T3VhJZI",
+      "roleId": "role_Oo7l0olB3Us",
+      "start": 10.238,
+      "end": 11.118,
+      "text": "We're from New York.",
+      "hint": "我们来自纽约。",
+      "words": [
+        {
+          "text": "We're",
+          "start": 10.268,
+          "end": 10.43
+        },
+        {
+          "text": "from",
+          "start": 10.491,
+          "end": 10.633
+        },
+        {
+          "text": "New",
+          "start": 10.693,
+          "end": 10.774
+        },
+        {
+          "text": "York.",
+          "start": 10.835,
+          "end": 11.078
+        }
+      ]
+    },
+    {
+      "id": "line_7ok1yFf1GqU",
+      "roleId": "role_6Hy35lv2HP4",
+      "start": 11.61,
+      "end": 14.88,
+      "text": "All hail the New York Giants!",
+      "hint": "向纽约巨人致敬！",
+      "words": [
+        {
+          "text": "All",
+          "start": 11.64,
+          "end": 11.861
+        },
+        {
+          "text": "hail",
+          "start": 13.351,
+          "end": 13.612
+        },
+        {
+          "text": "the",
+          "start": 13.934,
+          "end": 14.035
+        },
+        {
+          "text": "New",
+          "start": 14.156,
+          "end": 14.256
+        },
+        {
+          "text": "York",
+          "start": 14.297,
+          "end": 14.478
+        },
+        {
+          "text": "Giants!",
+          "start": 14.558,
+          "end": 14.84
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Madagascar — The New York Giants",
+    "attribution": "d grey",
+    "source": "https://www.youtube.com/watch?v=CWZIOJGl72k&t=0s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 0–15.9 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

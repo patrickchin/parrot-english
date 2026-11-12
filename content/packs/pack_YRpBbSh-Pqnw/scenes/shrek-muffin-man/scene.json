@@ -1,0 +1,362 @@
+{
+  "version": 1,
+  "id": "scene_a3BDHKKQn54",
+  "title": "你认识松饼人吗？",
+  "tags": [
+    "Shrek",
+    "你认识松饼人吗？",
+    "Gingy",
+    "Lord Farquaad",
+    "姜饼人",
+    "法尔夸德"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 18.936,
+  "video": "shrek-muffin-man-review-b8665f4d1246.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/shrek-muffin-man/",
+  "poster": "shrek-muffin-man-poster-b8665f4d1246.jpg",
+  "waveform": "waveform-b8665f4d1246.json",
+  "roles": [
+    {
+      "id": "role_7XN0VQR8hM4",
+      "name": "姜饼人",
+      "label": "姜饼人",
+      "hint": "4 句台词",
+      "portrait": "gingy-avatar-fc6fe4f5868b.jpg"
+    },
+    {
+      "id": "role_A77uZ7IIAyQ",
+      "name": "法尔夸德",
+      "label": "法尔夸德",
+      "hint": "4 句台词",
+      "portrait": "lord-farquaad-avatar-2b22c06fc6e9.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_5VWch3n3ZZU",
+      "roleId": "role_7XN0VQR8hM4",
+      "start": 0.452,
+      "end": 5.18,
+      "text": "Okay, I'll tell you. Do you know the Muffin Man?",
+      "hint": "好吧，我告诉你。你认识松饼人吗？",
+      "words": [
+        {
+          "text": "Okay,",
+          "start": 0.482,
+          "end": 0.803
+        },
+        {
+          "text": "I'll",
+          "start": 1.405,
+          "end": 1.586
+        },
+        {
+          "text": "tell",
+          "start": 1.626,
+          "end": 1.807
+        },
+        {
+          "text": "you.",
+          "start": 1.887,
+          "end": 2.008
+        },
+        {
+          "text": "Do",
+          "start": 2.911,
+          "end": 2.992
+        },
+        {
+          "text": "you",
+          "start": 3.253,
+          "end": 3.353
+        },
+        {
+          "text": "know",
+          "start": 3.474,
+          "end": 3.714
+        },
+        {
+          "text": "the",
+          "start": 4.257,
+          "end": 4.337
+        },
+        {
+          "text": "Muffin",
+          "start": 4.397,
+          "end": 4.738
+        },
+        {
+          "text": "Man?",
+          "start": 4.859,
+          "end": 5.14
+        }
+      ]
+    },
+    {
+      "id": "line_m7V2WS08eE4",
+      "roleId": "role_A77uZ7IIAyQ",
+      "start": 5.315,
+      "end": 6.16,
+      "text": "The Muffin Man?",
+      "hint": "松饼人？",
+      "words": [
+        {
+          "text": "The",
+          "start": 5.345,
+          "end": 5.406
+        },
+        {
+          "text": "Muffin",
+          "start": 5.487,
+          "end": 5.753
+        },
+        {
+          "text": "Man?",
+          "start": 5.814,
+          "end": 6.12
+        }
+      ]
+    },
+    {
+      "id": "line_OUhi_PHE0EU",
+      "roleId": "role_7XN0VQR8hM4",
+      "start": 6.333,
+      "end": 7.398,
+      "text": "The Muffin Man.",
+      "hint": "松饼人。",
+      "words": [
+        {
+          "text": "The",
+          "start": 6.363,
+          "end": 6.465
+        },
+        {
+          "text": "Muffin",
+          "start": 6.526,
+          "end": 6.932
+        },
+        {
+          "text": "Man.",
+          "start": 7.074,
+          "end": 7.358
+        }
+      ]
+    },
+    {
+      "id": "line_ENhHWv2NwkQ",
+      "roleId": "role_A77uZ7IIAyQ",
+      "start": 7.531,
+      "end": 10.82,
+      "text": "Yes, I know the Muffin Man. Who lives on Drury Lane?",
+      "hint": "我认识松饼人。住在德鲁里巷的那个？",
+      "words": [
+        {
+          "text": "Yes,",
+          "start": 7.561,
+          "end": 8.004
+        },
+        {
+          "text": "I",
+          "start": 8.165,
+          "end": 8.185
+        },
+        {
+          "text": "know",
+          "start": 8.245,
+          "end": 8.366
+        },
+        {
+          "text": "the",
+          "start": 8.426,
+          "end": 8.507
+        },
+        {
+          "text": "Muffin",
+          "start": 8.567,
+          "end": 8.809
+        },
+        {
+          "text": "Man.",
+          "start": 8.929,
+          "end": 9.13
+        },
+        {
+          "text": "Who",
+          "start": 9.734,
+          "end": 9.834
+        },
+        {
+          "text": "lives",
+          "start": 9.895,
+          "end": 10.076
+        },
+        {
+          "text": "on",
+          "start": 10.156,
+          "end": 10.197
+        },
+        {
+          "text": "Drury",
+          "start": 10.237,
+          "end": 10.478
+        },
+        {
+          "text": "Lane?",
+          "start": 10.518,
+          "end": 10.78
+        }
+      ]
+    },
+    {
+      "id": "line__boxy0kuaVA",
+      "roleId": "role_7XN0VQR8hM4",
+      "start": 11.171,
+      "end": 14.62,
+      "text": "Well, she's married to the Muffin Man.",
+      "hint": "她嫁给了松饼人。",
+      "words": [
+        {
+          "text": "Well,",
+          "start": 11.201,
+          "end": 11.422
+        },
+        {
+          "text": "she's",
+          "start": 12.287,
+          "end": 12.508
+        },
+        {
+          "text": "married",
+          "start": 12.649,
+          "end": 13.112
+        },
+        {
+          "text": "to",
+          "start": 13.212,
+          "end": 13.373
+        },
+        {
+          "text": "the",
+          "start": 13.735,
+          "end": 13.815
+        },
+        {
+          "text": "Muffin",
+          "start": 13.876,
+          "end": 14.218
+        },
+        {
+          "text": "Man.",
+          "start": 14.318,
+          "end": 14.58
+        }
+      ]
+    },
+    {
+      "id": "line_hqpDOto_BgU",
+      "roleId": "role_A77uZ7IIAyQ",
+      "start": 14.654,
+      "end": 15.477,
+      "text": "The Muffin Man?",
+      "hint": "松饼人？",
+      "words": [
+        {
+          "text": "The",
+          "start": 14.684,
+          "end": 14.766
+        },
+        {
+          "text": "Muffin",
+          "start": 14.867,
+          "end": 15.213
+        },
+        {
+          "text": "Man?",
+          "start": 15.254,
+          "end": 15.437
+        }
+      ]
+    },
+    {
+      "id": "line_zDDOFvEDE2w",
+      "roleId": "role_7XN0VQR8hM4",
+      "start": 15.573,
+      "end": 16.779,
+      "text": "The Muffin Man!",
+      "hint": "松饼人！",
+      "words": [
+        {
+          "text": "The",
+          "start": 15.603,
+          "end": 15.704
+        },
+        {
+          "text": "Muffin",
+          "start": 15.928,
+          "end": 16.293
+        },
+        {
+          "text": "Man!",
+          "start": 16.414,
+          "end": 16.739
+        }
+      ]
+    },
+    {
+      "id": "line_qPRfqN0jQBI",
+      "roleId": "role_A77uZ7IIAyQ",
+      "start": 16.953,
+      "end": 18.879,
+      "text": "She's married to the Muffin Man.",
+      "hint": "她嫁给了松饼人。",
+      "words": [
+        {
+          "text": "She's",
+          "start": 16.983,
+          "end": 17.185
+        },
+        {
+          "text": "married",
+          "start": 17.346,
+          "end": 17.77
+        },
+        {
+          "text": "to",
+          "start": 17.83,
+          "end": 17.891
+        },
+        {
+          "text": "the",
+          "start": 17.972,
+          "end": 18.032
+        },
+        {
+          "text": "Muffin",
+          "start": 18.133,
+          "end": 18.517
+        },
+        {
+          "text": "Man.",
+          "start": 18.658,
+          "end": 18.839
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Shrek — Do you know the Muffin Man?",
+    "attribution": "Movieclips",
+    "source": "https://www.youtube.com/watch?v=mFl8nzZuExE&t=41s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 41.5–60.4 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

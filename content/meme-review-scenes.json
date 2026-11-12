@@ -59,7 +59,8 @@
       "sourceOffset": 0,
       "title": "Cars on the Road",
       "attribution": "原作：Disney / Pixar",
-      "kind": "source-excerpt"
+      "kind": "source-excerpt",
+      "franchise": "Cars"
     },
     {
       "id": "xwk4D4td0_4",
@@ -70,7 +71,8 @@
       "attribution": "原作：Disney / Pixar",
       "kind": "source-excerpt",
       "uploadTitle": "Lightning McQueen - Well, you know, because Thunder always comes after... Lightning!",
-      "channel": "The Team Awesomeness Vault"
+      "channel": "The Team Awesomeness Vault",
+      "franchise": "Cars"
     },
     {
       "id": "82utG7Q3G_k",
@@ -137,7 +139,8 @@
       "sourceOffset": 0,
       "title": "Shrek Forever After",
       "attribution": "原作：DreamWorks Animation",
-      "kind": "source-excerpt"
+      "kind": "source-excerpt",
+      "franchise": "Shrek"
     },
     {
       "id": "Gn51xYvJhQI",
@@ -146,7 +149,8 @@
       "sourceOffset": 0,
       "title": "Shrek 2",
       "attribution": "原作：DreamWorks Animation",
-      "kind": "source-excerpt"
+      "kind": "source-excerpt",
+      "franchise": "Shrek"
     },
     {
       "id": "xuS9UxuUZ3Y",
@@ -155,7 +159,8 @@
       "sourceOffset": 0,
       "title": "Shrek",
       "attribution": "原作：DreamWorks Animation",
-      "kind": "source-excerpt"
+      "kind": "source-excerpt",
+      "franchise": "Shrek"
     },
     {
       "id": "AGTH7rOEbxE",
@@ -220,7 +225,8 @@
       "title": "Shrek",
       "attribution": "原作：DreamWorks Animation",
       "kind": "prepared-benchmark",
-      "changes": "从同一段洋葱对话的横版上传中选取 00:19.4–00:35.1，压缩并添加配音时间标记。"
+      "changes": "从同一段洋葱对话的横版上传中选取 00:19.4–00:35.1，压缩并添加配音时间标记。",
+      "franchise": "Shrek"
     }
   ],
   "scenes": [

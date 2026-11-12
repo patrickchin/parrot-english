@@ -9,7 +9,7 @@ const catalog = clips;
 const scenes = clips;
 
 test('shipped scene tags and all dialogue stay in sync with the search index and authoring recipes', async () => {
-  const recipes = await Promise.all(['meme', 'preschool', 'tv'].map(name => load(`content/${name}-review-scenes.json`)));
+  const recipes = await Promise.all(['meme', 'preschool', 'tv', 'franchise'].map(name => load(`content/${name}-review-scenes.json`)));
   const authored = recipes.flatMap(recipe => recipe.scenes);
   assert.equal(new Set(catalog.map(scene => scene.slug)).size, catalog.length);
   for (const entry of scenes) {

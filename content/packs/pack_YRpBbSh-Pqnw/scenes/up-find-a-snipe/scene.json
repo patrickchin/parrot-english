@@ -1,0 +1,632 @@
+{
+  "version": 1,
+  "id": "scene_Pz29dRMAdd0",
+  "title": "你听过沙锥鸟吗？",
+  "tags": [
+    "Up",
+    "你听过沙锥鸟吗？",
+    "Carl",
+    "Russell",
+    "卡尔",
+    "罗素"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 34.284,
+  "video": "up-find-a-snipe-review-b74d23091e3c.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/up-find-a-snipe/",
+  "poster": "up-find-a-snipe-poster-b74d23091e3c.jpg",
+  "waveform": "waveform-b74d23091e3c.json",
+  "roles": [
+    {
+      "id": "role_SxE__9y_T3s",
+      "name": "卡尔",
+      "label": "卡尔",
+      "hint": "5 句台词",
+      "portrait": "carl-avatar-e8c66060b5e7.jpg"
+    },
+    {
+      "id": "role_ajs5aku0O4s",
+      "name": "罗素",
+      "label": "罗素",
+      "hint": "5 句台词",
+      "portrait": "russell-avatar-05d62abe14ee.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_q2Lly5OIMDc",
+      "roleId": "role_SxE__9y_T3s",
+      "start": 0.553,
+      "end": 2.14,
+      "text": "You want to assist an old person?",
+      "hint": "你想帮助老人？",
+      "words": [
+        {
+          "text": "You",
+          "start": 0.583,
+          "end": 0.664
+        },
+        {
+          "text": "want",
+          "start": 0.745,
+          "end": 0.886
+        },
+        {
+          "text": "to",
+          "start": 0.907,
+          "end": 0.967
+        },
+        {
+          "text": "assist",
+          "start": 1.068,
+          "end": 1.351
+        },
+        {
+          "text": "an",
+          "start": 1.432,
+          "end": 1.473
+        },
+        {
+          "text": "old",
+          "start": 1.594,
+          "end": 1.736
+        },
+        {
+          "text": "person?",
+          "start": 1.816,
+          "end": 2.1
+        }
+      ]
+    },
+    {
+      "id": "line_VS62WadWvIM",
+      "roleId": "role_ajs5aku0O4s",
+      "start": 2.391,
+      "end": 5.33,
+      "text": "Yep! Then I'll be a Senior Wilderness Explorer.",
+      "hint": "对！这样我就能成为高级荒野探险家了。",
+      "words": [
+        {
+          "text": "Yep!",
+          "start": 2.421,
+          "end": 2.621
+        },
+        {
+          "text": "Then",
+          "start": 3.143,
+          "end": 3.284
+        },
+        {
+          "text": "I'll",
+          "start": 3.404,
+          "end": 3.564
+        },
+        {
+          "text": "be",
+          "start": 3.605,
+          "end": 3.665
+        },
+        {
+          "text": "a",
+          "start": 3.765,
+          "end": 3.785
+        },
+        {
+          "text": "Senior",
+          "start": 3.906,
+          "end": 4.247
+        },
+        {
+          "text": "Wilderness",
+          "start": 4.307,
+          "end": 4.849
+        },
+        {
+          "text": "Explorer.",
+          "start": 4.949,
+          "end": 5.29
+        }
+      ]
+    },
+    {
+      "id": "line_YTl8_OIdR9A",
+      "roleId": "role_SxE__9y_T3s",
+      "start": 7.172,
+      "end": 8.919,
+      "text": "You ever heard of a snipe?",
+      "hint": "你听说过沙锥鸟吗？",
+      "words": [
+        {
+          "text": "You",
+          "start": 7.202,
+          "end": 7.344
+        },
+        {
+          "text": "ever",
+          "start": 7.525,
+          "end": 7.667
+        },
+        {
+          "text": "heard",
+          "start": 7.828,
+          "end": 8.03
+        },
+        {
+          "text": "of",
+          "start": 8.131,
+          "end": 8.172
+        },
+        {
+          "text": "a",
+          "start": 8.313,
+          "end": 8.333
+        },
+        {
+          "text": "snipe?",
+          "start": 8.495,
+          "end": 8.879
+        }
+      ]
+    },
+    {
+      "id": "line_3J-KNE-LO1E",
+      "roleId": "role_ajs5aku0O4s",
+      "start": 9.437,
+      "end": 10.038,
+      "text": "Snipe?",
+      "hint": "沙锥鸟？",
+      "words": [
+        {
+          "text": "Snipe?",
+          "start": 9.467,
+          "end": 9.998
+        }
+      ]
+    },
+    {
+      "id": "line_E2EnHrGyVtg",
+      "roleId": "role_SxE__9y_T3s",
+      "start": 10.67,
+      "end": 21.8,
+      "text": "Bird. Beady eyes. Every night it sneaks in my yard and gobbles my poor azaleas. I'm elderly and infirm. I can't catch it. If only someone could help me.",
+      "hint": "一种小眼睛的鸟。每晚偷偷跑进院子吃我的杜鹃花。我年老体弱，抓不到它。要是有人能帮我就好了。",
+      "words": [
+        {
+          "text": "Bird.",
+          "start": 10.7,
+          "end": 11.121
+        },
+        {
+          "text": "Beady",
+          "start": 11.161,
+          "end": 11.361
+        },
+        {
+          "text": "eyes.",
+          "start": 11.602,
+          "end": 11.762
+        },
+        {
+          "text": "Every",
+          "start": 12.343,
+          "end": 12.523
+        },
+        {
+          "text": "night",
+          "start": 12.603,
+          "end": 12.784
+        },
+        {
+          "text": "it",
+          "start": 12.884,
+          "end": 12.924
+        },
+        {
+          "text": "sneaks",
+          "start": 13.044,
+          "end": 13.365
+        },
+        {
+          "text": "in",
+          "start": 13.525,
+          "end": 13.565
+        },
+        {
+          "text": "my",
+          "start": 13.725,
+          "end": 13.906
+        },
+        {
+          "text": "yard",
+          "start": 14.026,
+          "end": 14.326
+        },
+        {
+          "text": "and",
+          "start": 14.447,
+          "end": 14.527
+        },
+        {
+          "text": "gobbles",
+          "start": 14.647,
+          "end": 14.968
+        },
+        {
+          "text": "my",
+          "start": 15.048,
+          "end": 15.168
+        },
+        {
+          "text": "poor",
+          "start": 15.288,
+          "end": 15.569
+        },
+        {
+          "text": "azaleas.",
+          "start": 15.629,
+          "end": 16.21
+        },
+        {
+          "text": "I'm",
+          "start": 16.811,
+          "end": 16.931
+        },
+        {
+          "text": "elderly",
+          "start": 17.031,
+          "end": 17.432
+        },
+        {
+          "text": "and",
+          "start": 17.572,
+          "end": 17.632
+        },
+        {
+          "text": "infirm.",
+          "start": 17.712,
+          "end": 18.213
+        },
+        {
+          "text": "I",
+          "start": 18.734,
+          "end": 18.754
+        },
+        {
+          "text": "can't",
+          "start": 18.854,
+          "end": 19.155
+        },
+        {
+          "text": "catch",
+          "start": 19.255,
+          "end": 19.556
+        },
+        {
+          "text": "it.",
+          "start": 19.656,
+          "end": 19.696
+        },
+        {
+          "text": "If",
+          "start": 20.257,
+          "end": 20.297
+        },
+        {
+          "text": "only",
+          "start": 20.437,
+          "end": 20.618
+        },
+        {
+          "text": "someone",
+          "start": 20.718,
+          "end": 21.058
+        },
+        {
+          "text": "could",
+          "start": 21.118,
+          "end": 21.259
+        },
+        {
+          "text": "help",
+          "start": 21.319,
+          "end": 21.499
+        },
+        {
+          "text": "me.",
+          "start": 21.679,
+          "end": 21.76
+        }
+      ]
+    },
+    {
+      "id": "line_-3AZUec5QNg",
+      "roleId": "role_ajs5aku0O4s",
+      "start": 22.052,
+      "end": 23.32,
+      "text": "Me! Me! I'll do it!",
+      "hint": "我！我来帮忙！",
+      "words": [
+        {
+          "text": "Me!",
+          "start": 22.082,
+          "end": 22.204
+        },
+        {
+          "text": "Me!",
+          "start": 22.244,
+          "end": 22.305
+        },
+        {
+          "text": "I'll",
+          "start": 22.447,
+          "end": 22.691
+        },
+        {
+          "text": "do",
+          "start": 22.853,
+          "end": 22.935
+        },
+        {
+          "text": "it!",
+          "start": 23.056,
+          "end": 23.28
+        }
+      ]
+    },
+    {
+      "id": "line_TKWFlkOOgXM",
+      "roleId": "role_SxE__9y_T3s",
+      "start": 23.431,
+      "end": 28.671,
+      "text": "Oh, I don't know. It's awfully crafty. You'd have to clap your hands three times to lure it in.",
+      "hint": "这可不好说，它很狡猾。你得拍三下手才能引它出来。",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 23.461,
+          "end": 23.541
+        },
+        {
+          "text": "I",
+          "start": 23.622,
+          "end": 23.642
+        },
+        {
+          "text": "don't",
+          "start": 23.762,
+          "end": 23.903
+        },
+        {
+          "text": "know.",
+          "start": 23.943,
+          "end": 24.083
+        },
+        {
+          "text": "It's",
+          "start": 24.384,
+          "end": 24.505
+        },
+        {
+          "text": "awfully",
+          "start": 24.585,
+          "end": 24.866
+        },
+        {
+          "text": "crafty.",
+          "start": 24.946,
+          "end": 25.388
+        },
+        {
+          "text": "You'd",
+          "start": 25.829,
+          "end": 25.95
+        },
+        {
+          "text": "have",
+          "start": 25.97,
+          "end": 26.09
+        },
+        {
+          "text": "to",
+          "start": 26.13,
+          "end": 26.171
+        },
+        {
+          "text": "clap",
+          "start": 26.231,
+          "end": 26.472
+        },
+        {
+          "text": "your",
+          "start": 26.572,
+          "end": 26.712
+        },
+        {
+          "text": "hands",
+          "start": 26.773,
+          "end": 27.013
+        },
+        {
+          "text": "three",
+          "start": 27.114,
+          "end": 27.355
+        },
+        {
+          "text": "times",
+          "start": 27.435,
+          "end": 27.897
+        },
+        {
+          "text": "to",
+          "start": 28.057,
+          "end": 28.137
+        },
+        {
+          "text": "lure",
+          "start": 28.218,
+          "end": 28.479
+        },
+        {
+          "text": "it",
+          "start": 28.499,
+          "end": 28.579
+        },
+        {
+          "text": "in.",
+          "start": 28.639,
+          "end": 28.671
+        }
+      ]
+    },
+    {
+      "id": "line_02DHKSjCVHo",
+      "roleId": "role_ajs5aku0O4s",
+      "start": 28.671,
+      "end": 30.04,
+      "text": "I'll find him, Mr. Fredricksen!",
+      "hint": "我会找到它的，弗雷德里克森先生！",
+      "words": [
+        {
+          "text": "I'll",
+          "start": 28.671,
+          "end": 28.967
+        },
+        {
+          "text": "find",
+          "start": 29.027,
+          "end": 29.25
+        },
+        {
+          "text": "him,",
+          "start": 29.311,
+          "end": 29.372
+        },
+        {
+          "text": "Mr.",
+          "start": 29.412,
+          "end": 29.453
+        },
+        {
+          "text": "Fredricksen!",
+          "start": 29.493,
+          "end": 30
+        }
+      ]
+    },
+    {
+      "id": "line_2nZeiw7LqOg",
+      "roleId": "role_SxE__9y_T3s",
+      "start": 30.572,
+      "end": 32.94,
+      "text": "I think its burrow is two blocks down. If you go...",
+      "hint": "它的窝好像在两个街区外。你往……",
+      "words": [
+        {
+          "text": "I",
+          "start": 30.602,
+          "end": 30.622
+        },
+        {
+          "text": "think",
+          "start": 30.662,
+          "end": 30.783
+        },
+        {
+          "text": "its",
+          "start": 30.844,
+          "end": 30.904
+        },
+        {
+          "text": "burrow",
+          "start": 30.985,
+          "end": 31.227
+        },
+        {
+          "text": "is",
+          "start": 31.287,
+          "end": 31.348
+        },
+        {
+          "text": "two",
+          "start": 31.388,
+          "end": 31.509
+        },
+        {
+          "text": "blocks",
+          "start": 31.569,
+          "end": 31.831
+        },
+        {
+          "text": "down.",
+          "start": 31.912,
+          "end": 32.134
+        },
+        {
+          "text": "If",
+          "start": 32.698,
+          "end": 32.738
+        },
+        {
+          "text": "you",
+          "start": 32.779,
+          "end": 32.839
+        },
+        {
+          "text": "go...",
+          "start": 32.9,
+          "end": 32.94
+        }
+      ]
+    },
+    {
+      "id": "line_Onz-IKWqoIg",
+      "roleId": "role_ajs5aku0O4s",
+      "start": 32.94,
+      "end": 33.878,
+      "text": "Two blocks down. Got it!",
+      "hint": "两个街区外，明白了！",
+      "words": [
+        {
+          "text": "Two",
+          "start": 32.94,
+          "end": 32.965
+        },
+        {
+          "text": "blocks",
+          "start": 33.029,
+          "end": 33.211
+        },
+        {
+          "text": "down.",
+          "start": 33.312,
+          "end": 33.433
+        },
+        {
+          "text": "Got",
+          "start": 33.575,
+          "end": 33.737
+        },
+        {
+          "text": "it!",
+          "start": 33.797,
+          "end": 33.838
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Up — Have you heard of a snipe?",
+    "attribution": "Freeform",
+    "source": "https://www.youtube.com/watch?v=w8NzWsA5188&t=89s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 89.45–123.7 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

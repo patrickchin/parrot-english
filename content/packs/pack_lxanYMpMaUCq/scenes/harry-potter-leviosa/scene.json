@@ -1,0 +1,347 @@
+{
+  "version": 1,
+  "id": "scene_SGeZrNxyAME",
+  "title": "你念错咒语了",
+  "tags": [
+    "Harry Potter",
+    "Harry Potter and the Philosopher's Stone",
+    "你念错咒语了",
+    "Ron",
+    "Hermione",
+    "Flitwick",
+    "罗恩",
+    "赫敏",
+    "弗立维教授"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 37.162,
+  "video": "harry-potter-leviosa-review-a4a0eba4870e.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/harry-potter-leviosa/",
+  "poster": "harry-potter-leviosa-poster-a4a0eba4870e.jpg",
+  "waveform": "waveform-a4a0eba4870e.json",
+  "roles": [
+    {
+      "id": "role_56GRJHvZvEo",
+      "name": "罗恩",
+      "label": "罗恩",
+      "hint": "2 句台词",
+      "portrait": "ron-avatar-12a7b89fb3f8.jpg"
+    },
+    {
+      "id": "role_NOg6FhjQg_g",
+      "name": "赫敏",
+      "label": "赫敏",
+      "hint": "2 句台词",
+      "portrait": "hermione-avatar-3cafc2d9e7fc.jpg"
+    },
+    {
+      "id": "role_uDfKgI_A0Ro",
+      "name": "弗立维教授",
+      "label": "弗立维教授",
+      "hint": "1 句台词",
+      "portrait": "flitwick-avatar-5e4bf2ec4298.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_W0r78mJZNgY",
+      "roleId": "role_56GRJHvZvEo",
+      "start": 0.071,
+      "end": 2.579,
+      "text": "Wingardium Leviosa.",
+      "hint": "羽加迪姆，勒维奥萨。",
+      "words": [
+        {
+          "text": "Wingardium",
+          "start": 0.101,
+          "end": 1.229
+        },
+        {
+          "text": "Leviosa.",
+          "start": 1.733,
+          "end": 2.539
+        }
+      ]
+    },
+    {
+      "id": "line_CUpC2oGIP8c",
+      "roleId": "role_NOg6FhjQg_g",
+      "start": 4.272,
+      "end": 14.3,
+      "text": "Stop, stop, stop. You're going to take someone's eye out. Besides, you're saying it wrong. It's Leviosa, not Leviosa.",
+      "hint": "停，你会戳到别人眼睛的。而且你念错了，要这样念。",
+      "words": [
+        {
+          "text": "Stop,",
+          "start": 4.302,
+          "end": 4.563
+        },
+        {
+          "text": "stop,",
+          "start": 4.703,
+          "end": 4.964
+        },
+        {
+          "text": "stop.",
+          "start": 5.124,
+          "end": 5.364
+        },
+        {
+          "text": "You're",
+          "start": 6.005,
+          "end": 6.206
+        },
+        {
+          "text": "going",
+          "start": 6.286,
+          "end": 6.566
+        },
+        {
+          "text": "to",
+          "start": 6.626,
+          "end": 6.687
+        },
+        {
+          "text": "take",
+          "start": 6.727,
+          "end": 6.947
+        },
+        {
+          "text": "someone's",
+          "start": 7.007,
+          "end": 7.308
+        },
+        {
+          "text": "eye",
+          "start": 7.328,
+          "end": 7.648
+        },
+        {
+          "text": "out.",
+          "start": 7.748,
+          "end": 7.949
+        },
+        {
+          "text": "Besides,",
+          "start": 8.45,
+          "end": 8.85
+        },
+        {
+          "text": "you're",
+          "start": 9.111,
+          "end": 9.311
+        },
+        {
+          "text": "saying",
+          "start": 9.371,
+          "end": 9.652
+        },
+        {
+          "text": "it",
+          "start": 9.712,
+          "end": 9.752
+        },
+        {
+          "text": "wrong.",
+          "start": 9.952,
+          "end": 10.353
+        },
+        {
+          "text": "It's",
+          "start": 10.854,
+          "end": 10.994
+        },
+        {
+          "text": "Leviosa,",
+          "start": 11.275,
+          "end": 12.356
+        },
+        {
+          "text": "not",
+          "start": 12.938,
+          "end": 13.118
+        },
+        {
+          "text": "Leviosa.",
+          "start": 13.358,
+          "end": 14.26
+        }
+      ]
+    },
+    {
+      "id": "line_1q0BeufUQ_Q",
+      "roleId": "role_56GRJHvZvEo",
+      "start": 14.953,
+      "end": 17.779,
+      "text": "You do it then if you're so clever. Go on, go on.",
+      "hint": "你这么聪明，你来试试。",
+      "words": [
+        {
+          "text": "You",
+          "start": 14.983,
+          "end": 15.224
+        },
+        {
+          "text": "do",
+          "start": 15.385,
+          "end": 15.466
+        },
+        {
+          "text": "it",
+          "start": 15.526,
+          "end": 15.586
+        },
+        {
+          "text": "then",
+          "start": 15.647,
+          "end": 15.727
+        },
+        {
+          "text": "if",
+          "start": 15.808,
+          "end": 15.848
+        },
+        {
+          "text": "you're",
+          "start": 15.908,
+          "end": 16.13
+        },
+        {
+          "text": "so",
+          "start": 16.19,
+          "end": 16.29
+        },
+        {
+          "text": "clever.",
+          "start": 16.492,
+          "end": 16.773
+        },
+        {
+          "text": "Go",
+          "start": 17.035,
+          "end": 17.135
+        },
+        {
+          "text": "on,",
+          "start": 17.236,
+          "end": 17.276
+        },
+        {
+          "text": "go",
+          "start": 17.518,
+          "end": 17.638
+        },
+        {
+          "text": "on.",
+          "start": 17.699,
+          "end": 17.739
+        }
+      ]
+    },
+    {
+      "id": "line_5fg0DBU3kas",
+      "roleId": "role_NOg6FhjQg_g",
+      "start": 19.758,
+      "end": 22.179,
+      "text": "Wingardium Leviosa.",
+      "hint": "羽加迪姆，勒维奥萨。",
+      "words": [
+        {
+          "text": "Wingardium",
+          "start": 19.788,
+          "end": 21.235
+        },
+        {
+          "text": "Leviosa.",
+          "start": 21.496,
+          "end": 22.139
+        }
+      ]
+    },
+    {
+      "id": "line_UPFZ8ZOAyPw",
+      "roleId": "role_uDfKgI_A0Ro",
+      "start": 31.341,
+      "end": 37.04,
+      "text": "Oh, well done! See here, everyone. Miss Granger's done it! Oh, splendid!",
+      "hint": "做得好！大家看，格兰杰小姐成功了！太棒了！",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 31.371,
+          "end": 31.471
+        },
+        {
+          "text": "well",
+          "start": 31.652,
+          "end": 31.972
+        },
+        {
+          "text": "done!",
+          "start": 32.233,
+          "end": 32.553
+        },
+        {
+          "text": "See",
+          "start": 33.294,
+          "end": 33.475
+        },
+        {
+          "text": "here,",
+          "start": 33.555,
+          "end": 33.755
+        },
+        {
+          "text": "everyone.",
+          "start": 33.835,
+          "end": 34.176
+        },
+        {
+          "text": "Miss",
+          "start": 34.476,
+          "end": 34.656
+        },
+        {
+          "text": "Granger's",
+          "start": 34.736,
+          "end": 35.197
+        },
+        {
+          "text": "done",
+          "start": 35.337,
+          "end": 35.538
+        },
+        {
+          "text": "it!",
+          "start": 35.618,
+          "end": 35.658
+        },
+        {
+          "text": "Oh,",
+          "start": 35.818,
+          "end": 36.038
+        },
+        {
+          "text": "splendid!",
+          "start": 36.639,
+          "end": 37
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Harry Potter and the Philosopher's Stone — You are saying it wrong",
+    "attribution": "Harry Potter",
+    "source": "https://www.youtube.com/watch?v=Qgr4dcsY-60&t=0s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 0–37.15 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

@@ -1,0 +1,437 @@
+{
+  "version": 1,
+  "id": "scene_0OwJPdKTGPc",
+  "title": "梦见面条",
+  "tags": [
+    "Kung Fu Panda",
+    "梦见面条",
+    "Mr. Ping",
+    "Po",
+    "平先生",
+    "阿宝"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 30.822,
+  "video": "panda-noodle-dream-review-825197b75aa0.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/panda-noodle-dream/",
+  "poster": "panda-noodle-dream-poster-825197b75aa0.jpg",
+  "waveform": "waveform-825197b75aa0.json",
+  "roles": [
+    {
+      "id": "role_g0jPPlcNkUQ",
+      "name": "平先生",
+      "label": "平先生",
+      "hint": "4 句台词",
+      "portrait": "ping-avatar-dbb905f7c19c.jpg"
+    },
+    {
+      "id": "role_BGhegRLBHS4",
+      "name": "阿宝",
+      "label": "阿宝",
+      "hint": "3 句台词",
+      "portrait": "po-avatar-05b8203f6846.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_3JCpSxxtqiw",
+      "roleId": "role_g0jPPlcNkUQ",
+      "start": 0.473,
+      "end": 2.34,
+      "text": "What were you doing up there? All that noise.",
+      "hint": "你在楼上干什么？那么吵。",
+      "words": [
+        {
+          "text": "What",
+          "start": 0.503,
+          "end": 0.604
+        },
+        {
+          "text": "were",
+          "start": 0.665,
+          "end": 0.766
+        },
+        {
+          "text": "you",
+          "start": 0.786,
+          "end": 0.867
+        },
+        {
+          "text": "doing",
+          "start": 0.947,
+          "end": 1.149
+        },
+        {
+          "text": "up",
+          "start": 1.23,
+          "end": 1.27
+        },
+        {
+          "text": "there?",
+          "start": 1.311,
+          "end": 1.493
+        },
+        {
+          "text": "All",
+          "start": 1.634,
+          "end": 1.735
+        },
+        {
+          "text": "that",
+          "start": 1.795,
+          "end": 1.896
+        },
+        {
+          "text": "noise.",
+          "start": 1.977,
+          "end": 2.3
+        }
+      ]
+    },
+    {
+      "id": "line_8sgsZ-XO9Hs",
+      "roleId": "role_BGhegRLBHS4",
+      "start": 2.713,
+      "end": 4.939,
+      "text": "Oh, nothing. Just had a crazy dream.",
+      "hint": "没什么，就是做了个奇怪的梦。",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 2.743,
+          "end": 2.803
+        },
+        {
+          "text": "nothing.",
+          "start": 2.904,
+          "end": 3.166
+        },
+        {
+          "text": "Just",
+          "start": 3.267,
+          "end": 3.448
+        },
+        {
+          "text": "had",
+          "start": 4.073,
+          "end": 4.174
+        },
+        {
+          "text": "a",
+          "start": 4.234,
+          "end": 4.254
+        },
+        {
+          "text": "crazy",
+          "start": 4.295,
+          "end": 4.597
+        },
+        {
+          "text": "dream.",
+          "start": 4.678,
+          "end": 4.899
+        }
+      ]
+    },
+    {
+      "id": "line_05xYqCK4K6g",
+      "roleId": "role_g0jPPlcNkUQ",
+      "start": 5.392,
+      "end": 8.08,
+      "text": "About what? Huh? What were you dreaming about?",
+      "hint": "梦见了什么？",
+      "words": [
+        {
+          "text": "About",
+          "start": 5.422,
+          "end": 5.643
+        },
+        {
+          "text": "what?",
+          "start": 5.704,
+          "end": 5.905
+        },
+        {
+          "text": "Huh?",
+          "start": 6.328,
+          "end": 6.429
+        },
+        {
+          "text": "What",
+          "start": 6.892,
+          "end": 6.993
+        },
+        {
+          "text": "were",
+          "start": 7.053,
+          "end": 7.174
+        },
+        {
+          "text": "you",
+          "start": 7.194,
+          "end": 7.275
+        },
+        {
+          "text": "dreaming",
+          "start": 7.335,
+          "end": 7.677
+        },
+        {
+          "text": "about?",
+          "start": 7.758,
+          "end": 8.04
+        }
+      ]
+    },
+    {
+      "id": "line_72OJ9crYRpI",
+      "roleId": "role_BGhegRLBHS4",
+      "start": 8.411,
+      "end": 15.44,
+      "text": "What was I... I was dreaming about... noodles.",
+      "hint": "我梦见……面条。",
+      "words": [
+        {
+          "text": "What",
+          "start": 8.441,
+          "end": 8.541
+        },
+        {
+          "text": "was",
+          "start": 8.601,
+          "end": 8.661
+        },
+        {
+          "text": "I...",
+          "start": 8.822,
+          "end": 8.842
+        },
+        {
+          "text": "I",
+          "start": 10.767,
+          "end": 10.787
+        },
+        {
+          "text": "was",
+          "start": 10.867,
+          "end": 10.988
+        },
+        {
+          "text": "dreaming",
+          "start": 11.108,
+          "end": 11.349
+        },
+        {
+          "text": "about...",
+          "start": 11.389,
+          "end": 11.649
+        },
+        {
+          "text": "noodles.",
+          "start": 15.019,
+          "end": 15.4
+        }
+      ]
+    },
+    {
+      "id": "line_0s45OockJos",
+      "roleId": "role_g0jPPlcNkUQ",
+      "start": 16.415,
+      "end": 19.06,
+      "text": "Noodles? You were really dreaming about noodles?",
+      "hint": "面条？你真的梦见了面条？",
+      "words": [
+        {
+          "text": "Noodles?",
+          "start": 16.445,
+          "end": 16.827
+        },
+        {
+          "text": "You",
+          "start": 17.451,
+          "end": 17.531
+        },
+        {
+          "text": "were",
+          "start": 17.612,
+          "end": 17.752
+        },
+        {
+          "text": "really",
+          "start": 17.813,
+          "end": 18.054
+        },
+        {
+          "text": "dreaming",
+          "start": 18.115,
+          "end": 18.477
+        },
+        {
+          "text": "about",
+          "start": 18.577,
+          "end": 18.779
+        },
+        {
+          "text": "noodles?",
+          "start": 18.859,
+          "end": 19.02
+        }
+      ]
+    },
+    {
+      "id": "line_NFZcZH1PnEw",
+      "roleId": "role_BGhegRLBHS4",
+      "start": 20.133,
+      "end": 22.059,
+      "text": "Yeah. What else would I be dreaming about?",
+      "hint": "对啊，不然还能梦见什么？",
+      "words": [
+        {
+          "text": "Yeah.",
+          "start": 20.163,
+          "end": 20.344
+        },
+        {
+          "text": "What",
+          "start": 20.768,
+          "end": 20.889
+        },
+        {
+          "text": "else",
+          "start": 20.95,
+          "end": 21.051
+        },
+        {
+          "text": "would",
+          "start": 21.091,
+          "end": 21.212
+        },
+        {
+          "text": "I",
+          "start": 21.252,
+          "end": 21.273
+        },
+        {
+          "text": "be",
+          "start": 21.333,
+          "end": 21.414
+        },
+        {
+          "text": "dreaming",
+          "start": 21.454,
+          "end": 21.717
+        },
+        {
+          "text": "about?",
+          "start": 21.777,
+          "end": 22.019
+        }
+      ]
+    },
+    {
+      "id": "line_ETuEQ4kXzSI",
+      "roleId": "role_g0jPPlcNkUQ",
+      "start": 22.6,
+      "end": 29.759,
+      "text": "Oh, careful! That soup is sharp. Oh, happy day! My son finally having the noodle dream!",
+      "hint": "小心，这汤烫。真是好日子！我儿子终于梦见面条了！",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 22.63,
+          "end": 22.691
+        },
+        {
+          "text": "careful!",
+          "start": 22.951,
+          "end": 23.211
+        },
+        {
+          "text": "That",
+          "start": 23.291,
+          "end": 23.391
+        },
+        {
+          "text": "soup",
+          "start": 23.451,
+          "end": 23.632
+        },
+        {
+          "text": "is",
+          "start": 23.692,
+          "end": 23.792
+        },
+        {
+          "text": "sharp.",
+          "start": 24.212,
+          "end": 24.453
+        },
+        {
+          "text": "Oh,",
+          "start": 25.254,
+          "end": 25.334
+        },
+        {
+          "text": "happy",
+          "start": 25.614,
+          "end": 25.934
+        },
+        {
+          "text": "day!",
+          "start": 26.014,
+          "end": 26.215
+        },
+        {
+          "text": "My",
+          "start": 27.176,
+          "end": 27.316
+        },
+        {
+          "text": "son",
+          "start": 27.496,
+          "end": 27.676
+        },
+        {
+          "text": "finally",
+          "start": 28.057,
+          "end": 28.457
+        },
+        {
+          "text": "having",
+          "start": 28.517,
+          "end": 28.778
+        },
+        {
+          "text": "the",
+          "start": 28.818,
+          "end": 28.898
+        },
+        {
+          "text": "noodle",
+          "start": 28.978,
+          "end": 29.278
+        },
+        {
+          "text": "dream!",
+          "start": 29.358,
+          "end": 29.719
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Kung Fu Panda — Dreaming about noodles",
+    "attribution": "KFP clips ",
+    "source": "https://www.youtube.com/watch?v=tIiv-YDtCXY&t=61s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 61.55–92.35 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

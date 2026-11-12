@@ -1,0 +1,387 @@
+{
+  "version": 1,
+  "id": "scene_3ETMSXAqzEs",
+  "title": "换一种方言试试",
+  "tags": [
+    "Finding Nemo",
+    "换一种方言试试",
+    "Marlin",
+    "Dory",
+    "马林",
+    "多莉"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 19.603,
+  "video": "nemo-speaking-whale-review-43ce05b10840.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/nemo-speaking-whale/",
+  "poster": "nemo-speaking-whale-poster-43ce05b10840.jpg",
+  "waveform": "waveform-43ce05b10840.json",
+  "roles": [
+    {
+      "id": "role_R9JrW6iAf6s",
+      "name": "马林",
+      "label": "马林",
+      "hint": "4 句台词",
+      "portrait": "marlin-avatar-169e500acee4.jpg"
+    },
+    {
+      "id": "role_oxxbg7pReN0",
+      "name": "多莉",
+      "label": "多莉",
+      "hint": "3 句台词",
+      "portrait": "dory-avatar-3c95c4a20bb0.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_isHY1hA0P6I",
+      "roleId": "role_R9JrW6iAf6s",
+      "start": 1.071,
+      "end": 4.54,
+      "text": "Dory, Dory, this is not whale. You're speaking like upset stomach.",
+      "hint": "多莉，这不是鲸鱼语。听起来像肚子疼。",
+      "words": [
+        {
+          "text": "Dory,",
+          "start": 1.101,
+          "end": 1.282
+        },
+        {
+          "text": "Dory,",
+          "start": 1.302,
+          "end": 1.463
+        },
+        {
+          "text": "this",
+          "start": 1.483,
+          "end": 1.564
+        },
+        {
+          "text": "is",
+          "start": 1.584,
+          "end": 1.624
+        },
+        {
+          "text": "not",
+          "start": 1.745,
+          "end": 1.805
+        },
+        {
+          "text": "whale.",
+          "start": 1.885,
+          "end": 2.227
+        },
+        {
+          "text": "You're",
+          "start": 2.247,
+          "end": 2.509
+        },
+        {
+          "text": "speaking",
+          "start": 2.81,
+          "end": 3.172
+        },
+        {
+          "text": "like",
+          "start": 3.333,
+          "end": 3.494
+        },
+        {
+          "text": "upset",
+          "start": 3.796,
+          "end": 4.077
+        },
+        {
+          "text": "stomach.",
+          "start": 4.158,
+          "end": 4.5
+        }
+      ]
+    },
+    {
+      "id": "line_253HmQv9QBQ",
+      "roleId": "role_oxxbg7pReN0",
+      "start": 4.712,
+      "end": 5.655,
+      "text": "Maybe I should try humpback.",
+      "hint": "也许我该试试座头鲸语。",
+      "words": [
+        {
+          "text": "Maybe",
+          "start": 4.742,
+          "end": 4.863
+        },
+        {
+          "text": "I",
+          "start": 4.883,
+          "end": 4.903
+        },
+        {
+          "text": "should",
+          "start": 4.984,
+          "end": 5.105
+        },
+        {
+          "text": "try",
+          "start": 5.125,
+          "end": 5.246
+        },
+        {
+          "text": "humpback.",
+          "start": 5.347,
+          "end": 5.655
+        }
+      ]
+    },
+    {
+      "id": "line_Yg0Es9eczVw",
+      "roleId": "role_R9JrW6iAf6s",
+      "start": 5.655,
+      "end": 9.94,
+      "text": "No, don't try humpback. All right, you actually sound sick.",
+      "hint": "别试座头鲸语。你听起来真的像生病了。",
+      "words": [
+        {
+          "text": "No,",
+          "start": 5.655,
+          "end": 5.781
+        },
+        {
+          "text": "don't",
+          "start": 5.862,
+          "end": 6.002
+        },
+        {
+          "text": "try",
+          "start": 6.042,
+          "end": 6.183
+        },
+        {
+          "text": "humpback.",
+          "start": 6.324,
+          "end": 6.786
+        },
+        {
+          "text": "All",
+          "start": 7.067,
+          "end": 7.69
+        },
+        {
+          "text": "right,",
+          "start": 8.152,
+          "end": 8.313
+        },
+        {
+          "text": "you",
+          "start": 8.393,
+          "end": 8.473
+        },
+        {
+          "text": "actually",
+          "start": 8.815,
+          "end": 9.438
+        },
+        {
+          "text": "sound",
+          "start": 9.498,
+          "end": 9.699
+        },
+        {
+          "text": "sick.",
+          "start": 9.82,
+          "end": 9.9
+        }
+      ]
+    },
+    {
+      "id": "line_IwSys_tj-F0",
+      "roleId": "role_oxxbg7pReN0",
+      "start": 9.993,
+      "end": 10.797,
+      "text": "Maybe louder, huh?",
+      "hint": "也许应该大声点？",
+      "words": [
+        {
+          "text": "Maybe",
+          "start": 10.023,
+          "end": 10.227
+        },
+        {
+          "text": "louder,",
+          "start": 10.288,
+          "end": 10.553
+        },
+        {
+          "text": "huh?",
+          "start": 10.635,
+          "end": 10.757
+        }
+      ]
+    },
+    {
+      "id": "line_9enyQB4qKLU",
+      "roleId": "role_R9JrW6iAf6s",
+      "start": 11.678,
+      "end": 12.818,
+      "text": "Don't do that.",
+      "hint": "别那样。",
+      "words": [
+        {
+          "text": "Don't",
+          "start": 11.708,
+          "end": 11.93
+        },
+        {
+          "text": "do",
+          "start": 12.455,
+          "end": 12.556
+        },
+        {
+          "text": "that.",
+          "start": 12.677,
+          "end": 12.778
+        }
+      ]
+    },
+    {
+      "id": "line_44AchkNXZOg",
+      "roleId": "role_oxxbg7pReN0",
+      "start": 12.912,
+      "end": 14.58,
+      "text": "Too much orca, didn't it? It sounded a little orca-ish.",
+      "hint": "太像虎鲸了，是吧？有点虎鲸的感觉。",
+      "words": [
+        {
+          "text": "Too",
+          "start": 12.942,
+          "end": 13.043
+        },
+        {
+          "text": "much",
+          "start": 13.063,
+          "end": 13.184
+        },
+        {
+          "text": "orca,",
+          "start": 13.306,
+          "end": 13.488
+        },
+        {
+          "text": "didn't",
+          "start": 13.67,
+          "end": 13.831
+        },
+        {
+          "text": "it?",
+          "start": 13.851,
+          "end": 13.892
+        },
+        {
+          "text": "It",
+          "start": 13.912,
+          "end": 13.953
+        },
+        {
+          "text": "sounded",
+          "start": 13.973,
+          "end": 14.114
+        },
+        {
+          "text": "a",
+          "start": 14.134,
+          "end": 14.155
+        },
+        {
+          "text": "little",
+          "start": 14.175,
+          "end": 14.316
+        },
+        {
+          "text": "orca-ish.",
+          "start": 14.337,
+          "end": 14.58
+        }
+      ]
+    },
+    {
+      "id": "line_ALyu6Wdv75M",
+      "roleId": "role_R9JrW6iAf6s",
+      "start": 14.58,
+      "end": 17.6,
+      "text": "It doesn't sound orca. It sounds like nothing I've ever heard.",
+      "hint": "一点也不像虎鲸。我从没听过这种声音。",
+      "words": [
+        {
+          "text": "It",
+          "start": 14.58,
+          "end": 14.581
+        },
+        {
+          "text": "doesn't",
+          "start": 14.782,
+          "end": 15.104
+        },
+        {
+          "text": "sound",
+          "start": 15.185,
+          "end": 15.406
+        },
+        {
+          "text": "orca.",
+          "start": 15.608,
+          "end": 15.789
+        },
+        {
+          "text": "It",
+          "start": 15.829,
+          "end": 15.909
+        },
+        {
+          "text": "sounds",
+          "start": 15.93,
+          "end": 16.091
+        },
+        {
+          "text": "like",
+          "start": 16.111,
+          "end": 16.211
+        },
+        {
+          "text": "nothing",
+          "start": 16.252,
+          "end": 16.493
+        },
+        {
+          "text": "I've",
+          "start": 16.875,
+          "end": 16.996
+        },
+        {
+          "text": "ever",
+          "start": 17.057,
+          "end": 17.218
+        },
+        {
+          "text": "heard.",
+          "start": 17.278,
+          "end": 17.56
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Finding Nemo — Maybe a different dialect",
+    "attribution": "Velandrra",
+    "source": "https://www.youtube.com/watch?v=jJGeeryk0Eo&t=71s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 71.85–91.45 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

@@ -21,8 +21,8 @@ test('staging is deterministic, includes only referenced content, and rejects sy
   const second = await stageDirectory('content', join(folder, 'second'));
   assert.equal(first.revision, second.revision);
   assert.deepEqual(first.catalog, second.catalog);
-  assert.equal(first.sceneCount, 79);
-  assert.equal(first.files.size, 162);
+  assert.equal(first.sceneCount, 108);
+  assert.equal(first.files.size, 220);
   assert.ok(first.catalog.packs.every(pack => /^releases\/[a-f0-9]{24}\/packs\//.test(pack.manifest)));
   assert.ok([...first.files.keys()].every(path => path.startsWith('packs/')));
   const expected = first.catalog.packs.flatMap(pack => {
@@ -105,7 +105,9 @@ test('publication activates its catalog last and never activates a failed object
   assert.equal(commands[0][3], `oss://${bucket}/content/`);
   assert.ok(commands[0][2].endsWith('/objects/'));
   assert.ok(commands[1].some(arg => arg.endsWith('/content/catalog.json')));
-  assert.ok(commands[1].some(arg => arg.includes('Cache-Control:no-store')));
+  assert.equal(commands[0][commands[0].indexOf('--cache-control') + 1], 'public,max-age=31536000,immutable');
+  assert.equal(commands[1][commands[1].indexOf('--cache-control') + 1], 'no-store');
+  assert.equal(commands[1][commands[1].indexOf('--content-type') + 1], 'application/json');
   await writeFile(log, ''); await writeFile(cli, fakeCli(true));
   await assert.rejects(publishDirectory('content'), /Alibaba CLI failed/);
   const failedCommands = (await readFile(log, 'utf8')).trim().split('\n').map(line => JSON.parse(line));

@@ -1,0 +1,353 @@
+{
+  "version": 1,
+  "id": "scene_XZWUH0xrnko",
+  "title": "我的鳍上有标签？",
+  "tags": [
+    "Finding Nemo",
+    "Finding Dory",
+    "我的鳍上有标签？",
+    "Hank",
+    "Dory",
+    "汉克",
+    "多莉"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 14.89,
+  "video": "dory-forgot-the-tag-review-2dcb0843690f.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/dory-forgot-the-tag/",
+  "poster": "dory-forgot-the-tag-poster-2dcb0843690f.jpg",
+  "waveform": "waveform-2dcb0843690f.json",
+  "roles": [
+    {
+      "id": "role_1G4bNl5b0j4",
+      "name": "汉克",
+      "label": "汉克",
+      "hint": "3 句台词",
+      "portrait": "hank-avatar-dc0549992599.jpg"
+    },
+    {
+      "id": "role_Zi1HqrucPIM",
+      "name": "多莉",
+      "label": "多莉",
+      "hint": "3 句台词",
+      "portrait": "dory-avatar-3c95c4a20bb0.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_64uP2exn3B4",
+      "roleId": "role_1G4bNl5b0j4",
+      "start": 0.252,
+      "end": 2.279,
+      "text": "All you have to do is give me the tag.",
+      "hint": "你只要把标签给我就行。",
+      "words": [
+        {
+          "text": "All",
+          "start": 0.282,
+          "end": 0.403
+        },
+        {
+          "text": "you",
+          "start": 0.464,
+          "end": 0.545
+        },
+        {
+          "text": "have",
+          "start": 0.625,
+          "end": 0.746
+        },
+        {
+          "text": "to",
+          "start": 0.787,
+          "end": 0.867
+        },
+        {
+          "text": "do",
+          "start": 0.948,
+          "end": 1.029
+        },
+        {
+          "text": "is",
+          "start": 1.17,
+          "end": 1.251
+        },
+        {
+          "text": "give",
+          "start": 1.372,
+          "end": 1.533
+        },
+        {
+          "text": "me",
+          "start": 1.594,
+          "end": 1.654
+        },
+        {
+          "text": "the",
+          "start": 1.755,
+          "end": 1.836
+        },
+        {
+          "text": "tag.",
+          "start": 1.916,
+          "end": 2.239
+        }
+      ]
+    },
+    {
+      "id": "line_6HQfdA8vXLE",
+      "roleId": "role_Zi1HqrucPIM",
+      "start": 2.392,
+      "end": 4.74,
+      "text": "What tag? There's a tag on my fin?",
+      "hint": "什么标签？我的鳍上有标签？",
+      "words": [
+        {
+          "text": "What",
+          "start": 2.422,
+          "end": 2.583
+        },
+        {
+          "text": "tag?",
+          "start": 2.744,
+          "end": 2.986
+        },
+        {
+          "text": "There's",
+          "start": 3.671,
+          "end": 3.873
+        },
+        {
+          "text": "a",
+          "start": 3.913,
+          "end": 3.934
+        },
+        {
+          "text": "tag",
+          "start": 3.974,
+          "end": 4.175
+        },
+        {
+          "text": "on",
+          "start": 4.256,
+          "end": 4.296
+        },
+        {
+          "text": "my",
+          "start": 4.357,
+          "end": 4.397
+        },
+        {
+          "text": "fin?",
+          "start": 4.478,
+          "end": 4.7
+        }
+      ]
+    },
+    {
+      "id": "line_O-nd1xfW1y8",
+      "roleId": "role_1G4bNl5b0j4",
+      "start": 4.992,
+      "end": 6.999,
+      "text": "How could you forget? You have a tag on your fin.",
+      "hint": "你怎么会忘了？你的鳍上有标签。",
+      "words": [
+        {
+          "text": "How",
+          "start": 5.022,
+          "end": 5.567
+        },
+        {
+          "text": "could",
+          "start": 5.627,
+          "end": 5.728
+        },
+        {
+          "text": "you",
+          "start": 5.769,
+          "end": 5.849
+        },
+        {
+          "text": "forget?",
+          "start": 5.89,
+          "end": 6.071
+        },
+        {
+          "text": "You",
+          "start": 6.112,
+          "end": 6.172
+        },
+        {
+          "text": "have",
+          "start": 6.213,
+          "end": 6.293
+        },
+        {
+          "text": "a",
+          "start": 6.314,
+          "end": 6.334
+        },
+        {
+          "text": "tag",
+          "start": 6.354,
+          "end": 6.495
+        },
+        {
+          "text": "on",
+          "start": 6.536,
+          "end": 6.596
+        },
+        {
+          "text": "your",
+          "start": 6.616,
+          "end": 6.697
+        },
+        {
+          "text": "fin.",
+          "start": 6.717,
+          "end": 6.959
+        }
+      ]
+    },
+    {
+      "id": "line_CqRxoHdcEyk",
+      "roleId": "role_Zi1HqrucPIM",
+      "start": 7.292,
+      "end": 11.18,
+      "text": "Oh, no, I'm sorry. I suffer from short-term memory loss.",
+      "hint": "抱歉，我有短期失忆症。",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 7.322,
+          "end": 7.402
+        },
+        {
+          "text": "no,",
+          "start": 7.543,
+          "end": 7.643
+        },
+        {
+          "text": "I'm",
+          "start": 7.844,
+          "end": 7.965
+        },
+        {
+          "text": "sorry.",
+          "start": 8.086,
+          "end": 8.347
+        },
+        {
+          "text": "I",
+          "start": 9.532,
+          "end": 9.552
+        },
+        {
+          "text": "suffer",
+          "start": 9.733,
+          "end": 9.954
+        },
+        {
+          "text": "from",
+          "start": 10.015,
+          "end": 10.115
+        },
+        {
+          "text": "short-term",
+          "start": 10.175,
+          "end": 10.537
+        },
+        {
+          "text": "memory",
+          "start": 10.597,
+          "end": 10.838
+        },
+        {
+          "text": "loss.",
+          "start": 10.879,
+          "end": 11.14
+        }
+      ]
+    },
+    {
+      "id": "line_4SOkjCaOjxM",
+      "roleId": "role_1G4bNl5b0j4",
+      "start": 12.092,
+      "end": 13.839,
+      "text": "You don't remember what we were talking about?",
+      "hint": "你不记得我们在聊什么了？",
+      "words": [
+        {
+          "text": "You",
+          "start": 12.122,
+          "end": 12.183
+        },
+        {
+          "text": "don't",
+          "start": 12.244,
+          "end": 12.385
+        },
+        {
+          "text": "remember",
+          "start": 12.425,
+          "end": 12.769
+        },
+        {
+          "text": "what",
+          "start": 12.829,
+          "end": 12.93
+        },
+        {
+          "text": "we",
+          "start": 12.991,
+          "end": 13.051
+        },
+        {
+          "text": "were",
+          "start": 13.092,
+          "end": 13.213
+        },
+        {
+          "text": "talking",
+          "start": 13.253,
+          "end": 13.536
+        },
+        {
+          "text": "about?",
+          "start": 13.597,
+          "end": 13.799
+        }
+      ]
+    },
+    {
+      "id": "line_LV2B-18-zl4",
+      "roleId": "role_Zi1HqrucPIM",
+      "start": 14.15,
+      "end": 14.5,
+      "text": "Mm-mm.",
+      "hint": "不记得了。",
+      "words": [
+        {
+          "text": "Mm-mm.",
+          "start": 14.18,
+          "end": 14.47
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Finding Dory — There is a tag on my fin?",
+    "attribution": "Rotten Tomatoes Coming Soon",
+    "source": "https://www.youtube.com/watch?v=1LhFiJd8GnE&t=31s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 31.8–46.65 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

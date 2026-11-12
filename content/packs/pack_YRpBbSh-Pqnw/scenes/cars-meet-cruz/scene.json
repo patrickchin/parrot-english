@@ -1,0 +1,532 @@
+{
+  "version": 1,
+  "id": "scene_ZSxmzYiUWTM",
+  "title": "你看见闪电麦昆了吗？",
+  "tags": [
+    "Cars",
+    "Cars 3",
+    "你看见闪电麦昆了吗？",
+    "Sterling",
+    "Cruz Ramirez",
+    "Lightning McQueen",
+    "史特林",
+    "酷姐",
+    "闪电麦昆"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 27.152,
+  "video": "cars-meet-cruz-review-cace9fd649ed.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/cars-meet-cruz/",
+  "poster": "cars-meet-cruz-poster-cace9fd649ed.jpg",
+  "waveform": "waveform-cace9fd649ed.json",
+  "roles": [
+    {
+      "id": "role_TVl__9_H-uo",
+      "name": "史特林",
+      "label": "史特林",
+      "hint": "4 句台词",
+      "portrait": "sterling-avatar-bbc62070e4a0.jpg"
+    },
+    {
+      "id": "role_nQSavK14OQU",
+      "name": "酷姐",
+      "label": "酷姐",
+      "hint": "4 句台词",
+      "portrait": "cruz-ramirez-avatar-beb22e376817.jpg"
+    },
+    {
+      "id": "role_iH6JptG0C3M",
+      "name": "闪电麦昆",
+      "label": "闪电麦昆",
+      "hint": "2 句台词",
+      "portrait": "mcqueen-avatar-8c53b8a25c63.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_xPcWJmszZXU",
+      "roleId": "role_TVl__9_H-uo",
+      "start": 0.237,
+      "end": 0.778,
+      "text": "Hey, Cruz.",
+      "hint": "嘿，酷姐。",
+      "words": [
+        {
+          "text": "Hey,",
+          "start": 0.267,
+          "end": 0.349
+        },
+        {
+          "text": "Cruz.",
+          "start": 0.431,
+          "end": 0.738
+        }
+      ]
+    },
+    {
+      "id": "line_1IP-XZhcsRo",
+      "roleId": "role_nQSavK14OQU",
+      "start": 1.757,
+      "end": 2.88,
+      "text": "Oh, hey, Mr. Sterling.",
+      "hint": "哦，史特林先生。",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 1.787,
+          "end": 1.847
+        },
+        {
+          "text": "hey,",
+          "start": 1.989,
+          "end": 2.171
+        },
+        {
+          "text": "Mr.",
+          "start": 2.232,
+          "end": 2.495
+        },
+        {
+          "text": "Sterling.",
+          "start": 2.556,
+          "end": 2.84
+        }
+      ]
+    },
+    {
+      "id": "line_b7olwKAzU5k",
+      "roleId": "role_TVl__9_H-uo",
+      "start": 3.532,
+      "end": 5.9,
+      "text": "I'd like to introduce you to Lightning McQueen.",
+      "hint": "我来介绍一下闪电麦昆。",
+      "words": [
+        {
+          "text": "I'd",
+          "start": 3.562,
+          "end": 3.703
+        },
+        {
+          "text": "like",
+          "start": 3.764,
+          "end": 3.925
+        },
+        {
+          "text": "to",
+          "start": 3.965,
+          "end": 4.026
+        },
+        {
+          "text": "introduce",
+          "start": 4.066,
+          "end": 4.469
+        },
+        {
+          "text": "you",
+          "start": 4.509,
+          "end": 4.65
+        },
+        {
+          "text": "to",
+          "start": 4.812,
+          "end": 4.912
+        },
+        {
+          "text": "Lightning",
+          "start": 5.033,
+          "end": 5.376
+        },
+        {
+          "text": "McQueen.",
+          "start": 5.457,
+          "end": 5.9
+        }
+      ]
+    },
+    {
+      "id": "line_IEyEIqHSblM",
+      "roleId": "role_iH6JptG0C3M",
+      "start": 5.9,
+      "end": 7.019,
+      "text": "I hear you're the maestro.",
+      "hint": "听说你是训练大师。",
+      "words": [
+        {
+          "text": "I",
+          "start": 5.9,
+          "end": 5.925
+        },
+        {
+          "text": "hear",
+          "start": 5.925,
+          "end": 6.107
+        },
+        {
+          "text": "you're",
+          "start": 6.188,
+          "end": 6.371
+        },
+        {
+          "text": "the",
+          "start": 6.411,
+          "end": 6.472
+        },
+        {
+          "text": "maestro.",
+          "start": 6.533,
+          "end": 6.979
+        }
+      ]
+    },
+    {
+      "id": "line_wPN-zUlDMUI",
+      "roleId": "role_nQSavK14OQU",
+      "start": 7.631,
+      "end": 12.26,
+      "text": "Mr. Sterling, did you say Lightning McQueen was here? Because I don't see him anywhere.",
+      "hint": "史特林先生，你说闪电麦昆来了？我怎么没看见？",
+      "words": [
+        {
+          "text": "Mr.",
+          "start": 7.661,
+          "end": 7.862
+        },
+        {
+          "text": "Sterling,",
+          "start": 7.902,
+          "end": 8.244
+        },
+        {
+          "text": "did",
+          "start": 8.284,
+          "end": 8.384
+        },
+        {
+          "text": "you",
+          "start": 8.445,
+          "end": 8.525
+        },
+        {
+          "text": "say",
+          "start": 8.605,
+          "end": 8.726
+        },
+        {
+          "text": "Lightning",
+          "start": 8.907,
+          "end": 9.288
+        },
+        {
+          "text": "McQueen",
+          "start": 9.388,
+          "end": 9.75
+        },
+        {
+          "text": "was",
+          "start": 9.83,
+          "end": 9.931
+        },
+        {
+          "text": "here?",
+          "start": 10.011,
+          "end": 10.172
+        },
+        {
+          "text": "Because",
+          "start": 10.272,
+          "end": 10.634
+        },
+        {
+          "text": "I",
+          "start": 11.276,
+          "end": 11.296
+        },
+        {
+          "text": "don't",
+          "start": 11.356,
+          "end": 11.537
+        },
+        {
+          "text": "see",
+          "start": 11.597,
+          "end": 11.758
+        },
+        {
+          "text": "him",
+          "start": 11.838,
+          "end": 11.959
+        },
+        {
+          "text": "anywhere.",
+          "start": 11.999,
+          "end": 12.22
+        }
+      ]
+    },
+    {
+      "id": "line_IUjRYNNQd4Y",
+      "roleId": "role_TVl__9_H-uo",
+      "start": 13.212,
+      "end": 16.079,
+      "text": "Uh, but he's right here. Do you not see him?",
+      "hint": "他就在这儿。你没看见吗？",
+      "words": [
+        {
+          "text": "Uh,",
+          "start": 13.242,
+          "end": 13.302
+        },
+        {
+          "text": "but",
+          "start": 13.765,
+          "end": 13.866
+        },
+        {
+          "text": "he's",
+          "start": 13.906,
+          "end": 14.087
+        },
+        {
+          "text": "right",
+          "start": 14.168,
+          "end": 14.268
+        },
+        {
+          "text": "here.",
+          "start": 14.288,
+          "end": 14.61
+        },
+        {
+          "text": "Do",
+          "start": 15.053,
+          "end": 15.113
+        },
+        {
+          "text": "you",
+          "start": 15.194,
+          "end": 15.274
+        },
+        {
+          "text": "not",
+          "start": 15.355,
+          "end": 15.475
+        },
+        {
+          "text": "see",
+          "start": 15.657,
+          "end": 15.817
+        },
+        {
+          "text": "him?",
+          "start": 15.918,
+          "end": 16.039
+        }
+      ]
+    },
+    {
+      "id": "line_6LQrvafZkL0",
+      "roleId": "role_nQSavK14OQU",
+      "start": 16.394,
+      "end": 17.818,
+      "text": "Nope. Still don't see him.",
+      "hint": "没有，还是没看见。",
+      "words": [
+        {
+          "text": "Nope.",
+          "start": 16.424,
+          "end": 16.605
+        },
+        {
+          "text": "Still",
+          "start": 17.05,
+          "end": 17.313
+        },
+        {
+          "text": "don't",
+          "start": 17.354,
+          "end": 17.495
+        },
+        {
+          "text": "see",
+          "start": 17.536,
+          "end": 17.637
+        },
+        {
+          "text": "him.",
+          "start": 17.697,
+          "end": 17.778
+        }
+      ]
+    },
+    {
+      "id": "line_gG8fPG7CMzA",
+      "roleId": "role_TVl__9_H-uo",
+      "start": 17.931,
+      "end": 20.911,
+      "text": "He's right in front of you. It's Lightning McQueen.",
+      "hint": "他就在你面前，是闪电麦昆。",
+      "words": [
+        {
+          "text": "He's",
+          "start": 17.961,
+          "end": 18.102
+        },
+        {
+          "text": "right",
+          "start": 18.223,
+          "end": 18.364
+        },
+        {
+          "text": "in",
+          "start": 18.424,
+          "end": 18.464
+        },
+        {
+          "text": "front",
+          "start": 18.605,
+          "end": 18.907
+        },
+        {
+          "text": "of",
+          "start": 19.008,
+          "end": 19.068
+        },
+        {
+          "text": "you.",
+          "start": 19.149,
+          "end": 19.249
+        },
+        {
+          "text": "It's",
+          "start": 19.833,
+          "end": 19.933
+        },
+        {
+          "text": "Lightning",
+          "start": 20.054,
+          "end": 20.477
+        },
+        {
+          "text": "McQueen.",
+          "start": 20.557,
+          "end": 20.911
+        }
+      ]
+    },
+    {
+      "id": "line_UyjG6VoeEeA",
+      "roleId": "role_nQSavK14OQU",
+      "start": 20.911,
+      "end": 26.2,
+      "text": "He's obviously an impostor. He looks old and broken down, with flabby tires.",
+      "hint": "他显然是冒牌货。他看起来又老又破，轮胎也松垮垮的。",
+      "words": [
+        {
+          "text": "He's",
+          "start": 20.911,
+          "end": 21.322
+        },
+        {
+          "text": "obviously",
+          "start": 21.644,
+          "end": 22.065
+        },
+        {
+          "text": "an",
+          "start": 22.125,
+          "end": 22.165
+        },
+        {
+          "text": "impostor.",
+          "start": 22.246,
+          "end": 22.727
+        },
+        {
+          "text": "He",
+          "start": 23.189,
+          "end": 23.229
+        },
+        {
+          "text": "looks",
+          "start": 23.269,
+          "end": 23.45
+        },
+        {
+          "text": "old",
+          "start": 23.671,
+          "end": 23.811
+        },
+        {
+          "text": "and",
+          "start": 23.892,
+          "end": 23.972
+        },
+        {
+          "text": "broken",
+          "start": 24.012,
+          "end": 24.313
+        },
+        {
+          "text": "down,",
+          "start": 24.414,
+          "end": 24.695
+        },
+        {
+          "text": "with",
+          "start": 25.257,
+          "end": 25.357
+        },
+        {
+          "text": "flabby",
+          "start": 25.417,
+          "end": 25.738
+        },
+        {
+          "text": "tires.",
+          "start": 25.819,
+          "end": 26.16
+        }
+      ]
+    },
+    {
+      "id": "line_aVzfr7wyJdA",
+      "roleId": "role_iH6JptG0C3M",
+      "start": 26.417,
+      "end": 27.1,
+      "text": "I do not.",
+      "hint": "我才没有。",
+      "words": [
+        {
+          "text": "I",
+          "start": 26.447,
+          "end": 26.467
+        },
+        {
+          "text": "do",
+          "start": 26.549,
+          "end": 26.63
+        },
+        {
+          "text": "not.",
+          "start": 26.753,
+          "end": 27.06
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Cars 3 — Can you see Lightning McQueen?",
+    "attribution": "Flicks And The City Clips",
+    "source": "https://www.youtube.com/watch?v=oRH4n5boJqM&t=0s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 0.85–28 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

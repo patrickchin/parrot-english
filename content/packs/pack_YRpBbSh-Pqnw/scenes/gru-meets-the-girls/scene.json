@@ -1,0 +1,331 @@
+{
+  "version": 1,
+  "id": "scene_ggDkGOmQZTA",
+  "title": "抱住你的腿啦",
+  "tags": [
+    "Despicable Me",
+    "抱住你的腿啦",
+    "Margo",
+    "Agnes",
+    "Gru",
+    "玛戈",
+    "艾格尼丝",
+    "格鲁"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 26.25,
+  "video": "gru-meets-the-girls-review-202d446670f4.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gru-meets-the-girls/",
+  "poster": "gru-meets-the-girls-poster-202d446670f4.jpg",
+  "waveform": "waveform-202d446670f4.json",
+  "roles": [
+    {
+      "id": "role_gt8sRYHc9GA",
+      "name": "玛戈",
+      "label": "玛戈",
+      "hint": "1 句台词",
+      "portrait": "margo-avatar-e7dfb1b37895.jpg"
+    },
+    {
+      "id": "role_3AI1krmr0WM",
+      "name": "艾格尼丝",
+      "label": "艾格尼丝",
+      "hint": "1 句台词",
+      "portrait": "agnes-avatar-0e0649781100.jpg"
+    },
+    {
+      "id": "role_sPY3P9aVvf8",
+      "name": "格鲁",
+      "label": "格鲁",
+      "hint": "1 句台词",
+      "portrait": "gru-avatar-f040917be194.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_abeYCfrcAic",
+      "roleId": "role_gt8sRYHc9GA",
+      "start": 0.552,
+      "end": 6.359,
+      "text": "Hi, I'm Margo. This is Edith. That's Agnes.",
+      "hint": "你好，我叫玛戈。这是伊迪丝，那是艾格尼丝。",
+      "words": [
+        {
+          "text": "Hi,",
+          "start": 0.582,
+          "end": 0.963
+        },
+        {
+          "text": "I'm",
+          "start": 1.826,
+          "end": 1.926
+        },
+        {
+          "text": "Margo.",
+          "start": 2.468,
+          "end": 2.929
+        },
+        {
+          "text": "This",
+          "start": 3.892,
+          "end": 4.012
+        },
+        {
+          "text": "is",
+          "start": 4.133,
+          "end": 4.193
+        },
+        {
+          "text": "Edith.",
+          "start": 4.373,
+          "end": 4.634
+        },
+        {
+          "text": "That's",
+          "start": 5.657,
+          "end": 5.838
+        },
+        {
+          "text": "Agnes.",
+          "start": 6.079,
+          "end": 6.319
+        }
+      ]
+    },
+    {
+      "id": "line_jUiF14EcKK0",
+      "roleId": "role_3AI1krmr0WM",
+      "start": 7.415,
+      "end": 9.44,
+      "text": "I got your leg! I got your leg!",
+      "hint": "抱住你的腿啦！",
+      "words": [
+        {
+          "text": "I",
+          "start": 7.445,
+          "end": 7.465
+        },
+        {
+          "text": "got",
+          "start": 7.546,
+          "end": 7.647
+        },
+        {
+          "text": "your",
+          "start": 7.727,
+          "end": 7.848
+        },
+        {
+          "text": "leg!",
+          "start": 8.231,
+          "end": 8.372
+        },
+        {
+          "text": "I",
+          "start": 8.533,
+          "end": 8.554
+        },
+        {
+          "text": "got",
+          "start": 8.674,
+          "end": 8.856
+        },
+        {
+          "text": "your",
+          "start": 8.896,
+          "end": 9.057
+        },
+        {
+          "text": "leg!",
+          "start": 9.118,
+          "end": 9.4
+        }
+      ]
+    },
+    {
+      "id": "line_1mrkSRbXWSg",
+      "roleId": "role_sPY3P9aVvf8",
+      "start": 9.65,
+      "end": 24.88,
+      "text": "Okay, that's enough, little girl. Let go of my leg. Come on, little girl. Just release your grip. Wow. How do you remove them? Is there a command? Some nonstick spray? Crowbar?",
+      "hint": "好了，小姑娘，够了。松开我的腿。松手吧。要怎么把她弄下来？有口令吗？防粘喷雾？撬棍？",
+      "words": [
+        {
+          "text": "Okay,",
+          "start": 9.68,
+          "end": 10.201
+        },
+        {
+          "text": "that's",
+          "start": 10.321,
+          "end": 10.542
+        },
+        {
+          "text": "enough,",
+          "start": 10.642,
+          "end": 11.202
+        },
+        {
+          "text": "little",
+          "start": 11.523,
+          "end": 11.743
+        },
+        {
+          "text": "girl.",
+          "start": 11.923,
+          "end": 12.524
+        },
+        {
+          "text": "Let",
+          "start": 12.704,
+          "end": 12.804
+        },
+        {
+          "text": "go",
+          "start": 12.885,
+          "end": 13.005
+        },
+        {
+          "text": "of",
+          "start": 13.085,
+          "end": 13.125
+        },
+        {
+          "text": "my",
+          "start": 13.185,
+          "end": 13.305
+        },
+        {
+          "text": "leg.",
+          "start": 13.485,
+          "end": 13.626
+        },
+        {
+          "text": "Come",
+          "start": 13.706,
+          "end": 13.826
+        },
+        {
+          "text": "on,",
+          "start": 13.846,
+          "end": 13.886
+        },
+        {
+          "text": "little",
+          "start": 14.026,
+          "end": 14.166
+        },
+        {
+          "text": "girl.",
+          "start": 14.206,
+          "end": 14.707
+        },
+        {
+          "text": "Just",
+          "start": 14.747,
+          "end": 14.847
+        },
+        {
+          "text": "release",
+          "start": 14.927,
+          "end": 15.288
+        },
+        {
+          "text": "your",
+          "start": 15.308,
+          "end": 15.388
+        },
+        {
+          "text": "grip.",
+          "start": 15.448,
+          "end": 15.768
+        },
+        {
+          "text": "Wow.",
+          "start": 16.069,
+          "end": 16.329
+        },
+        {
+          "text": "How",
+          "start": 17.31,
+          "end": 17.571
+        },
+        {
+          "text": "do",
+          "start": 17.891,
+          "end": 17.971
+        },
+        {
+          "text": "you",
+          "start": 18.191,
+          "end": 18.271
+        },
+        {
+          "text": "remove",
+          "start": 18.452,
+          "end": 18.692
+        },
+        {
+          "text": "them?",
+          "start": 18.752,
+          "end": 18.892
+        },
+        {
+          "text": "Is",
+          "start": 18.952,
+          "end": 19.052
+        },
+        {
+          "text": "there",
+          "start": 19.153,
+          "end": 19.313
+        },
+        {
+          "text": "a",
+          "start": 19.373,
+          "end": 19.393
+        },
+        {
+          "text": "command?",
+          "start": 19.593,
+          "end": 20.094
+        },
+        {
+          "text": "Some",
+          "start": 20.835,
+          "end": 21.015
+        },
+        {
+          "text": "nonstick",
+          "start": 21.115,
+          "end": 21.756
+        },
+        {
+          "text": "spray?",
+          "start": 21.836,
+          "end": 22.257
+        },
+        {
+          "text": "Crowbar?",
+          "start": 24.419,
+          "end": 24.84
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Despicable Me — I got your leg",
+    "attribution": "Screen Bites",
+    "source": "https://www.youtube.com/watch?v=7Drao-T8omA&t=175s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 175.45–201.7 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

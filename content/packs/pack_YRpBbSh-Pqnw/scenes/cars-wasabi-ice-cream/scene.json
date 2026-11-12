@@ -1,0 +1,398 @@
+{
+  "version": 1,
+  "id": "scene_lZYYhcV8k2Y",
+  "title": "这是开心果冰淇淋吗？",
+  "tags": [
+    "Cars",
+    "Cars 2",
+    "这是开心果冰淇淋吗？",
+    "Mater",
+    "Wasabi vendor",
+    "板牙",
+    "芥末摊主"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 28.904,
+  "video": "cars-wasabi-ice-cream-review-93675c9f0348.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/cars-wasabi-ice-cream/",
+  "poster": "cars-wasabi-ice-cream-poster-93675c9f0348.jpg",
+  "waveform": "waveform-93675c9f0348.json",
+  "roles": [
+    {
+      "id": "role_VXY9t6Fv1RQ",
+      "name": "板牙",
+      "label": "板牙",
+      "hint": "3 句台词",
+      "portrait": "mater-avatar-80fbfb162bed.jpg"
+    },
+    {
+      "id": "role_wHynyqr8qEw",
+      "name": "芥末摊主",
+      "label": "芥末摊主",
+      "hint": "1 句台词",
+      "portrait": "wasabi-vendor-avatar-98940f82e682.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_V0FkSzb4Q0M",
+      "roleId": "role_VXY9t6Fv1RQ",
+      "start": 0.412,
+      "end": 4.52,
+      "text": "Hey, what you got here that's free? How about that pistachio ice cream?",
+      "hint": "这里有什么免费的？那个开心果冰淇淋怎么样？",
+      "words": [
+        {
+          "text": "Hey,",
+          "start": 0.442,
+          "end": 0.603
+        },
+        {
+          "text": "what",
+          "start": 0.703,
+          "end": 0.844
+        },
+        {
+          "text": "you",
+          "start": 0.884,
+          "end": 0.944
+        },
+        {
+          "text": "got",
+          "start": 0.984,
+          "end": 1.185
+        },
+        {
+          "text": "here",
+          "start": 1.245,
+          "end": 1.366
+        },
+        {
+          "text": "that's",
+          "start": 1.446,
+          "end": 1.647
+        },
+        {
+          "text": "free?",
+          "start": 1.687,
+          "end": 1.949
+        },
+        {
+          "text": "How",
+          "start": 2.611,
+          "end": 2.712
+        },
+        {
+          "text": "about",
+          "start": 2.732,
+          "end": 2.933
+        },
+        {
+          "text": "that",
+          "start": 2.993,
+          "end": 3.134
+        },
+        {
+          "text": "pistachio",
+          "start": 3.234,
+          "end": 3.857
+        },
+        {
+          "text": "ice",
+          "start": 4.058,
+          "end": 4.178
+        },
+        {
+          "text": "cream?",
+          "start": 4.279,
+          "end": 4.48
+        }
+      ]
+    },
+    {
+      "id": "line_0vp7Qp0olCA",
+      "roleId": "role_wHynyqr8qEw",
+      "start": 5.674,
+      "end": 6.84,
+      "text": "No, no. Wasabi.",
+      "hint": "不，不。是芥末。",
+      "words": [
+        {
+          "text": "No,",
+          "start": 5.704,
+          "end": 5.785
+        },
+        {
+          "text": "no.",
+          "start": 5.887,
+          "end": 6.009
+        },
+        {
+          "text": "Wasabi.",
+          "start": 6.252,
+          "end": 6.8
+        }
+      ]
+    },
+    {
+      "id": "line_8Sqv5dGk53E",
+      "roleId": "role_VXY9t6Fv1RQ",
+      "start": 7.111,
+      "end": 10.44,
+      "text": "Oh, same old, same old. What's up with you? That looks delicious.",
+      "hint": "哦，老样子。你怎么样？看起来真好吃。",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 7.141,
+          "end": 7.222
+        },
+        {
+          "text": "same",
+          "start": 7.322,
+          "end": 7.524
+        },
+        {
+          "text": "old,",
+          "start": 7.604,
+          "end": 7.705
+        },
+        {
+          "text": "same",
+          "start": 7.745,
+          "end": 7.946
+        },
+        {
+          "text": "old.",
+          "start": 8.006,
+          "end": 8.107
+        },
+        {
+          "text": "What's",
+          "start": 8.167,
+          "end": 8.328
+        },
+        {
+          "text": "up",
+          "start": 8.409,
+          "end": 8.469
+        },
+        {
+          "text": "with",
+          "start": 8.529,
+          "end": 8.63
+        },
+        {
+          "text": "you?",
+          "start": 8.67,
+          "end": 8.791
+        },
+        {
+          "text": "That",
+          "start": 9.817,
+          "end": 9.937
+        },
+        {
+          "text": "looks",
+          "start": 10.018,
+          "end": 10.179
+        },
+        {
+          "text": "delicious.",
+          "start": 10.199,
+          "end": 10.4
+        }
+      ]
+    },
+    {
+      "id": "line_Xd19Gxc-dUs",
+      "roleId": "role_VXY9t6Fv1RQ",
+      "start": 15.69,
+      "end": 27.22,
+      "text": "A little more, please. It is free, right? Keep it coming. A little more. Come on, let's go. It's free! You're getting there. There you go. Now that's a scoop of ice cream.",
+      "hint": "请再多一点。是免费的吧？继续加。再来一点。来吧，免费的！快够了。对了，这才叫一勺冰淇淋。",
+      "words": [
+        {
+          "text": "A",
+          "start": 15.72,
+          "end": 15.74
+        },
+        {
+          "text": "little",
+          "start": 15.86,
+          "end": 16.061
+        },
+        {
+          "text": "more,",
+          "start": 16.081,
+          "end": 16.221
+        },
+        {
+          "text": "please.",
+          "start": 16.261,
+          "end": 16.562
+        },
+        {
+          "text": "It",
+          "start": 17.063,
+          "end": 17.103
+        },
+        {
+          "text": "is",
+          "start": 17.223,
+          "end": 17.283
+        },
+        {
+          "text": "free,",
+          "start": 17.383,
+          "end": 17.603
+        },
+        {
+          "text": "right?",
+          "start": 17.684,
+          "end": 17.904
+        },
+        {
+          "text": "Keep",
+          "start": 18.365,
+          "end": 18.525
+        },
+        {
+          "text": "it",
+          "start": 18.625,
+          "end": 18.665
+        },
+        {
+          "text": "coming.",
+          "start": 18.685,
+          "end": 19.006
+        },
+        {
+          "text": "A",
+          "start": 19.326,
+          "end": 19.346
+        },
+        {
+          "text": "little",
+          "start": 19.407,
+          "end": 19.647
+        },
+        {
+          "text": "more.",
+          "start": 19.667,
+          "end": 19.927
+        },
+        {
+          "text": "Come",
+          "start": 20.308,
+          "end": 20.428
+        },
+        {
+          "text": "on,",
+          "start": 20.549,
+          "end": 20.649
+        },
+        {
+          "text": "let's",
+          "start": 20.669,
+          "end": 20.829
+        },
+        {
+          "text": "go.",
+          "start": 20.889,
+          "end": 21.009
+        },
+        {
+          "text": "It's",
+          "start": 21.13,
+          "end": 21.23
+        },
+        {
+          "text": "free!",
+          "start": 21.29,
+          "end": 21.57
+        },
+        {
+          "text": "You're",
+          "start": 22.031,
+          "end": 22.231
+        },
+        {
+          "text": "getting",
+          "start": 22.272,
+          "end": 22.512
+        },
+        {
+          "text": "there.",
+          "start": 22.552,
+          "end": 22.792
+        },
+        {
+          "text": "There",
+          "start": 23.934,
+          "end": 24.335
+        },
+        {
+          "text": "you",
+          "start": 24.475,
+          "end": 24.636
+        },
+        {
+          "text": "go.",
+          "start": 24.836,
+          "end": 25.076
+        },
+        {
+          "text": "Now",
+          "start": 25.237,
+          "end": 25.397
+        },
+        {
+          "text": "that's",
+          "start": 25.517,
+          "end": 25.918
+        },
+        {
+          "text": "a",
+          "start": 26.118,
+          "end": 26.138
+        },
+        {
+          "text": "scoop",
+          "start": 26.298,
+          "end": 26.599
+        },
+        {
+          "text": "of",
+          "start": 26.639,
+          "end": 26.699
+        },
+        {
+          "text": "ice",
+          "start": 26.98,
+          "end": 27.04
+        },
+        {
+          "text": "cream.",
+          "start": 27.06,
+          "end": 27.18
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Cars 2 — Pistachio ice cream?",
+    "attribution": "Disney Jr. ",
+    "source": "https://www.youtube.com/watch?v=VjPdFZsCY4Y&t=9s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 9–37.9 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

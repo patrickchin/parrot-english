@@ -876,6 +876,321 @@
       ],
       "source": "scene-credit",
       "brightness": 1.65
+    },
+    {
+      "key": "franchise-gingy",
+      "name": "姜饼人",
+      "kind": "video-still",
+      "video": "review/franchises/sources/mFl8nzZuExE.mp4",
+      "source": "https://www.youtube.com/watch?v=mFl8nzZuExE",
+      "time": 55,
+      "frameCrop": [
+        125,
+        9,
+        230
+      ]
+    },
+    {
+      "key": "franchise-lord-farquaad",
+      "name": "法尔夸德",
+      "kind": "video-still",
+      "video": "review/franchises/sources/mFl8nzZuExE.mp4",
+      "source": "https://www.youtube.com/watch?v=mFl8nzZuExE",
+      "time": 49,
+      "frameCrop": [
+        221,
+        8,
+        211
+      ]
+    },
+    {
+      "key": "franchise-wasabi-vendor",
+      "name": "芥末摊主",
+      "kind": "video-still",
+      "video": "review/franchises/sources/VjPdFZsCY4Y.mp4",
+      "source": "https://www.youtube.com/watch?v=VjPdFZsCY4Y",
+      "time": 15,
+      "frameCrop": [
+        161,
+        18,
+        235
+      ]
+    },
+    {
+      "key": "franchise-cruz-ramirez",
+      "name": "酷姐",
+      "kind": "video-still",
+      "video": "review/franchises/sources/oRH4n5boJqM.mp4",
+      "source": "https://www.youtube.com/watch?v=oRH4n5boJqM",
+      "time": 2,
+      "frameCrop": [
+        112,
+        51,
+        189
+      ]
+    },
+    {
+      "key": "franchise-sterling",
+      "name": "史特林",
+      "kind": "video-still",
+      "video": "review/franchises/sources/oRH4n5boJqM.mp4",
+      "source": "https://www.youtube.com/watch?v=oRH4n5boJqM",
+      "time": 8,
+      "frameCrop": [
+        288,
+        69,
+        116
+      ]
+    },
+    {
+      "key": "franchise-hank",
+      "name": "汉克",
+      "kind": "video-still",
+      "video": "review/franchises/sources/1LhFiJd8GnE.mp4",
+      "source": "https://www.youtube.com/watch?v=1LhFiJd8GnE",
+      "time": 32,
+      "frameCrop": [
+        283,
+        39,
+        197
+      ]
+    },
+    {
+      "key": "franchise-crush",
+      "name": "龟龟",
+      "kind": "video-still",
+      "video": "review/franchises/sources/rVpVHI3aloI.mp4",
+      "source": "https://www.youtube.com/watch?v=rVpVHI3aloI",
+      "time": 24,
+      "frameCrop": [
+        152,
+        3,
+        167
+      ]
+    },
+    {
+      "key": "franchise-utility-belt-buzz",
+      "name": "腰带巴斯",
+      "kind": "video-still",
+      "video": "review/franchises/sources/BpcGI_IgbQM.mp4",
+      "source": "https://www.youtube.com/watch?v=BpcGI_IgbQM",
+      "time": 99,
+      "frameCrop": [
+        194,
+        24,
+        189
+      ]
+    },
+    {
+      "key": "franchise-edith",
+      "name": "伊迪丝",
+      "kind": "video-still",
+      "video": "review/franchises/sources/7Drao-T8omA.mp4",
+      "source": "https://www.youtube.com/watch?v=7Drao-T8omA",
+      "time": 176,
+      "frameCrop": [
+        24,
+        51,
+        173
+      ]
+    },
+    {
+      "key": "franchise-lucy-wilde",
+      "name": "露西",
+      "kind": "video-still",
+      "video": "review/franchises/sources/ANEvrmvjuqg.mp4",
+      "source": "https://www.youtube.com/watch?v=ANEvrmvjuqg",
+      "time": 32,
+      "frameCrop": [
+        55,
+        19,
+        178
+      ]
+    },
+    {
+      "key": "franchise-russell",
+      "name": "罗素",
+      "kind": "video-still",
+      "video": "review/franchises/sources/w8NzWsA5188.mp4",
+      "source": "https://www.youtube.com/watch?v=w8NzWsA5188",
+      "time": 94,
+      "frameCrop": [
+        133,
+        14,
+        243
+      ]
+    },
+    {
+      "key": "franchise-emile",
+      "name": "大米",
+      "kind": "video-still",
+      "video": "review/franchises/sources/1S5s7oozviU.mp4",
+      "source": "https://www.youtube.com/watch?v=1S5s7oozviU",
+      "time": 19,
+      "frameCrop": [
+        67,
+        108,
+        202
+      ]
+    },
+    {
+      "key": "franchise-anton-ego",
+      "name": "安东·伊戈",
+      "kind": "video-still",
+      "video": "review/franchises/sources/ef91za0liTM.mp4",
+      "source": "https://www.youtube.com/watch?v=ef91za0liTM",
+      "time": 17,
+      "frameCrop": [
+        146,
+        13,
+        168
+      ],
+      "brightness": 1.3
+    },
+    {
+      "key": "franchise-ambrister",
+      "name": "管家",
+      "kind": "video-still",
+      "video": "review/franchises/sources/ef91za0liTM.mp4",
+      "source": "https://www.youtube.com/watch?v=ef91za0liTM",
+      "time": 27,
+      "frameCrop": [
+        367,
+        133,
+        63
+      ],
+      "brightness": 1.3
+    },
+    {
+      "key": "franchise-waiter",
+      "name": "服务员",
+      "kind": "video-still",
+      "video": "review/franchises/sources/4BSfWh9uHoY.mp4",
+      "source": "https://www.youtube.com/watch?v=4BSfWh9uHoY",
+      "time": 35,
+      "frameCrop": [
+        116,
+        22,
+        152
+      ]
+    },
+    {
+      "key": "franchise-shifu",
+      "name": "师父",
+      "kind": "video-still",
+      "video": "review/franchises/sources/KtsOkdO3wTw.mp4",
+      "source": "https://www.youtube.com/watch?v=KtsOkdO3wTw",
+      "time": 116,
+      "frameCrop": [
+        171,
+        61,
+        176
+      ]
+    },
+    {
+      "key": "franchise-marty",
+      "name": "马蒂",
+      "kind": "video-still",
+      "video": "review/franchises/sources/Zql3EuAYeF0.mp4",
+      "source": "https://www.youtube.com/watch?v=Zql3EuAYeF0",
+      "time": 73,
+      "frameCrop": [
+        140,
+        26,
+        230
+      ]
+    },
+    {
+      "key": "franchise-alex",
+      "name": "艾力狮",
+      "kind": "video-still",
+      "video": "review/franchises/sources/kPE7ZCGjw4o.mp4",
+      "source": "https://www.youtube.com/watch?v=kPE7ZCGjw4o",
+      "time": 133,
+      "frameCrop": [
+        163,
+        46,
+        135
+      ]
+    },
+    {
+      "key": "franchise-gloria",
+      "name": "格洛丽亚",
+      "kind": "video-still",
+      "video": "review/franchises/sources/Zql3EuAYeF0.mp4",
+      "source": "https://www.youtube.com/watch?v=Zql3EuAYeF0",
+      "time": 67,
+      "frameCrop": [
+        165,
+        40,
+        189
+      ]
+    },
+    {
+      "key": "franchise-melman",
+      "name": "梅尔曼",
+      "kind": "video-still",
+      "video": "review/franchises/sources/Zql3EuAYeF0.mp4",
+      "source": "https://www.youtube.com/watch?v=Zql3EuAYeF0",
+      "time": 67,
+      "frameCrop": [
+        325,
+        5,
+        119
+      ]
+    },
+    {
+      "key": "franchise-king-julien",
+      "name": "朱利安国王",
+      "kind": "video-still",
+      "video": "review/franchises/sources/CWZIOJGl72k.mp4",
+      "source": "https://www.youtube.com/watch?v=CWZIOJGl72k",
+      "time": 3,
+      "frameCrop": [
+        129,
+        14,
+        221
+      ]
+    },
+    {
+      "key": "franchise-hagrid",
+      "name": "海格",
+      "kind": "video-still",
+      "video": "review/franchises/sources/z9GwIeh5FIY.mp4",
+      "source": "https://www.youtube.com/watch?v=z9GwIeh5FIY",
+      "time": 121,
+      "frameCrop": [
+        157,
+        14,
+        252
+      ],
+      "brightness": 1.3
+    },
+    {
+      "key": "franchise-hermione",
+      "name": "赫敏",
+      "kind": "video-still",
+      "video": "review/franchises/sources/Gs7SIiRHQfs.mp4",
+      "source": "https://www.youtube.com/watch?v=Gs7SIiRHQfs",
+      "time": 25,
+      "frameCrop": [
+        118,
+        22,
+        245
+      ]
+    },
+    {
+      "key": "franchise-flitwick",
+      "name": "弗立维教授",
+      "kind": "video-still",
+      "video": "review/franchises/sources/Qgr4dcsY-60.mp4",
+      "source": "https://www.youtube.com/watch?v=Qgr4dcsY-60",
+      "time": 30,
+      "frameCrop": [
+        113,
+        16,
+        254
+      ]
     }
   ]
 }

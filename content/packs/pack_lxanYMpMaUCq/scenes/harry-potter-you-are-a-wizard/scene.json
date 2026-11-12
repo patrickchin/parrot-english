@@ -1,0 +1,318 @@
+{
+  "version": 1,
+  "id": "scene_CQH3SvpFNEE",
+  "title": "哈利，你是巫师",
+  "tags": [
+    "Harry Potter",
+    "Harry Potter and the Philosopher's Stone",
+    "哈利，你是巫师",
+    "Harry",
+    "Hagrid",
+    "哈利",
+    "海格"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 23.707,
+  "video": "harry-potter-you-are-a-wizard-review-014654de4d54.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/harry-potter-you-are-a-wizard/",
+  "poster": "harry-potter-you-are-a-wizard-poster-014654de4d54.jpg",
+  "waveform": "waveform-014654de4d54.json",
+  "roles": [
+    {
+      "id": "role_dD-Rbw8Zc-U",
+      "name": "哈利",
+      "label": "哈利",
+      "hint": "3 句台词",
+      "portrait": "harry-avatar-eebde66f2a0e.jpg"
+    },
+    {
+      "id": "role_qEetDP7cbGc",
+      "name": "海格",
+      "label": "海格",
+      "hint": "2 句台词",
+      "portrait": "hagrid-avatar-760f79c88639.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_3m1p3ItZdIU",
+      "roleId": "role_dD-Rbw8Zc-U",
+      "start": 0.456,
+      "end": 0.996,
+      "text": "Learned what?",
+      "hint": "学什么？",
+      "words": [
+        {
+          "text": "Learned",
+          "start": 0.486,
+          "end": 0.71
+        },
+        {
+          "text": "what?",
+          "start": 0.731,
+          "end": 0.956
+        }
+      ]
+    },
+    {
+      "id": "line_bOcYYztGCFE",
+      "roleId": "role_qEetDP7cbGc",
+      "start": 2.233,
+      "end": 3.339,
+      "text": "You're a wizard, Harry.",
+      "hint": "哈利，你是个巫师。",
+      "words": [
+        {
+          "text": "You're",
+          "start": 2.263,
+          "end": 2.446
+        },
+        {
+          "text": "a",
+          "start": 2.507,
+          "end": 2.527
+        },
+        {
+          "text": "wizard,",
+          "start": 2.629,
+          "end": 2.954
+        },
+        {
+          "text": "Harry.",
+          "start": 3.056,
+          "end": 3.299
+        }
+      ]
+    },
+    {
+      "id": "line_OApkl7XW4ok",
+      "roleId": "role_dD-Rbw8Zc-U",
+      "start": 6.28,
+      "end": 6.878,
+      "text": "I'm a what?",
+      "hint": "我是个什么？",
+      "words": [
+        {
+          "text": "I'm",
+          "start": 6.31,
+          "end": 6.432
+        },
+        {
+          "text": "a",
+          "start": 6.513,
+          "end": 6.533
+        },
+        {
+          "text": "what?",
+          "start": 6.615,
+          "end": 6.838
+        }
+      ]
+    },
+    {
+      "id": "line_L0AbqC8cxMA",
+      "roleId": "role_qEetDP7cbGc",
+      "start": 7.311,
+      "end": 11.08,
+      "text": "A wizard. And a thumping good one, I'd wager, once you train up a little.",
+      "hint": "巫师。稍加训练，你就会成为很棒的巫师。",
+      "words": [
+        {
+          "text": "A",
+          "start": 7.341,
+          "end": 7.362
+        },
+        {
+          "text": "wizard.",
+          "start": 7.462,
+          "end": 7.743
+        },
+        {
+          "text": "And",
+          "start": 8.306,
+          "end": 8.366
+        },
+        {
+          "text": "a",
+          "start": 8.447,
+          "end": 8.467
+        },
+        {
+          "text": "thumping",
+          "start": 8.547,
+          "end": 8.889
+        },
+        {
+          "text": "good",
+          "start": 8.949,
+          "end": 9.07
+        },
+        {
+          "text": "one,",
+          "start": 9.13,
+          "end": 9.19
+        },
+        {
+          "text": "I'd",
+          "start": 9.271,
+          "end": 9.371
+        },
+        {
+          "text": "wager,",
+          "start": 9.432,
+          "end": 9.693
+        },
+        {
+          "text": "once",
+          "start": 10.175,
+          "end": 10.256
+        },
+        {
+          "text": "you",
+          "start": 10.276,
+          "end": 10.356
+        },
+        {
+          "text": "train",
+          "start": 10.416,
+          "end": 10.617
+        },
+        {
+          "text": "up",
+          "start": 10.678,
+          "end": 10.718
+        },
+        {
+          "text": "a",
+          "start": 10.778,
+          "end": 10.798
+        },
+        {
+          "text": "little.",
+          "start": 10.839,
+          "end": 11.04
+        }
+      ]
+    },
+    {
+      "id": "line_M3e4dYxg7Hc",
+      "roleId": "role_dD-Rbw8Zc-U",
+      "start": 11.611,
+      "end": 22.8,
+      "text": "No. You've made a mistake. I mean, I can't be a wizard. I mean, I'm just Harry. Just Harry.",
+      "hint": "不，你弄错了。我不可能是巫师。我只是哈利，普通的哈利。",
+      "words": [
+        {
+          "text": "No.",
+          "start": 11.641,
+          "end": 11.761
+        },
+        {
+          "text": "You've",
+          "start": 12.382,
+          "end": 12.562
+        },
+        {
+          "text": "made",
+          "start": 12.602,
+          "end": 12.743
+        },
+        {
+          "text": "a",
+          "start": 12.803,
+          "end": 12.823
+        },
+        {
+          "text": "mistake.",
+          "start": 12.863,
+          "end": 13.203
+        },
+        {
+          "text": "I",
+          "start": 13.264,
+          "end": 13.284
+        },
+        {
+          "text": "mean,",
+          "start": 13.324,
+          "end": 13.424
+        },
+        {
+          "text": "I",
+          "start": 14.886,
+          "end": 14.906
+        },
+        {
+          "text": "can't",
+          "start": 15.547,
+          "end": 15.848
+        },
+        {
+          "text": "be",
+          "start": 15.908,
+          "end": 15.988
+        },
+        {
+          "text": "a",
+          "start": 16.088,
+          "end": 16.108
+        },
+        {
+          "text": "wizard.",
+          "start": 16.97,
+          "end": 17.31
+        },
+        {
+          "text": "I",
+          "start": 17.351,
+          "end": 17.371
+        },
+        {
+          "text": "mean,",
+          "start": 18.392,
+          "end": 18.513
+        },
+        {
+          "text": "I'm",
+          "start": 18.593,
+          "end": 18.693
+        },
+        {
+          "text": "just",
+          "start": 19.414,
+          "end": 19.634
+        },
+        {
+          "text": "Harry.",
+          "start": 20.696,
+          "end": 21.037
+        },
+        {
+          "text": "Just",
+          "start": 22.239,
+          "end": 22.419
+        },
+        {
+          "text": "Harry.",
+          "start": 22.479,
+          "end": 22.76
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Harry Potter and the Philosopher's Stone — You are a wizard, Harry",
+    "attribution": "Harry Potter",
+    "source": "https://www.youtube.com/watch?v=z9GwIeh5FIY&t=113s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 113.3–137 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

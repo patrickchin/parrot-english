@@ -1,0 +1,263 @@
+{
+  "version": 1,
+  "id": "scene_szm7GJTTBds",
+  "title": "什么的内心平静？",
+  "tags": [
+    "Kung Fu Panda",
+    "Kung Fu Panda 2",
+    "什么的内心平静？",
+    "Po",
+    "Shifu",
+    "阿宝",
+    "师父"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 21.438,
+  "video": "panda-inner-peace-review-dc1c6382bda1.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/panda-inner-peace/",
+  "poster": "panda-inner-peace-poster-dc1c6382bda1.jpg",
+  "waveform": "waveform-dc1c6382bda1.json",
+  "roles": [
+    {
+      "id": "role_OMj0OxuLlII",
+      "name": "阿宝",
+      "label": "阿宝",
+      "hint": "2 句台词",
+      "portrait": "po-avatar-05b8203f6846.jpg"
+    },
+    {
+      "id": "role_AnJwAbTjjmA",
+      "name": "师父",
+      "label": "师父",
+      "hint": "2 句台词",
+      "portrait": "shifu-avatar-f2aac7396925.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_IkX2ph6gpSM",
+      "roleId": "role_OMj0OxuLlII",
+      "start": 0.712,
+      "end": 6.66,
+      "text": "Wow. Awesome. How did you do that?",
+      "hint": "哇，太厉害了。你怎么做到的？",
+      "words": [
+        {
+          "text": "Wow.",
+          "start": 0.742,
+          "end": 2.407
+        },
+        {
+          "text": "Awesome.",
+          "start": 3.19,
+          "end": 3.771
+        },
+        {
+          "text": "How",
+          "start": 4.032,
+          "end": 4.313
+        },
+        {
+          "text": "did",
+          "start": 4.915,
+          "end": 5.075
+        },
+        {
+          "text": "you",
+          "start": 5.135,
+          "end": 5.316
+        },
+        {
+          "text": "do",
+          "start": 5.898,
+          "end": 6.078
+        },
+        {
+          "text": "that?",
+          "start": 6.239,
+          "end": 6.62
+        }
+      ]
+    },
+    {
+      "id": "line_VS5XwtEw8pI",
+      "roleId": "role_AnJwAbTjjmA",
+      "start": 7.21,
+      "end": 7.979,
+      "text": "Inner peace.",
+      "hint": "内心平静。",
+      "words": [
+        {
+          "text": "Inner",
+          "start": 7.24,
+          "end": 7.528
+        },
+        {
+          "text": "peace.",
+          "start": 7.692,
+          "end": 7.939
+        }
+      ]
+    },
+    {
+      "id": "line_iSeELCwH5k0",
+      "roleId": "role_OMj0OxuLlII",
+      "start": 8.631,
+      "end": 13.22,
+      "text": "Inner peace? That's cool. Inner peace of what?",
+      "hint": "内心平静？真酷。什么的内心平静？",
+      "words": [
+        {
+          "text": "Inner",
+          "start": 8.661,
+          "end": 8.842
+        },
+        {
+          "text": "peace?",
+          "start": 8.902,
+          "end": 9.223
+        },
+        {
+          "text": "That's",
+          "start": 9.906,
+          "end": 10.127
+        },
+        {
+          "text": "cool.",
+          "start": 10.268,
+          "end": 10.669
+        },
+        {
+          "text": "Inner",
+          "start": 12.316,
+          "end": 12.477
+        },
+        {
+          "text": "peace",
+          "start": 12.537,
+          "end": 12.738
+        },
+        {
+          "text": "of",
+          "start": 12.818,
+          "end": 12.858
+        },
+        {
+          "text": "what?",
+          "start": 12.959,
+          "end": 13.18
+        }
+      ]
+    },
+    {
+      "id": "line_VKugwgglyj4",
+      "roleId": "role_AnJwAbTjjmA",
+      "start": 13.811,
+      "end": 21.22,
+      "text": "It is the next phase of your training. Every master must find his path to inner peace.",
+      "hint": "这是你下一阶段的训练。每位大师都要找到通往内心平静的道路。",
+      "words": [
+        {
+          "text": "It",
+          "start": 13.841,
+          "end": 13.901
+        },
+        {
+          "text": "is",
+          "start": 13.981,
+          "end": 14.041
+        },
+        {
+          "text": "the",
+          "start": 14.101,
+          "end": 14.182
+        },
+        {
+          "text": "next",
+          "start": 14.302,
+          "end": 14.603
+        },
+        {
+          "text": "phase",
+          "start": 14.703,
+          "end": 15.004
+        },
+        {
+          "text": "of",
+          "start": 15.124,
+          "end": 15.164
+        },
+        {
+          "text": "your",
+          "start": 15.224,
+          "end": 15.365
+        },
+        {
+          "text": "training.",
+          "start": 15.425,
+          "end": 15.826
+        },
+        {
+          "text": "Every",
+          "start": 16.307,
+          "end": 16.508
+        },
+        {
+          "text": "master",
+          "start": 16.588,
+          "end": 17.029
+        },
+        {
+          "text": "must",
+          "start": 17.591,
+          "end": 17.831
+        },
+        {
+          "text": "find",
+          "start": 18.272,
+          "end": 18.633
+        },
+        {
+          "text": "his",
+          "start": 19.014,
+          "end": 19.195
+        },
+        {
+          "text": "path",
+          "start": 19.295,
+          "end": 19.596
+        },
+        {
+          "text": "to",
+          "start": 20.478,
+          "end": 20.578
+        },
+        {
+          "text": "inner",
+          "start": 20.759,
+          "end": 20.959
+        },
+        {
+          "text": "peace.",
+          "start": 21.06,
+          "end": 21.18
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Kung Fu Panda 2 — Inner peace of what?",
+    "attribution": "KFP clips ",
+    "source": "https://www.youtube.com/watch?v=1eP4xQpYHfw&t=147s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 147–168.4 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

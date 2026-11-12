@@ -1,0 +1,348 @@
+{
+  "version": 1,
+  "id": "scene_QRuUGGTNTDQ",
+  "title": "特工露西",
+  "tags": [
+    "Despicable Me",
+    "Despicable Me 2",
+    "特工露西",
+    "Lucy Wilde",
+    "Gru",
+    "露西",
+    "格鲁"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 33.367,
+  "video": "gru-meets-lucy-review-ac6a10c64fa3.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gru-meets-lucy/",
+  "poster": "gru-meets-lucy-poster-ac6a10c64fa3.jpg",
+  "waveform": "waveform-ac6a10c64fa3.json",
+  "roles": [
+    {
+      "id": "role_wIpaFcBailA",
+      "name": "露西",
+      "label": "露西",
+      "hint": "4 句台词",
+      "portrait": "lucy-wilde-avatar-07ee17d72384.jpg"
+    },
+    {
+      "id": "role_EUZhxArGg-0",
+      "name": "格鲁",
+      "label": "格鲁",
+      "hint": "2 句台词",
+      "portrait": "gru-avatar-f040917be194.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_AW_3fCorAGw",
+      "roleId": "role_wIpaFcBailA",
+      "start": 0.935,
+      "end": 1.578,
+      "text": "Mr. Gru?",
+      "hint": "格鲁先生？",
+      "words": [
+        {
+          "text": "Mr.",
+          "start": 0.965,
+          "end": 1.231
+        },
+        {
+          "text": "Gru?",
+          "start": 1.272,
+          "end": 1.538
+        }
+      ]
+    },
+    {
+      "id": "line_3TuZYLjGcdg",
+      "roleId": "role_EUZhxArGg-0",
+      "start": 2.232,
+      "end": 2.837,
+      "text": "Wh-what? Yes?",
+      "hint": "什么？",
+      "words": [
+        {
+          "text": "Wh-what?",
+          "start": 2.262,
+          "end": 2.529
+        },
+        {
+          "text": "Yes?",
+          "start": 2.591,
+          "end": 2.797
+        }
+      ]
+    },
+    {
+      "id": "line_nltpvD0Nen8",
+      "roleId": "role_wIpaFcBailA",
+      "start": 5.193,
+      "end": 13.4,
+      "text": "Hi. Agent Lucy Wilde of the AVL. Oh, whoops. Sorry. You're gonna have to come with me.",
+      "hint": "你好，我是反恶人联盟的露西特工。哎呀，抱歉，你得跟我走一趟。",
+      "words": [
+        {
+          "text": "Hi.",
+          "start": 5.223,
+          "end": 5.484
+        },
+        {
+          "text": "Agent",
+          "start": 6.265,
+          "end": 6.466
+        },
+        {
+          "text": "Lucy",
+          "start": 6.486,
+          "end": 6.706
+        },
+        {
+          "text": "Wilde",
+          "start": 6.746,
+          "end": 7.047
+        },
+        {
+          "text": "of",
+          "start": 7.067,
+          "end": 7.107
+        },
+        {
+          "text": "the",
+          "start": 7.147,
+          "end": 7.227
+        },
+        {
+          "text": "AVL.",
+          "start": 7.288,
+          "end": 7.708
+        },
+        {
+          "text": "Oh,",
+          "start": 8.77,
+          "end": 8.831
+        },
+        {
+          "text": "whoops.",
+          "start": 9.592,
+          "end": 9.833
+        },
+        {
+          "text": "Sorry.",
+          "start": 11.516,
+          "end": 11.736
+        },
+        {
+          "text": "You're",
+          "start": 12.598,
+          "end": 12.718
+        },
+        {
+          "text": "gonna",
+          "start": 12.738,
+          "end": 12.859
+        },
+        {
+          "text": "have",
+          "start": 12.879,
+          "end": 12.979
+        },
+        {
+          "text": "to",
+          "start": 12.999,
+          "end": 13.039
+        },
+        {
+          "text": "come",
+          "start": 13.059,
+          "end": 13.159
+        },
+        {
+          "text": "with",
+          "start": 13.179,
+          "end": 13.259
+        },
+        {
+          "text": "me.",
+          "start": 13.299,
+          "end": 13.36
+        }
+      ]
+    },
+    {
+      "id": "line_pqqBtSCwW7Y",
+      "roleId": "role_EUZhxArGg-0",
+      "start": 15.081,
+      "end": 15.654,
+      "text": "Freeze ray!",
+      "hint": "冰冻射线！",
+      "words": [
+        {
+          "text": "Freeze",
+          "start": 15.111,
+          "end": 15.312
+        },
+        {
+          "text": "ray!",
+          "start": 15.433,
+          "end": 15.614
+        }
+      ]
+    },
+    {
+      "id": "line_NAZ3nRSc0_0",
+      "roleId": "role_wIpaFcBailA",
+      "start": 19.55,
+      "end": 25.28,
+      "text": "Oh, you know, you really should announce your weapons after you fire them, Mr. Gru. For example.",
+      "hint": "格鲁先生，你应该先发射武器，再报武器名字。比如这样。",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 19.58,
+          "end": 19.7
+        },
+        {
+          "text": "you",
+          "start": 20.472,
+          "end": 20.552
+        },
+        {
+          "text": "know,",
+          "start": 20.572,
+          "end": 20.652
+        },
+        {
+          "text": "you",
+          "start": 20.692,
+          "end": 20.772
+        },
+        {
+          "text": "really",
+          "start": 20.832,
+          "end": 21.053
+        },
+        {
+          "text": "should",
+          "start": 21.073,
+          "end": 21.233
+        },
+        {
+          "text": "announce",
+          "start": 21.253,
+          "end": 21.514
+        },
+        {
+          "text": "your",
+          "start": 21.554,
+          "end": 21.654
+        },
+        {
+          "text": "weapons",
+          "start": 21.694,
+          "end": 21.954
+        },
+        {
+          "text": "after",
+          "start": 22.215,
+          "end": 22.475
+        },
+        {
+          "text": "you",
+          "start": 22.636,
+          "end": 22.716
+        },
+        {
+          "text": "fire",
+          "start": 22.776,
+          "end": 22.996
+        },
+        {
+          "text": "them,",
+          "start": 23.056,
+          "end": 23.136
+        },
+        {
+          "text": "Mr.",
+          "start": 23.176,
+          "end": 23.437
+        },
+        {
+          "text": "Gru.",
+          "start": 23.557,
+          "end": 23.657
+        },
+        {
+          "text": "For",
+          "start": 24.839,
+          "end": 24.94
+        },
+        {
+          "text": "example.",
+          "start": 25,
+          "end": 25.24
+        }
+      ]
+    },
+    {
+      "id": "line_fnzBKWjyeGs",
+      "roleId": "role_wIpaFcBailA",
+      "start": 30.17,
+      "end": 33.12,
+      "text": "Lipstick taser! Oh, it works so good.",
+      "hint": "口红电击器！真好用。",
+      "words": [
+        {
+          "text": "Lipstick",
+          "start": 30.2,
+          "end": 30.422
+        },
+        {
+          "text": "taser!",
+          "start": 30.442,
+          "end": 30.603
+        },
+        {
+          "text": "Oh,",
+          "start": 31.952,
+          "end": 32.073
+        },
+        {
+          "text": "it",
+          "start": 32.154,
+          "end": 32.194
+        },
+        {
+          "text": "works",
+          "start": 32.234,
+          "end": 32.415
+        },
+        {
+          "text": "so",
+          "start": 32.456,
+          "end": 32.536
+        },
+        {
+          "text": "good.",
+          "start": 32.637,
+          "end": 33.08
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Despicable Me 2 — Agent Lucy Wilde",
+    "attribution": "Arlo TV",
+    "source": "https://www.youtube.com/watch?v=ANEvrmvjuqg&t=23s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 23.15–56.5 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

@@ -5,15 +5,15 @@ import { readFile, readdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { validateScene } from '../../src/scene.ts';
 
-test('all 79 internal-test scenes have valid scenes, timed words, waveforms and separate audience folders', async () => {
+test('all 108 internal-test scenes have valid scenes, timed words, waveforms and separate audience folders', async () => {
   const scenes = clips;
   const { validateWaveform } = await import('../../src/waveform.ts');
-  assert.equal(scenes.length, 79);
+  assert.equal(scenes.length, 108);
   assert.equal(scenes.filter(s => s.cohort === 'younger-age-5').length, 15);
-  assert.equal(scenes.filter(s => s.cohort === 'older-audience').length, 38);
-  assert.equal(scenes.filter(s => s.cohort === 'older-children').length, 12);
+  assert.equal(scenes.filter(s => s.cohort === 'older-audience').length, 64);
+  assert.equal(scenes.filter(s => s.cohort === 'older-children').length, 15);
   assert.equal(scenes.filter(s => s.cohort === 'teens').length, 14);
-  assert.equal(new Set(scenes.map(s => s.slug)).size, 79);
+  assert.equal(new Set(scenes.map(s => s.slug)).size, 108);
   assert.equal(new Set(scenes.map(s => s.routeSlug ?? s.slug)).size, scenes.length, 'public scene names must be unique');
   const ids = new Set();
   for (const entry of scenes) {
@@ -122,4 +122,31 @@ test('First English requires explicit level review and contains only short compl
   const previous = recipe.scenes.filter(scene => scene.beginnerSuitable === false);
   assert.equal(previous.length, 14);
   for (const scene of previous) assert.equal(catalog.find(entry => entry.slug === scene.publicSlug).cohort, 'older-audience');
+});
+
+test('film franchises group sequels into five complete dialogue scenes each', async () => {
+  const recipe = JSON.parse(await readFile('content/franchise-review-scenes.json', 'utf8'));
+  const franchises = ['Shrek', 'Cars', 'Toy Story', 'Finding Nemo', 'Despicable Me', 'Up', 'Ratatouille', 'Kung Fu Panda', 'Madagascar', 'Harry Potter'];
+  assert.equal(recipe.scenes.length, 29);
+  for (const name of franchises) assert.equal(clips.filter(clip => clip.note === name).length, 5, name);
+  for (const authored of recipe.scenes) {
+    const clip = clips.find(clip => clip.slug === authored.publicSlug);
+    const scene = validateScene(JSON.parse(await readFile(sceneFile(clip.slug), 'utf8')), '/fixture/');
+    const source = recipe.sources.find(source => source.id === authored.sourceId);
+    assert.equal(clip.note, source.franchise);
+    assert.ok(scene.credit.title.startsWith(source.series));
+    assert.ok(clip.tags.includes(source.series), 'exact film titles remain searchable');
+    assert.ok(scene.duration >= 10 && scene.duration <= 40);
+    assert.ok(new Set(scene.lines.map(line => line.roleId)).size >= 2);
+    assert.ok(scene.lines.filter((line, index, lines) => !index || line.roleId !== lines[index - 1].roleId).length >= 3);
+    assert.ok(scene.roles.every(role => role.portrait));
+    for (const other of recipe.scenes) {
+      if (other === authored) continue;
+      const otherSource = recipe.sources.find(source => source.id === other.sourceId);
+      if (source.url === otherSource.url) assert.ok(authored.end <= other.start || other.end <= authored.start, `overlapping excerpts: ${authored.slug}, ${other.slug}`);
+    }
+  }
+  for (const note of ['Shrek 2', 'Shrek Forever After', 'Cars 2', 'Cars 3', 'Cars on the Road', 'Harry Potter and the Philosopher’s Stone']) {
+    assert.equal(clips.filter(clip => clip.note === note).length, 0, 'sequels must not create separate folders');
+  }
 });

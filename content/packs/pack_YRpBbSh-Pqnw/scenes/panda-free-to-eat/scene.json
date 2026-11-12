@@ -1,0 +1,327 @@
+{
+  "version": 1,
+  "id": "scene_87NyKFKTV9c",
+  "title": "你可以吃了",
+  "tags": [
+    "Kung Fu Panda",
+    "你可以吃了",
+    "Shifu",
+    "Po",
+    "师父",
+    "阿宝"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 26.151,
+  "video": "panda-free-to-eat-review-ab05a3cdb17b.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/panda-free-to-eat/",
+  "poster": "panda-free-to-eat-poster-ab05a3cdb17b.jpg",
+  "waveform": "waveform-ab05a3cdb17b.json",
+  "roles": [
+    {
+      "id": "role_odkF-xJfSPg",
+      "name": "师父",
+      "label": "师父",
+      "hint": "3 句台词",
+      "portrait": "shifu-avatar-f2aac7396925.jpg"
+    },
+    {
+      "id": "role_TY1pCRHc9Fs",
+      "name": "阿宝",
+      "label": "阿宝",
+      "hint": "3 句台词",
+      "portrait": "po-avatar-05b8203f6846.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_s37TESw4fLk",
+      "roleId": "role_odkF-xJfSPg",
+      "start": 0.454,
+      "end": 1.16,
+      "text": "After you, panda.",
+      "hint": "你先请，熊猫。",
+      "words": [
+        {
+          "text": "After",
+          "start": 0.484,
+          "end": 0.669
+        },
+        {
+          "text": "you,",
+          "start": 0.73,
+          "end": 0.833
+        },
+        {
+          "text": "panda.",
+          "start": 0.935,
+          "end": 1.12
+        }
+      ]
+    },
+    {
+      "id": "line_cOId1t4QUbs",
+      "roleId": "role_TY1pCRHc9Fs",
+      "start": 2.071,
+      "end": 6.24,
+      "text": "Just like that? No sit-ups? No, no, no, no, no ten-mile hike?",
+      "hint": "就这样？不用做仰卧起坐，也不用走十英里？",
+      "words": [
+        {
+          "text": "Just",
+          "start": 2.101,
+          "end": 2.222
+        },
+        {
+          "text": "like",
+          "start": 2.262,
+          "end": 2.382
+        },
+        {
+          "text": "that?",
+          "start": 2.402,
+          "end": 2.563
+        },
+        {
+          "text": "No",
+          "start": 3.729,
+          "end": 3.809
+        },
+        {
+          "text": "sit-ups?",
+          "start": 3.909,
+          "end": 4.251
+        },
+        {
+          "text": "No,",
+          "start": 4.392,
+          "end": 4.492
+        },
+        {
+          "text": "no,",
+          "start": 4.753,
+          "end": 4.874
+        },
+        {
+          "text": "no,",
+          "start": 5.034,
+          "end": 5.115
+        },
+        {
+          "text": "no,",
+          "start": 5.215,
+          "end": 5.296
+        },
+        {
+          "text": "no",
+          "start": 5.416,
+          "end": 5.476
+        },
+        {
+          "text": "ten-mile",
+          "start": 5.577,
+          "end": 5.939
+        },
+        {
+          "text": "hike?",
+          "start": 5.979,
+          "end": 6.2
+        }
+      ]
+    },
+    {
+      "id": "line_V2JAf7elkD0",
+      "roleId": "role_odkF-xJfSPg",
+      "start": 7.371,
+      "end": 17.7,
+      "text": "I vowed to train you, and you have been trained. You are free to eat. Enjoy.",
+      "hint": "我答应训练你，现在你已经完成训练。可以吃了，请享用。",
+      "words": [
+        {
+          "text": "I",
+          "start": 7.401,
+          "end": 7.421
+        },
+        {
+          "text": "vowed",
+          "start": 7.561,
+          "end": 7.841
+        },
+        {
+          "text": "to",
+          "start": 7.882,
+          "end": 7.962
+        },
+        {
+          "text": "train",
+          "start": 8.042,
+          "end": 8.282
+        },
+        {
+          "text": "you,",
+          "start": 8.342,
+          "end": 8.443
+        },
+        {
+          "text": "and",
+          "start": 8.643,
+          "end": 8.723
+        },
+        {
+          "text": "you",
+          "start": 8.743,
+          "end": 8.843
+        },
+        {
+          "text": "have",
+          "start": 8.923,
+          "end": 9.044
+        },
+        {
+          "text": "been",
+          "start": 9.084,
+          "end": 9.224
+        },
+        {
+          "text": "trained.",
+          "start": 9.284,
+          "end": 9.625
+        },
+        {
+          "text": "You",
+          "start": 10.066,
+          "end": 10.166
+        },
+        {
+          "text": "are",
+          "start": 10.266,
+          "end": 10.346
+        },
+        {
+          "text": "free",
+          "start": 10.406,
+          "end": 10.607
+        },
+        {
+          "text": "to",
+          "start": 11.208,
+          "end": 11.308
+        },
+        {
+          "text": "eat.",
+          "start": 11.428,
+          "end": 11.568
+        },
+        {
+          "text": "Enjoy.",
+          "start": 17.319,
+          "end": 17.66
+        }
+      ]
+    },
+    {
+      "id": "line_gZeFJu09Vn8",
+      "roleId": "role_TY1pCRHc9Fs",
+      "start": 20.4,
+      "end": 20.657,
+      "text": "Hey!",
+      "hint": "嘿！",
+      "words": [
+        {
+          "text": "Hey!",
+          "start": 20.43,
+          "end": 20.617
+        }
+      ]
+    },
+    {
+      "id": "line_USN_RzGrTlU",
+      "roleId": "role_odkF-xJfSPg",
+      "start": 21.952,
+      "end": 24.335,
+      "text": "I said you are free to eat. Have a dumpling.",
+      "hint": "我说你可以吃了。来个包子。",
+      "words": [
+        {
+          "text": "I",
+          "start": 21.982,
+          "end": 22.002
+        },
+        {
+          "text": "said",
+          "start": 22.123,
+          "end": 22.285
+        },
+        {
+          "text": "you",
+          "start": 22.325,
+          "end": 22.405
+        },
+        {
+          "text": "are",
+          "start": 22.486,
+          "end": 22.567
+        },
+        {
+          "text": "free",
+          "start": 22.627,
+          "end": 22.808
+        },
+        {
+          "text": "to",
+          "start": 22.849,
+          "end": 22.929
+        },
+        {
+          "text": "eat.",
+          "start": 23.07,
+          "end": 23.211
+        },
+        {
+          "text": "Have",
+          "start": 23.715,
+          "end": 23.876
+        },
+        {
+          "text": "a",
+          "start": 23.917,
+          "end": 23.937
+        },
+        {
+          "text": "dumpling.",
+          "start": 23.977,
+          "end": 24.335
+        }
+      ]
+    },
+    {
+      "id": "line_hkPiIOu10a8",
+      "roleId": "role_TY1pCRHc9Fs",
+      "start": 24.335,
+      "end": 24.653,
+      "text": "Hey!",
+      "hint": "嘿！",
+      "words": [
+        {
+          "text": "Hey!",
+          "start": 24.335,
+          "end": 24.613
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "Utterance-constrained CTC alignment with independent base.en transcript anchors",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Kung Fu Panda — You are free to eat",
+    "attribution": "Rotten Tomatoes Family",
+    "source": "https://www.youtube.com/watch?v=KtsOkdO3wTw&t=94s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 94.35–120.5 秒的连续节选。连续多角色对话；先听完整场景，再选择角色练习。"
+  }
+}

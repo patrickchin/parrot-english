@@ -323,7 +323,7 @@
       "slug": "i-am-speed",
       "title": "我就是速度！",
       "english": "I am speed.",
-      "note": "Cars on the Road",
+      "note": "Cars",
       "source": "https://www.youtube.com/watch?v=y39L1PesHmc&t=28s",
       "cohort": "older-audience",
       "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/i-am-speed/i-am-speed-poster-8742eaee9998.jpg",
@@ -663,7 +663,7 @@
       "slug": "do-the-roar",
       "title": "吼一声嘛！",
       "english": "Do the roar!",
-      "note": "Shrek Forever After",
+      "note": "Shrek",
       "source": "https://www.youtube.com/watch?v=6I5B0jyLBUg&t=14s",
       "cohort": "older-audience",
       "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/do-the-roar/do-the-roar-poster-4592e0d9dfc6.jpg",
@@ -705,7 +705,7 @@
       "slug": "are-we-there-yet",
       "title": "我们到了吗？",
       "english": "Are we there yet?",
-      "note": "Shrek 2",
+      "note": "Shrek",
       "source": "https://www.youtube.com/watch?v=Gn51xYvJhQI&t=14s",
       "cohort": "older-audience",
       "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/are-we-there-yet/are-we-there-yet-poster-28b2064057ea.jpg",
@@ -1457,6 +1457,945 @@
         "呃，这就是整个计划了。"
       ],
       "manifest": "scenes/ben-simple-plan/scene.json"
+    },
+    {
+      "id": "scene_a3BDHKKQn54",
+      "slug": "shrek-muffin-man",
+      "routeSlug": "shrek-muffin-man",
+      "title": "你认识松饼人吗？",
+      "english": "Do you know the Muffin Man?",
+      "note": "Shrek",
+      "source": "https://www.youtube.com/watch?v=mFl8nzZuExE&t=41s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/shrek-muffin-man/shrek-muffin-man-poster-b8665f4d1246.jpg",
+      "tags": [
+        "Shrek",
+        "你认识松饼人吗？",
+        "Gingy",
+        "Lord Farquaad",
+        "姜饼人",
+        "法尔夸德"
+      ],
+      "quotes": [
+        "Okay, I'll tell you. Do you know the Muffin Man?",
+        "好吧，我告诉你。你认识松饼人吗？",
+        "The Muffin Man?",
+        "松饼人？",
+        "The Muffin Man.",
+        "松饼人。",
+        "Yes, I know the Muffin Man. Who lives on Drury Lane?",
+        "我认识松饼人。住在德鲁里巷的那个？",
+        "Well, she's married to the Muffin Man.",
+        "她嫁给了松饼人。",
+        "The Muffin Man?",
+        "松饼人？",
+        "The Muffin Man!",
+        "松饼人！",
+        "She's married to the Muffin Man.",
+        "她嫁给了松饼人。"
+      ],
+      "manifest": "scenes/shrek-muffin-man/scene.json"
+    },
+    {
+      "id": "scene_c_rtu-aligQ",
+      "slug": "cars-driving-backwards",
+      "routeSlug": "cars-driving-backwards",
+      "title": "倒着开车的高手",
+      "english": "The best backwards driver",
+      "note": "Cars",
+      "source": "https://www.youtube.com/watch?v=ZScLa1iucOM&t=21s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/cars-driving-backwards/cars-driving-backwards-poster-79c273af0217.jpg",
+      "tags": [
+        "Cars",
+        "倒着开车的高手",
+        "Lightning McQueen",
+        "Mater",
+        "闪电麦昆",
+        "板牙"
+      ],
+      "quotes": [
+        "Will you stop that?",
+        "你能停下来吗？",
+        "What?",
+        "什么？",
+        "That driving backwards stuff. It's creeping me out. You're gonna wreck or something.",
+        "就是倒着开车这事。看得我心里发毛。你会撞车的。",
+        "Wreck? Shoot, I'm the world's best backwards driver. Just watch this right here, lover boy.",
+        "撞车？我可是世界上最会倒着开车的。看好了，情圣。",
+        "What are you doing? Watch out! Watch out!",
+        "你在干什么？小心！小心！"
+      ],
+      "manifest": "scenes/cars-driving-backwards/scene.json"
+    },
+    {
+      "id": "scene_lZYYhcV8k2Y",
+      "slug": "cars-wasabi-ice-cream",
+      "routeSlug": "cars-wasabi-ice-cream",
+      "title": "这是开心果冰淇淋吗？",
+      "english": "Pistachio ice cream?",
+      "note": "Cars",
+      "source": "https://www.youtube.com/watch?v=VjPdFZsCY4Y&t=9s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/cars-wasabi-ice-cream/cars-wasabi-ice-cream-poster-93675c9f0348.jpg",
+      "tags": [
+        "Cars",
+        "Cars 2",
+        "这是开心果冰淇淋吗？",
+        "Mater",
+        "Wasabi vendor",
+        "板牙",
+        "芥末摊主"
+      ],
+      "quotes": [
+        "Hey, what you got here that's free? How about that pistachio ice cream?",
+        "这里有什么免费的？那个开心果冰淇淋怎么样？",
+        "No, no. Wasabi.",
+        "不，不。是芥末。",
+        "Oh, same old, same old. What's up with you? That looks delicious.",
+        "哦，老样子。你怎么样？看起来真好吃。",
+        "A little more, please. It is free, right? Keep it coming. A little more. Come on, let's go. It's free! You're getting there. There you go. Now that's a scoop of ice cream.",
+        "请再多一点。是免费的吧？继续加。再来一点。来吧，免费的！快够了。对了，这才叫一勺冰淇淋。"
+      ],
+      "manifest": "scenes/cars-wasabi-ice-cream/scene.json"
+    },
+    {
+      "id": "scene_ZSxmzYiUWTM",
+      "slug": "cars-meet-cruz",
+      "routeSlug": "cars-meet-cruz",
+      "title": "你看见闪电麦昆了吗？",
+      "english": "Can you see Lightning McQueen?",
+      "note": "Cars",
+      "source": "https://www.youtube.com/watch?v=oRH4n5boJqM&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/cars-meet-cruz/cars-meet-cruz-poster-cace9fd649ed.jpg",
+      "tags": [
+        "Cars",
+        "Cars 3",
+        "你看见闪电麦昆了吗？",
+        "Sterling",
+        "Cruz Ramirez",
+        "Lightning McQueen",
+        "史特林",
+        "酷姐",
+        "闪电麦昆"
+      ],
+      "quotes": [
+        "Hey, Cruz.",
+        "嘿，酷姐。",
+        "Oh, hey, Mr. Sterling.",
+        "哦，史特林先生。",
+        "I'd like to introduce you to Lightning McQueen.",
+        "我来介绍一下闪电麦昆。",
+        "I hear you're the maestro.",
+        "听说你是训练大师。",
+        "Mr. Sterling, did you say Lightning McQueen was here? Because I don't see him anywhere.",
+        "史特林先生，你说闪电麦昆来了？我怎么没看见？",
+        "Uh, but he's right here. Do you not see him?",
+        "他就在这儿。你没看见吗？",
+        "Nope. Still don't see him.",
+        "没有，还是没看见。",
+        "He's right in front of you. It's Lightning McQueen.",
+        "他就在你面前，是闪电麦昆。",
+        "He's obviously an impostor. He looks old and broken down, with flabby tires.",
+        "他显然是冒牌货。他看起来又老又破，轮胎也松垮垮的。",
+        "I do not.",
+        "我才没有。"
+      ],
+      "manifest": "scenes/cars-meet-cruz/scene.json"
+    },
+    {
+      "id": "scene_XZWUH0xrnko",
+      "slug": "dory-forgot-the-tag",
+      "routeSlug": "dory-forgot-the-tag",
+      "title": "我的鳍上有标签？",
+      "english": "There is a tag on my fin?",
+      "note": "Finding Nemo",
+      "source": "https://www.youtube.com/watch?v=1LhFiJd8GnE&t=31s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/dory-forgot-the-tag/dory-forgot-the-tag-poster-2dcb0843690f.jpg",
+      "tags": [
+        "Finding Nemo",
+        "Finding Dory",
+        "我的鳍上有标签？",
+        "Hank",
+        "Dory",
+        "汉克",
+        "多莉"
+      ],
+      "quotes": [
+        "All you have to do is give me the tag.",
+        "你只要把标签给我就行。",
+        "What tag? There's a tag on my fin?",
+        "什么标签？我的鳍上有标签？",
+        "How could you forget? You have a tag on your fin.",
+        "你怎么会忘了？你的鳍上有标签。",
+        "Oh, no, I'm sorry. I suffer from short-term memory loss.",
+        "抱歉，我有短期失忆症。",
+        "You don't remember what we were talking about?",
+        "你不记得我们在聊什么了？",
+        "Mm-mm.",
+        "不记得了。"
+      ],
+      "manifest": "scenes/dory-forgot-the-tag/scene.json"
+    },
+    {
+      "id": "scene_1M4ndSuAIeM",
+      "slug": "nemo-exit-buddy",
+      "routeSlug": "nemo-exit-buddy",
+      "title": "找到你的出口伙伴",
+      "english": "Find your exit buddy",
+      "note": "Finding Nemo",
+      "source": "https://www.youtube.com/watch?v=rVpVHI3aloI&t=5s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/nemo-exit-buddy/nemo-exit-buddy-poster-8d456584eff6.jpg",
+      "tags": [
+        "Finding Nemo",
+        "找到你的出口伙伴",
+        "Crush",
+        "Marlin",
+        "Dory",
+        "龟龟",
+        "马林",
+        "多莉"
+      ],
+      "quotes": [
+        "All right, we're here, dudes. Get ready. Your exit's coming up, man.",
+        "伙计们，我们到了。准备好，你们的出口快到了。",
+        "Where? I don't see it.",
+        "哪里？我没看见。",
+        "Right there.",
+        "就在那儿。",
+        "I see it! I see it!",
+        "我看见了！",
+        "You mean the swirling vortex of terror?",
+        "你说的是那个可怕的漩涡？",
+        "That's it, dude.",
+        "就是那里，伙计。",
+        "Of course it is.",
+        "果然如此。",
+        "Okay, first find your exit buddy. Do you have your exit buddy?",
+        "先找到你的出口伙伴。找到了吗？",
+        "Yes!",
+        "找到了！",
+        "Okay.",
+        "好。"
+      ],
+      "manifest": "scenes/nemo-exit-buddy/scene.json"
+    },
+    {
+      "id": "scene_3ETMSXAqzEs",
+      "slug": "nemo-speaking-whale",
+      "routeSlug": "nemo-speaking-whale",
+      "title": "换一种方言试试",
+      "english": "Maybe a different dialect",
+      "note": "Finding Nemo",
+      "source": "https://www.youtube.com/watch?v=jJGeeryk0Eo&t=71s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/nemo-speaking-whale/nemo-speaking-whale-poster-43ce05b10840.jpg",
+      "tags": [
+        "Finding Nemo",
+        "换一种方言试试",
+        "Marlin",
+        "Dory",
+        "马林",
+        "多莉"
+      ],
+      "quotes": [
+        "Dory, Dory, this is not whale. You're speaking like upset stomach.",
+        "多莉，这不是鲸鱼语。听起来像肚子疼。",
+        "Maybe I should try humpback.",
+        "也许我该试试座头鲸语。",
+        "No, don't try humpback. All right, you actually sound sick.",
+        "别试座头鲸语。你听起来真的像生病了。",
+        "Maybe louder, huh?",
+        "也许应该大声点？",
+        "Don't do that.",
+        "别那样。",
+        "Too much orca, didn't it? It sounded a little orca-ish.",
+        "太像虎鲸了，是吧？有点虎鲸的感觉。",
+        "It doesn't sound orca. It sounds like nothing I've ever heard.",
+        "一点也不像虎鲸。我从没听过这种声音。"
+      ],
+      "manifest": "scenes/nemo-speaking-whale/scene.json"
+    },
+    {
+      "id": "scene_78PngUk4uMA",
+      "slug": "toy-story-mrs-nesbitt",
+      "routeSlug": "toy-story-mrs-nesbitt",
+      "title": "奈斯比特太太",
+      "english": "Mrs. Nesbitt",
+      "note": "Toy Story",
+      "source": "https://www.youtube.com/watch?v=l7u7SAoyF9Y&t=35s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/toy-story-mrs-nesbitt/toy-story-mrs-nesbitt-poster-459774f523d5.jpg",
+      "tags": [
+        "Toy Story",
+        "奈斯比特太太",
+        "Woody",
+        "Buzz Lightyear",
+        "胡迪",
+        "巴斯光年"
+      ],
+      "quotes": [
+        "Buzz? Hey! Buzz, are you okay?",
+        "巴斯，你没事吧？",
+        "Gone. It's all gone. All of it's gone. Bye-bye. See ya.",
+        "没了。全没了。再见了。",
+        "What happened to you?",
+        "你怎么了？",
+        "One minute you're defending the whole galaxy, and suddenly you find yourself sucking down Darjeeling with Marie Antoinette and her little sister.",
+        "刚才还在保卫整个银河，转眼却在陪玛丽王后和她妹妹喝茶。",
+        "I think you've had enough tea for today. Let's get you out of here, Buzz.",
+        "你今天茶喝够了。我们走吧，巴斯。",
+        "Don't you get it? You see the hat? I am Mrs. Nesbitt!",
+        "你还不明白吗？看见这顶帽子了吗？我是奈斯比特太太！",
+        "Snap out of it, Buzz!",
+        "清醒点，巴斯！"
+      ],
+      "manifest": "scenes/toy-story-mrs-nesbitt/scene.json"
+    },
+    {
+      "id": "scene_ILkvhup_YFY",
+      "slug": "toy-story-two-buzzes",
+      "routeSlug": "toy-story-two-buzzes",
+      "title": "我有激光",
+      "english": "I have a laser",
+      "note": "Toy Story",
+      "source": "https://www.youtube.com/watch?v=BpcGI_IgbQM&t=85s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/toy-story-two-buzzes/toy-story-two-buzzes-poster-85cddfc985c4.jpg",
+      "tags": [
+        "Toy Story",
+        "Toy Story 2",
+        "我有激光",
+        "Buzz Lightyear",
+        "Utility Belt Buzz",
+        "巴斯光年",
+        "腰带巴斯"
+      ],
+      "quotes": [
+        "Ow! What are you doing?",
+        "哎哟！你在干什么？",
+        "You're in direct violation of code six four zero four point five, stating all Space Rangers are to be in hypersleep until awakened by authorized personnel.",
+        "你违反了条例6404.5：所有太空骑警必须休眠，直到获授权人员唤醒。",
+        "Buzz!",
+        "巴斯！",
+        "You're breaking ranks, Ranger. Buzz Lightyear to Star Command. I've got an AWOL Space Ranger.",
+        "你擅离岗位了，骑警。巴斯光年呼叫星际总部，有太空骑警逃离岗位。",
+        "Tell me I wasn't this delusional.",
+        "我以前没有这么糊涂吧。",
+        "No back talk. I have a laser, and I will use it.",
+        "不许顶嘴。我有激光，而且我会使用它。",
+        "You mean the laser that's a light bulb?",
+        "你说的是那个小灯泡激光？"
+      ],
+      "manifest": "scenes/toy-story-two-buzzes/scene.json"
+    },
+    {
+      "id": "scene_FL_WvS6Yrg4",
+      "slug": "gru-bedtime-story",
+      "routeSlug": "gru-bedtime-story",
+      "title": "求求你啦",
+      "english": "Pretty please?",
+      "note": "Despicable Me",
+      "source": "https://www.youtube.com/watch?v=-smMKRBdxD0&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gru-bedtime-story/gru-bedtime-story-poster-bd5b6f18f0a4.jpg",
+      "tags": [
+        "Despicable Me",
+        "求求你啦",
+        "Agnes",
+        "Gru",
+        "Margo",
+        "Edith",
+        "艾格尼丝",
+        "格鲁",
+        "玛戈",
+        "伊迪丝"
+      ],
+      "quotes": [
+        "Will you read us a bedtime story?",
+        "你能给我们讲睡前故事吗？",
+        "No.",
+        "不行。",
+        "Pretty please?",
+        "求求你啦。",
+        "The physical appearance of the please makes no difference. It is still no, so go to sleep.",
+        "求我的样子再好看也没有用。还是不行，睡觉去。",
+        "But we can't. We're all hyper. And without a bedtime story, we'll just keep getting up and bugging you.",
+        "我们睡不着，都太兴奋了。不讲故事，我们就会不停起床烦你。",
+        "All night long.",
+        "一整晚。",
+        "Oh, fine.",
+        "好吧。"
+      ],
+      "manifest": "scenes/gru-bedtime-story/scene.json"
+    },
+    {
+      "id": "scene_ggDkGOmQZTA",
+      "slug": "gru-meets-the-girls",
+      "routeSlug": "gru-meets-the-girls",
+      "title": "抱住你的腿啦",
+      "english": "I got your leg",
+      "note": "Despicable Me",
+      "source": "https://www.youtube.com/watch?v=7Drao-T8omA&t=175s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gru-meets-the-girls/gru-meets-the-girls-poster-202d446670f4.jpg",
+      "tags": [
+        "Despicable Me",
+        "抱住你的腿啦",
+        "Margo",
+        "Agnes",
+        "Gru",
+        "玛戈",
+        "艾格尼丝",
+        "格鲁"
+      ],
+      "quotes": [
+        "Hi, I'm Margo. This is Edith. That's Agnes.",
+        "你好，我叫玛戈。这是伊迪丝，那是艾格尼丝。",
+        "I got your leg! I got your leg!",
+        "抱住你的腿啦！",
+        "Okay, that's enough, little girl. Let go of my leg. Come on, little girl. Just release your grip. Wow. How do you remove them? Is there a command? Some nonstick spray? Crowbar?",
+        "好了，小姑娘，够了。松开我的腿。松手吧。要怎么把她弄下来？有口令吗？防粘喷雾？撬棍？"
+      ],
+      "manifest": "scenes/gru-meets-the-girls/scene.json"
+    },
+    {
+      "id": "scene_QRuUGGTNTDQ",
+      "slug": "gru-meets-lucy",
+      "routeSlug": "gru-meets-lucy",
+      "title": "特工露西",
+      "english": "Agent Lucy Wilde",
+      "note": "Despicable Me",
+      "source": "https://www.youtube.com/watch?v=ANEvrmvjuqg&t=23s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gru-meets-lucy/gru-meets-lucy-poster-ac6a10c64fa3.jpg",
+      "tags": [
+        "Despicable Me",
+        "Despicable Me 2",
+        "特工露西",
+        "Lucy Wilde",
+        "Gru",
+        "露西",
+        "格鲁"
+      ],
+      "quotes": [
+        "Mr. Gru?",
+        "格鲁先生？",
+        "Wh-what? Yes?",
+        "什么？",
+        "Hi. Agent Lucy Wilde of the AVL. Oh, whoops. Sorry. You're gonna have to come with me.",
+        "你好，我是反恶人联盟的露西特工。哎呀，抱歉，你得跟我走一趟。",
+        "Freeze ray!",
+        "冰冻射线！",
+        "Oh, you know, you really should announce your weapons after you fire them, Mr. Gru. For example.",
+        "格鲁先生，你应该先发射武器，再报武器名字。比如这样。",
+        "Lipstick taser! Oh, it works so good.",
+        "口红电击器！真好用。"
+      ],
+      "manifest": "scenes/gru-meets-lucy/scene.json"
+    },
+    {
+      "id": "scene_LtZ9BfnLwbo",
+      "slug": "up-cross-the-porch",
+      "routeSlug": "up-cross-the-porch",
+      "title": "我能帮你过点什么吗？",
+      "english": "Can I help you cross something?",
+      "note": "Up",
+      "source": "https://www.youtube.com/watch?v=w8NzWsA5188&t=2s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/up-cross-the-porch/up-cross-the-porch-poster-9108681301fd.jpg",
+      "tags": [
+        "Up",
+        "我能帮你过点什么吗？",
+        "Russell",
+        "Carl",
+        "罗素",
+        "卡尔"
+      ],
+      "quotes": [
+        "Good afternoon. My name is Russell, and I am a Wilderness Explorer in Tribe fifty-four, Sweat Lodge twelve. Are you in need of any assistance today, sir?",
+        "下午好，我叫罗素，是54部落12分队的荒野探险家。先生，您需要帮助吗？",
+        "No.",
+        "不需要。",
+        "I could help you cross the street.",
+        "我可以扶您过马路。",
+        "No.",
+        "不需要。",
+        "I could help you cross your yard.",
+        "我可以扶您穿过院子。",
+        "No.",
+        "不需要。",
+        "I could help you cross your porch.",
+        "我可以扶您走过门廊。",
+        "No.",
+        "不需要。",
+        "Well, I gotta help you cross something.",
+        "我总得扶您过点什么。",
+        "Uh, no. I'm doing fine.",
+        "不用了，我挺好。"
+      ],
+      "manifest": "scenes/up-cross-the-porch/scene.json"
+    },
+    {
+      "id": "scene_Pz29dRMAdd0",
+      "slug": "up-find-a-snipe",
+      "routeSlug": "up-find-a-snipe",
+      "title": "你听过沙锥鸟吗？",
+      "english": "Have you heard of a snipe?",
+      "note": "Up",
+      "source": "https://www.youtube.com/watch?v=w8NzWsA5188&t=89s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/up-find-a-snipe/up-find-a-snipe-poster-b74d23091e3c.jpg",
+      "tags": [
+        "Up",
+        "你听过沙锥鸟吗？",
+        "Carl",
+        "Russell",
+        "卡尔",
+        "罗素"
+      ],
+      "quotes": [
+        "You want to assist an old person?",
+        "你想帮助老人？",
+        "Yep! Then I'll be a Senior Wilderness Explorer.",
+        "对！这样我就能成为高级荒野探险家了。",
+        "You ever heard of a snipe?",
+        "你听说过沙锥鸟吗？",
+        "Snipe?",
+        "沙锥鸟？",
+        "Bird. Beady eyes. Every night it sneaks in my yard and gobbles my poor azaleas. I'm elderly and infirm. I can't catch it. If only someone could help me.",
+        "一种小眼睛的鸟。每晚偷偷跑进院子吃我的杜鹃花。我年老体弱，抓不到它。要是有人能帮我就好了。",
+        "Me! Me! I'll do it!",
+        "我！我来帮忙！",
+        "Oh, I don't know. It's awfully crafty. You'd have to clap your hands three times to lure it in.",
+        "这可不好说，它很狡猾。你得拍三下手才能引它出来。",
+        "I'll find him, Mr. Fredricksen!",
+        "我会找到它的，弗雷德里克森先生！",
+        "I think its burrow is two blocks down. If you go...",
+        "它的窝好像在两个街区外。你往……",
+        "Two blocks down. Got it!",
+        "两个街区外，明白了！"
+      ],
+      "manifest": "scenes/up-find-a-snipe/scene.json"
+    },
+    {
+      "id": "scene_tbGsw9t4_kI",
+      "slug": "up-found-the-snipe",
+      "routeSlug": "up-found-the-snipe",
+      "title": "它们喜欢巧克力吗？",
+      "english": "Do they like chocolate?",
+      "note": "Up",
+      "source": "https://www.youtube.com/watch?v=PocShNsZjPE&t=49s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/up-found-the-snipe/up-found-the-snipe-poster-eae30660d72a.jpg",
+      "tags": [
+        "Up",
+        "它们喜欢巧克力吗？",
+        "Russell",
+        "Carl",
+        "罗素",
+        "卡尔"
+      ],
+      "quotes": [
+        "I found the snipe!",
+        "我找到沙锥鸟了！",
+        "Oh, did you?",
+        "是吗？",
+        "Are they tall?",
+        "它们很高吗？",
+        "Oh, yes, they're very tall.",
+        "是的，非常高。",
+        "Do they have a lot of colors?",
+        "它们有很多颜色吗？",
+        "They do indeed.",
+        "确实有。",
+        "Do they like chocolate?",
+        "它们喜欢巧克力吗？",
+        "Oh, yeah. Chocolate.",
+        "当然喜欢巧克力。"
+      ],
+      "manifest": "scenes/up-found-the-snipe/scene.json"
+    },
+    {
+      "id": "scene_qwQnpt21fAY",
+      "slug": "ratatouille-what-are-you-eating",
+      "routeSlug": "ratatouille-what-are-you-eating",
+      "title": "你在吃那个？",
+      "english": "You are eating that?",
+      "note": "Ratatouille",
+      "source": "https://www.youtube.com/watch?v=1S5s7oozviU&t=14s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/ratatouille-what-are-you-eating/ratatouille-what-are-you-eating-poster-31cab998c746.jpg",
+      "tags": [
+        "Ratatouille",
+        "你在吃那个？",
+        "Remy",
+        "Emile",
+        "小米",
+        "大米"
+      ],
+      "quotes": [
+        "What is that?",
+        "那是什么？",
+        "I don't really know.",
+        "我也不太清楚。",
+        "You don't know, and you're eating it?",
+        "你都不知道，还吃？",
+        "You know, if you can sort of muscle your way past the gag reflex, all kinds of food possibilities open up.",
+        "只要设法忍过想吐的感觉，各种食物都能接受了。"
+      ],
+      "manifest": "scenes/ratatouille-what-are-you-eating/scene.json"
+    },
+    {
+      "id": "scene_lUZv5MAYQqA",
+      "slug": "ratatouille-popular-again",
+      "routeSlug": "ratatouille-popular-again",
+      "title": "餐厅又火了",
+      "english": "It is popular again",
+      "note": "Ratatouille",
+      "source": "https://www.youtube.com/watch?v=ef91za0liTM&t=8s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/ratatouille-popular-again/ratatouille-popular-again-poster-5d3cc489b9d2.jpg",
+      "tags": [
+        "Ratatouille",
+        "餐厅又火了",
+        "Anton Ego",
+        "Ambrister",
+        "安东·伊戈",
+        "管家"
+      ],
+      "quotes": [
+        "What is it, Ambrister? Gusteau's finally closing, is it?",
+        "怎么了？古斯托餐厅终于要关门了吗？",
+        "No.",
+        "不是。",
+        "More financial trouble?",
+        "又有财务问题了？",
+        "No.",
+        "不是。",
+        "It's announced a new line of microwave egg rolls?",
+        "要推出新的微波春卷？",
+        "What?",
+        "什么？",
+        "What? Spit it out!",
+        "怎么了？快说！",
+        "It's come back. It's popular.",
+        "它又重新火起来了。"
+      ],
+      "manifest": "scenes/ratatouille-popular-again/scene.json"
+    },
+    {
+      "id": "scene_0OwJPdKTGPc",
+      "slug": "panda-noodle-dream",
+      "routeSlug": "panda-noodle-dream",
+      "title": "梦见面条",
+      "english": "Dreaming about noodles",
+      "note": "Kung Fu Panda",
+      "source": "https://www.youtube.com/watch?v=tIiv-YDtCXY&t=61s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/panda-noodle-dream/panda-noodle-dream-poster-825197b75aa0.jpg",
+      "tags": [
+        "Kung Fu Panda",
+        "梦见面条",
+        "Mr. Ping",
+        "Po",
+        "平先生",
+        "阿宝"
+      ],
+      "quotes": [
+        "What were you doing up there? All that noise.",
+        "你在楼上干什么？那么吵。",
+        "Oh, nothing. Just had a crazy dream.",
+        "没什么，就是做了个奇怪的梦。",
+        "About what? Huh? What were you dreaming about?",
+        "梦见了什么？",
+        "What was I... I was dreaming about... noodles.",
+        "我梦见……面条。",
+        "Noodles? You were really dreaming about noodles?",
+        "面条？你真的梦见了面条？",
+        "Yeah. What else would I be dreaming about?",
+        "对啊，不然还能梦见什么？",
+        "Oh, careful! That soup is sharp. Oh, happy day! My son finally having the noodle dream!",
+        "小心，这汤烫。真是好日子！我儿子终于梦见面条了！"
+      ],
+      "manifest": "scenes/panda-noodle-dream/scene.json"
+    },
+    {
+      "id": "scene_87NyKFKTV9c",
+      "slug": "panda-free-to-eat",
+      "routeSlug": "panda-free-to-eat",
+      "title": "你可以吃了",
+      "english": "You are free to eat",
+      "note": "Kung Fu Panda",
+      "source": "https://www.youtube.com/watch?v=KtsOkdO3wTw&t=94s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/panda-free-to-eat/panda-free-to-eat-poster-ab05a3cdb17b.jpg",
+      "tags": [
+        "Kung Fu Panda",
+        "你可以吃了",
+        "Shifu",
+        "Po",
+        "师父",
+        "阿宝"
+      ],
+      "quotes": [
+        "After you, panda.",
+        "你先请，熊猫。",
+        "Just like that? No sit-ups? No, no, no, no, no ten-mile hike?",
+        "就这样？不用做仰卧起坐，也不用走十英里？",
+        "I vowed to train you, and you have been trained. You are free to eat. Enjoy.",
+        "我答应训练你，现在你已经完成训练。可以吃了，请享用。",
+        "Hey!",
+        "嘿！",
+        "I said you are free to eat. Have a dumpling.",
+        "我说你可以吃了。来个包子。",
+        "Hey!",
+        "嘿！"
+      ],
+      "manifest": "scenes/panda-free-to-eat/scene.json"
+    },
+    {
+      "id": "scene_szm7GJTTBds",
+      "slug": "panda-inner-peace",
+      "routeSlug": "panda-inner-peace",
+      "title": "什么的内心平静？",
+      "english": "Inner peace of what?",
+      "note": "Kung Fu Panda",
+      "source": "https://www.youtube.com/watch?v=1eP4xQpYHfw&t=147s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/panda-inner-peace/panda-inner-peace-poster-dc1c6382bda1.jpg",
+      "tags": [
+        "Kung Fu Panda",
+        "Kung Fu Panda 2",
+        "什么的内心平静？",
+        "Po",
+        "Shifu",
+        "阿宝",
+        "师父"
+      ],
+      "quotes": [
+        "Wow. Awesome. How did you do that?",
+        "哇，太厉害了。你怎么做到的？",
+        "Inner peace.",
+        "内心平静。",
+        "Inner peace? That's cool. Inner peace of what?",
+        "内心平静？真酷。什么的内心平静？",
+        "It is the next phase of your training. Every master must find his path to inner peace.",
+        "这是你下一阶段的训练。每位大师都要找到通往内心平静的道路。"
+      ],
+      "manifest": "scenes/panda-inner-peace/scene.json"
+    },
+    {
+      "id": "scene_iEHU4pcNbz8",
+      "slug": "madagascar-birthday-wish",
+      "routeSlug": "madagascar-birthday-wish",
+      "title": "你许了什么愿？",
+      "english": "What did you wish for?",
+      "note": "Madagascar",
+      "source": "https://www.youtube.com/watch?v=Zql3EuAYeF0&t=53s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/madagascar-birthday-wish/madagascar-birthday-wish-poster-fe8174a43ce6.jpg",
+      "tags": [
+        "Madagascar",
+        "你许了什么愿？",
+        "Alex",
+        "Marty",
+        "Gloria",
+        "艾力狮",
+        "马蒂",
+        "格洛丽亚"
+      ],
+      "quotes": [
+        "Come on, what'd you wish for?",
+        "快说，你许了什么愿？",
+        "No, can't tell you that.",
+        "不能告诉你。",
+        "Come on, tell.",
+        "说嘛。",
+        "No siree, I'm telling you, it's bad luck. You want some bad luck? I'll blab it out. But if you want to be safe, I'll keep...",
+        "不行，说出来会倒霉的。你想倒霉的话，我就说。要想平安的话……",
+        "Would you just tell us? I mean, really, what could happen?",
+        "告诉我们吧，到底能发生什么？",
+        "Okay. I wished I could go to the wild.",
+        "好吧，我希望能去野外。",
+        "The wild?",
+        "野外？",
+        "Whoa. I told you it was bad luck.",
+        "看吧，我就说会倒霉。"
+      ],
+      "manifest": "scenes/madagascar-birthday-wish/scene.json"
+    },
+    {
+      "id": "scene_6oNrdV4y6EM",
+      "slug": "madagascar-new-york-giants",
+      "routeSlug": "madagascar-new-york-giants",
+      "title": "纽约巨人",
+      "english": "The New York Giants",
+      "note": "Madagascar",
+      "source": "https://www.youtube.com/watch?v=CWZIOJGl72k&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/madagascar-new-york-giants/madagascar-new-york-giants-poster-ee7ecc918af4.jpg",
+      "tags": [
+        "Madagascar",
+        "纽约巨人",
+        "King Julien",
+        "Alex",
+        "朱利安国王",
+        "艾力狮"
+      ],
+      "quotes": [
+        "You must tell me, who the heck are you?",
+        "快告诉我，你们究竟是谁？",
+        "I'm Alex. The Alex. And this is Gloria, Marty, Melman.",
+        "我是艾力狮。这是格洛丽亚、马蒂和梅尔曼。",
+        "Just where are you giants from?",
+        "你们这些巨人从哪里来？",
+        "We're from New York.",
+        "我们来自纽约。",
+        "All hail the New York Giants!",
+        "向纽约巨人致敬！"
+      ],
+      "manifest": "scenes/madagascar-new-york-giants/scene.json"
+    },
+    {
+      "id": "scene_R0UWEZ7AuGI",
+      "slug": "madagascar-warning-light",
+      "routeSlug": "madagascar-warning-light",
+      "title": "这盏灯是什么意思？",
+      "english": "What does the light mean?",
+      "note": "Madagascar",
+      "source": "https://www.youtube.com/watch?v=9F3iBMYvQOs&t=49s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/madagascar-warning-light/madagascar-warning-light-poster-516fd16fc8ce.jpg",
+      "tags": [
+        "Madagascar",
+        "Madagascar: Escape 2 Africa",
+        "这盏灯是什么意思？",
+        "Kowalski",
+        "Skipper",
+        "科瓦斯基",
+        "老大"
+      ],
+      "quotes": [
+        "Skipper, look.",
+        "老大，快看。",
+        "Analysis.",
+        "分析一下。",
+        "It looks like a small incandescent bulb designed to indicate something out of the ordinary, like a malfunction.",
+        "看起来是个小灯泡，用来指示异常情况，比如故障。",
+        "I find it pretty and somewhat hypnotic.",
+        "我觉得它挺漂亮，还有点催眠。",
+        "That too, sir.",
+        "也有这个作用，长官。",
+        "Right. Rico. Manual. Problem solved.",
+        "好，瑞哥，手册。问题解决了。",
+        "Sir, we may be out of fuel.",
+        "长官，我们可能没油了。",
+        "What makes you think that?",
+        "你怎么知道？",
+        "We've lost engine one. And engine two is no longer on fire.",
+        "一号发动机停了，二号发动机也不冒火了。"
+      ],
+      "manifest": "scenes/madagascar-warning-light/scene.json"
+    },
+    {
+      "id": "scene_Y1VpaH0XS9c",
+      "slug": "madagascar-little-situation",
+      "routeSlug": "madagascar-little-situation",
+      "title": "出了点小状况",
+      "english": "A little situation",
+      "note": "Madagascar",
+      "source": "https://www.youtube.com/watch?v=kPE7ZCGjw4o&t=132s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/madagascar-little-situation/madagascar-little-situation-poster-0e6444727fc9.jpg",
+      "tags": [
+        "Madagascar",
+        "出了点小状况",
+        "Melman",
+        "Alex",
+        "Marty",
+        "梅尔曼",
+        "艾力狮",
+        "马蒂"
+      ],
+      "quotes": [
+        "Good evening, officers.",
+        "警官们，晚上好。",
+        "No, no, no. You don't talk now, okay? You're not so good with the putting the words together and they're coming out good thing. You keep it shh.",
+        "别说了。你不太擅长组织语言，你先安静一下。",
+        "Hey, how you doing? Yeah, you know what? Everything's cool. We just had a little situation here. Little internal situation. Actually, my friend just went a little crazy. Happens to everybody. The city gets to us all. Just went a little cuckoo in the head.",
+        "你们好，一切正常。我们只是出了点小状况，内部小状况。我朋友有点失控，这种事谁都会遇到。这座城市让大家都有压力，他只是脑子有点糊涂。",
+        "Hey, don't be calling me cuckoo in the head!",
+        "别说我脑子糊涂！",
+        "Just shh.",
+        "嘘。"
+      ],
+      "manifest": "scenes/madagascar-little-situation/scene.json"
+    },
+    {
+      "id": "scene_T-bJo8Z4eF0",
+      "slug": "ratatouille-taste-the-food",
+      "routeSlug": "ratatouille-taste-the-food",
+      "title": "慢慢尝尝味道",
+      "english": "Do not just eat it",
+      "note": "Ratatouille",
+      "source": "https://www.youtube.com/watch?v=rLXYILcRoPQ&t=36s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/ratatouille-taste-the-food/ratatouille-taste-the-food-poster-714ff9370698.jpg",
+      "tags": [
+        "Ratatouille",
+        "慢慢尝尝味道",
+        "Remy",
+        "Emile",
+        "小米",
+        "大米"
+      ],
+      "quotes": [
+        "Close your eyes. Now take a bite of this. No, no. Don't just hork it down!",
+        "闭上眼睛，咬一口。别一口吞下去！",
+        "Here. Chew it slowly. Only think about the taste. See? Creamy, salty, sweet, an oaky nuttiness. You detect that?",
+        "给你，慢慢嚼。只想着它的味道。尝到了吗？奶油味、咸味、甜味和橡木果仁香。感觉到了吗？",
+        "Oh, I'm detecting nuttiness.",
+        "嗯，我确实感觉到果仁味了。",
+        "Close your eyes. Now taste this. A whole different thing, right? Sweet, crisp, slight tang on the finish.",
+        "闭上眼睛，尝尝这个。完全不一样吧？香甜清脆，回味有一丝酸味。"
+      ],
+      "manifest": "scenes/ratatouille-taste-the-food/scene.json"
+    },
+    {
+      "id": "scene_n_VK-I9IFbU",
+      "slug": "ratatouille-a-little-perspective",
+      "routeSlug": "ratatouille-a-little-perspective",
+      "title": "来一点见解",
+      "english": "A little perspective",
+      "note": "Ratatouille",
+      "source": "https://www.youtube.com/watch?v=4BSfWh9uHoY&t=5s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/ratatouille-a-little-perspective/ratatouille-a-little-perspective-poster-05e42d12554e.jpg",
+      "tags": [
+        "Ratatouille",
+        "来一点见解",
+        "Waiter",
+        "Anton Ego",
+        "服务员",
+        "安东·伊戈"
+      ],
+      "quotes": [
+        "Do you know what you would like this evening, sir?",
+        "先生，今晚您想点些什么？",
+        "Yes, I think I do. After reading a lot of overheated puffery about your new cook, you know what I'm craving? A little perspective. That's it.",
+        "我想好了。读了那么多对你们新厨师夸大的吹捧后，你知道我渴望什么吗？一点见解。",
+        "I'd like some fresh, clear, well-seasoned perspective. Can you suggest a good wine to go with that?",
+        "没错。我想要新鲜、清楚、调味得当的见解。能推荐一款搭配的葡萄酒吗？",
+        "With what, sir?",
+        "搭配什么，先生？",
+        "Perspective. Fresh out, I take it?",
+        "见解。看来已经没有了？"
+      ],
+      "manifest": "scenes/ratatouille-a-little-perspective/scene.json"
     }
   ],
   "locales": {
@@ -1651,6 +2590,136 @@
           "title": "I have got a simple plan",
           "licence": "Redistribution permission unconfirmed",
           "changes": "Internal prototype testing; excerpt from 310.55–336.3 seconds of the original upload. Fantasy prop only; ordinary problem-solving dialogue. The later put-down and bird/climbing sequence are excluded."
+        },
+        "scene_a3BDHKKQn54": {
+          "title": "Do you know the Muffin Man?",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_c_rtu-aligQ": {
+          "title": "The best backwards driver",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_lZYYhcV8k2Y": {
+          "title": "Pistachio ice cream?",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_ZSxmzYiUWTM": {
+          "title": "Can you see Lightning McQueen?",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_XZWUH0xrnko": {
+          "title": "There is a tag on my fin?",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_1M4ndSuAIeM": {
+          "title": "Find your exit buddy",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_3ETMSXAqzEs": {
+          "title": "Maybe a different dialect",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_78PngUk4uMA": {
+          "title": "Mrs. Nesbitt",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_ILkvhup_YFY": {
+          "title": "I have a laser",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_FL_WvS6Yrg4": {
+          "title": "Pretty please?",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_ggDkGOmQZTA": {
+          "title": "I got your leg",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_QRuUGGTNTDQ": {
+          "title": "Agent Lucy Wilde",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_LtZ9BfnLwbo": {
+          "title": "Can I help you cross something?",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_Pz29dRMAdd0": {
+          "title": "Have you heard of a snipe?",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_tbGsw9t4_kI": {
+          "title": "Do they like chocolate?",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_qwQnpt21fAY": {
+          "title": "You are eating that?",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_lUZv5MAYQqA": {
+          "title": "It is popular again",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_0OwJPdKTGPc": {
+          "title": "Dreaming about noodles",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_87NyKFKTV9c": {
+          "title": "You are free to eat",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_szm7GJTTBds": {
+          "title": "Inner peace of what?",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_iEHU4pcNbz8": {
+          "title": "What did you wish for?",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_6oNrdV4y6EM": {
+          "title": "The New York Giants",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_R0UWEZ7AuGI": {
+          "title": "What does the light mean?",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_Y1VpaH0XS9c": {
+          "title": "A little situation",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_T-bJo8Z4eF0": {
+          "title": "Do not just eat it",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_n_VK-I9IFbU": {
+          "title": "A little perspective",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
         }
       },
       "roles": {
@@ -2045,6 +3114,242 @@
         "role_6um5do5ReBs": {
           "name": "Ben",
           "hint": "4 lines"
+        },
+        "role_7XN0VQR8hM4": {
+          "name": "Gingy",
+          "hint": "4 lines"
+        },
+        "role_A77uZ7IIAyQ": {
+          "name": "Lord Farquaad",
+          "hint": "4 lines"
+        },
+        "role_yfj7cGvR8rM": {
+          "name": "Lightning McQueen",
+          "hint": "3 lines"
+        },
+        "role_LEVMlOe3hJ8": {
+          "name": "Mater",
+          "hint": "2 lines"
+        },
+        "role_VXY9t6Fv1RQ": {
+          "name": "Mater",
+          "hint": "3 lines"
+        },
+        "role_wHynyqr8qEw": {
+          "name": "Wasabi vendor",
+          "hint": "1 line"
+        },
+        "role_TVl__9_H-uo": {
+          "name": "Sterling",
+          "hint": "4 lines"
+        },
+        "role_nQSavK14OQU": {
+          "name": "Cruz Ramirez",
+          "hint": "4 lines"
+        },
+        "role_iH6JptG0C3M": {
+          "name": "Lightning McQueen",
+          "hint": "2 lines"
+        },
+        "role_1G4bNl5b0j4": {
+          "name": "Hank",
+          "hint": "3 lines"
+        },
+        "role_Zi1HqrucPIM": {
+          "name": "Dory",
+          "hint": "3 lines"
+        },
+        "role_iSu9D4PqC1A": {
+          "name": "Crush",
+          "hint": "5 lines"
+        },
+        "role_hGL5XBuFwGc": {
+          "name": "Marlin",
+          "hint": "3 lines"
+        },
+        "role_afmsmZ2bsI8": {
+          "name": "Dory",
+          "hint": "2 lines"
+        },
+        "role_R9JrW6iAf6s": {
+          "name": "Marlin",
+          "hint": "4 lines"
+        },
+        "role_oxxbg7pReN0": {
+          "name": "Dory",
+          "hint": "3 lines"
+        },
+        "role_AKeW1fapsu8": {
+          "name": "Woody",
+          "hint": "4 lines"
+        },
+        "role_fo0NHYDjW7o": {
+          "name": "Buzz Lightyear",
+          "hint": "3 lines"
+        },
+        "role_EBCAuBAeMgQ": {
+          "name": "Buzz Lightyear",
+          "hint": "4 lines"
+        },
+        "role_NYvRYCuAHCc": {
+          "name": "Utility Belt Buzz",
+          "hint": "3 lines"
+        },
+        "role_T84qUgqhJWs": {
+          "name": "Agnes",
+          "hint": "2 lines"
+        },
+        "role_1riy0R0QHso": {
+          "name": "Gru",
+          "hint": "3 lines"
+        },
+        "role_i5Z0lX1OKRk": {
+          "name": "Margo",
+          "hint": "1 line"
+        },
+        "role_8j5eoCcBDKg": {
+          "name": "Edith",
+          "hint": "1 line"
+        },
+        "role_gt8sRYHc9GA": {
+          "name": "Margo",
+          "hint": "1 line"
+        },
+        "role_3AI1krmr0WM": {
+          "name": "Agnes",
+          "hint": "1 line"
+        },
+        "role_sPY3P9aVvf8": {
+          "name": "Gru",
+          "hint": "1 line"
+        },
+        "role_wIpaFcBailA": {
+          "name": "Lucy Wilde",
+          "hint": "4 lines"
+        },
+        "role_EUZhxArGg-0": {
+          "name": "Gru",
+          "hint": "2 lines"
+        },
+        "role_chi9JH8XMY4": {
+          "name": "Russell",
+          "hint": "5 lines"
+        },
+        "role_BDRzhE5Z6q8": {
+          "name": "Carl",
+          "hint": "5 lines"
+        },
+        "role_SxE__9y_T3s": {
+          "name": "Carl",
+          "hint": "5 lines"
+        },
+        "role_ajs5aku0O4s": {
+          "name": "Russell",
+          "hint": "5 lines"
+        },
+        "role_iF2a-6KO_e0": {
+          "name": "Russell",
+          "hint": "4 lines"
+        },
+        "role_kYO5OsI8PP4": {
+          "name": "Carl",
+          "hint": "4 lines"
+        },
+        "role_Y_wPsynZvd8": {
+          "name": "Remy",
+          "hint": "2 lines"
+        },
+        "role_CIjvzYuv4W4": {
+          "name": "Emile",
+          "hint": "2 lines"
+        },
+        "role_1Nu3qyPbhsA": {
+          "name": "Anton Ego",
+          "hint": "4 lines"
+        },
+        "role_vQzCZAEgqrg": {
+          "name": "Ambrister",
+          "hint": "4 lines"
+        },
+        "role_g0jPPlcNkUQ": {
+          "name": "Mr. Ping",
+          "hint": "4 lines"
+        },
+        "role_BGhegRLBHS4": {
+          "name": "Po",
+          "hint": "3 lines"
+        },
+        "role_odkF-xJfSPg": {
+          "name": "Shifu",
+          "hint": "3 lines"
+        },
+        "role_TY1pCRHc9Fs": {
+          "name": "Po",
+          "hint": "3 lines"
+        },
+        "role_OMj0OxuLlII": {
+          "name": "Po",
+          "hint": "2 lines"
+        },
+        "role_AnJwAbTjjmA": {
+          "name": "Shifu",
+          "hint": "2 lines"
+        },
+        "role_dhHEnAF3xc8": {
+          "name": "Alex",
+          "hint": "3 lines"
+        },
+        "role_zMIbPZPaoZE": {
+          "name": "Marty",
+          "hint": "4 lines"
+        },
+        "role_5hTvr_4qtsY": {
+          "name": "Gloria",
+          "hint": "1 line"
+        },
+        "role_6Hy35lv2HP4": {
+          "name": "King Julien",
+          "hint": "3 lines"
+        },
+        "role_Oo7l0olB3Us": {
+          "name": "Alex",
+          "hint": "2 lines"
+        },
+        "role_yJFA4SClcgo": {
+          "name": "Kowalski",
+          "hint": "5 lines"
+        },
+        "role_h5Q-n0Lb1CM": {
+          "name": "Skipper",
+          "hint": "4 lines"
+        },
+        "role_sq5rREP5D1E": {
+          "name": "Melman",
+          "hint": "1 line"
+        },
+        "role_dkpFjwnCRZU": {
+          "name": "Alex",
+          "hint": "3 lines"
+        },
+        "role_-Zl-OSzuP6Q": {
+          "name": "Marty",
+          "hint": "1 line"
+        },
+        "role_B8bCFyAVSNc": {
+          "name": "Remy",
+          "hint": "3 lines"
+        },
+        "role_uoywbUkAf0U": {
+          "name": "Emile",
+          "hint": "1 line"
+        },
+        "role_tK6NBFXudoI": {
+          "name": "Waiter",
+          "hint": "2 lines"
+        },
+        "role_Lbe3H2XSU5Y": {
+          "name": "Anton Ego",
+          "hint": "3 lines"
         }
       },
       "notices": {
@@ -2243,6 +3548,136 @@
           "title": "我有一个简单的计划",
           "licence": "未确认再分发许可",
           "changes": "内部原型测试；原上传 310.55–336.3 秒的连续节选。Fantasy prop only; ordinary problem-solving dialogue. The later put-down and bird/climbing sequence are excluded."
+        },
+        "scene_a3BDHKKQn54": {
+          "title": "你认识松饼人吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_c_rtu-aligQ": {
+          "title": "倒着开车的高手",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_lZYYhcV8k2Y": {
+          "title": "这是开心果冰淇淋吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_ZSxmzYiUWTM": {
+          "title": "你看见闪电麦昆了吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_XZWUH0xrnko": {
+          "title": "我的鳍上有标签？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_1M4ndSuAIeM": {
+          "title": "找到你的出口伙伴",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_3ETMSXAqzEs": {
+          "title": "换一种方言试试",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_78PngUk4uMA": {
+          "title": "奈斯比特太太",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_ILkvhup_YFY": {
+          "title": "我有激光",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_FL_WvS6Yrg4": {
+          "title": "求求你啦",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_ggDkGOmQZTA": {
+          "title": "抱住你的腿啦",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_QRuUGGTNTDQ": {
+          "title": "特工露西",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_LtZ9BfnLwbo": {
+          "title": "我能帮你过点什么吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_Pz29dRMAdd0": {
+          "title": "你听过沙锥鸟吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_tbGsw9t4_kI": {
+          "title": "它们喜欢巧克力吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_qwQnpt21fAY": {
+          "title": "你在吃那个？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_lUZv5MAYQqA": {
+          "title": "餐厅又火了",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_0OwJPdKTGPc": {
+          "title": "梦见面条",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_87NyKFKTV9c": {
+          "title": "你可以吃了",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_szm7GJTTBds": {
+          "title": "什么的内心平静？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_iEHU4pcNbz8": {
+          "title": "你许了什么愿？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_6oNrdV4y6EM": {
+          "title": "纽约巨人",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_R0UWEZ7AuGI": {
+          "title": "这盏灯是什么意思？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_Y1VpaH0XS9c": {
+          "title": "出了点小状况",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_T-bJo8Z4eF0": {
+          "title": "慢慢尝尝味道",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_n_VK-I9IFbU": {
+          "title": "来一点见解",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
         }
       },
       "roles": {
@@ -2637,6 +4072,242 @@
         "role_6um5do5ReBs": {
           "name": "本",
           "hint": "4 句台词"
+        },
+        "role_7XN0VQR8hM4": {
+          "name": "姜饼人",
+          "hint": "4 句台词"
+        },
+        "role_A77uZ7IIAyQ": {
+          "name": "法尔夸德",
+          "hint": "4 句台词"
+        },
+        "role_yfj7cGvR8rM": {
+          "name": "闪电麦昆",
+          "hint": "3 句台词"
+        },
+        "role_LEVMlOe3hJ8": {
+          "name": "板牙",
+          "hint": "2 句台词"
+        },
+        "role_VXY9t6Fv1RQ": {
+          "name": "板牙",
+          "hint": "3 句台词"
+        },
+        "role_wHynyqr8qEw": {
+          "name": "芥末摊主",
+          "hint": "1 句台词"
+        },
+        "role_TVl__9_H-uo": {
+          "name": "史特林",
+          "hint": "4 句台词"
+        },
+        "role_nQSavK14OQU": {
+          "name": "酷姐",
+          "hint": "4 句台词"
+        },
+        "role_iH6JptG0C3M": {
+          "name": "闪电麦昆",
+          "hint": "2 句台词"
+        },
+        "role_1G4bNl5b0j4": {
+          "name": "汉克",
+          "hint": "3 句台词"
+        },
+        "role_Zi1HqrucPIM": {
+          "name": "多莉",
+          "hint": "3 句台词"
+        },
+        "role_iSu9D4PqC1A": {
+          "name": "龟龟",
+          "hint": "5 句台词"
+        },
+        "role_hGL5XBuFwGc": {
+          "name": "马林",
+          "hint": "3 句台词"
+        },
+        "role_afmsmZ2bsI8": {
+          "name": "多莉",
+          "hint": "2 句台词"
+        },
+        "role_R9JrW6iAf6s": {
+          "name": "马林",
+          "hint": "4 句台词"
+        },
+        "role_oxxbg7pReN0": {
+          "name": "多莉",
+          "hint": "3 句台词"
+        },
+        "role_AKeW1fapsu8": {
+          "name": "胡迪",
+          "hint": "4 句台词"
+        },
+        "role_fo0NHYDjW7o": {
+          "name": "巴斯光年",
+          "hint": "3 句台词"
+        },
+        "role_EBCAuBAeMgQ": {
+          "name": "巴斯光年",
+          "hint": "4 句台词"
+        },
+        "role_NYvRYCuAHCc": {
+          "name": "腰带巴斯",
+          "hint": "3 句台词"
+        },
+        "role_T84qUgqhJWs": {
+          "name": "艾格尼丝",
+          "hint": "2 句台词"
+        },
+        "role_1riy0R0QHso": {
+          "name": "格鲁",
+          "hint": "3 句台词"
+        },
+        "role_i5Z0lX1OKRk": {
+          "name": "玛戈",
+          "hint": "1 句台词"
+        },
+        "role_8j5eoCcBDKg": {
+          "name": "伊迪丝",
+          "hint": "1 句台词"
+        },
+        "role_gt8sRYHc9GA": {
+          "name": "玛戈",
+          "hint": "1 句台词"
+        },
+        "role_3AI1krmr0WM": {
+          "name": "艾格尼丝",
+          "hint": "1 句台词"
+        },
+        "role_sPY3P9aVvf8": {
+          "name": "格鲁",
+          "hint": "1 句台词"
+        },
+        "role_wIpaFcBailA": {
+          "name": "露西",
+          "hint": "4 句台词"
+        },
+        "role_EUZhxArGg-0": {
+          "name": "格鲁",
+          "hint": "2 句台词"
+        },
+        "role_chi9JH8XMY4": {
+          "name": "罗素",
+          "hint": "5 句台词"
+        },
+        "role_BDRzhE5Z6q8": {
+          "name": "卡尔",
+          "hint": "5 句台词"
+        },
+        "role_SxE__9y_T3s": {
+          "name": "卡尔",
+          "hint": "5 句台词"
+        },
+        "role_ajs5aku0O4s": {
+          "name": "罗素",
+          "hint": "5 句台词"
+        },
+        "role_iF2a-6KO_e0": {
+          "name": "罗素",
+          "hint": "4 句台词"
+        },
+        "role_kYO5OsI8PP4": {
+          "name": "卡尔",
+          "hint": "4 句台词"
+        },
+        "role_Y_wPsynZvd8": {
+          "name": "小米",
+          "hint": "2 句台词"
+        },
+        "role_CIjvzYuv4W4": {
+          "name": "大米",
+          "hint": "2 句台词"
+        },
+        "role_1Nu3qyPbhsA": {
+          "name": "安东·伊戈",
+          "hint": "4 句台词"
+        },
+        "role_vQzCZAEgqrg": {
+          "name": "管家",
+          "hint": "4 句台词"
+        },
+        "role_g0jPPlcNkUQ": {
+          "name": "平先生",
+          "hint": "4 句台词"
+        },
+        "role_BGhegRLBHS4": {
+          "name": "阿宝",
+          "hint": "3 句台词"
+        },
+        "role_odkF-xJfSPg": {
+          "name": "师父",
+          "hint": "3 句台词"
+        },
+        "role_TY1pCRHc9Fs": {
+          "name": "阿宝",
+          "hint": "3 句台词"
+        },
+        "role_OMj0OxuLlII": {
+          "name": "阿宝",
+          "hint": "2 句台词"
+        },
+        "role_AnJwAbTjjmA": {
+          "name": "师父",
+          "hint": "2 句台词"
+        },
+        "role_dhHEnAF3xc8": {
+          "name": "艾力狮",
+          "hint": "3 句台词"
+        },
+        "role_zMIbPZPaoZE": {
+          "name": "马蒂",
+          "hint": "4 句台词"
+        },
+        "role_5hTvr_4qtsY": {
+          "name": "格洛丽亚",
+          "hint": "1 句台词"
+        },
+        "role_6Hy35lv2HP4": {
+          "name": "朱利安国王",
+          "hint": "3 句台词"
+        },
+        "role_Oo7l0olB3Us": {
+          "name": "艾力狮",
+          "hint": "2 句台词"
+        },
+        "role_yJFA4SClcgo": {
+          "name": "科瓦斯基",
+          "hint": "5 句台词"
+        },
+        "role_h5Q-n0Lb1CM": {
+          "name": "队长",
+          "hint": "4 句台词"
+        },
+        "role_sq5rREP5D1E": {
+          "name": "梅尔曼",
+          "hint": "1 句台词"
+        },
+        "role_dkpFjwnCRZU": {
+          "name": "艾力狮",
+          "hint": "3 句台词"
+        },
+        "role_-Zl-OSzuP6Q": {
+          "name": "马蒂",
+          "hint": "1 句台词"
+        },
+        "role_B8bCFyAVSNc": {
+          "name": "小米",
+          "hint": "3 句台词"
+        },
+        "role_uoywbUkAf0U": {
+          "name": "大米",
+          "hint": "1 句台词"
+        },
+        "role_tK6NBFXudoI": {
+          "name": "服务员",
+          "hint": "2 句台词"
+        },
+        "role_Lbe3H2XSU5Y": {
+          "name": "安东·伊戈",
+          "hint": "3 句台词"
         }
       },
       "notices": {
@@ -2835,6 +4506,136 @@
           "title": "Tengo un plan muy sencillo",
           "licence": "Permiso de redistribución sin confirmar",
           "changes": "Prueba interna del prototipo; fragmento de los segundos 310.55–336.3 del vídeo original. Solo hay un objeto fantástico; el diálogo trata de resolver un problema cotidiano. Se excluyen el comentario despectivo posterior y la secuencia del pájaro y la escalada."
+        },
+        "scene_a3BDHKKQn54": {
+          "title": "¿Conoces al Hombre de los Muffins?",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_c_rtu-aligQ": {
+          "title": "El mejor conductor marcha atrás",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_lZYYhcV8k2Y": {
+          "title": "¿Helado de pistacho?",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_ZSxmzYiUWTM": {
+          "title": "¿Puedes ver a Rayo McQueen?",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_XZWUH0xrnko": {
+          "title": "¿Tengo una etiqueta en la aleta?",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_1M4ndSuAIeM": {
+          "title": "Busca a tu compañero de salida",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_3ETMSXAqzEs": {
+          "title": "Quizá otro dialecto",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_78PngUk4uMA": {
+          "title": "La señora Nesbitt",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_ILkvhup_YFY": {
+          "title": "Tengo un láser",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_FL_WvS6Yrg4": {
+          "title": "¿Por favor?",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_ggDkGOmQZTA": {
+          "title": "¡Tengo tu pierna!",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_QRuUGGTNTDQ": {
+          "title": "La agente Lucy Wilde",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_LtZ9BfnLwbo": {
+          "title": "¿Te ayudo a cruzar algo?",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_Pz29dRMAdd0": {
+          "title": "¿Has oído hablar de la agachadiza?",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_tbGsw9t4_kI": {
+          "title": "¿Les gusta el chocolate?",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_qwQnpt21fAY": {
+          "title": "¿Te estás comiendo eso?",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_lUZv5MAYQqA": {
+          "title": "Vuelve a ser popular",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_0OwJPdKTGPc": {
+          "title": "Soñar con fideos",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_87NyKFKTV9c": {
+          "title": "Puedes comer",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_szm7GJTTBds": {
+          "title": "¿Paz interior de qué?",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_iEHU4pcNbz8": {
+          "title": "¿Qué deseo pediste?",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_6oNrdV4y6EM": {
+          "title": "Los gigantes de Nueva York",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_R0UWEZ7AuGI": {
+          "title": "¿Qué significa esa luz?",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_Y1VpaH0XS9c": {
+          "title": "Un pequeño problema",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_T-bJo8Z4eF0": {
+          "title": "No te lo tragues sin saborear",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_n_VK-I9IFbU": {
+          "title": "Un poco de perspectiva",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
         }
       },
       "roles": {
@@ -3229,6 +5030,242 @@
         "role_6um5do5ReBs": {
           "name": "Ben",
           "hint": "4 frases"
+        },
+        "role_7XN0VQR8hM4": {
+          "name": "Gingy",
+          "hint": "4 frases"
+        },
+        "role_A77uZ7IIAyQ": {
+          "name": "Lord Farquaad",
+          "hint": "4 frases"
+        },
+        "role_yfj7cGvR8rM": {
+          "name": "Lightning McQueen",
+          "hint": "3 frases"
+        },
+        "role_LEVMlOe3hJ8": {
+          "name": "Mater",
+          "hint": "2 frases"
+        },
+        "role_VXY9t6Fv1RQ": {
+          "name": "Mater",
+          "hint": "3 frases"
+        },
+        "role_wHynyqr8qEw": {
+          "name": "Vendedor de wasabi",
+          "hint": "1 frase"
+        },
+        "role_TVl__9_H-uo": {
+          "name": "Sterling",
+          "hint": "4 frases"
+        },
+        "role_nQSavK14OQU": {
+          "name": "Cruz Ramirez",
+          "hint": "4 frases"
+        },
+        "role_iH6JptG0C3M": {
+          "name": "Lightning McQueen",
+          "hint": "2 frases"
+        },
+        "role_1G4bNl5b0j4": {
+          "name": "Hank",
+          "hint": "3 frases"
+        },
+        "role_Zi1HqrucPIM": {
+          "name": "Dory",
+          "hint": "3 frases"
+        },
+        "role_iSu9D4PqC1A": {
+          "name": "Crush",
+          "hint": "5 frases"
+        },
+        "role_hGL5XBuFwGc": {
+          "name": "Marlin",
+          "hint": "3 frases"
+        },
+        "role_afmsmZ2bsI8": {
+          "name": "Dory",
+          "hint": "2 frases"
+        },
+        "role_R9JrW6iAf6s": {
+          "name": "Marlin",
+          "hint": "4 frases"
+        },
+        "role_oxxbg7pReN0": {
+          "name": "Dory",
+          "hint": "3 frases"
+        },
+        "role_AKeW1fapsu8": {
+          "name": "Woody",
+          "hint": "4 frases"
+        },
+        "role_fo0NHYDjW7o": {
+          "name": "Buzz Lightyear",
+          "hint": "3 frases"
+        },
+        "role_EBCAuBAeMgQ": {
+          "name": "Buzz Lightyear",
+          "hint": "4 frases"
+        },
+        "role_NYvRYCuAHCc": {
+          "name": "Utility Belt Buzz",
+          "hint": "3 frases"
+        },
+        "role_T84qUgqhJWs": {
+          "name": "Agnes",
+          "hint": "2 frases"
+        },
+        "role_1riy0R0QHso": {
+          "name": "Gru",
+          "hint": "3 frases"
+        },
+        "role_i5Z0lX1OKRk": {
+          "name": "Margo",
+          "hint": "1 frase"
+        },
+        "role_8j5eoCcBDKg": {
+          "name": "Edith",
+          "hint": "1 frase"
+        },
+        "role_gt8sRYHc9GA": {
+          "name": "Margo",
+          "hint": "1 frase"
+        },
+        "role_3AI1krmr0WM": {
+          "name": "Agnes",
+          "hint": "1 frase"
+        },
+        "role_sPY3P9aVvf8": {
+          "name": "Gru",
+          "hint": "1 frase"
+        },
+        "role_wIpaFcBailA": {
+          "name": "Lucy Wilde",
+          "hint": "4 frases"
+        },
+        "role_EUZhxArGg-0": {
+          "name": "Gru",
+          "hint": "2 frases"
+        },
+        "role_chi9JH8XMY4": {
+          "name": "Russell",
+          "hint": "5 frases"
+        },
+        "role_BDRzhE5Z6q8": {
+          "name": "Carl",
+          "hint": "5 frases"
+        },
+        "role_SxE__9y_T3s": {
+          "name": "Carl",
+          "hint": "5 frases"
+        },
+        "role_ajs5aku0O4s": {
+          "name": "Russell",
+          "hint": "5 frases"
+        },
+        "role_iF2a-6KO_e0": {
+          "name": "Russell",
+          "hint": "4 frases"
+        },
+        "role_kYO5OsI8PP4": {
+          "name": "Carl",
+          "hint": "4 frases"
+        },
+        "role_Y_wPsynZvd8": {
+          "name": "Remy",
+          "hint": "2 frases"
+        },
+        "role_CIjvzYuv4W4": {
+          "name": "Emile",
+          "hint": "2 frases"
+        },
+        "role_1Nu3qyPbhsA": {
+          "name": "Anton Ego",
+          "hint": "4 frases"
+        },
+        "role_vQzCZAEgqrg": {
+          "name": "Ambrister",
+          "hint": "4 frases"
+        },
+        "role_g0jPPlcNkUQ": {
+          "name": "Mr. Ping",
+          "hint": "4 frases"
+        },
+        "role_BGhegRLBHS4": {
+          "name": "Po",
+          "hint": "3 frases"
+        },
+        "role_odkF-xJfSPg": {
+          "name": "Shifu",
+          "hint": "3 frases"
+        },
+        "role_TY1pCRHc9Fs": {
+          "name": "Po",
+          "hint": "3 frases"
+        },
+        "role_OMj0OxuLlII": {
+          "name": "Po",
+          "hint": "2 frases"
+        },
+        "role_AnJwAbTjjmA": {
+          "name": "Shifu",
+          "hint": "2 frases"
+        },
+        "role_dhHEnAF3xc8": {
+          "name": "Alex",
+          "hint": "3 frases"
+        },
+        "role_zMIbPZPaoZE": {
+          "name": "Marty",
+          "hint": "4 frases"
+        },
+        "role_5hTvr_4qtsY": {
+          "name": "Gloria",
+          "hint": "1 frase"
+        },
+        "role_6Hy35lv2HP4": {
+          "name": "King Julien",
+          "hint": "3 frases"
+        },
+        "role_Oo7l0olB3Us": {
+          "name": "Alex",
+          "hint": "2 frases"
+        },
+        "role_yJFA4SClcgo": {
+          "name": "Kowalski",
+          "hint": "5 frases"
+        },
+        "role_h5Q-n0Lb1CM": {
+          "name": "Skipper",
+          "hint": "4 frases"
+        },
+        "role_sq5rREP5D1E": {
+          "name": "Melman",
+          "hint": "1 frase"
+        },
+        "role_dkpFjwnCRZU": {
+          "name": "Alex",
+          "hint": "3 frases"
+        },
+        "role_-Zl-OSzuP6Q": {
+          "name": "Marty",
+          "hint": "1 frase"
+        },
+        "role_B8bCFyAVSNc": {
+          "name": "Remy",
+          "hint": "3 frases"
+        },
+        "role_uoywbUkAf0U": {
+          "name": "Emile",
+          "hint": "1 frase"
+        },
+        "role_tK6NBFXudoI": {
+          "name": "Camarero",
+          "hint": "2 frases"
+        },
+        "role_Lbe3H2XSU5Y": {
+          "name": "Anton Ego",
+          "hint": "3 frases"
         }
       },
       "notices": {
@@ -3427,6 +5464,136 @@
           "title": "簡単な計画があるんだ",
           "licence": "再配布の許諾は未確認",
           "changes": "内部試作テスト用。元の動画の310.55–336.3秒の抜粋です。 道具だけがファンタジーで、会話は普通の問題解決です。その後のけなす言葉や、鳥と登る場面は含みません。"
+        },
+        "scene_a3BDHKKQn54": {
+          "title": "マフィンマンを知ってる？",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_c_rtu-aligQ": {
+          "title": "バック運転の名人",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_lZYYhcV8k2Y": {
+          "title": "ピスタチオのアイス？",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_ZSxmzYiUWTM": {
+          "title": "マックィーンが見える？",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_XZWUH0xrnko": {
+          "title": "ひれにタグがあるの？",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_1M4ndSuAIeM": {
+          "title": "出口の相棒を探そう",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_3ETMSXAqzEs": {
+          "title": "別の方言ならどう？",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_78PngUk4uMA": {
+          "title": "ネズビット夫人",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_ILkvhup_YFY": {
+          "title": "レーザーを持っているぞ",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_FL_WvS6Yrg4": {
+          "title": "お願いだから",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_ggDkGOmQZTA": {
+          "title": "脚をつかまえた！",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_QRuUGGTNTDQ": {
+          "title": "エージェント・ルーシー",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_LtZ9BfnLwbo": {
+          "title": "何かを渡るお手伝いは？",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_Pz29dRMAdd0": {
+          "title": "シギって知ってる？",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_tbGsw9t4_kI": {
+          "title": "チョコレートは好き？",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_qwQnpt21fAY": {
+          "title": "それを食べてるの？",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_lUZv5MAYQqA": {
+          "title": "また人気店に",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_0OwJPdKTGPc": {
+          "title": "麺の夢を見た",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_87NyKFKTV9c": {
+          "title": "食べてもいいぞ",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_szm7GJTTBds": {
+          "title": "何の心の平穏？",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_iEHU4pcNbz8": {
+          "title": "どんな願い事をしたの？",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_6oNrdV4y6EM": {
+          "title": "ニューヨークの巨人",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_R0UWEZ7AuGI": {
+          "title": "このランプの意味は？",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_Y1VpaH0XS9c": {
+          "title": "ちょっとした問題",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_T-bJo8Z4eF0": {
+          "title": "ゆっくり味わって",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_n_VK-I9IFbU": {
+          "title": "少しの見識",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
         }
       },
       "roles": {
@@ -3821,6 +5988,242 @@
         "role_6um5do5ReBs": {
           "name": "ベン",
           "hint": "セリフ4行"
+        },
+        "role_7XN0VQR8hM4": {
+          "name": "Gingy",
+          "hint": "セリフ 4 行"
+        },
+        "role_A77uZ7IIAyQ": {
+          "name": "Lord Farquaad",
+          "hint": "セリフ 4 行"
+        },
+        "role_yfj7cGvR8rM": {
+          "name": "Lightning McQueen",
+          "hint": "セリフ 3 行"
+        },
+        "role_LEVMlOe3hJ8": {
+          "name": "Mater",
+          "hint": "セリフ 2 行"
+        },
+        "role_VXY9t6Fv1RQ": {
+          "name": "Mater",
+          "hint": "セリフ 3 行"
+        },
+        "role_wHynyqr8qEw": {
+          "name": "わさびの店員",
+          "hint": "セリフ 1 行"
+        },
+        "role_TVl__9_H-uo": {
+          "name": "Sterling",
+          "hint": "セリフ 4 行"
+        },
+        "role_nQSavK14OQU": {
+          "name": "Cruz Ramirez",
+          "hint": "セリフ 4 行"
+        },
+        "role_iH6JptG0C3M": {
+          "name": "Lightning McQueen",
+          "hint": "セリフ 2 行"
+        },
+        "role_1G4bNl5b0j4": {
+          "name": "Hank",
+          "hint": "セリフ 3 行"
+        },
+        "role_Zi1HqrucPIM": {
+          "name": "Dory",
+          "hint": "セリフ 3 行"
+        },
+        "role_iSu9D4PqC1A": {
+          "name": "Crush",
+          "hint": "セリフ 5 行"
+        },
+        "role_hGL5XBuFwGc": {
+          "name": "Marlin",
+          "hint": "セリフ 3 行"
+        },
+        "role_afmsmZ2bsI8": {
+          "name": "Dory",
+          "hint": "セリフ 2 行"
+        },
+        "role_R9JrW6iAf6s": {
+          "name": "Marlin",
+          "hint": "セリフ 4 行"
+        },
+        "role_oxxbg7pReN0": {
+          "name": "Dory",
+          "hint": "セリフ 3 行"
+        },
+        "role_AKeW1fapsu8": {
+          "name": "Woody",
+          "hint": "セリフ 4 行"
+        },
+        "role_fo0NHYDjW7o": {
+          "name": "Buzz Lightyear",
+          "hint": "セリフ 3 行"
+        },
+        "role_EBCAuBAeMgQ": {
+          "name": "Buzz Lightyear",
+          "hint": "セリフ 4 行"
+        },
+        "role_NYvRYCuAHCc": {
+          "name": "Utility Belt Buzz",
+          "hint": "セリフ 3 行"
+        },
+        "role_T84qUgqhJWs": {
+          "name": "Agnes",
+          "hint": "セリフ 2 行"
+        },
+        "role_1riy0R0QHso": {
+          "name": "Gru",
+          "hint": "セリフ 3 行"
+        },
+        "role_i5Z0lX1OKRk": {
+          "name": "Margo",
+          "hint": "セリフ 1 行"
+        },
+        "role_8j5eoCcBDKg": {
+          "name": "Edith",
+          "hint": "セリフ 1 行"
+        },
+        "role_gt8sRYHc9GA": {
+          "name": "Margo",
+          "hint": "セリフ 1 行"
+        },
+        "role_3AI1krmr0WM": {
+          "name": "Agnes",
+          "hint": "セリフ 1 行"
+        },
+        "role_sPY3P9aVvf8": {
+          "name": "Gru",
+          "hint": "セリフ 1 行"
+        },
+        "role_wIpaFcBailA": {
+          "name": "Lucy Wilde",
+          "hint": "セリフ 4 行"
+        },
+        "role_EUZhxArGg-0": {
+          "name": "Gru",
+          "hint": "セリフ 2 行"
+        },
+        "role_chi9JH8XMY4": {
+          "name": "Russell",
+          "hint": "セリフ 5 行"
+        },
+        "role_BDRzhE5Z6q8": {
+          "name": "Carl",
+          "hint": "セリフ 5 行"
+        },
+        "role_SxE__9y_T3s": {
+          "name": "Carl",
+          "hint": "セリフ 5 行"
+        },
+        "role_ajs5aku0O4s": {
+          "name": "Russell",
+          "hint": "セリフ 5 行"
+        },
+        "role_iF2a-6KO_e0": {
+          "name": "Russell",
+          "hint": "セリフ 4 行"
+        },
+        "role_kYO5OsI8PP4": {
+          "name": "Carl",
+          "hint": "セリフ 4 行"
+        },
+        "role_Y_wPsynZvd8": {
+          "name": "Remy",
+          "hint": "セリフ 2 行"
+        },
+        "role_CIjvzYuv4W4": {
+          "name": "Emile",
+          "hint": "セリフ 2 行"
+        },
+        "role_1Nu3qyPbhsA": {
+          "name": "Anton Ego",
+          "hint": "セリフ 4 行"
+        },
+        "role_vQzCZAEgqrg": {
+          "name": "Ambrister",
+          "hint": "セリフ 4 行"
+        },
+        "role_g0jPPlcNkUQ": {
+          "name": "Mr. Ping",
+          "hint": "セリフ 4 行"
+        },
+        "role_BGhegRLBHS4": {
+          "name": "Po",
+          "hint": "セリフ 3 行"
+        },
+        "role_odkF-xJfSPg": {
+          "name": "Shifu",
+          "hint": "セリフ 3 行"
+        },
+        "role_TY1pCRHc9Fs": {
+          "name": "Po",
+          "hint": "セリフ 3 行"
+        },
+        "role_OMj0OxuLlII": {
+          "name": "Po",
+          "hint": "セリフ 2 行"
+        },
+        "role_AnJwAbTjjmA": {
+          "name": "Shifu",
+          "hint": "セリフ 2 行"
+        },
+        "role_dhHEnAF3xc8": {
+          "name": "Alex",
+          "hint": "セリフ 3 行"
+        },
+        "role_zMIbPZPaoZE": {
+          "name": "Marty",
+          "hint": "セリフ 4 行"
+        },
+        "role_5hTvr_4qtsY": {
+          "name": "Gloria",
+          "hint": "セリフ 1 行"
+        },
+        "role_6Hy35lv2HP4": {
+          "name": "King Julien",
+          "hint": "セリフ 3 行"
+        },
+        "role_Oo7l0olB3Us": {
+          "name": "Alex",
+          "hint": "セリフ 2 行"
+        },
+        "role_yJFA4SClcgo": {
+          "name": "Kowalski",
+          "hint": "セリフ 5 行"
+        },
+        "role_h5Q-n0Lb1CM": {
+          "name": "Skipper",
+          "hint": "セリフ 4 行"
+        },
+        "role_sq5rREP5D1E": {
+          "name": "Melman",
+          "hint": "セリフ 1 行"
+        },
+        "role_dkpFjwnCRZU": {
+          "name": "Alex",
+          "hint": "セリフ 3 行"
+        },
+        "role_-Zl-OSzuP6Q": {
+          "name": "Marty",
+          "hint": "セリフ 1 行"
+        },
+        "role_B8bCFyAVSNc": {
+          "name": "Remy",
+          "hint": "セリフ 3 行"
+        },
+        "role_uoywbUkAf0U": {
+          "name": "Emile",
+          "hint": "セリフ 1 行"
+        },
+        "role_tK6NBFXudoI": {
+          "name": "ウェイター",
+          "hint": "セリフ 2 行"
+        },
+        "role_Lbe3H2XSU5Y": {
+          "name": "Anton Ego",
+          "hint": "セリフ 3 行"
         }
       },
       "notices": {
@@ -4019,6 +6422,136 @@
           "title": "내겐 간단한 계획이 있어",
           "licence": "재배포 허가 미확인",
           "changes": "내부 시제품 테스트용. 원본 영상의 310.55–336.3초 구간을 발췌했어요. 소품만 판타지이며 대화는 일상적인 문제 해결에 관한 내용이에요. 이후의 깎아내리는 말과 새 또는 오르기 장면은 제외했어요."
+        },
+        "scene_a3BDHKKQn54": {
+          "title": "머핀 맨을 아니?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_c_rtu-aligQ": {
+          "title": "후진 운전의 달인",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_lZYYhcV8k2Y": {
+          "title": "피스타치오 아이스크림?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_ZSxmzYiUWTM": {
+          "title": "라이트닝 맥퀸이 보여요?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_XZWUH0xrnko": {
+          "title": "지느러미에 표가 있어?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_1M4ndSuAIeM": {
+          "title": "출구 짝꿍을 찾아",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_3ETMSXAqzEs": {
+          "title": "다른 사투리로 해 볼까?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_78PngUk4uMA": {
+          "title": "네즈빗 부인",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_ILkvhup_YFY": {
+          "title": "레이저가 있다",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_FL_WvS6Yrg4": {
+          "title": "제발 부탁해요",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_ggDkGOmQZTA": {
+          "title": "다리를 잡았어요!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_QRuUGGTNTDQ": {
+          "title": "루시 와일드 요원",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_LtZ9BfnLwbo": {
+          "title": "건너는 걸 도와드릴까요?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_Pz29dRMAdd0": {
+          "title": "도요새를 들어 봤니?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_tbGsw9t4_kI": {
+          "title": "초콜릿을 좋아해요?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_qwQnpt21fAY": {
+          "title": "그걸 먹고 있어?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_lUZv5MAYQqA": {
+          "title": "다시 인기를 얻다",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_0OwJPdKTGPc": {
+          "title": "국수 꿈을 꾸다",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_87NyKFKTV9c": {
+          "title": "먹어도 좋다",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_szm7GJTTBds": {
+          "title": "무엇의 마음의 평화요?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_iEHU4pcNbz8": {
+          "title": "무슨 소원을 빌었어?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_6oNrdV4y6EM": {
+          "title": "뉴욕의 거인들",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_R0UWEZ7AuGI": {
+          "title": "이 불빛은 무슨 뜻이지?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_Y1VpaH0XS9c": {
+          "title": "작은 문제",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_T-bJo8Z4eF0": {
+          "title": "천천히 맛을 느껴 봐",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_n_VK-I9IFbU": {
+          "title": "약간의 안목",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
         }
       },
       "roles": {
@@ -4413,6 +6946,242 @@
         "role_6um5do5ReBs": {
           "name": "벤",
           "hint": "대사 4개"
+        },
+        "role_7XN0VQR8hM4": {
+          "name": "Gingy",
+          "hint": "대사 4줄"
+        },
+        "role_A77uZ7IIAyQ": {
+          "name": "Lord Farquaad",
+          "hint": "대사 4줄"
+        },
+        "role_yfj7cGvR8rM": {
+          "name": "Lightning McQueen",
+          "hint": "대사 3줄"
+        },
+        "role_LEVMlOe3hJ8": {
+          "name": "Mater",
+          "hint": "대사 2줄"
+        },
+        "role_VXY9t6Fv1RQ": {
+          "name": "Mater",
+          "hint": "대사 3줄"
+        },
+        "role_wHynyqr8qEw": {
+          "name": "와사비 점원",
+          "hint": "대사 1줄"
+        },
+        "role_TVl__9_H-uo": {
+          "name": "Sterling",
+          "hint": "대사 4줄"
+        },
+        "role_nQSavK14OQU": {
+          "name": "Cruz Ramirez",
+          "hint": "대사 4줄"
+        },
+        "role_iH6JptG0C3M": {
+          "name": "Lightning McQueen",
+          "hint": "대사 2줄"
+        },
+        "role_1G4bNl5b0j4": {
+          "name": "Hank",
+          "hint": "대사 3줄"
+        },
+        "role_Zi1HqrucPIM": {
+          "name": "Dory",
+          "hint": "대사 3줄"
+        },
+        "role_iSu9D4PqC1A": {
+          "name": "Crush",
+          "hint": "대사 5줄"
+        },
+        "role_hGL5XBuFwGc": {
+          "name": "Marlin",
+          "hint": "대사 3줄"
+        },
+        "role_afmsmZ2bsI8": {
+          "name": "Dory",
+          "hint": "대사 2줄"
+        },
+        "role_R9JrW6iAf6s": {
+          "name": "Marlin",
+          "hint": "대사 4줄"
+        },
+        "role_oxxbg7pReN0": {
+          "name": "Dory",
+          "hint": "대사 3줄"
+        },
+        "role_AKeW1fapsu8": {
+          "name": "Woody",
+          "hint": "대사 4줄"
+        },
+        "role_fo0NHYDjW7o": {
+          "name": "Buzz Lightyear",
+          "hint": "대사 3줄"
+        },
+        "role_EBCAuBAeMgQ": {
+          "name": "Buzz Lightyear",
+          "hint": "대사 4줄"
+        },
+        "role_NYvRYCuAHCc": {
+          "name": "Utility Belt Buzz",
+          "hint": "대사 3줄"
+        },
+        "role_T84qUgqhJWs": {
+          "name": "Agnes",
+          "hint": "대사 2줄"
+        },
+        "role_1riy0R0QHso": {
+          "name": "Gru",
+          "hint": "대사 3줄"
+        },
+        "role_i5Z0lX1OKRk": {
+          "name": "Margo",
+          "hint": "대사 1줄"
+        },
+        "role_8j5eoCcBDKg": {
+          "name": "Edith",
+          "hint": "대사 1줄"
+        },
+        "role_gt8sRYHc9GA": {
+          "name": "Margo",
+          "hint": "대사 1줄"
+        },
+        "role_3AI1krmr0WM": {
+          "name": "Agnes",
+          "hint": "대사 1줄"
+        },
+        "role_sPY3P9aVvf8": {
+          "name": "Gru",
+          "hint": "대사 1줄"
+        },
+        "role_wIpaFcBailA": {
+          "name": "Lucy Wilde",
+          "hint": "대사 4줄"
+        },
+        "role_EUZhxArGg-0": {
+          "name": "Gru",
+          "hint": "대사 2줄"
+        },
+        "role_chi9JH8XMY4": {
+          "name": "Russell",
+          "hint": "대사 5줄"
+        },
+        "role_BDRzhE5Z6q8": {
+          "name": "Carl",
+          "hint": "대사 5줄"
+        },
+        "role_SxE__9y_T3s": {
+          "name": "Carl",
+          "hint": "대사 5줄"
+        },
+        "role_ajs5aku0O4s": {
+          "name": "Russell",
+          "hint": "대사 5줄"
+        },
+        "role_iF2a-6KO_e0": {
+          "name": "Russell",
+          "hint": "대사 4줄"
+        },
+        "role_kYO5OsI8PP4": {
+          "name": "Carl",
+          "hint": "대사 4줄"
+        },
+        "role_Y_wPsynZvd8": {
+          "name": "Remy",
+          "hint": "대사 2줄"
+        },
+        "role_CIjvzYuv4W4": {
+          "name": "Emile",
+          "hint": "대사 2줄"
+        },
+        "role_1Nu3qyPbhsA": {
+          "name": "Anton Ego",
+          "hint": "대사 4줄"
+        },
+        "role_vQzCZAEgqrg": {
+          "name": "Ambrister",
+          "hint": "대사 4줄"
+        },
+        "role_g0jPPlcNkUQ": {
+          "name": "Mr. Ping",
+          "hint": "대사 4줄"
+        },
+        "role_BGhegRLBHS4": {
+          "name": "Po",
+          "hint": "대사 3줄"
+        },
+        "role_odkF-xJfSPg": {
+          "name": "Shifu",
+          "hint": "대사 3줄"
+        },
+        "role_TY1pCRHc9Fs": {
+          "name": "Po",
+          "hint": "대사 3줄"
+        },
+        "role_OMj0OxuLlII": {
+          "name": "Po",
+          "hint": "대사 2줄"
+        },
+        "role_AnJwAbTjjmA": {
+          "name": "Shifu",
+          "hint": "대사 2줄"
+        },
+        "role_dhHEnAF3xc8": {
+          "name": "Alex",
+          "hint": "대사 3줄"
+        },
+        "role_zMIbPZPaoZE": {
+          "name": "Marty",
+          "hint": "대사 4줄"
+        },
+        "role_5hTvr_4qtsY": {
+          "name": "Gloria",
+          "hint": "대사 1줄"
+        },
+        "role_6Hy35lv2HP4": {
+          "name": "King Julien",
+          "hint": "대사 3줄"
+        },
+        "role_Oo7l0olB3Us": {
+          "name": "Alex",
+          "hint": "대사 2줄"
+        },
+        "role_yJFA4SClcgo": {
+          "name": "Kowalski",
+          "hint": "대사 5줄"
+        },
+        "role_h5Q-n0Lb1CM": {
+          "name": "Skipper",
+          "hint": "대사 4줄"
+        },
+        "role_sq5rREP5D1E": {
+          "name": "Melman",
+          "hint": "대사 1줄"
+        },
+        "role_dkpFjwnCRZU": {
+          "name": "Alex",
+          "hint": "대사 3줄"
+        },
+        "role_-Zl-OSzuP6Q": {
+          "name": "Marty",
+          "hint": "대사 1줄"
+        },
+        "role_B8bCFyAVSNc": {
+          "name": "Remy",
+          "hint": "대사 3줄"
+        },
+        "role_uoywbUkAf0U": {
+          "name": "Emile",
+          "hint": "대사 1줄"
+        },
+        "role_tK6NBFXudoI": {
+          "name": "웨이터",
+          "hint": "대사 2줄"
+        },
+        "role_Lbe3H2XSU5Y": {
+          "name": "Anton Ego",
+          "hint": "대사 3줄"
         }
       },
       "notices": {
