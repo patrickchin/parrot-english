@@ -151,9 +151,13 @@ deploy the player. A Git commit or push does not replace this publication step.
 
 The `Deploy player` GitHub workflow checks the complete diff of each `main` push.
 Changes limited to `content/`, `docs/`, `README.md`, and known authoring scripts
-skip the ESA deployment job. Other paths, including package and unknown files,
-request the connected ESA source build of `main`; content stays in OSS. A content-only commit can therefore
-advance `main` without changing the app revision returned by `/api/health`.
+leave `release/player` unchanged. Other paths, including package and unknown
+files, advance this deployment pointer to an already merged main commit after
+fast-forward and ancestry checks. ESA builds its Git source with both
+`BuildBranches` and `ProductionBranch` set to `release/player`. Content-only main
+commits do not move the pointer, so `/api/health` can report an older application
+commit than the current `main`. Content publication still requires the explicit
+OSS command above.
 
 Publish the initial pack catalog before releasing the player change that reads
 it. Afterward, changing only content requires this publishing workflow and a

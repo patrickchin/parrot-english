@@ -147,20 +147,28 @@ workflow on 2026-10-29; old feature worktrees are not the current application.
 The [Deploy player workflow](.github/workflows/deploy-app.yml) runs on `main`
 pushes and checks the complete Git diff through `scripts/app-deployment.mjs`.
 Changes limited to `content/`, `docs/`, `README.md`, or known authoring scripts
-skip player deployment. Runtime, package, build, and unknown paths request a build;
-the filter has no 300-file limit. Manual workflow runs can request a main build.
+leave the player release pointer unchanged. Runtime, package, build, and unknown
+paths advance it; the filter has no 300-file limit. Manual main workflow runs can
+retry a release build.
 
-ESA still fetches source from the connected `patrickchin/parrot-english` GitHub
-repository and builds `main` for production. Its native push trigger is parked
-on `codex/esa-auto-build-disabled`, while `ProductionBranch` remains `main`.
-The build uses Node 24, `npm ci`, then `npm run test:app && npm run build`;
-`esa.jsonc` versions those commands. The app gate works independently of authored
-content. `npm test` runs all app, content, typecheck, and boundary checks.
+`release/player` is a deployment pointer to an already merged commit from `main`,
+advanced only by that workflow after fast-forward and ancestry checks. Develop
+and merge on ordinary branches, never on this release ref. ESA's `BuildBranches`
+and `ProductionBranch` both use `release/player`; its native Git push build is
+monitored by the workflow. A missing build or manual retry can request a fresh
+ESA build from the same Git-backed release ref. Feature code is merged into
+`main` before it can be released; the workflow uploads no application bundle.
 
-The workflow obtains short-lived Alibaba credentials through GitHub OIDC; see
-[the infrastructure record](docs/infrastructure.md) for its provider and role.
-Do not upload local bundles or ZIPs, or publish feature branches to production.
-When an app deployment runs, compare the successful ESA build's actual source
-commit with `/api/health`'s `revision`. Content-only commits intentionally leave
-the deployed app revision behind `main`. Pack publication remains the explicit
-OSS workflow above, with no player build or learner-recording upload.
+ESA fetches source from the existing GitHub connection and uses Node 24,
+`npm ci`, then `npm run test:app && npm run build`; `esa.jsonc` versions those
+commands. The app gate works independently of authored content. `npm test` runs
+all app, content, typecheck, and boundary checks. The workflow obtains short-lived
+Alibaba credentials through GitHub OIDC; see [the infrastructure record](docs/infrastructure.md)
+for its provider, role, and selected trigger configuration.
+
+Never publish unmerged feature code, local bundles, or ZIPs to production. When
+an app deployment runs, compare the successful ESA build's actual source commit
+with `/api/health`'s `revision`. Content-only main commits do not advance the
+release pointer, so the deployed app revision can trail `main`. Pack publication
+remains the explicit OSS workflow above, with no player build or learner-recording
+upload.
