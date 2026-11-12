@@ -1,12 +1,12 @@
+import { clips, sceneFile } from './content-fixtures.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { searchScenes } from '../src/scene-search.ts';
 
 const load = async path => JSON.parse(await readFile(path, 'utf8'));
-const catalog = await load('src/review-clips.json');
-const index = await load('src/scene-search-index.json');
-const scenes = catalog.map(scene => ({ ...scene, ...index[scene.slug] }));
+const catalog = clips;
+const scenes = clips;
 
 test('Fuse ranks metadata above dialogue and handles typos, combined terms and punctuation', () => {
   const scene = (slug, tags = [], quotes = []) => ({ slug, title: '', english: '', note: '', tags, quotes });
@@ -36,11 +36,11 @@ test('Fuse ranks metadata above dialogue and handles typos, combined terms and p
 test('shipped scene tags and all dialogue stay in sync with the search index and authoring recipes', async () => {
   const recipes = await Promise.all(['meme', 'preschool', 'tv'].map(name => load(`content/${name}-review-scenes.json`)));
   const authored = recipes.flatMap(recipe => recipe.scenes);
-  assert.deepEqual(Object.keys(index), catalog.map(scene => scene.slug));
+  assert.equal(new Set(catalog.map(scene => scene.slug)).size, catalog.length);
   for (const entry of scenes) {
-    const scene = await load(`public/scenes/${entry.slug}/scene.json`);
+    const scene = await load(sceneFile(entry.slug));
     assert.ok(scene.tags.length > 0, entry.slug);
-    assert.deepEqual(index[entry.slug], { tags: scene.tags, quotes: scene.lines.flatMap(line => [line.text, line.hint]) });
+    assert.deepEqual({ tags: entry.tags, quotes: entry.quotes }, { tags: scene.tags, quotes: scene.lines.flatMap(line => [line.text, line.hint]) });
     const recipe = authored.find(scene => (scene.publicSlug ?? scene.slug) === entry.slug);
     assert.deepEqual(recipe.tags, scene.tags, entry.slug);
   }

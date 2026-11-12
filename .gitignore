@@ -78,6 +78,7 @@ Peppa & Dolly assets-*.zip
 /public/*.svg
 /.worktrees/
 /.playwright-mcp/
-/content/local-dubbing/
+/content/local-dubbing
+/content/local-packs/
 
 /.playwright-cli/

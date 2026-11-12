@@ -36,7 +36,7 @@ export function PreviewSubtitles({ scene, time }: { scene: Scene; time: number }
   }, [index, scene.lines]);
 
   const text = (line: Scene['lines'][number]) => <>
-    <span className="preview-subtitle-speaker">{t(`roles.${line.roleId}.name`, { defaultValue: scene.roles.find(role => role.id === line.roleId)!.name })}</span>
+    <span className="preview-subtitle-speaker">{t(`content:roles.${line.roleId}.name`, { defaultValue: scene.roles.find(role => role.id === line.roleId)!.name })}</span>
     <p lang="en">{line.text}</p>
     {line.hint && <p lang="zh-CN">{line.hint}</p>}
   </>;

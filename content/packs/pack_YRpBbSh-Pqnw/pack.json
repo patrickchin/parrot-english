@@ -1,0 +1,4424 @@
+{
+  "version": 1,
+  "id": "pack_YRpBbSh-Pqnw",
+  "title": "Films & animation",
+  "description": "Film and animation scenes for internal prototype testing.",
+  "author": "Parrotbook",
+  "scenes": [
+    {
+      "id": "scene_KHUVKWak",
+      "slug": "patrick",
+      "title": "不，这是派大星！",
+      "english": "No, this is Patrick.",
+      "note": "SpongeBob SquarePants",
+      "source": "https://www.youtube.com/watch?v=dwifOuuMkfo",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/patrick/patrick-poster-v1.jpg",
+      "tags": [
+        "SpongeBob SquarePants",
+        "SpongeBob",
+        "Sponge Bob",
+        "海绵宝宝",
+        "派大星",
+        "来电者",
+        "Patrick",
+        "Caller",
+        "phone call",
+        "电话",
+        "Krusty Krab",
+        "蟹堡王"
+      ],
+      "quotes": [
+        "Is this the Krusty Krab?",
+        "请问是蟹堡王吗？",
+        "No, this is Patrick.",
+        "不，这是派大星。",
+        "Is this the Krusty Krab?",
+        "请问是蟹堡王吗？",
+        "No! This is Patrick!",
+        "不！这是派大星！"
+      ],
+      "manifest": "scenes/patrick/scene.json"
+    },
+    {
+      "id": "scene_LnSPbYi0",
+      "slug": "chocolate",
+      "title": "巧克力？！",
+      "english": "Chocolate!",
+      "note": "SpongeBob SquarePants",
+      "source": "https://www.youtube.com/watch?v=NBhxIyT8Slg",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/chocolate/chocolate-poster-v1.jpg",
+      "tags": [
+        "SpongeBob SquarePants",
+        "SpongeBob",
+        "Sponge Bob",
+        "海绵宝宝",
+        "顾客",
+        "派大星",
+        "Patrick",
+        "Customer",
+        "food",
+        "食物",
+        "selling",
+        "推销"
+      ],
+      "quotes": [
+        "Chocolate? Did you say chocolate?",
+        "巧克力？你说的是巧克力吗？",
+        "Yes, sir. With or without nuts?",
+        "是的，先生。要有坚果的，还是没有坚果的？",
+        "Chocolate?! Chocolate!",
+        "巧克力？！巧克力！"
+      ],
+      "manifest": "scenes/chocolate/scene.json"
+    },
+    {
+      "id": "scene_1eCjBRKF",
+      "slug": "wumbo",
+      "title": "调成 Wumbo！",
+      "english": "I wumbo, you wumbo.",
+      "note": "SpongeBob SquarePants",
+      "source": "https://www.youtube.com/watch?v=--hsVknT1c0&t=2s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/wumbo/wumbo-poster-7ea5bd1144c5.jpg",
+      "tags": [
+        "SpongeBob SquarePants",
+        "SpongeBob",
+        "Sponge Bob",
+        "海绵宝宝",
+        "Patrick",
+        "派大星",
+        "wordplay",
+        "文字游戏",
+        "mini",
+        "迷你"
+      ],
+      "quotes": [
+        "You know what the problem is?",
+        "你知道问题是什么吗？",
+        "What?",
+        "什么？",
+        "You got it set to M for mini, when it should be set to W for Wumbo.",
+        "你把它设成了代表迷你的 M，而它应该设成代表 Wumbo 的 W。",
+        "Patrick, I don't think Wumbo is a real word.",
+        "派大星，我觉得 Wumbo 不是一个真正的词。",
+        "Come on! You know, I Wumbo, you Wumbo. He, she, me, Wumbo.",
+        "别这样！你知道的，我 Wumbo，你 Wumbo，他、她、我，Wumbo。（这是剧中的虚构词。）"
+      ],
+      "manifest": "scenes/wumbo/scene.json"
+    },
+    {
+      "id": "scene_BeIAKV4J",
+      "slug": "onions",
+      "title": "怪物就像洋葱",
+      "english": "Ogres are like onions.",
+      "note": "Shrek",
+      "source": "https://www.youtube.com/watch?v=aJQmVZSAqlc",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/onions/onions-poster-v1.jpg",
+      "tags": [
+        "Shrek",
+        "怪物史莱克",
+        "怪物史瑞克",
+        "史莱克",
+        "驴子",
+        "Donkey",
+        "food",
+        "食物",
+        "layers",
+        "层次"
+      ],
+      "quotes": [
+        "No! Layers! Onions have layers. Ogres have layers. Onions have layers.",
+        "不！层次！洋葱有层次，怪物也有层次。",
+        "You get it? We both have layers.",
+        "你明白了吗？我们都有层次。",
+        "Oh, you both have layers.",
+        "哦，你们都有层次。"
+      ],
+      "manifest": "scenes/onions/scene.json"
+    },
+    {
+      "id": "scene_oq1hQgYa",
+      "slug": "keep-swimming",
+      "title": "一直游下去！",
+      "english": "Just keep swimming. Just keep swimming. Just keep swimming.",
+      "note": "Finding Nemo",
+      "source": "https://www.youtube.com/watch?v=AsemWIZUk4k&t=4s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/keep-swimming/keep-swimming-poster-d2e6c6472194.jpg",
+      "tags": [
+        "Finding Nemo",
+        "海底总动员",
+        "Nemo",
+        "Dory",
+        "Marlin",
+        "多莉",
+        "马林",
+        "swimming",
+        "游泳",
+        "encouragement",
+        "鼓励"
+      ],
+      "quotes": [
+        "When life gets you down, you know what you gotta do?",
+        "当生活让你沮丧时，你知道该怎么办吗？",
+        "I don't wanna know what you gotta do.",
+        "我不想知道你要怎么办。",
+        "Just keep swimming. Just keep swimming. Just keep swimming, swimming, swimming, swimming.",
+        "一直游下去。一直游下去。游啊，游啊，游啊。",
+        "What do we do? We swim, swim.",
+        "我们要做什么？我们游啊，游啊。",
+        "Dory, no singing!",
+        "多莉，别唱了！"
+      ],
+      "manifest": "scenes/keep-swimming/scene.json"
+    },
+    {
+      "id": "scene_EI_7V5r9",
+      "slug": "fish-friends",
+      "title": "鱼儿是朋友！",
+      "english": "Fish are friends, not food.",
+      "note": "Finding Nemo",
+      "source": "https://www.youtube.com/watch?v=c6mVl6fAxLw&t=15s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/fish-friends/fish-friends-poster-09f37d88c736.jpg",
+      "tags": [
+        "Finding Nemo",
+        "海底总动员",
+        "Nemo",
+        "Sharks",
+        "Chum",
+        "Anchor",
+        "鲨鱼合声",
+        "查姆",
+        "安可",
+        "friendship",
+        "友谊",
+        "sharks",
+        "鲨鱼"
+      ],
+      "quotes": [
+        "I must first change myself. Fish are friends, not food.",
+        "我必须先改变自己。鱼儿是朋友，不是食物。",
+        "Except stinking dolphins.",
+        "那些讨厌的海豚除外。",
+        "Dolphins! Yeah, they think they're so cute.",
+        "海豚！对，它们觉得自己可爱极了。"
+      ],
+      "manifest": "scenes/fish-friends/scene.json"
+    },
+    {
+      "id": "scene_fEAVzgFh",
+      "slug": "infinity",
+      "routeSlug": "toy-story-infinity",
+      "title": "飞向宇宙！",
+      "english": "To infinity and beyond!",
+      "note": "Toy Story",
+      "source": "https://www.youtube.com/watch?v=T2b-Ve0GHBw&t=25s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/infinity/infinity-poster-2dccdca1aa1a.jpg",
+      "tags": [
+        "Toy Story",
+        "玩具总动员",
+        "Buzz Lightyear",
+        "Woody",
+        "Buzz",
+        "胡迪",
+        "巴斯光年",
+        "flying",
+        "飞行",
+        "challenge",
+        "挑战"
+      ],
+      "quotes": [
+        "No, you can't.",
+        "不，你不会。",
+        "Yes, I can.",
+        "不，我会。",
+        "You can't! Can't, can't, can't!",
+        "你不会！不会，不会，不会！",
+        "I tell you, I could fly around this room with my eyes closed.",
+        "告诉你，我闭着眼睛都能绕着房间飞。",
+        "Okay, then, Mr. Lightyear. Prove it.",
+        "那好吧，光年先生。证明给我看。",
+        "All right, then I will. Stand back, everyone.",
+        "好，我来证明。大家往后站。",
+        "To infinity and beyond!",
+        "飞向宇宙，浩瀚无垠！"
+      ],
+      "manifest": "scenes/infinity/scene.json"
+    },
+    {
+      "id": "scene_txYTl2tq",
+      "slug": "you-are-a-toy",
+      "title": "你是个玩具！",
+      "english": "You are a toy!",
+      "note": "Toy Story",
+      "source": "https://www.youtube.com/watch?v=wRsTXf4jvhY&t=45s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/you-are-a-toy/you-are-a-toy-poster-7b86b448fcdc.jpg",
+      "tags": [
+        "Toy Story",
+        "玩具总动员",
+        "Buzz Lightyear",
+        "Woody",
+        "Buzz",
+        "胡迪",
+        "巴斯光年",
+        "toys",
+        "玩具",
+        "argument",
+        "争论"
+      ],
+      "quotes": [
+        "You are a toy! You aren't the real Buzz Lightyear! You're an action figure! You are a child's plaything!",
+        "你是个玩具！你不是真正的巴斯光年！你是一个人偶，是孩子的玩具！",
+        "You are a sad, strange little man, and you have my pity. Farewell.",
+        "你是一个可怜又奇怪的小家伙，我同情你。告辞。",
+        "Oh, yeah? Well, good riddance, you loony!",
+        "哦，是吗？走了正好，你这个疯子！"
+      ],
+      "manifest": "scenes/you-are-a-toy/scene.json"
+    },
+    {
+      "id": "scene_Ciq_cd4H",
+      "slug": "falling-with-style",
+      "title": "有风格地落下！",
+      "english": "This isn't flying.",
+      "note": "Toy Story",
+      "source": "https://www.youtube.com/watch?v=zffvi3dTVIo&t=189s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/falling-with-style/falling-with-style-poster-ee6964ce2bcd.jpg",
+      "tags": [
+        "Toy Story",
+        "玩具总动员",
+        "Buzz Lightyear",
+        "Woody",
+        "Buzz",
+        "胡迪",
+        "巴斯光年",
+        "flying",
+        "飞行",
+        "adventure",
+        "冒险"
+      ],
+      "quotes": [
+        "Hey, Buzz! You're flying!",
+        "嘿，巴斯！你在飞！",
+        "This isn't flying. This is falling with style.",
+        "这不叫飞，这叫有风格地落下。",
+        "To infinity and beyond!",
+        "飞向宇宙，浩瀚无垠！",
+        "Buzz! We missed the truck!",
+        "巴斯！我们错过卡车了！",
+        "We're not aiming for the truck.",
+        "我们的目标不是卡车。"
+      ],
+      "manifest": "scenes/falling-with-style/scene.json"
+    },
+    {
+      "id": "scene_oSd4bYiR",
+      "slug": "i-am-speed",
+      "title": "我就是速度！",
+      "english": "I am speed.",
+      "note": "Cars on the Road",
+      "source": "https://www.youtube.com/watch?v=y39L1PesHmc&t=28s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/i-am-speed/i-am-speed-poster-8742eaee9998.jpg",
+      "tags": [
+        "Cars on the Road",
+        "Cars",
+        "赛车总动员",
+        "公路旅行",
+        "Mater",
+        "Lightning McQueen",
+        "Speed announcer",
+        "板牙",
+        "闪电麦昆",
+        "测速播报员",
+        "driving",
+        "驾驶",
+        "racing",
+        "赛车"
+      ],
+      "quotes": [
+        "One hundred seventy-five miles per hour!",
+        "每小时一百七十五英里！",
+        "Okay! You did it, buddy! You can back off now!",
+        "好！你做到了，伙计！你现在可以慢下来了！",
+        "Later! I am speed!",
+        "回头见！我就是速度！",
+        "Whoa!",
+        "哇！"
+      ],
+      "manifest": "scenes/i-am-speed/scene.json"
+    },
+    {
+      "id": "scene_p5BgIG-b",
+      "slug": "ka-chow",
+      "title": "咔嚓！",
+      "english": "Ka-chow!",
+      "note": "Cars",
+      "source": "https://www.youtube.com/watch?v=xwk4D4td0_4&t=13s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/ka-chow/ka-chow-poster-6a207017ac2d.jpg",
+      "tags": [
+        "Cars",
+        "赛车总动员",
+        "Lightning McQueen",
+        "Chick Hicks",
+        "闪电麦昆",
+        "奇克·海克斯",
+        "Dinoco",
+        "恐龙石油",
+        "racing",
+        "赛车",
+        "wordplay",
+        "文字游戏"
+      ],
+      "quotes": [
+        "Hey, fellas, how do you think I'd look in Dinoco blue?",
+        "嘿，伙计们，你们觉得我涂上恐龙石油的蓝色会怎么样？",
+        "Dinoco blue?",
+        "恐龙石油的蓝色？",
+        "In your dreams, Thunder.",
+        "做梦吧，雷声先生。",
+        "Yeah, right. Thunder? What's he talking about, thunder?",
+        "是啊，才怪。雷声？他为什么说雷声？",
+        "You know, because thunder always comes after lightning! Ka-chow!",
+        "你知道的，因为雷声总在闪电之后！咔嚓！"
+      ],
+      "manifest": "scenes/ka-chow/scene.json"
+    },
+    {
+      "id": "scene_RPXXEtjf",
+      "slug": "so-fluffy",
+      "title": "太毛茸茸了！",
+      "english": "It's so fluffy!",
+      "note": "Despicable Me",
+      "source": "https://www.youtube.com/watch?v=82utG7Q3G_k&t=23s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/so-fluffy/so-fluffy-poster-c54addceb505.jpg",
+      "tags": [
+        "Despicable Me",
+        "神偷奶爸",
+        "卑鄙的我",
+        "Margo",
+        "Agnes",
+        "Carnival attendant",
+        "Gru",
+        "玛戈",
+        "艾格尼丝",
+        "游乐场摊主",
+        "格鲁",
+        "carnival",
+        "游乐场",
+        "unicorn",
+        "独角兽",
+        "toys",
+        "玩具"
+      ],
+      "quotes": [
+        "She hit that!",
+        "她打中了！",
+        "I saw that with my own eyes!",
+        "我亲眼看到的！",
+        "Let me explain something to you. You see how it's not knocked over?",
+        "让我给你解释一下。看见了吗？它没有倒下。",
+        "Okay. My turn.",
+        "好吧。轮到我了。",
+        "Knocked over!",
+        "打倒了！",
+        "It's so fluffy!",
+        "太毛茸茸了！"
+      ],
+      "manifest": "scenes/so-fluffy/scene.json"
+    },
+    {
+      "id": "scene_CZ0bp6VC",
+      "slug": "banana",
+      "title": "那地板呢？",
+      "english": "What about the floor?",
+      "note": "Despicable Me",
+      "source": "https://www.youtube.com/watch?v=CeOsRggJO4s&t=10s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/banana/banana-poster-d90b2ac2df8d.jpg",
+      "tags": [
+        "Despicable Me",
+        "神偷奶爸",
+        "卑鄙的我",
+        "Gru",
+        "Margo",
+        "Edith",
+        "格鲁",
+        "玛戈",
+        "伊迪丝",
+        "rules",
+        "规则",
+        "family",
+        "家庭"
+      ],
+      "quotes": [
+        "Rule number one: you will not touch anything.",
+        "第一条：什么都不许碰。",
+        "Uh-huh. What about the floor?",
+        "嗯，那地板呢？",
+        "Yes, you may touch the floor.",
+        "好，地板可以碰。",
+        "What about the air?",
+        "那空气呢？",
+        "Yes, you may touch the air.",
+        "好，空气也可以碰。",
+        "What about this?",
+        "那这个呢？",
+        "Where did you get that?",
+        "你从哪里拿到的？",
+        "Found it.",
+        "捡到的。"
+      ],
+      "manifest": "scenes/banana/scene.json"
+    },
+    {
+      "id": "scene_nJ9pMesA",
+      "slug": "squirrel",
+      "title": "松鼠！",
+      "english": "Squirrel!",
+      "note": "Up",
+      "source": "https://www.youtube.com/watch?v=Fi2i7iuA1n4&t=95s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/squirrel/squirrel-poster-e20d10b48ef2.jpg",
+      "tags": [
+        "Up",
+        "飞屋环游记",
+        "Dug",
+        "Carl",
+        "道格",
+        "卡尔",
+        "dog",
+        "狗",
+        "animals",
+        "动物",
+        "talking collar",
+        "会说话的项圈"
+      ],
+      "quotes": [
+        "My master made me this collar. He is a good and smart master, and he made me this collar so that I may talk.",
+        "我的主人给我做了这个项圈。他是个善良又聪明的主人，这个项圈能让我说话。",
+        "Squirrel!",
+        "松鼠！",
+        "My master is good and smart.",
+        "我的主人善良又聪明。",
+        "It's impossible!",
+        "这不可能！",
+        "Oh, it is because my master is smart.",
+        "哦，这有可能，因为我的主人很聪明。"
+      ],
+      "manifest": "scenes/squirrel/scene.json"
+    },
+    {
+      "id": "scene_IuDLtAby",
+      "slug": "meet-dug",
+      "title": "刚认识就喜欢你！",
+      "english": "I have just met you, and I love you.",
+      "note": "Up",
+      "source": "https://www.youtube.com/watch?v=Fi2i7iuA1n4&t=83s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/meet-dug/meet-dug-poster-42f496b588d1.jpg",
+      "tags": [
+        "Up",
+        "飞屋环游记",
+        "Russell",
+        "Dug",
+        "Carl",
+        "罗素",
+        "道格",
+        "卡尔",
+        "dog",
+        "狗",
+        "greetings",
+        "打招呼",
+        "friendship",
+        "友谊"
+      ],
+      "quotes": [
+        "Speak!",
+        "说话！",
+        "Hi there!",
+        "你们好！",
+        "Did that dog just say hi there?",
+        "那只狗刚才说了“你们好”吗？",
+        "Oh, yes! My name is Dug. I have just met you, and I love you.",
+        "哦，是的！我叫道格。我刚认识你，就已经喜欢你了。"
+      ],
+      "manifest": "scenes/meet-dug/scene.json"
+    },
+    {
+      "id": "scene_y50gF2Cn",
+      "slug": "anyone-can-cook",
+      "title": "谁都能做饭！",
+      "english": "Anyone can cook!",
+      "note": "Ratatouille",
+      "source": "https://www.youtube.com/watch?v=thkDWSUzQDo&t=11s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/anyone-can-cook/anyone-can-cook-poster-d688ba8a437a.jpg",
+      "tags": [
+        "Ratatouille",
+        "料理鼠王",
+        "美食总动员",
+        "Gusteau",
+        "Remy",
+        "古斯托",
+        "小米",
+        "cooking",
+        "做饭",
+        "food",
+        "食物"
+      ],
+      "quotes": [
+        "But he could.",
+        "但是他可以学会。",
+        "Uh, no.",
+        "呃，不行。",
+        "How do you know? What do I always say? Anyone can cook.",
+        "你怎么知道？我常说什么？谁都能做饭。",
+        "Well, yeah, anyone can. That doesn't mean that anyone should.",
+        "嗯，对，谁都能做。可这不代表谁都应该做。",
+        "Well, that is not stopping him. See?",
+        "可这并没有让他停下来。看。"
+      ],
+      "manifest": "scenes/anyone-can-cook/scene.json"
+    },
+    {
+      "id": "scene_wr2NM2nf",
+      "slug": "secret-ingredient",
+      "title": "没有秘密配料！",
+      "english": "There is no secret ingredient.",
+      "note": "Kung Fu Panda",
+      "source": "https://www.youtube.com/watch?v=K7DnFGdqT8c&t=27s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/secret-ingredient/secret-ingredient-poster-7e3595f151be.jpg",
+      "tags": [
+        "Kung Fu Panda",
+        "功夫熊猫",
+        "Mr. Ping",
+        "Po",
+        "平先生",
+        "阿宝",
+        "cooking",
+        "做饭",
+        "noodles",
+        "面条",
+        "belief",
+        "信念"
+      ],
+      "quotes": [
+        "Come here. The secret ingredient is nothing.",
+        "过来。秘密配料就是——什么都没有。",
+        "Huh?",
+        "啊？",
+        "You heard me. Nothing. There is no secret ingredient.",
+        "你没听错。什么都没有。没有什么秘密配料。",
+        "Wait, wait. It's just plain old noodle soup? You don't add some kind of special sauce or something?",
+        "等等，就是普通的面汤？你没有加什么特别的酱料之类的吗？",
+        "Don't have to. To make something special, you just have to believe it's special.",
+        "不需要。要让一样东西变得特别，只需要相信它是特别的。"
+      ],
+      "manifest": "scenes/secret-ingredient/scene.json"
+    },
+    {
+      "id": "scene_kuOni4tB",
+      "slug": "today-is-a-gift",
+      "title": "我没有不开心！",
+      "english": "I'm not upset!",
+      "note": "Kung Fu Panda",
+      "source": "https://www.youtube.com/watch?v=PSBfcpqICvY&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/today-is-a-gift/today-is-a-gift-poster-f697ac5d1902.jpg",
+      "tags": [
+        "Kung Fu Panda",
+        "功夫熊猫",
+        "Oogway",
+        "Po",
+        "乌龟大师",
+        "阿宝",
+        "feelings",
+        "情绪",
+        "food",
+        "食物"
+      ],
+      "quotes": [
+        "I understand. You eat when you are upset.",
+        "我理解。你不开心的时候就会吃东西。",
+        "Upset? I'm not upset. What makes you think I'm upset?",
+        "不开心？我没有不开心。你为什么觉得我不开心？",
+        "So why are you upset?",
+        "那么，你为什么不开心？"
+      ],
+      "manifest": "scenes/today-is-a-gift/scene.json"
+    },
+    {
+      "id": "scene_4ds3OMdO",
+      "slug": "do-the-roar",
+      "title": "吼一声嘛！",
+      "english": "Do the roar!",
+      "note": "Shrek Forever After",
+      "source": "https://www.youtube.com/watch?v=6I5B0jyLBUg&t=14s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/do-the-roar/do-the-roar-poster-4592e0d9dfc6.jpg",
+      "tags": [
+        "Shrek Forever After",
+        "Shrek",
+        "怪物史莱克",
+        "怪物史瑞克",
+        "Boy's father",
+        "Boy",
+        "Fiona",
+        "男孩的爸爸",
+        "小男孩",
+        "史莱克",
+        "菲奥娜",
+        "birthday",
+        "生日",
+        "party",
+        "派对"
+      ],
+      "quotes": [
+        "Excuse me, Mr. Shrek. Could you do that ogre roar of yours for my son? He's a big, big fan.",
+        "打扰了，史莱克先生。可以为我儿子表演一下怪物吼叫吗？他是你的超级粉丝。",
+        "Do the roar.",
+        "吼一声嘛。",
+        "You know, I'd rather not. It's my kids' birthday party.",
+        "我还是不想。这是我孩子们的生日聚会。",
+        "Do the roar.",
+        "吼一声嘛。",
+        "Honey, why don't you go check on the cake?",
+        "亲爱的，你去看看蛋糕好吗？",
+        "Sure. And don't forget the candles.",
+        "好。别忘了蜡烛。"
+      ],
+      "manifest": "scenes/do-the-roar/scene.json"
+    },
+    {
+      "id": "scene_HY-tFxVL",
+      "slug": "are-we-there-yet",
+      "title": "我们到了吗？",
+      "english": "Are we there yet?",
+      "note": "Shrek 2",
+      "source": "https://www.youtube.com/watch?v=Gn51xYvJhQI&t=14s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/are-we-there-yet/are-we-there-yet-poster-28b2064057ea.jpg",
+      "tags": [
+        "Shrek 2",
+        "Shrek",
+        "怪物史莱克",
+        "怪物史瑞克",
+        "Donkey",
+        "Fiona",
+        "驴子",
+        "史莱克",
+        "菲奥娜",
+        "travel",
+        "旅行",
+        "impatience",
+        "不耐烦"
+      ],
+      "quotes": [
+        "Are we there yet?",
+        "我们到了吗？",
+        "No!",
+        "没有！",
+        "Are we there yet?",
+        "我们到了吗？",
+        "Yes.",
+        "到了。",
+        "Really?",
+        "真的吗？",
+        "No!",
+        "没有！",
+        "Are we there yet?",
+        "我们到了吗？",
+        "No!",
+        "没有！",
+        "Are we there yet?",
+        "我们到了吗？",
+        "No, we are not!",
+        "没有，我们还没到！"
+      ],
+      "manifest": "scenes/are-we-there-yet/scene.json"
+    },
+    {
+      "id": "scene_XFfwULcF",
+      "slug": "my-swamp",
+      "title": "谁让你们来这里的？",
+      "english": "Who sent you here?",
+      "note": "Shrek",
+      "source": "https://www.youtube.com/watch?v=xuS9UxuUZ3Y&t=96s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/my-swamp/my-swamp-poster-18fb523fc3a0.jpg",
+      "tags": [
+        "Shrek",
+        "怪物史莱克",
+        "怪物史瑞克",
+        "Donkey",
+        "Pinocchio",
+        "Little pig",
+        "驴子",
+        "匹诺曹",
+        "史莱克",
+        "小猪",
+        "fairy tales",
+        "童话",
+        "eviction",
+        "驱逐"
+      ],
+      "quotes": [
+        "I didn't invite them.",
+        "不是我邀请他们的。",
+        "Oh, gosh, no one invited us.",
+        "天啊，没人邀请我们。",
+        "What?",
+        "什么？",
+        "We were forced to come here.",
+        "我们是被迫来这里的。",
+        "By who?",
+        "被谁逼的？",
+        "Lord Farquaad!",
+        "法夸德领主！",
+        "He huffed and he puffed and he—",
+        "他呼哧呼哧地吹气，然后他——",
+        "Signed an eviction notice.",
+        "签了一张驱逐通知。"
+      ],
+      "manifest": "scenes/my-swamp/scene.json"
+    },
+    {
+      "id": "scene_MkR1_VOc",
+      "slug": "im-ready",
+      "title": "我准备好了！",
+      "english": "I'm ready! I'm ready! I'm ready!",
+      "note": "SpongeBob SquarePants",
+      "source": "https://www.youtube.com/watch?v=AGTH7rOEbxE&t=18s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/im-ready/im-ready-poster-f26643dd80e2.jpg",
+      "tags": [
+        "SpongeBob SquarePants",
+        "SpongeBob",
+        "Sponge Bob",
+        "海绵宝宝",
+        "Squidward",
+        "章鱼哥",
+        "driving test",
+        "驾驶考试",
+        "excitement",
+        "兴奋"
+      ],
+      "quotes": [
+        "I'm ready! I'm ready!",
+        "我准备好了！我准备好了！",
+        "Squidward! Squidward!",
+        "章鱼哥！章鱼哥！",
+        "What?",
+        "什么事？",
+        "I'm ready, Squidward!",
+        "章鱼哥，我准备好了！",
+        "Ready to move?",
+        "准备好搬家了吗？",
+        "No! I'm ready to pass my boating test!",
+        "不是！我准备好通过驾驶考试了！"
+      ],
+      "manifest": "scenes/im-ready/scene.json"
+    },
+    {
+      "id": "scene_F9ob5jiT",
+      "slug": "mayonnaise",
+      "title": "蛋黄酱是乐器吗？",
+      "english": "Is mayonnaise an instrument?",
+      "note": "SpongeBob SquarePants",
+      "source": "https://www.youtube.com/watch?v=bJ1-CMJY7CE&t=9s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/mayonnaise/mayonnaise-poster-0d26c71bfc79.jpg",
+      "tags": [
+        "SpongeBob SquarePants",
+        "SpongeBob",
+        "Sponge Bob",
+        "海绵宝宝",
+        "Squidward",
+        "Plankton",
+        "Patrick",
+        "章鱼哥",
+        "痞老板",
+        "派大星",
+        "music",
+        "音乐",
+        "instruments",
+        "乐器",
+        "food",
+        "食物"
+      ],
+      "quotes": [
+        "How many of you have played musical instruments before?",
+        "你们有多少人以前演奏过乐器？",
+        "Do instruments of torture count?",
+        "刑具算不算？",
+        "No.",
+        "不算。",
+        "Is mayonnaise an instrument?",
+        "蛋黄酱是乐器吗？",
+        "No, Patrick, mayonnaise is not an instrument.",
+        "不是，派大星，蛋黄酱不是乐器。",
+        "Horseradish is not an instrument either.",
+        "辣根也不是乐器。"
+      ],
+      "manifest": "scenes/mayonnaise/scene.json"
+    },
+    {
+      "id": "scene_uDawiVCK",
+      "slug": "smile-and-wave",
+      "title": "微笑，挥挥手！",
+      "english": "Just smile and wave, boys. Smile and wave.",
+      "note": "Madagascar",
+      "source": "https://www.youtube.com/watch?v=F64CJmF2dHM&t=2s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/smile-and-wave/smile-and-wave-poster-6f22ee3b0bb0.jpg",
+      "tags": [
+        "Madagascar",
+        "马达加斯加",
+        "Penguins",
+        "企鹅",
+        "Skipper",
+        "Kowalski",
+        "Private",
+        "队长",
+        "科瓦斯基",
+        "菜鸟",
+        "escape",
+        "逃脱",
+        "teamwork",
+        "合作"
+      ],
+      "quotes": [
+        "Just smile and wave, boys. Smile and wave.",
+        "小伙子们，微笑，挥挥手。微笑，挥挥手。",
+        "Kowalski, progress report.",
+        "科瓦斯基，报告进展。",
+        "We're only five hundred feet from the main sewer line.",
+        "距离主下水道只剩五百英尺了。",
+        "And the bad news?",
+        "那坏消息呢？",
+        "We've broken our last shovel.",
+        "我们的最后一把铲子也断了。",
+        "Right. Rico, you're on litter patrol. We need shovels, and find more Popsicle sticks. You don't want to risk another cave-in.",
+        "好。瑞哥，你去找废弃物。我们需要铲子，再找些冰棒棍。你可不想再冒塌方的风险。",
+        "And me, Skipper?",
+        "那我呢，队长？",
+        "I want you to look cute and cuddly, Private.",
+        "你的任务是保持可爱，菜鸟。"
+      ],
+      "manifest": "scenes/smile-and-wave/scene.json"
+    },
+    {
+      "id": "scene_gCp7ClczBfE",
+      "slug": "ben-blue-hat",
+      "title": "我看起来怎么样？",
+      "english": "How do I look?",
+      "note": "Ben and Holly’s Little Kingdom",
+      "source": "https://www.youtube.com/watch?v=Kmw12eUP4MM&t=564s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/ben-blue-hat/ben-blue-hat-poster-32416e93bf9f.jpg",
+      "tags": [
+        "Ben and Holly’s Little Kingdom",
+        "Ben and Holly's Little Kingdom",
+        "Ben and Holly",
+        "本和霍莉的小王国",
+        "Nanny Plum",
+        "Ben",
+        "Holly",
+        "梅姨",
+        "本",
+        "霍莉",
+        "magic",
+        "魔法",
+        "hat",
+        "帽子"
+      ],
+      "quotes": [
+        "Oh no! The magic hat has turned Ben blue!",
+        "哦，不！魔法帽把本变蓝了！",
+        "How do I look?",
+        "我看起来怎么样？",
+        "Um, I think your old hat suits you better.",
+        "嗯，我觉得你原来的帽子更适合你。",
+        "Me too.",
+        "我也这么觉得。",
+        "Abracazobody!",
+        "阿布拉卡佐波迪！（剧中的魔法咒语）",
+        "Ah, it's good to have my old hat back again.",
+        "啊，能重新戴上我的旧帽子真好。",
+        "And it's nice to have you back, wand. I will never lose you again.",
+        "魔法棒，你也回来了，真好。我再也不会把你弄丢了。"
+      ],
+      "manifest": "scenes/ben-blue-hat/scene.json"
+    },
+    {
+      "id": "scene_oHKH4UW2j7Q",
+      "slug": "ben-never-scared",
+      "title": "精灵从来不害怕！",
+      "english": "Elves are never scared!",
+      "note": "Ben and Holly’s Little Kingdom",
+      "source": "https://www.youtube.com/watch?v=Kmw12eUP4MM&t=194s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/ben-never-scared/ben-never-scared-poster-3a86987f29ed.jpg",
+      "tags": [
+        "Ben and Holly’s Little Kingdom",
+        "Ben and Holly's Little Kingdom",
+        "Ben and Holly",
+        "本和霍莉的小王国",
+        "Holly",
+        "Ben",
+        "霍莉",
+        "本",
+        "feelings",
+        "情绪",
+        "fear",
+        "害怕",
+        "elves",
+        "精灵"
+      ],
+      "quotes": [
+        "Sorry, Ben. Were you scared?",
+        "对不起，本。你害怕了吗？",
+        "I'm an elf. Elves are never scared.",
+        "我是精灵。精灵从来不害怕。",
+        "Er, good. In that case, can I try again?",
+        "呃，那就好。那我可以再试一次吗？",
+        "Um, maybe later. See you!",
+        "嗯，待会儿再说吧。再见！",
+        "Bye, Ben.",
+        "再见，本。"
+      ],
+      "manifest": "scenes/ben-never-scared/scene.json"
+    },
+    {
+      "id": "scene_ue_rpVpccbk",
+      "slug": "holly-can-i-play",
+      "title": "我可以和本一起玩吗？",
+      "english": "Can I play with Ben?",
+      "note": "Ben and Holly’s Little Kingdom",
+      "source": "https://www.youtube.com/watch?v=Kmw12eUP4MM&t=12s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/holly-can-i-play/holly-can-i-play-poster-4f9f32a909c0.jpg",
+      "tags": [
+        "Ben and Holly’s Little Kingdom",
+        "Ben and Holly's Little Kingdom",
+        "Ben and Holly",
+        "本和霍莉的小王国",
+        "Holly",
+        "Nanny Plum",
+        "霍莉",
+        "梅姨",
+        "playing",
+        "玩耍",
+        "asking permission",
+        "请求许可",
+        "magic",
+        "魔法"
+      ],
+      "quotes": [
+        "But Nanny Plum, I was going to play with Ben.",
+        "可是梅姨，我本来打算和本一起玩。",
+        "Princess Holly, there's a time for playing with elves and a time for wand practice.",
+        "霍莉公主，和精灵玩有玩的时间，练习魔法棒有练习的时间。",
+        "Please, Nanny. I promise to practise later.",
+        "求你了，梅姨。我保证待会儿练习。",
+        "Hmm, very well, but come in when I—",
+        "嗯，好吧，不过等我叫你时就——",
+        "Thanks, Nanny. Bye!",
+        "谢谢梅姨。再见！"
+      ],
+      "manifest": "scenes/holly-can-i-play/scene.json"
+    },
+    {
+      "id": "scene_9aW-AUNHyhc",
+      "slug": "peppa-found-glasses",
+      "title": "你一直坐在眼镜上！",
+      "english": "You were sitting on them!",
+      "note": "Peppa Pig",
+      "source": "https://www.youtube.com/watch?v=Izul_xs5dWo&t=243s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/peppa-found-glasses/peppa-found-glasses-poster-b4297f3f9d8a.jpg",
+      "tags": [
+        "Peppa Pig",
+        "小猪佩奇",
+        "Mummy Pig",
+        "Daddy Pig",
+        "Peppa",
+        "猪妈妈",
+        "猪爸爸",
+        "佩奇",
+        "glasses",
+        "眼镜",
+        "family",
+        "家庭"
+      ],
+      "quotes": [
+        "Daddy Pig, you were sitting on them all the time!",
+        "猪爸爸，你一直坐在眼镜上！",
+        "Oh!",
+        "哦！",
+        "Silly Daddy!",
+        "糊涂爸爸！",
+        "I don't know how they got there.",
+        "我不知道眼镜怎么跑到那里了。"
+      ],
+      "manifest": "scenes/peppa-found-glasses/scene.json"
+    },
+    {
+      "id": "scene_y5A8q-8McdQ",
+      "slug": "peppa-guess-what",
+      "title": "猜猜我们干什么了！",
+      "english": "Guess what we have been doing!",
+      "note": "Peppa Pig",
+      "source": "https://www.youtube.com/watch?v=QFdLgfy63cc&t=189s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/peppa-guess-what/peppa-guess-what-poster-cd5c1dd92b95.jpg",
+      "tags": [
+        "Peppa Pig",
+        "小猪佩奇",
+        "Peppa",
+        "Daddy Pig",
+        "佩奇",
+        "猪爸爸",
+        "muddy puddles",
+        "泥坑",
+        "guessing",
+        "猜谜"
+      ],
+      "quotes": [
+        "Daddy, Daddy! Guess what we've been doing!",
+        "爸爸，爸爸！猜猜我们干什么了！",
+        "Let me think. Have you been watching television?",
+        "让我想想。你们在看电视吗？",
+        "No, no, Daddy.",
+        "不，不是，爸爸。",
+        "Have you just had a bath?",
+        "你们刚洗完澡吗？",
+        "No, no.",
+        "不，不是。",
+        "I know! You've been jumping in muddy puddles!",
+        "我知道了！你们在泥坑里跳来跳去！",
+        "Yes, yes, Daddy! We've been jumping in muddy puddles!",
+        "对，对，爸爸！我们在泥坑里跳来跳去！"
+      ],
+      "manifest": "scenes/peppa-guess-what/scene.json"
+    },
+    {
+      "id": "scene_dJ3aIJ7VuJ0",
+      "slug": "peppa-lost-glasses",
+      "title": "我们帮你找眼镜好吗？",
+      "english": "Can we help find your glasses?",
+      "note": "Peppa Pig",
+      "source": "https://www.youtube.com/watch?v=Izul_xs5dWo&t=108s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/peppa-lost-glasses/peppa-lost-glasses-poster-49b4ac98efcb.jpg",
+      "tags": [
+        "Peppa Pig",
+        "小猪佩奇",
+        "Daddy Pig",
+        "Mummy Pig",
+        "Peppa",
+        "猪爸爸",
+        "猪妈妈",
+        "佩奇",
+        "glasses",
+        "眼镜",
+        "helping",
+        "帮忙"
+      ],
+      "quotes": [
+        "Somebody must have put my glasses somewhere.",
+        "一定有人把我的眼镜放到什么地方了。",
+        "Do you remember where you last put them, Daddy Pig?",
+        "猪爸爸，你记得上次把眼镜放在哪里了吗？",
+        "When I don't wear them, I always put them in my pocket. But they aren't there now.",
+        "不戴的时候，我总把眼镜放在口袋里。可是现在不在里面。",
+        "Daddy, can we help find your glasses?",
+        "爸爸，我们帮你找眼镜好吗？",
+        "Good idea, Peppa. If you find them, Daddy will stop being so grumpy.",
+        "好主意，佩奇。找到眼镜，爸爸就不会这么暴躁了。",
+        "I'm not grumpy!",
+        "我才没有暴躁呢！"
+      ],
+      "manifest": "scenes/peppa-lost-glasses/scene.json"
+    },
+    {
+      "id": "scene_I2NmYZZ4ICk",
+      "slug": "peppa-pretend-doctors",
+      "title": "病人可以有访客吗？",
+      "english": "Can the patient have a visitor?",
+      "note": "Peppa Pig",
+      "source": "https://www.youtube.com/watch?v=pDUASheI0aI&t=216s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/peppa-pretend-doctors/peppa-pretend-doctors-poster-642294351759.jpg",
+      "tags": [
+        "Peppa Pig",
+        "小猪佩奇",
+        "Daddy Pig",
+        "Peppa",
+        "Suzy Sheep",
+        "Mummy Pig",
+        "猪爸爸",
+        "佩奇",
+        "小羊苏西",
+        "猪妈妈",
+        "doctor",
+        "医生",
+        "pretend play",
+        "角色扮演"
+      ],
+      "quotes": [
+        "Oh no! What's wrong with George?",
+        "哦，不！乔治怎么了？",
+        "Don't worry, Daddy. It's only a game.",
+        "别担心，爸爸。我们只是在玩游戏。",
+        "George is our patient.",
+        "乔治是我们的病人。",
+        "Oh, I see. Can the patient have a visitor?",
+        "哦，我明白了。病人可以有访客吗？",
+        "Just for a little while. He might get tired.",
+        "只能一小会儿。他可能会累的。",
+        "Cookies!",
+        "饼干！",
+        "Yes, they're for George. They're his medicine to make him feel better.",
+        "对，给乔治的。这是让他好起来的药。"
+      ],
+      "manifest": "scenes/peppa-pretend-doctors/scene.json"
+    },
+    {
+      "id": "scene_bxQM0S-Xsn4",
+      "slug": "peppa-toy-dinosaur",
+      "title": "那是恐龙吗？",
+      "english": "Is that a dinosaur?",
+      "note": "Peppa Pig",
+      "source": "https://www.youtube.com/watch?v=SHi4XJxgfVs&t=371s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/peppa-toy-dinosaur/peppa-toy-dinosaur-poster-8226511ce837.jpg",
+      "tags": [
+        "Peppa Pig",
+        "小猪佩奇",
+        "Danny Dog",
+        "Peppa",
+        "George",
+        "Madame Gazelle",
+        "小狗丹尼",
+        "佩奇",
+        "乔治",
+        "羚羊夫人",
+        "dinosaur",
+        "恐龙",
+        "toys",
+        "玩具"
+      ],
+      "quotes": [
+        "Is that a dinosaur?",
+        "那是恐龙吗？",
+        "It's just a toy dinosaur.",
+        "那只是一只玩具恐龙。",
+        "Grr! Dinosaur!",
+        "吼！恐龙！",
+        "Brilliant!",
+        "太棒了！",
+        "What?",
+        "什么？",
+        "Dinosaur! Grr!",
+        "恐龙！吼！",
+        "Dinosaur! Grr!",
+        "恐龙！吼！",
+        "Really scary!",
+        "真吓人！",
+        "That's brilliant!",
+        "太棒了！"
+      ],
+      "manifest": "scenes/peppa-toy-dinosaur/scene.json"
+    },
+    {
+      "id": "scene_ow8KQy0Ni_U",
+      "slug": "bluey-real-coins",
+      "routeSlug": "can-we-have-some-real-coins",
+      "title": "能给我们几个真硬币吗？",
+      "english": "Can we have some real coins?",
+      "note": "Bluey",
+      "source": "https://www.youtube.com/watch?v=zqExJdPYu00&t=9s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/bluey-real-coins/bluey-real-coins-poster-48976104fa5c.jpg",
+      "tags": [
+        "Bluey",
+        "Bluey",
+        "Bandit",
+        "Chilli",
+        "coins",
+        "chores",
+        "布鲁伊",
+        "硬币",
+        "家务"
+      ],
+      "quotes": [
+        "This machine doesn't take imaginary coins. Go and get a job and earn real ones.",
+        "这台机器不收想象出来的硬币。去干点活，挣几个真的吧。",
+        "Mum, can we have some real coins?",
+        "妈妈，能给我们几个真硬币吗？",
+        "I said go and get a job.",
+        "我说了，去干点活。",
+        "Well, if you kids make Mum and Dad's bed, I'll give you twenty cents.",
+        "好吧，你们把爸爸妈妈的床铺好，我就给你们二十分钱。",
+        "Oh, come on, Bingo!",
+        "哦，来吧，宾果！",
+        "I'm watching you, Magic Claw.",
+        "我盯着你呢，魔法抓娃娃机。"
+      ],
+      "manifest": "scenes/bluey-real-coins/scene.json"
+    },
+    {
+      "id": "scene_rWVQAIy-SYw",
+      "slug": "bluey-magic-claw",
+      "routeSlug": "dad-this-is-not-fair",
+      "title": "爸爸，这不公平！",
+      "english": "Dad, this is not fair!",
+      "note": "Bluey",
+      "source": "https://www.youtube.com/watch?v=zqExJdPYu00&t=84s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/bluey-magic-claw/bluey-magic-claw-poster-bbd3ecc853a0.jpg",
+      "tags": [
+        "Bluey",
+        "Bluey",
+        "Bandit",
+        "pretend play",
+        "fairness",
+        "布鲁伊",
+        "游戏",
+        "公平"
+      ],
+      "quotes": [
+        "Okay, let's do this.",
+        "好，开始吧。",
+        "You lose!",
+        "你输了！",
+        "Dad! This isn't fair!",
+        "爸爸！这不公平！",
+        "I am not Dad. I am Magic Claw. Magic Claw has no children. His days are free and easy.",
+        "我不是爸爸，我是魔法抓娃娃机。魔法抓娃娃机没有孩子，每天都自由自在。"
+      ],
+      "manifest": "scenes/bluey-magic-claw/scene.json"
+    },
+    {
+      "id": "scene_pZDW-Ao5SAw",
+      "slug": "peppa-pancake",
+      "routeSlug": "that-pancake-went-too-high",
+      "title": "煎饼飞得太高啦！",
+      "english": "That pancake went too high!",
+      "note": "Peppa Pig",
+      "source": "https://www.youtube.com/watch?v=mzGkxm7lLrg&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/peppa-pancake/peppa-pancake-poster-9b63f7cba22c.jpg",
+      "tags": [
+        "Peppa Pig",
+        "Peppa",
+        "Daddy Pig",
+        "Mummy Pig",
+        "pancakes",
+        "cooking",
+        "佩奇",
+        "煎饼",
+        "做饭"
+      ],
+      "quotes": [
+        "Is everyone watching?",
+        "大家都在看吗？",
+        "The secret of making a good pancake is to flip it high into the air.",
+        "做出好煎饼的秘诀，就是把它高高地翻到空中。",
+        "A-one, two, three, hoopla!",
+        "一、二、三，嘿！",
+        "Silly Daddy!",
+        "傻爸爸！",
+        "Oh, maybe that was just a bit too high.",
+        "哦，可能刚才翻得有点太高了。",
+        "Oh, what a shame. That was the last pancake.",
+        "哦，真可惜，那是最后一张煎饼了。",
+        "It should be a simple matter to get it down.",
+        "把它弄下来应该很简单。"
+      ],
+      "manifest": "scenes/peppa-pancake/scene.json"
+    },
+    {
+      "id": "scene_kSciHakPXA0",
+      "slug": "peppa-another-turn",
+      "routeSlug": "let-george-have-another-turn",
+      "title": "再给乔治一次机会",
+      "english": "Let George have another turn",
+      "note": "Peppa Pig",
+      "source": "https://www.youtube.com/watch?v=SHi4XJxgfVs&t=145s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/peppa-another-turn/peppa-another-turn-poster-4d682a01a0f8.jpg",
+      "tags": [
+        "Peppa Pig",
+        "Peppa",
+        "Daddy Pig",
+        "George",
+        "hide and seek",
+        "taking turns",
+        "佩奇",
+        "捉迷藏",
+        "轮流"
+      ],
+      "quotes": [
+        "George found me! Now it's Daddy's turn to hide.",
+        "乔治找到我啦！现在轮到爸爸藏起来了。",
+        "Oh, I think George should have another turn.",
+        "哦，我觉得应该让乔治再来一次。",
+        "But George isn't very good at hiding.",
+        "可是乔治不太会藏。",
+        "I'm sure he'll be better this time. Close your eyes and start counting.",
+        "我相信这次他会藏得更好。闭上眼睛，开始数数吧。"
+      ],
+      "manifest": "scenes/peppa-another-turn/scene.json"
+    },
+    {
+      "id": "scene_dc581WltScU",
+      "slug": "holly-magic-mistake",
+      "routeSlug": "my-magic-went-a-bit-wrong",
+      "title": "我的魔法出了一点错",
+      "english": "My magic went a bit wrong",
+      "note": "Ben and Holly’s Little Kingdom",
+      "source": "https://www.youtube.com/watch?v=Kmw12eUP4MM&t=119s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/holly-magic-mistake/holly-magic-mistake-poster-2ea121b97714.jpg",
+      "tags": [
+        "Ben and Holly’s Little Kingdom",
+        "Holly",
+        "Nanny Plum",
+        "practice",
+        "mistakes",
+        "magic",
+        "霍莉",
+        "练习",
+        "出错"
+      ],
+      "quotes": [
+        "Gosh! What a big hat!",
+        "哎呀！好大的一顶帽子！",
+        "Er, it's Ben. I accidentally turned him into a hat.",
+        "呃，那是本。我不小心把他变成帽子了。",
+        "Princess Holly, that's exactly why you need to practise your magic more.",
+        "霍莉公主，这正是你需要多练习魔法的原因。",
+        "I was practising, but it all went a bit wrong.",
+        "我刚才就在练习，可是出了一点错。"
+      ],
+      "manifest": "scenes/holly-magic-mistake/scene.json"
+    },
+    {
+      "id": "scene_ljYOYpWoouw",
+      "slug": "ben-simple-plan",
+      "routeSlug": "i-have-got-a-simple-plan",
+      "title": "我有一个简单的计划",
+      "english": "I have got a simple plan",
+      "note": "Ben and Holly’s Little Kingdom",
+      "source": "https://www.youtube.com/watch?v=Kmw12eUP4MM&t=310s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/ben-simple-plan/ben-simple-plan-poster-c4dc1fb282e3.jpg",
+      "tags": [
+        "Ben and Holly’s Little Kingdom",
+        "Ben",
+        "Holly",
+        "lost things",
+        "plans",
+        "questions",
+        "本",
+        "霍莉",
+        "计划",
+        "寻找"
+      ],
+      "quotes": [
+        "But Ben, how are you going to find my wand?",
+        "可是，本，你要怎么找到我的魔法棒呢？",
+        "I've got a simple plan.",
+        "我有一个简单的计划。",
+        "Oh, goody!",
+        "哦，太好啦！",
+        "First, try to remember where you left your wand. In your bedroom, perhaps.",
+        "首先，想想你把魔法棒放在哪里了。也许在你的卧室里？",
+        "Or in the meadow. That's where I left it.",
+        "或者在草地上。我就是把它落在那里了。",
+        "Ah.",
+        "啊。",
+        "What's the next bit of your plan?",
+        "你的计划下一步是什么呢？",
+        "Um, that was the plan.",
+        "呃，这就是整个计划了。"
+      ],
+      "manifest": "scenes/ben-simple-plan/scene.json"
+    }
+  ],
+  "locales": {
+    "en": {
+      "scenes": {
+        "scene_KHUVKWak": {
+          "title": "No, this is Patrick!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Excerpts from 00:00–00:08 and 00:17–00:23.2, joined and compressed with dubbing timing markers."
+        },
+        "scene_LnSPbYi0": {
+          "title": "Chocolate?!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Excerpt from 00:10.8–00:22.2, compressed with dubbing timing markers."
+        },
+        "scene_1eCjBRKF": {
+          "title": "Set it to Wumbo!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 2.55–21.95 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_BeIAKV4J": {
+          "title": "Ogres are like onions",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Excerpt from 00:19.4–00:35.1 of a landscape upload of the onion conversation, compressed with dubbing timing markers."
+        },
+        "scene_oq1hQgYa": {
+          "title": "Just keep swimming!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 4.5–15.6 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_EI_7V5r9": {
+          "title": "Fish are friends!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 15.4–25.65 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_fEAVzgFh": {
+          "title": "To infinity and beyond!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 25.15–50.05 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_txYTl2tq": {
+          "title": "You are a toy!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 45.05–63.65 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_Ciq_cd4H": {
+          "title": "Falling with style!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 189.45–213.25 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_oSd4bYiR": {
+          "title": "I am speed!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 28.95–40.65 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_p5BgIG-b": {
+          "title": "Ka-chow!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 13.1–27.65 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_RPXXEtjf": {
+          "title": "It’s so fluffy!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 23.3–54 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_CZ0bp6VC": {
+          "title": "What about the floor?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 10.9–29.8 seconds of the original upload. The original Minionese catchphrase is replaced by an English Gru/children exchange from the same franchise."
+        },
+        "scene_nJ9pMesA": {
+          "title": "Squirrel!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 95–109.5 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_IuDLtAby": {
+          "title": "I just met you!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 83.75–95.05 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_y50gF2Cn": {
+          "title": "Anyone can cook!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 11.8–26.5 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_wr2NM2nf": {
+          "title": "No secret ingredient!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 27.45–50.55 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_kuOni4tB": {
+          "title": "I'm not upset!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 0.25–12.3 seconds of the original upload. The isolated proverb is replaced by Po/Oogway’s short question-and-answer exchange from the same scene."
+        },
+        "scene_4ds3OMdO": {
+          "title": "Do the roar!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 14.5–30.9 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_HY-tFxVL": {
+          "title": "Are we there yet?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 14.5–24.95 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_XFfwULcF": {
+          "title": "Who sent you here?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 96.4–109.6 seconds of the original upload. Uses the eviction conversation immediately after the swamp outburst, rather than padding the shout with crowd reactions."
+        },
+        "scene_MkR1_VOc": {
+          "title": "I’m ready!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 18.2–28.7 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_F9ob5jiT": {
+          "title": "Is mayonnaise an instrument?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 9.15–24.4 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_uDawiVCK": {
+          "title": "Smile and wave!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 2.7–29.4 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_gCp7ClczBfE": {
+          "title": "How do I look?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 564.65–589.7 seconds of the original upload."
+        },
+        "scene_oHKH4UW2j7Q": {
+          "title": "Elves are never scared!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 194–211.35 seconds of the original upload."
+        },
+        "scene_ue_rpVpccbk": {
+          "title": "Can I play with Ben?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 12.2–33.85 seconds of the original upload."
+        },
+        "scene_9aW-AUNHyhc": {
+          "title": "You were sitting on them!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 243.15–258.15 seconds of the original upload."
+        },
+        "scene_y5A8q-8McdQ": {
+          "title": "Guess what we have been doing!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 189.2–214.05 seconds of the original upload."
+        },
+        "scene_dJ3aIJ7VuJ0": {
+          "title": "Can we help find your glasses?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 108.15–130.5 seconds of the original upload."
+        },
+        "scene_I2NmYZZ4ICk": {
+          "title": "Can the patient have a visitor?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 216.3–239.7 seconds of the original upload."
+        },
+        "scene_bxQM0S-Xsn4": {
+          "title": "Is that a dinosaur?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 371.8–395.55 seconds of the original upload."
+        },
+        "scene_ow8KQy0Ni_U": {
+          "title": "Can we have some real coins?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 9.65–32.35 seconds of the original upload. Pretend machine and household pocket-money bargain; not an invitation for young children to take outside work. Original Australian English."
+        },
+        "scene_rWVQAIy-SYw": {
+          "title": "Dad, this is not fair!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 84.8–106.44 seconds of the original upload. The intentionally unfair pretend game is a family comedy. Mechanical sounds and the full attempt remain in the original audio; sound effects are not vocabulary prompts."
+        },
+        "scene_pZDW-Ao5SAw": {
+          "title": "That pancake went too high!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 0–29.75 seconds of the original upload. Cartoon cooking mishap with a hot pan; adult cooking activity, not a child demonstration to copy. Mild family teasing."
+        },
+        "scene_kSciHakPXA0": {
+          "title": "Let George have another turn",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 145.4–166.12 seconds of the original upload. Gentle sibling comparison. Stops before Peppa begins the next counting turn; no narrator practice role."
+        },
+        "scene_dc581WltScU": {
+          "title": "My magic went a bit wrong",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 119.15–138.85 seconds of the original upload. Fantasy: Ben has become a hat. No spell or invented magic words are used as English prompts."
+        },
+        "scene_ljYOYpWoouw": {
+          "title": "I have got a simple plan",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 310.55–336.3 seconds of the original upload. Fantasy prop only; ordinary problem-solving dialogue. The later put-down and bird/climbing sequence are excluded."
+        }
+      },
+      "roles": {
+        "role_GMoleWKV": {
+          "name": "Patrick",
+          "hint": "2 lines · Try two moods"
+        },
+        "role_VMR9ThiJ": {
+          "name": "Caller",
+          "hint": "2 lines · Ask the same question"
+        },
+        "role_-pse1q5d": {
+          "name": "Customer",
+          "hint": "2 lines · Show a change in mood"
+        },
+        "role_S1FPrc0B": {
+          "name": "Patrick",
+          "hint": "1 line · With or without"
+        },
+        "role_v-seIUIJ": {
+          "name": "Patrick",
+          "hint": "3 lines"
+        },
+        "role_llrWB6OVSyA": {
+          "name": "SpongeBob",
+          "hint": "2 lines"
+        },
+        "role_aBTF2CU4": {
+          "name": "Shrek",
+          "hint": "2 lines · Try an explanation"
+        },
+        "role_1xuLJg1A": {
+          "name": "Donkey",
+          "hint": "1 line · Have a sudden realization"
+        },
+        "role_k7e1KRth": {
+          "name": "Dory",
+          "hint": "3 lines"
+        },
+        "role_y7mBEj-GiRI": {
+          "name": "Marlin",
+          "hint": "2 lines"
+        },
+        "role_gkU-I3wxM6c": {
+          "name": "Sharks",
+          "hint": "1 line"
+        },
+        "role_gp1z-ZLSL6Y": {
+          "name": "Chum",
+          "hint": "1 line"
+        },
+        "role_74zNIJOZO7U": {
+          "name": "Anchor",
+          "hint": "1 line"
+        },
+        "role_jPzYR5J6EIU": {
+          "name": "Woody",
+          "hint": "3 lines"
+        },
+        "role_a9_OwCFQ": {
+          "name": "Buzz Lightyear",
+          "hint": "4 lines"
+        },
+        "role_f58ELG8A": {
+          "name": "Woody",
+          "hint": "2 lines"
+        },
+        "role_q1JOcg9gD7M": {
+          "name": "Buzz Lightyear",
+          "hint": "1 line"
+        },
+        "role_PbbqOHSVd2c": {
+          "name": "Woody",
+          "hint": "2 lines"
+        },
+        "role_dG7FU8MF": {
+          "name": "Buzz Lightyear",
+          "hint": "3 lines"
+        },
+        "role_MA9SyNmW": {
+          "name": "Mater",
+          "hint": "1 line"
+        },
+        "role_t3AskixQqcI": {
+          "name": "Lightning McQueen",
+          "hint": "2 lines"
+        },
+        "role_G8GuFY_TB7c": {
+          "name": "Speed announcer",
+          "hint": "1 line"
+        },
+        "role_NauR2jpl": {
+          "name": "Lightning McQueen",
+          "hint": "3 lines"
+        },
+        "role_wyV97y-qVtA": {
+          "name": "Chick Hicks",
+          "hint": "2 lines"
+        },
+        "role_ac_suThrxnA": {
+          "name": "Margo",
+          "hint": "1 line"
+        },
+        "role_mZOwX2ys": {
+          "name": "Agnes",
+          "hint": "1 line"
+        },
+        "role_2YM2UXibtNQ": {
+          "name": "Carnival attendant",
+          "hint": "1 line"
+        },
+        "role_AmEQPuK-wqk": {
+          "name": "Gru",
+          "hint": "3 lines"
+        },
+        "role_6qGKlj0DGGU": {
+          "name": "Gru",
+          "hint": "4 lines"
+        },
+        "role_ttD2BhSD_aQ": {
+          "name": "Margo",
+          "hint": "2 lines"
+        },
+        "role_Y1QH7lsWlSU": {
+          "name": "Edith",
+          "hint": "2 lines"
+        },
+        "role_i_3nIjrN": {
+          "name": "Dug",
+          "hint": "4 lines"
+        },
+        "role_tD36hMnXUVc": {
+          "name": "Carl",
+          "hint": "1 line"
+        },
+        "role_LMfavnX8qAw": {
+          "name": "Russell",
+          "hint": "1 line"
+        },
+        "role_AkxqSDuU": {
+          "name": "Dug",
+          "hint": "2 lines"
+        },
+        "role_D1aZwWlTtkk": {
+          "name": "Carl",
+          "hint": "1 line"
+        },
+        "role_CwTyhoLe": {
+          "name": "Gusteau",
+          "hint": "3 lines"
+        },
+        "role_43NdYGbMURo": {
+          "name": "Remy",
+          "hint": "2 lines"
+        },
+        "role_q93mX0oX": {
+          "name": "Mr. Ping",
+          "hint": "3 lines"
+        },
+        "role_KLqdqSbZHmw": {
+          "name": "Po",
+          "hint": "2 lines"
+        },
+        "role__OrFsrNE": {
+          "name": "Oogway",
+          "hint": "2 lines"
+        },
+        "role_-aBSnmfkqjk": {
+          "name": "Po",
+          "hint": "1 line"
+        },
+        "role_fQeXDxQ7A-I": {
+          "name": "Boy's father",
+          "hint": "1 line"
+        },
+        "role_Kx8gM4db": {
+          "name": "Boy",
+          "hint": "2 lines"
+        },
+        "role_HxBpf2F4gNA": {
+          "name": "Shrek",
+          "hint": "2 lines"
+        },
+        "role_c6niQ-oI2rA": {
+          "name": "Fiona",
+          "hint": "1 line"
+        },
+        "role_OhnCGoVU": {
+          "name": "Donkey",
+          "hint": "5 lines"
+        },
+        "role__qQJ8UfC": {
+          "name": "Shrek",
+          "hint": "4 lines"
+        },
+        "role_YoD156O5n0s": {
+          "name": "Fiona",
+          "hint": "1 line"
+        },
+        "role_Rp4xE21Pv6o": {
+          "name": "Donkey",
+          "hint": "1 line"
+        },
+        "role_stZNsPqJ3SU": {
+          "name": "Pinocchio",
+          "hint": "3 lines"
+        },
+        "role_VNG5X2g-": {
+          "name": "Shrek",
+          "hint": "2 lines"
+        },
+        "role_WP8iVeXihIk": {
+          "name": "Little pig",
+          "hint": "2 lines"
+        },
+        "role_K490suAd": {
+          "name": "SpongeBob",
+          "hint": "4 lines"
+        },
+        "role_ZsxADi00XhU": {
+          "name": "Squidward",
+          "hint": "2 lines"
+        },
+        "role_-6cZmGav": {
+          "name": "Squidward",
+          "hint": "4 lines"
+        },
+        "role_biDyZtCKZuA": {
+          "name": "Plankton",
+          "hint": "1 line"
+        },
+        "role_cGjaFVM0": {
+          "name": "Patrick",
+          "hint": "1 line"
+        },
+        "role_y89zbrnV": {
+          "name": "Skipper",
+          "hint": "5 lines"
+        },
+        "role_csUjXkRdbuM": {
+          "name": "Kowalski",
+          "hint": "2 lines"
+        },
+        "role_48Y-QZ9fhhE": {
+          "name": "Private",
+          "hint": "1 line"
+        },
+        "role_YMmMf1wkkD0": {
+          "name": "Nanny Plum",
+          "hint": "2 lines"
+        },
+        "role_DJntnoCh-CI": {
+          "name": "Ben",
+          "hint": "2 lines"
+        },
+        "role_VcebY2wPqqI": {
+          "name": "Holly",
+          "hint": "3 lines"
+        },
+        "role_1eyadGyaZ-U": {
+          "name": "Holly",
+          "hint": "3 lines"
+        },
+        "role_gYy8dSWMk40": {
+          "name": "Ben",
+          "hint": "2 lines"
+        },
+        "role_iNuzpzccAUs": {
+          "name": "Holly",
+          "hint": "3 lines"
+        },
+        "role_BIwW3pMFQ_o": {
+          "name": "Nanny Plum",
+          "hint": "2 lines"
+        },
+        "role_JbjeUfpdQeo": {
+          "name": "Mummy Pig",
+          "hint": "1 line"
+        },
+        "role_kG1Vhx3plc4": {
+          "name": "Daddy Pig",
+          "hint": "2 lines"
+        },
+        "role_Uivz-A7quiE": {
+          "name": "Peppa",
+          "hint": "1 line"
+        },
+        "role_nsjPD0zHc9g": {
+          "name": "Peppa",
+          "hint": "4 lines"
+        },
+        "role_vzHo-mLf8QQ": {
+          "name": "Daddy Pig",
+          "hint": "3 lines"
+        },
+        "role_GZ118819nuE": {
+          "name": "Daddy Pig",
+          "hint": "3 lines"
+        },
+        "role_zYkp26hxuB0": {
+          "name": "Mummy Pig",
+          "hint": "2 lines"
+        },
+        "role_SAm7j7Q6lfE": {
+          "name": "Peppa",
+          "hint": "1 line"
+        },
+        "role_TqcAfKZEoEo": {
+          "name": "Daddy Pig",
+          "hint": "2 lines"
+        },
+        "role_ORPImTlyeZM": {
+          "name": "Peppa",
+          "hint": "3 lines"
+        },
+        "role_5uI-c2fNuK0": {
+          "name": "Suzy Sheep",
+          "hint": "1 line"
+        },
+        "role_iEFhkfUkYtY": {
+          "name": "Mummy Pig",
+          "hint": "1 line"
+        },
+        "role__8jMontcRkc": {
+          "name": "Danny Dog",
+          "hint": "5 lines"
+        },
+        "role_MGcwyTjk6fU": {
+          "name": "Peppa",
+          "hint": "1 line"
+        },
+        "role_J5K-PqReqUY": {
+          "name": "George",
+          "hint": "2 lines"
+        },
+        "role_sC6qozH6L3I": {
+          "name": "Madame Gazelle",
+          "hint": "1 line"
+        },
+        "role_7weef38VGuI": {
+          "name": "Bandit",
+          "hint": "2 lines"
+        },
+        "role_L2VcbrWL4bA": {
+          "name": "Bluey",
+          "hint": "2 lines"
+        },
+        "role_YETwbI6_lYI": {
+          "name": "Chilli",
+          "hint": "2 lines"
+        },
+        "role_qv1zScGHWaw": {
+          "name": "Bluey",
+          "hint": "2 lines"
+        },
+        "role_3OkXi5CB_xA": {
+          "name": "Bandit",
+          "hint": "2 lines"
+        },
+        "role_hUKB1yRtZXw": {
+          "name": "Daddy Pig",
+          "hint": "5 lines"
+        },
+        "role_ivc93Nvkxm8": {
+          "name": "Peppa",
+          "hint": "1 line"
+        },
+        "role_k125HlEUqb8": {
+          "name": "Mummy Pig",
+          "hint": "1 line"
+        },
+        "role_shoymM1aoQM": {
+          "name": "Peppa",
+          "hint": "2 lines"
+        },
+        "role_mUwDImJFuLo": {
+          "name": "Daddy Pig",
+          "hint": "2 lines"
+        },
+        "role_60DwRWhXHns": {
+          "name": "Nanny Plum",
+          "hint": "2 lines"
+        },
+        "role_vRt7TOzwQLI": {
+          "name": "Holly",
+          "hint": "2 lines"
+        },
+        "role_Wyexw2YGEUw": {
+          "name": "Holly",
+          "hint": "4 lines"
+        },
+        "role_6um5do5ReBs": {
+          "name": "Ben",
+          "hint": "4 lines"
+        }
+      },
+      "notices": {
+        "library": "Adult prototype testing · Dubs save in this browser. No uploads. Redistribution permission for the meme clips is unconfirmed.",
+        "scene": "This scene is for adult prototype testing. The full film is not beginner learning material for children.The creators do not endorse this product."
+      }
+    },
+    "zh-CN": {
+      "scenes": {
+        "scene_KHUVKWak": {
+          "title": "不，这是派大星！",
+          "licence": "未确认再分发许可",
+          "changes": "选取原片 00:00–00:08 与 00:17–00:23.2，拼接、压缩并添加配音时间标记。"
+        },
+        "scene_LnSPbYi0": {
+          "title": "巧克力？！",
+          "licence": "未确认再分发许可",
+          "changes": "选取原片 00:10.8–00:22.2，压缩并添加配音时间标记。"
+        },
+        "scene_1eCjBRKF": {
+          "title": "调成 Wumbo！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 2.55–21.95 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_BeIAKV4J": {
+          "title": "怪物就像洋葱",
+          "licence": "未确认再分发许可",
+          "changes": "从同一段洋葱对话的横版上传中选取 00:19.4–00:35.1，压缩并添加配音时间标记。"
+        },
+        "scene_oq1hQgYa": {
+          "title": "一直游下去！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 4.5–15.6 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_EI_7V5r9": {
+          "title": "鱼儿是朋友！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 15.4–25.65 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_fEAVzgFh": {
+          "title": "飞向宇宙！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 25.15–50.05 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_txYTl2tq": {
+          "title": "你是个玩具！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 45.05–63.65 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_Ciq_cd4H": {
+          "title": "有风格地落下！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 189.45–213.25 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_oSd4bYiR": {
+          "title": "我就是速度！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 28.95–40.65 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_p5BgIG-b": {
+          "title": "咔嚓！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 13.1–27.65 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_RPXXEtjf": {
+          "title": "太毛茸茸了！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 23.3–54 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_CZ0bp6VC": {
+          "title": "那地板呢？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 10.9–29.8 秒的节选。The original Minionese catchphrase is replaced by an English Gru/children exchange from the same franchise."
+        },
+        "scene_nJ9pMesA": {
+          "title": "松鼠！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 95–109.5 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_IuDLtAby": {
+          "title": "刚认识就喜欢你！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 83.75–95.05 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_y50gF2Cn": {
+          "title": "谁都能做饭！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 11.8–26.5 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_wr2NM2nf": {
+          "title": "没有秘密配料！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 27.45–50.55 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_kuOni4tB": {
+          "title": "我没有不开心！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 0.25–12.3 秒的节选。The isolated proverb is replaced by Po/Oogway’s short question-and-answer exchange from the same scene."
+        },
+        "scene_4ds3OMdO": {
+          "title": "吼一声嘛！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 14.5–30.9 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_HY-tFxVL": {
+          "title": "我们到了吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 14.5–24.95 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_XFfwULcF": {
+          "title": "谁让你们来这里的？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 96.4–109.6 秒的节选。Uses the eviction conversation immediately after the swamp outburst, rather than padding the shout with crowd reactions."
+        },
+        "scene_MkR1_VOc": {
+          "title": "我准备好了！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 18.2–28.7 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_F9ob5jiT": {
+          "title": "蛋黄酱是乐器吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 9.15–24.4 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_uDawiVCK": {
+          "title": "微笑，挥挥手！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 2.7–29.4 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_gCp7ClczBfE": {
+          "title": "我看起来怎么样？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 564.65–589.7 秒的节选。"
+        },
+        "scene_oHKH4UW2j7Q": {
+          "title": "精灵从来不害怕！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 194–211.35 秒的节选。"
+        },
+        "scene_ue_rpVpccbk": {
+          "title": "我可以和本一起玩吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 12.2–33.85 秒的节选。"
+        },
+        "scene_9aW-AUNHyhc": {
+          "title": "你一直坐在眼镜上！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 243.15–258.15 秒的节选。"
+        },
+        "scene_y5A8q-8McdQ": {
+          "title": "猜猜我们干什么了！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 189.2–214.05 秒的节选。"
+        },
+        "scene_dJ3aIJ7VuJ0": {
+          "title": "我们帮你找眼镜好吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 108.15–130.5 秒的节选。"
+        },
+        "scene_I2NmYZZ4ICk": {
+          "title": "病人可以有访客吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 216.3–239.7 秒的节选。"
+        },
+        "scene_bxQM0S-Xsn4": {
+          "title": "那是恐龙吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 371.8–395.55 秒的节选。"
+        },
+        "scene_ow8KQy0Ni_U": {
+          "title": "能给我们几个真硬币吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 9.65–32.35 秒的连续节选。Pretend machine and household pocket-money bargain; not an invitation for young children to take outside work. Original Australian English."
+        },
+        "scene_rWVQAIy-SYw": {
+          "title": "爸爸，这不公平！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 84.8–106.44 秒的连续节选。The intentionally unfair pretend game is a family comedy. Mechanical sounds and the full attempt remain in the original audio; sound effects are not vocabulary prompts."
+        },
+        "scene_pZDW-Ao5SAw": {
+          "title": "煎饼飞得太高啦！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 0–29.75 秒的连续节选。Cartoon cooking mishap with a hot pan; adult cooking activity, not a child demonstration to copy. Mild family teasing."
+        },
+        "scene_kSciHakPXA0": {
+          "title": "再给乔治一次机会",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 145.4–166.12 秒的连续节选。Gentle sibling comparison. Stops before Peppa begins the next counting turn; no narrator practice role."
+        },
+        "scene_dc581WltScU": {
+          "title": "我的魔法出了一点错",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 119.15–138.85 秒的连续节选。Fantasy: Ben has become a hat. No spell or invented magic words are used as English prompts."
+        },
+        "scene_ljYOYpWoouw": {
+          "title": "我有一个简单的计划",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 310.55–336.3 秒的连续节选。Fantasy prop only; ordinary problem-solving dialogue. The later put-down and bird/climbing sequence are excluded."
+        }
+      },
+      "roles": {
+        "role_GMoleWKV": {
+          "name": "派大星",
+          "hint": "2 句台词 · 试试两种语气"
+        },
+        "role_VMR9ThiJ": {
+          "name": "来电者",
+          "hint": "2 句相同的问题"
+        },
+        "role_-pse1q5d": {
+          "name": "顾客",
+          "hint": "2 句台词 · 演出情绪变化"
+        },
+        "role_S1FPrc0B": {
+          "name": "派大星",
+          "hint": "1 句台词 · with or without"
+        },
+        "role_v-seIUIJ": {
+          "name": "派大星",
+          "hint": "3 句台词"
+        },
+        "role_llrWB6OVSyA": {
+          "name": "海绵宝宝",
+          "hint": "2 句台词"
+        },
+        "role_aBTF2CU4": {
+          "name": "史莱克",
+          "hint": "2 句台词 · 挑战一段解释"
+        },
+        "role_1xuLJg1A": {
+          "name": "驴子",
+          "hint": "1 句台词 · 模仿恍然大悟"
+        },
+        "role_k7e1KRth": {
+          "name": "多莉",
+          "hint": "3 句台词"
+        },
+        "role_y7mBEj-GiRI": {
+          "name": "马林",
+          "hint": "2 句台词"
+        },
+        "role_gkU-I3wxM6c": {
+          "name": "鲨鱼合声",
+          "hint": "1 句台词"
+        },
+        "role_gp1z-ZLSL6Y": {
+          "name": "查姆",
+          "hint": "1 句台词"
+        },
+        "role_74zNIJOZO7U": {
+          "name": "安可",
+          "hint": "1 句台词"
+        },
+        "role_jPzYR5J6EIU": {
+          "name": "胡迪",
+          "hint": "3 句台词"
+        },
+        "role_a9_OwCFQ": {
+          "name": "巴斯光年",
+          "hint": "4 句台词"
+        },
+        "role_f58ELG8A": {
+          "name": "胡迪",
+          "hint": "2 句台词"
+        },
+        "role_q1JOcg9gD7M": {
+          "name": "巴斯光年",
+          "hint": "1 句台词"
+        },
+        "role_PbbqOHSVd2c": {
+          "name": "胡迪",
+          "hint": "2 句台词"
+        },
+        "role_dG7FU8MF": {
+          "name": "巴斯光年",
+          "hint": "3 句台词"
+        },
+        "role_MA9SyNmW": {
+          "name": "板牙",
+          "hint": "1 句台词"
+        },
+        "role_t3AskixQqcI": {
+          "name": "闪电麦昆",
+          "hint": "2 句台词"
+        },
+        "role_G8GuFY_TB7c": {
+          "name": "测速播报员",
+          "hint": "1 句台词"
+        },
+        "role_NauR2jpl": {
+          "name": "闪电麦昆",
+          "hint": "3 句台词"
+        },
+        "role_wyV97y-qVtA": {
+          "name": "奇克·海克斯",
+          "hint": "2 句台词"
+        },
+        "role_ac_suThrxnA": {
+          "name": "玛戈",
+          "hint": "1 句台词"
+        },
+        "role_mZOwX2ys": {
+          "name": "艾格尼丝",
+          "hint": "1 句台词"
+        },
+        "role_2YM2UXibtNQ": {
+          "name": "游乐场摊主",
+          "hint": "1 句台词"
+        },
+        "role_AmEQPuK-wqk": {
+          "name": "格鲁",
+          "hint": "3 句台词"
+        },
+        "role_6qGKlj0DGGU": {
+          "name": "格鲁",
+          "hint": "4 句台词"
+        },
+        "role_ttD2BhSD_aQ": {
+          "name": "玛戈",
+          "hint": "2 句台词"
+        },
+        "role_Y1QH7lsWlSU": {
+          "name": "伊迪丝",
+          "hint": "2 句台词"
+        },
+        "role_i_3nIjrN": {
+          "name": "道格",
+          "hint": "4 句台词"
+        },
+        "role_tD36hMnXUVc": {
+          "name": "卡尔",
+          "hint": "1 句台词"
+        },
+        "role_LMfavnX8qAw": {
+          "name": "罗素",
+          "hint": "1 句台词"
+        },
+        "role_AkxqSDuU": {
+          "name": "道格",
+          "hint": "2 句台词"
+        },
+        "role_D1aZwWlTtkk": {
+          "name": "卡尔",
+          "hint": "1 句台词"
+        },
+        "role_CwTyhoLe": {
+          "name": "古斯托",
+          "hint": "3 句台词"
+        },
+        "role_43NdYGbMURo": {
+          "name": "小米",
+          "hint": "2 句台词"
+        },
+        "role_q93mX0oX": {
+          "name": "平先生",
+          "hint": "3 句台词"
+        },
+        "role_KLqdqSbZHmw": {
+          "name": "阿宝",
+          "hint": "2 句台词"
+        },
+        "role__OrFsrNE": {
+          "name": "乌龟大师",
+          "hint": "2 句台词"
+        },
+        "role_-aBSnmfkqjk": {
+          "name": "阿宝",
+          "hint": "1 句台词"
+        },
+        "role_fQeXDxQ7A-I": {
+          "name": "男孩的爸爸",
+          "hint": "1 句台词"
+        },
+        "role_Kx8gM4db": {
+          "name": "小男孩",
+          "hint": "2 句台词"
+        },
+        "role_HxBpf2F4gNA": {
+          "name": "史莱克",
+          "hint": "2 句台词"
+        },
+        "role_c6niQ-oI2rA": {
+          "name": "菲奥娜",
+          "hint": "1 句台词"
+        },
+        "role_OhnCGoVU": {
+          "name": "驴子",
+          "hint": "5 句台词"
+        },
+        "role__qQJ8UfC": {
+          "name": "史莱克",
+          "hint": "4 句台词"
+        },
+        "role_YoD156O5n0s": {
+          "name": "菲奥娜",
+          "hint": "1 句台词"
+        },
+        "role_Rp4xE21Pv6o": {
+          "name": "驴子",
+          "hint": "1 句台词"
+        },
+        "role_stZNsPqJ3SU": {
+          "name": "匹诺曹",
+          "hint": "3 句台词"
+        },
+        "role_VNG5X2g-": {
+          "name": "史莱克",
+          "hint": "2 句台词"
+        },
+        "role_WP8iVeXihIk": {
+          "name": "小猪",
+          "hint": "2 句台词"
+        },
+        "role_K490suAd": {
+          "name": "海绵宝宝",
+          "hint": "4 句台词"
+        },
+        "role_ZsxADi00XhU": {
+          "name": "章鱼哥",
+          "hint": "2 句台词"
+        },
+        "role_-6cZmGav": {
+          "name": "章鱼哥",
+          "hint": "4 句台词"
+        },
+        "role_biDyZtCKZuA": {
+          "name": "痞老板",
+          "hint": "1 句台词"
+        },
+        "role_cGjaFVM0": {
+          "name": "派大星",
+          "hint": "1 句台词"
+        },
+        "role_y89zbrnV": {
+          "name": "队长",
+          "hint": "5 句台词"
+        },
+        "role_csUjXkRdbuM": {
+          "name": "科瓦斯基",
+          "hint": "2 句台词"
+        },
+        "role_48Y-QZ9fhhE": {
+          "name": "菜鸟",
+          "hint": "1 句台词"
+        },
+        "role_YMmMf1wkkD0": {
+          "name": "梅姨",
+          "hint": "2 句台词"
+        },
+        "role_DJntnoCh-CI": {
+          "name": "本",
+          "hint": "2 句台词"
+        },
+        "role_VcebY2wPqqI": {
+          "name": "霍莉",
+          "hint": "3 句台词"
+        },
+        "role_1eyadGyaZ-U": {
+          "name": "霍莉",
+          "hint": "3 句台词"
+        },
+        "role_gYy8dSWMk40": {
+          "name": "本",
+          "hint": "2 句台词"
+        },
+        "role_iNuzpzccAUs": {
+          "name": "霍莉",
+          "hint": "3 句台词"
+        },
+        "role_BIwW3pMFQ_o": {
+          "name": "梅姨",
+          "hint": "2 句台词"
+        },
+        "role_JbjeUfpdQeo": {
+          "name": "猪妈妈",
+          "hint": "1 句台词"
+        },
+        "role_kG1Vhx3plc4": {
+          "name": "猪爸爸",
+          "hint": "2 句台词"
+        },
+        "role_Uivz-A7quiE": {
+          "name": "佩奇",
+          "hint": "1 句台词"
+        },
+        "role_nsjPD0zHc9g": {
+          "name": "佩奇",
+          "hint": "4 句台词"
+        },
+        "role_vzHo-mLf8QQ": {
+          "name": "猪爸爸",
+          "hint": "3 句台词"
+        },
+        "role_GZ118819nuE": {
+          "name": "猪爸爸",
+          "hint": "3 句台词"
+        },
+        "role_zYkp26hxuB0": {
+          "name": "猪妈妈",
+          "hint": "2 句台词"
+        },
+        "role_SAm7j7Q6lfE": {
+          "name": "佩奇",
+          "hint": "1 句台词"
+        },
+        "role_TqcAfKZEoEo": {
+          "name": "猪爸爸",
+          "hint": "2 句台词"
+        },
+        "role_ORPImTlyeZM": {
+          "name": "佩奇",
+          "hint": "3 句台词"
+        },
+        "role_5uI-c2fNuK0": {
+          "name": "小羊苏西",
+          "hint": "1 句台词"
+        },
+        "role_iEFhkfUkYtY": {
+          "name": "猪妈妈",
+          "hint": "1 句台词"
+        },
+        "role__8jMontcRkc": {
+          "name": "小狗丹尼",
+          "hint": "5 句台词"
+        },
+        "role_MGcwyTjk6fU": {
+          "name": "佩奇",
+          "hint": "1 句台词"
+        },
+        "role_J5K-PqReqUY": {
+          "name": "乔治",
+          "hint": "2 句台词"
+        },
+        "role_sC6qozH6L3I": {
+          "name": "羚羊夫人",
+          "hint": "1 句台词"
+        },
+        "role_7weef38VGuI": {
+          "name": "班迪特爸爸",
+          "hint": "2 句台词"
+        },
+        "role_L2VcbrWL4bA": {
+          "name": "布鲁伊",
+          "hint": "2 句台词"
+        },
+        "role_YETwbI6_lYI": {
+          "name": "奇莉妈妈",
+          "hint": "2 句台词"
+        },
+        "role_qv1zScGHWaw": {
+          "name": "布鲁伊",
+          "hint": "2 句台词"
+        },
+        "role_3OkXi5CB_xA": {
+          "name": "班迪特爸爸",
+          "hint": "2 句台词"
+        },
+        "role_hUKB1yRtZXw": {
+          "name": "猪爸爸",
+          "hint": "5 句台词"
+        },
+        "role_ivc93Nvkxm8": {
+          "name": "佩奇",
+          "hint": "1 句台词"
+        },
+        "role_k125HlEUqb8": {
+          "name": "猪妈妈",
+          "hint": "1 句台词"
+        },
+        "role_shoymM1aoQM": {
+          "name": "佩奇",
+          "hint": "2 句台词"
+        },
+        "role_mUwDImJFuLo": {
+          "name": "猪爸爸",
+          "hint": "2 句台词"
+        },
+        "role_60DwRWhXHns": {
+          "name": "梅姨",
+          "hint": "2 句台词"
+        },
+        "role_vRt7TOzwQLI": {
+          "name": "霍莉",
+          "hint": "2 句台词"
+        },
+        "role_Wyexw2YGEUw": {
+          "name": "霍莉",
+          "hint": "4 句台词"
+        },
+        "role_6um5do5ReBs": {
+          "name": "本",
+          "hint": "4 句台词"
+        }
+      },
+      "notices": {
+        "library": "成人原型测试 · 配音保存在此浏览器，不会上传。影视梗片段尚未确认再分发许可。",
+        "scene": "本片段用于成人原型测试；完整电影并非儿童入门教材。创作者未对本产品作出背书。"
+      }
+    },
+    "es": {
+      "scenes": {
+        "scene_KHUVKWak": {
+          "title": "¡No, soy Patricio!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Fragmentos de 00:00–00:08 y 00:17–00:23.2, unidos y comprimidos con marcas de tiempo para el doblaje."
+        },
+        "scene_LnSPbYi0": {
+          "title": "¡¿Chocolate?!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Fragmento de 00:10.8–00:22.2, comprimido con marcas de tiempo para el doblaje."
+        },
+        "scene_1eCjBRKF": {
+          "title": "¡Ponlo en Wumbo!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 2.55–21.95 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_BeIAKV4J": {
+          "title": "Los ogros son como las cebollas",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Fragmento de 00:19.4–00:35.1 de un vídeo horizontal de la conversación de la cebolla, comprimido con marcas de tiempo para el doblaje."
+        },
+        "scene_oq1hQgYa": {
+          "title": "¡Sigue nadando!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 4.5–15.6 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_EI_7V5r9": {
+          "title": "¡Los peces son amigos!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 15.4–25.65 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_fEAVzgFh": {
+          "title": "¡Hasta el infinito y más allá!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 25.15–50.05 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_txYTl2tq": {
+          "title": "¡Eres un juguete!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 45.05–63.65 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_Ciq_cd4H": {
+          "title": "¡Caer con estilo!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 189.45–213.25 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_oSd4bYiR": {
+          "title": "¡Soy la velocidad!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 28.95–40.65 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_p5BgIG-b": {
+          "title": "¡Ka-chow!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 13.1–27.65 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_RPXXEtjf": {
+          "title": "¡Es tan blandito!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 23.3–54 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_CZ0bp6VC": {
+          "title": "¿Y el suelo?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 10.9–29.8 del vídeo original. La frase original en el idioma de los Minions se sustituye por un diálogo en inglés entre Gru y los niños de la misma saga."
+        },
+        "scene_nJ9pMesA": {
+          "title": "¡Una ardilla!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 95–109.5 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_IuDLtAby": {
+          "title": "¡Acabo de conocerte!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 83.75–95.05 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_y50gF2Cn": {
+          "title": "¡Cualquiera puede cocinar!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 11.8–26.5 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_wr2NM2nf": {
+          "title": "¡No hay ingrediente secreto!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 27.45–50.55 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_kuOni4tB": {
+          "title": "¡No estoy enfadado!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 0.25–12.3 del vídeo original. La frase aislada se sustituye por un breve diálogo de preguntas y respuestas entre Po y Oogway de la misma escena."
+        },
+        "scene_4ds3OMdO": {
+          "title": "¡Haz el rugido!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 14.5–30.9 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_HY-tFxVL": {
+          "title": "¿Ya hemos llegado?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 14.5–24.95 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_XFfwULcF": {
+          "title": "¿Quién os ha mandado aquí?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 96.4–109.6 del vídeo original. Se usa la conversación sobre el desalojo justo después del grito en el pantano, en lugar de alargarlo con reacciones de la multitud."
+        },
+        "scene_MkR1_VOc": {
+          "title": "¡Estoy listo!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 18.2–28.7 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_F9ob5jiT": {
+          "title": "¿La mayonesa es un instrumento?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 9.15–24.4 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_uDawiVCK": {
+          "title": "¡Sonreíd y saludad!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 2.7–29.4 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_gCp7ClczBfE": {
+          "title": "¿Qué tal me queda?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 564.65–589.7 del vídeo original."
+        },
+        "scene_oHKH4UW2j7Q": {
+          "title": "¡Los elfos nunca tienen miedo!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 194–211.35 del vídeo original."
+        },
+        "scene_ue_rpVpccbk": {
+          "title": "¿Puedo jugar con Ben?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 12.2–33.85 del vídeo original."
+        },
+        "scene_9aW-AUNHyhc": {
+          "title": "¡Estabas sentado encima!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 243.15–258.15 del vídeo original."
+        },
+        "scene_y5A8q-8McdQ": {
+          "title": "¡Adivina qué hemos hecho!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 189.2–214.05 del vídeo original."
+        },
+        "scene_dJ3aIJ7VuJ0": {
+          "title": "¿Te ayudamos a buscar las gafas?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 108.15–130.5 del vídeo original."
+        },
+        "scene_I2NmYZZ4ICk": {
+          "title": "¿Puede recibir visitas el paciente?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 216.3–239.7 del vídeo original."
+        },
+        "scene_bxQM0S-Xsn4": {
+          "title": "¿Eso es un dinosaurio?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 371.8–395.55 del vídeo original."
+        },
+        "scene_ow8KQy0Ni_U": {
+          "title": "¿Nos das unas monedas de verdad?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 9.65–32.35 del vídeo original. Máquina de mentira y negociación de la paga en casa. No invita a los niños pequeños a trabajar fuera del hogar. Inglés australiano original."
+        },
+        "scene_rWVQAIy-SYw": {
+          "title": "¡Papá, no es justo!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 84.8–106.44 del vídeo original. El juego de ficción, deliberadamente injusto, es una comedia familiar. Los sonidos mecánicos y el intento completo se mantienen en el audio original; los efectos no son ejercicios de vocabulario."
+        },
+        "scene_pZDW-Ao5SAw": {
+          "title": "¡La tortita ha volado demasiado alto!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 0–29.75 del vídeo original. Accidente de cocina animado con una sartén caliente. Es una actividad de adultos, no una demostración para que los niños la imiten. Hay bromas familiares leves."
+        },
+        "scene_kSciHakPXA0": {
+          "title": "Deja que George vuelva a intentarlo",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 145.4–166.12 del vídeo original. Comparación suave entre hermanos. Termina antes de que Peppa empiece a contar otra vez. El narrador no es un personaje practicable."
+        },
+        "scene_dc581WltScU": {
+          "title": "Mi magia ha salido un poco mal",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 119.15–138.85 del vídeo original. Fantasía: Ben se ha convertido en un sombrero. No se usan hechizos ni palabras mágicas inventadas como ejercicios de inglés."
+        },
+        "scene_ljYOYpWoouw": {
+          "title": "Tengo un plan muy sencillo",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 310.55–336.3 del vídeo original. Solo hay un objeto fantástico; el diálogo trata de resolver un problema cotidiano. Se excluyen el comentario despectivo posterior y la secuencia del pájaro y la escalada."
+        }
+      },
+      "roles": {
+        "role_GMoleWKV": {
+          "name": "Patricio",
+          "hint": "2 frases · Prueba dos tonos"
+        },
+        "role_VMR9ThiJ": {
+          "name": "Persona que llama",
+          "hint": "2 frases · Haz la misma pregunta"
+        },
+        "role_-pse1q5d": {
+          "name": "Cliente",
+          "hint": "2 frases · Expresa un cambio de emoción"
+        },
+        "role_S1FPrc0B": {
+          "name": "Patricio",
+          "hint": "1 frase · Con o sin"
+        },
+        "role_v-seIUIJ": {
+          "name": "Patricio",
+          "hint": "3 frases"
+        },
+        "role_llrWB6OVSyA": {
+          "name": "Bob Esponja",
+          "hint": "2 frases"
+        },
+        "role_aBTF2CU4": {
+          "name": "Shrek",
+          "hint": "2 frases · Prueba a explicarlo"
+        },
+        "role_1xuLJg1A": {
+          "name": "Asno",
+          "hint": "1 frase · Expresa que acabas de entenderlo"
+        },
+        "role_k7e1KRth": {
+          "name": "Dory",
+          "hint": "3 frases"
+        },
+        "role_y7mBEj-GiRI": {
+          "name": "Marlin",
+          "hint": "2 frases"
+        },
+        "role_gkU-I3wxM6c": {
+          "name": "Tiburones",
+          "hint": "1 frase"
+        },
+        "role_gp1z-ZLSL6Y": {
+          "name": "Chum",
+          "hint": "1 frase"
+        },
+        "role_74zNIJOZO7U": {
+          "name": "Ancla",
+          "hint": "1 frase"
+        },
+        "role_jPzYR5J6EIU": {
+          "name": "Woody",
+          "hint": "3 frases"
+        },
+        "role_a9_OwCFQ": {
+          "name": "Buzz Lightyear",
+          "hint": "4 frases"
+        },
+        "role_f58ELG8A": {
+          "name": "Woody",
+          "hint": "2 frases"
+        },
+        "role_q1JOcg9gD7M": {
+          "name": "Buzz Lightyear",
+          "hint": "1 frase"
+        },
+        "role_PbbqOHSVd2c": {
+          "name": "Woody",
+          "hint": "2 frases"
+        },
+        "role_dG7FU8MF": {
+          "name": "Buzz Lightyear",
+          "hint": "3 frases"
+        },
+        "role_MA9SyNmW": {
+          "name": "Mate",
+          "hint": "1 frase"
+        },
+        "role_t3AskixQqcI": {
+          "name": "Rayo McQueen",
+          "hint": "2 frases"
+        },
+        "role_G8GuFY_TB7c": {
+          "name": "Locutor de velocidad",
+          "hint": "1 frase"
+        },
+        "role_NauR2jpl": {
+          "name": "Rayo McQueen",
+          "hint": "3 frases"
+        },
+        "role_wyV97y-qVtA": {
+          "name": "Chick Hicks",
+          "hint": "2 frases"
+        },
+        "role_ac_suThrxnA": {
+          "name": "Margo",
+          "hint": "1 frase"
+        },
+        "role_mZOwX2ys": {
+          "name": "Agnes",
+          "hint": "1 frase"
+        },
+        "role_2YM2UXibtNQ": {
+          "name": "Encargado de la feria",
+          "hint": "1 frase"
+        },
+        "role_AmEQPuK-wqk": {
+          "name": "Gru",
+          "hint": "3 frases"
+        },
+        "role_6qGKlj0DGGU": {
+          "name": "Gru",
+          "hint": "4 frases"
+        },
+        "role_ttD2BhSD_aQ": {
+          "name": "Margo",
+          "hint": "2 frases"
+        },
+        "role_Y1QH7lsWlSU": {
+          "name": "Edith",
+          "hint": "2 frases"
+        },
+        "role_i_3nIjrN": {
+          "name": "Dug",
+          "hint": "4 frases"
+        },
+        "role_tD36hMnXUVc": {
+          "name": "Carl",
+          "hint": "1 frase"
+        },
+        "role_LMfavnX8qAw": {
+          "name": "Russell",
+          "hint": "1 frase"
+        },
+        "role_AkxqSDuU": {
+          "name": "Dug",
+          "hint": "2 frases"
+        },
+        "role_D1aZwWlTtkk": {
+          "name": "Carl",
+          "hint": "1 frase"
+        },
+        "role_CwTyhoLe": {
+          "name": "Gusteau",
+          "hint": "3 frases"
+        },
+        "role_43NdYGbMURo": {
+          "name": "Remy",
+          "hint": "2 frases"
+        },
+        "role_q93mX0oX": {
+          "name": "Sr. Ping",
+          "hint": "3 frases"
+        },
+        "role_KLqdqSbZHmw": {
+          "name": "Po",
+          "hint": "2 frases"
+        },
+        "role__OrFsrNE": {
+          "name": "Maestro Oogway",
+          "hint": "2 frases"
+        },
+        "role_-aBSnmfkqjk": {
+          "name": "Po",
+          "hint": "1 frase"
+        },
+        "role_fQeXDxQ7A-I": {
+          "name": "Padre del niño",
+          "hint": "1 frase"
+        },
+        "role_Kx8gM4db": {
+          "name": "Niño",
+          "hint": "2 frases"
+        },
+        "role_HxBpf2F4gNA": {
+          "name": "Shrek",
+          "hint": "2 frases"
+        },
+        "role_c6niQ-oI2rA": {
+          "name": "Fiona",
+          "hint": "1 frase"
+        },
+        "role_OhnCGoVU": {
+          "name": "Asno",
+          "hint": "5 frases"
+        },
+        "role__qQJ8UfC": {
+          "name": "Shrek",
+          "hint": "4 frases"
+        },
+        "role_YoD156O5n0s": {
+          "name": "Fiona",
+          "hint": "1 frase"
+        },
+        "role_Rp4xE21Pv6o": {
+          "name": "Asno",
+          "hint": "1 frase"
+        },
+        "role_stZNsPqJ3SU": {
+          "name": "Pinocho",
+          "hint": "3 frases"
+        },
+        "role_VNG5X2g-": {
+          "name": "Shrek",
+          "hint": "2 frases"
+        },
+        "role_WP8iVeXihIk": {
+          "name": "Cerdito",
+          "hint": "2 frases"
+        },
+        "role_K490suAd": {
+          "name": "Bob Esponja",
+          "hint": "4 frases"
+        },
+        "role_ZsxADi00XhU": {
+          "name": "Calamardo",
+          "hint": "2 frases"
+        },
+        "role_-6cZmGav": {
+          "name": "Calamardo",
+          "hint": "4 frases"
+        },
+        "role_biDyZtCKZuA": {
+          "name": "Plancton",
+          "hint": "1 frase"
+        },
+        "role_cGjaFVM0": {
+          "name": "Patricio",
+          "hint": "1 frase"
+        },
+        "role_y89zbrnV": {
+          "name": "Skipper",
+          "hint": "5 frases"
+        },
+        "role_csUjXkRdbuM": {
+          "name": "Kowalski",
+          "hint": "2 frases"
+        },
+        "role_48Y-QZ9fhhE": {
+          "name": "Cabo",
+          "hint": "1 frase"
+        },
+        "role_YMmMf1wkkD0": {
+          "name": "Nana Ciruela",
+          "hint": "2 frases"
+        },
+        "role_DJntnoCh-CI": {
+          "name": "Ben",
+          "hint": "2 frases"
+        },
+        "role_VcebY2wPqqI": {
+          "name": "Holly",
+          "hint": "3 frases"
+        },
+        "role_1eyadGyaZ-U": {
+          "name": "Holly",
+          "hint": "3 frases"
+        },
+        "role_gYy8dSWMk40": {
+          "name": "Ben",
+          "hint": "2 frases"
+        },
+        "role_iNuzpzccAUs": {
+          "name": "Holly",
+          "hint": "3 frases"
+        },
+        "role_BIwW3pMFQ_o": {
+          "name": "Nana Ciruela",
+          "hint": "2 frases"
+        },
+        "role_JbjeUfpdQeo": {
+          "name": "Mamá Pig",
+          "hint": "1 frase"
+        },
+        "role_kG1Vhx3plc4": {
+          "name": "Papá Pig",
+          "hint": "2 frases"
+        },
+        "role_Uivz-A7quiE": {
+          "name": "Peppa",
+          "hint": "1 frase"
+        },
+        "role_nsjPD0zHc9g": {
+          "name": "Peppa",
+          "hint": "4 frases"
+        },
+        "role_vzHo-mLf8QQ": {
+          "name": "Papá Pig",
+          "hint": "3 frases"
+        },
+        "role_GZ118819nuE": {
+          "name": "Papá Pig",
+          "hint": "3 frases"
+        },
+        "role_zYkp26hxuB0": {
+          "name": "Mamá Pig",
+          "hint": "2 frases"
+        },
+        "role_SAm7j7Q6lfE": {
+          "name": "Peppa",
+          "hint": "1 frase"
+        },
+        "role_TqcAfKZEoEo": {
+          "name": "Papá Pig",
+          "hint": "2 frases"
+        },
+        "role_ORPImTlyeZM": {
+          "name": "Peppa",
+          "hint": "3 frases"
+        },
+        "role_5uI-c2fNuK0": {
+          "name": "Suzy Sheep",
+          "hint": "1 frase"
+        },
+        "role_iEFhkfUkYtY": {
+          "name": "Mamá Pig",
+          "hint": "1 frase"
+        },
+        "role__8jMontcRkc": {
+          "name": "Danny Dog",
+          "hint": "5 frases"
+        },
+        "role_MGcwyTjk6fU": {
+          "name": "Peppa",
+          "hint": "1 frase"
+        },
+        "role_J5K-PqReqUY": {
+          "name": "George",
+          "hint": "2 frases"
+        },
+        "role_sC6qozH6L3I": {
+          "name": "Señora Gazelle",
+          "hint": "1 frase"
+        },
+        "role_7weef38VGuI": {
+          "name": "Bandit",
+          "hint": "2 frases"
+        },
+        "role_L2VcbrWL4bA": {
+          "name": "Bluey",
+          "hint": "2 frases"
+        },
+        "role_YETwbI6_lYI": {
+          "name": "Chilli",
+          "hint": "2 frases"
+        },
+        "role_qv1zScGHWaw": {
+          "name": "Bluey",
+          "hint": "2 frases"
+        },
+        "role_3OkXi5CB_xA": {
+          "name": "Bandit",
+          "hint": "2 frases"
+        },
+        "role_hUKB1yRtZXw": {
+          "name": "Papá Pig",
+          "hint": "5 frases"
+        },
+        "role_ivc93Nvkxm8": {
+          "name": "Peppa",
+          "hint": "1 frase"
+        },
+        "role_k125HlEUqb8": {
+          "name": "Mamá Pig",
+          "hint": "1 frase"
+        },
+        "role_shoymM1aoQM": {
+          "name": "Peppa",
+          "hint": "2 frases"
+        },
+        "role_mUwDImJFuLo": {
+          "name": "Papá Pig",
+          "hint": "2 frases"
+        },
+        "role_60DwRWhXHns": {
+          "name": "Nana Ciruela",
+          "hint": "2 frases"
+        },
+        "role_vRt7TOzwQLI": {
+          "name": "Holly",
+          "hint": "2 frases"
+        },
+        "role_Wyexw2YGEUw": {
+          "name": "Holly",
+          "hint": "4 frases"
+        },
+        "role_6um5do5ReBs": {
+          "name": "Ben",
+          "hint": "4 frases"
+        }
+      },
+      "notices": {
+        "library": "Pruebas del prototipo con adultos · Los doblajes se guardan en este navegador y no se suben. No se ha confirmado el permiso de redistribución de estos fragmentos.",
+        "scene": "Esta escena es para pruebas del prototipo con adultos. La película completa no es material de iniciación para niños.Los creadores no respaldan este producto."
+      }
+    },
+    "ja": {
+      "scenes": {
+        "scene_KHUVKWak": {
+          "title": "いいえ、パトリックです！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "00:00〜00:08と00:17〜00:23.2の抜粋をつなぎ、圧縮して吹き替えの時間マーカーを追加しています。"
+        },
+        "scene_LnSPbYi0": {
+          "title": "チョコレート？！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "00:10.8〜00:22.2の抜粋を圧縮し、吹き替えの時間マーカーを追加しています。"
+        },
+        "scene_1eCjBRKF": {
+          "title": "ワンボに切り替えて！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の2.55–21.95秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_BeIAKV4J": {
+          "title": "オーガはタマネギみたいなもの",
+          "licence": "再配布の許諾は未確認",
+          "changes": "タマネギの会話の横向き動画から00:19.4〜00:35.1を抜粋し、圧縮して吹き替えの時間マーカーを追加しています。"
+        },
+        "scene_oq1hQgYa": {
+          "title": "泳ぎ続けよう！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の4.5–15.6秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_EI_7V5r9": {
+          "title": "魚は友だち！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の15.4–25.65秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_fEAVzgFh": {
+          "title": "無限のかなたへ、さあ行くぞ！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の25.15–50.05秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_txYTl2tq": {
+          "title": "君はおもちゃだ！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の45.05–63.65秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_Ciq_cd4H": {
+          "title": "かっこよく落ちる！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の189.45–213.25秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_oSd4bYiR": {
+          "title": "僕こそスピード！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の28.95–40.65秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_p5BgIG-b": {
+          "title": "カチャウ！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の13.1–27.65秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_RPXXEtjf": {
+          "title": "すごくふわふわ！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の23.3–54秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_CZ0bp6VC": {
+          "title": "床はどうするの？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の10.9–29.8秒の抜粋です。 元のミニオン語の決めゼリフを、同じシリーズのグルーと子どもたちの英語の会話に置き換えています。"
+        },
+        "scene_nJ9pMesA": {
+          "title": "リスだ！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の95–109.5秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_IuDLtAby": {
+          "title": "今、会ったばかりだけど！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の83.75–95.05秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_y50gF2Cn": {
+          "title": "誰でも料理はできる！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の11.8–26.5秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_wr2NM2nf": {
+          "title": "秘密の材料なんてない！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の27.45–50.55秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_kuOni4tB": {
+          "title": "落ち込んでなんかいない！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の0.25–12.3秒の抜粋です。 単独の格言ではなく、同じシーンのポーとウーグウェイの短い問答を使っています。"
+        },
+        "scene_4ds3OMdO": {
+          "title": "ほえてみて！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の14.5–30.9秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_HY-tFxVL": {
+          "title": "まだ着かないの？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の14.5–24.95秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_XFfwULcF": {
+          "title": "誰に言われて来たんだ？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の96.4–109.6秒の抜粋です。 沼で叫んだ直後の立ち退きに関する会話を使っています。群衆の反応で叫びの場面を引き延ばしてはいません。"
+        },
+        "scene_MkR1_VOc": {
+          "title": "準備オーケー！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の18.2–28.7秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_F9ob5jiT": {
+          "title": "マヨネーズは楽器？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の9.15–24.4秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_uDawiVCK": {
+          "title": "笑って手を振ろう！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の2.7–29.4秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_gCp7ClczBfE": {
+          "title": "似合ってる？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の564.65–589.7秒の抜粋です。"
+        },
+        "scene_oHKH4UW2j7Q": {
+          "title": "エルフは絶対に怖がらない！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の194–211.35秒の抜粋です。"
+        },
+        "scene_ue_rpVpccbk": {
+          "title": "ベンと遊んでもいい？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の12.2–33.85秒の抜粋です。"
+        },
+        "scene_9aW-AUNHyhc": {
+          "title": "その上に座ってたんだよ！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の243.15–258.15秒の抜粋です。"
+        },
+        "scene_y5A8q-8McdQ": {
+          "title": "何をしてたと思う？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の189.2–214.05秒の抜粋です。"
+        },
+        "scene_dJ3aIJ7VuJ0": {
+          "title": "メガネを一緒に探そうか？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の108.15–130.5秒の抜粋です。"
+        },
+        "scene_I2NmYZZ4ICk": {
+          "title": "お見舞いに入ってもいい？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の216.3–239.7秒の抜粋です。"
+        },
+        "scene_bxQM0S-Xsn4": {
+          "title": "あれは恐竜？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の371.8–395.55秒の抜粋です。"
+        },
+        "scene_ow8KQy0Ni_U": {
+          "title": "本物のコインをくれる？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の9.65–32.35秒の抜粋です。 ごっこの機械と家庭内のお小遣いの交渉です。幼い子に外で働くよう勧めるものではありません。元の音声はオーストラリア英語です。"
+        },
+        "scene_rWVQAIy-SYw": {
+          "title": "パパ、ずるいよ！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の84.8–106.44秒の抜粋です。 わざと不公平にしたごっこ遊びを描く家族コメディです。機械の音や一連の挑戦は元の音声に残しています。効果音は単語の練習用ではありません。"
+        },
+        "scene_pZDW-Ao5SAw": {
+          "title": "パンケーキが高く飛びすぎた！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の0–29.75秒の抜粋です。 熱いフライパンを使うアニメの料理の失敗です。大人の調理場面で、子どもがまねするための実演ではありません。家族間の軽いからかいがあります。"
+        },
+        "scene_kSciHakPXA0": {
+          "title": "ジョージにもう一度やらせてあげよう",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の145.4–166.12秒の抜粋です。 きょうだいを穏やかに比べる場面です。ペッパが次に数え始める前で終わります。ナレーターは練習用の役にしていません。"
+        },
+        "scene_dc581WltScU": {
+          "title": "魔法がちょっと失敗しちゃった",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の119.15–138.85秒の抜粋です。 ベンが帽子になるファンタジーです。呪文や架空の魔法の言葉は、英語練習のセリフに使っていません。"
+        },
+        "scene_ljYOYpWoouw": {
+          "title": "簡単な計画があるんだ",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の310.55–336.3秒の抜粋です。 道具だけがファンタジーで、会話は普通の問題解決です。その後のけなす言葉や、鳥と登る場面は含みません。"
+        }
+      },
+      "roles": {
+        "role_GMoleWKV": {
+          "name": "パトリック",
+          "hint": "セリフ2行 · 2つの気持ちで"
+        },
+        "role_VMR9ThiJ": {
+          "name": "電話の相手",
+          "hint": "セリフ2行 · 同じ質問をしてみよう"
+        },
+        "role_-pse1q5d": {
+          "name": "お客さん",
+          "hint": "セリフ2行 · 気持ちの変化を表してみよう"
+        },
+        "role_S1FPrc0B": {
+          "name": "パトリック",
+          "hint": "セリフ1行 · あり・なしを言ってみよう"
+        },
+        "role_v-seIUIJ": {
+          "name": "パトリック",
+          "hint": "セリフ3行"
+        },
+        "role_llrWB6OVSyA": {
+          "name": "スポンジ・ボブ",
+          "hint": "セリフ2行"
+        },
+        "role_aBTF2CU4": {
+          "name": "シュレック",
+          "hint": "セリフ2行 · 説明してみよう"
+        },
+        "role_1xuLJg1A": {
+          "name": "ドンキー",
+          "hint": "セリフ1行 · はっと気づいた感じで"
+        },
+        "role_k7e1KRth": {
+          "name": "ドリー",
+          "hint": "セリフ3行"
+        },
+        "role_y7mBEj-GiRI": {
+          "name": "マーリン",
+          "hint": "セリフ2行"
+        },
+        "role_gkU-I3wxM6c": {
+          "name": "サメたち",
+          "hint": "セリフ1行"
+        },
+        "role_gp1z-ZLSL6Y": {
+          "name": "チャム",
+          "hint": "セリフ1行"
+        },
+        "role_74zNIJOZO7U": {
+          "name": "アンカー",
+          "hint": "セリフ1行"
+        },
+        "role_jPzYR5J6EIU": {
+          "name": "ウッディ",
+          "hint": "セリフ3行"
+        },
+        "role_a9_OwCFQ": {
+          "name": "バズ・ライトイヤー",
+          "hint": "セリフ4行"
+        },
+        "role_f58ELG8A": {
+          "name": "ウッディ",
+          "hint": "セリフ2行"
+        },
+        "role_q1JOcg9gD7M": {
+          "name": "バズ・ライトイヤー",
+          "hint": "セリフ1行"
+        },
+        "role_PbbqOHSVd2c": {
+          "name": "ウッディ",
+          "hint": "セリフ2行"
+        },
+        "role_dG7FU8MF": {
+          "name": "バズ・ライトイヤー",
+          "hint": "セリフ3行"
+        },
+        "role_MA9SyNmW": {
+          "name": "メーター",
+          "hint": "セリフ1行"
+        },
+        "role_t3AskixQqcI": {
+          "name": "ライトニング・マックィーン",
+          "hint": "セリフ2行"
+        },
+        "role_G8GuFY_TB7c": {
+          "name": "速度を伝えるアナウンサー",
+          "hint": "セリフ1行"
+        },
+        "role_NauR2jpl": {
+          "name": "ライトニング・マックィーン",
+          "hint": "セリフ3行"
+        },
+        "role_wyV97y-qVtA": {
+          "name": "チック・ヒックス",
+          "hint": "セリフ2行"
+        },
+        "role_ac_suThrxnA": {
+          "name": "マーゴ",
+          "hint": "セリフ1行"
+        },
+        "role_mZOwX2ys": {
+          "name": "アグネス",
+          "hint": "セリフ1行"
+        },
+        "role_2YM2UXibtNQ": {
+          "name": "遊園地の係員",
+          "hint": "セリフ1行"
+        },
+        "role_AmEQPuK-wqk": {
+          "name": "グルー",
+          "hint": "セリフ3行"
+        },
+        "role_6qGKlj0DGGU": {
+          "name": "グルー",
+          "hint": "セリフ4行"
+        },
+        "role_ttD2BhSD_aQ": {
+          "name": "マーゴ",
+          "hint": "セリフ2行"
+        },
+        "role_Y1QH7lsWlSU": {
+          "name": "イディス",
+          "hint": "セリフ2行"
+        },
+        "role_i_3nIjrN": {
+          "name": "ダグ",
+          "hint": "セリフ4行"
+        },
+        "role_tD36hMnXUVc": {
+          "name": "カール",
+          "hint": "セリフ1行"
+        },
+        "role_LMfavnX8qAw": {
+          "name": "ラッセル",
+          "hint": "セリフ1行"
+        },
+        "role_AkxqSDuU": {
+          "name": "ダグ",
+          "hint": "セリフ2行"
+        },
+        "role_D1aZwWlTtkk": {
+          "name": "カール",
+          "hint": "セリフ1行"
+        },
+        "role_CwTyhoLe": {
+          "name": "グストー",
+          "hint": "セリフ3行"
+        },
+        "role_43NdYGbMURo": {
+          "name": "レミー",
+          "hint": "セリフ2行"
+        },
+        "role_q93mX0oX": {
+          "name": "ミスター・ピン",
+          "hint": "セリフ3行"
+        },
+        "role_KLqdqSbZHmw": {
+          "name": "ポー",
+          "hint": "セリフ2行"
+        },
+        "role__OrFsrNE": {
+          "name": "ウーグウェイ導師",
+          "hint": "セリフ2行"
+        },
+        "role_-aBSnmfkqjk": {
+          "name": "ポー",
+          "hint": "セリフ1行"
+        },
+        "role_fQeXDxQ7A-I": {
+          "name": "男の子のパパ",
+          "hint": "セリフ1行"
+        },
+        "role_Kx8gM4db": {
+          "name": "男の子",
+          "hint": "セリフ2行"
+        },
+        "role_HxBpf2F4gNA": {
+          "name": "シュレック",
+          "hint": "セリフ2行"
+        },
+        "role_c6niQ-oI2rA": {
+          "name": "フィオナ",
+          "hint": "セリフ1行"
+        },
+        "role_OhnCGoVU": {
+          "name": "ドンキー",
+          "hint": "セリフ5行"
+        },
+        "role__qQJ8UfC": {
+          "name": "シュレック",
+          "hint": "セリフ4行"
+        },
+        "role_YoD156O5n0s": {
+          "name": "フィオナ",
+          "hint": "セリフ1行"
+        },
+        "role_Rp4xE21Pv6o": {
+          "name": "ドンキー",
+          "hint": "セリフ1行"
+        },
+        "role_stZNsPqJ3SU": {
+          "name": "ピノキオ",
+          "hint": "セリフ3行"
+        },
+        "role_VNG5X2g-": {
+          "name": "シュレック",
+          "hint": "セリフ2行"
+        },
+        "role_WP8iVeXihIk": {
+          "name": "子ブタ",
+          "hint": "セリフ2行"
+        },
+        "role_K490suAd": {
+          "name": "スポンジ・ボブ",
+          "hint": "セリフ4行"
+        },
+        "role_ZsxADi00XhU": {
+          "name": "イカルド",
+          "hint": "セリフ2行"
+        },
+        "role_-6cZmGav": {
+          "name": "イカルド",
+          "hint": "セリフ4行"
+        },
+        "role_biDyZtCKZuA": {
+          "name": "プランクトン",
+          "hint": "セリフ1行"
+        },
+        "role_cGjaFVM0": {
+          "name": "パトリック",
+          "hint": "セリフ1行"
+        },
+        "role_y89zbrnV": {
+          "name": "スキッパー",
+          "hint": "セリフ5行"
+        },
+        "role_csUjXkRdbuM": {
+          "name": "コワルスキー",
+          "hint": "セリフ2行"
+        },
+        "role_48Y-QZ9fhhE": {
+          "name": "プライベート",
+          "hint": "セリフ1行"
+        },
+        "role_YMmMf1wkkD0": {
+          "name": "ナニー・プラム",
+          "hint": "セリフ2行"
+        },
+        "role_DJntnoCh-CI": {
+          "name": "ベン",
+          "hint": "セリフ2行"
+        },
+        "role_VcebY2wPqqI": {
+          "name": "ホリー",
+          "hint": "セリフ3行"
+        },
+        "role_1eyadGyaZ-U": {
+          "name": "ホリー",
+          "hint": "セリフ3行"
+        },
+        "role_gYy8dSWMk40": {
+          "name": "ベン",
+          "hint": "セリフ2行"
+        },
+        "role_iNuzpzccAUs": {
+          "name": "ホリー",
+          "hint": "セリフ3行"
+        },
+        "role_BIwW3pMFQ_o": {
+          "name": "ナニー・プラム",
+          "hint": "セリフ2行"
+        },
+        "role_JbjeUfpdQeo": {
+          "name": "ママピッグ",
+          "hint": "セリフ1行"
+        },
+        "role_kG1Vhx3plc4": {
+          "name": "パパピッグ",
+          "hint": "セリフ2行"
+        },
+        "role_Uivz-A7quiE": {
+          "name": "ペッパ",
+          "hint": "セリフ1行"
+        },
+        "role_nsjPD0zHc9g": {
+          "name": "ペッパ",
+          "hint": "セリフ4行"
+        },
+        "role_vzHo-mLf8QQ": {
+          "name": "パパピッグ",
+          "hint": "セリフ3行"
+        },
+        "role_GZ118819nuE": {
+          "name": "パパピッグ",
+          "hint": "セリフ3行"
+        },
+        "role_zYkp26hxuB0": {
+          "name": "ママピッグ",
+          "hint": "セリフ2行"
+        },
+        "role_SAm7j7Q6lfE": {
+          "name": "ペッパ",
+          "hint": "セリフ1行"
+        },
+        "role_TqcAfKZEoEo": {
+          "name": "パパピッグ",
+          "hint": "セリフ2行"
+        },
+        "role_ORPImTlyeZM": {
+          "name": "ペッパ",
+          "hint": "セリフ3行"
+        },
+        "role_5uI-c2fNuK0": {
+          "name": "スージー・シープ",
+          "hint": "セリフ1行"
+        },
+        "role_iEFhkfUkYtY": {
+          "name": "ママピッグ",
+          "hint": "セリフ1行"
+        },
+        "role__8jMontcRkc": {
+          "name": "ダニー・ドッグ",
+          "hint": "セリフ5行"
+        },
+        "role_MGcwyTjk6fU": {
+          "name": "ペッパ",
+          "hint": "セリフ1行"
+        },
+        "role_J5K-PqReqUY": {
+          "name": "ジョージ",
+          "hint": "セリフ2行"
+        },
+        "role_sC6qozH6L3I": {
+          "name": "マダム・ガゼル",
+          "hint": "セリフ1行"
+        },
+        "role_7weef38VGuI": {
+          "name": "バンディット",
+          "hint": "セリフ2行"
+        },
+        "role_L2VcbrWL4bA": {
+          "name": "ブルーイ",
+          "hint": "セリフ2行"
+        },
+        "role_YETwbI6_lYI": {
+          "name": "チリ",
+          "hint": "セリフ2行"
+        },
+        "role_qv1zScGHWaw": {
+          "name": "ブルーイ",
+          "hint": "セリフ2行"
+        },
+        "role_3OkXi5CB_xA": {
+          "name": "バンディット",
+          "hint": "セリフ2行"
+        },
+        "role_hUKB1yRtZXw": {
+          "name": "パパピッグ",
+          "hint": "セリフ5行"
+        },
+        "role_ivc93Nvkxm8": {
+          "name": "ペッパ",
+          "hint": "セリフ1行"
+        },
+        "role_k125HlEUqb8": {
+          "name": "ママピッグ",
+          "hint": "セリフ1行"
+        },
+        "role_shoymM1aoQM": {
+          "name": "ペッパ",
+          "hint": "セリフ2行"
+        },
+        "role_mUwDImJFuLo": {
+          "name": "パパピッグ",
+          "hint": "セリフ2行"
+        },
+        "role_60DwRWhXHns": {
+          "name": "ナニー・プラム",
+          "hint": "セリフ2行"
+        },
+        "role_vRt7TOzwQLI": {
+          "name": "ホリー",
+          "hint": "セリフ2行"
+        },
+        "role_Wyexw2YGEUw": {
+          "name": "ホリー",
+          "hint": "セリフ4行"
+        },
+        "role_6um5do5ReBs": {
+          "name": "ベン",
+          "hint": "セリフ4行"
+        }
+      },
+      "notices": {
+        "library": "大人向け試作版テスト・吹き替えはこのブラウザに保存され、アップロードされません。使用している映像の再配布許諾は未確認です。",
+        "scene": "このシーンは大人による試作版のテスト用です。映画全編は、子ども向けの入門教材ではありません。作品の制作者がこの製品を推奨しているわけではありません。"
+      }
+    },
+    "ko": {
+      "scenes": {
+        "scene_KHUVKWak": {
+          "title": "아니, 난 뚱이야!",
+          "licence": "재배포 허가 미확인",
+          "changes": "00:00–00:08 및 00:17–00:23.2 구간을 이어 붙이고 압축했으며 더빙 시간 표시를 추가했어요."
+        },
+        "scene_LnSPbYi0": {
+          "title": "초콜릿?!",
+          "licence": "재배포 허가 미확인",
+          "changes": "00:10.8–00:22.2 구간을 압축하고 더빙 시간 표시를 추가했어요."
+        },
+        "scene_1eCjBRKF": {
+          "title": "웜보로 바꿔!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 2.55–21.95초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_BeIAKV4J": {
+          "title": "오거는 양파와 같아",
+          "licence": "재배포 허가 미확인",
+          "changes": "양파 대화의 가로형 영상에서 00:19.4–00:35.1 구간을 발췌해 압축하고 더빙 시간 표시를 추가했어요."
+        },
+        "scene_oq1hQgYa": {
+          "title": "계속 헤엄쳐!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 4.5–15.6초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_EI_7V5r9": {
+          "title": "물고기는 친구야!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 15.4–25.65초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_fEAVzgFh": {
+          "title": "무한한 공간 저 너머로!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 25.15–50.05초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_txYTl2tq": {
+          "title": "넌 장난감이야!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 45.05–63.65초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_Ciq_cd4H": {
+          "title": "멋지게 떨어지는 거야!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 189.45–213.25초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_oSd4bYiR": {
+          "title": "난 스피드야!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 28.95–40.65초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_p5BgIG-b": {
+          "title": "카차우!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 13.1–27.65초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_RPXXEtjf": {
+          "title": "정말 폭신해!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 23.3–54초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_CZ0bp6VC": {
+          "title": "바닥은 어쩌고?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 10.9–29.8초 구간을 발췌했어요. 원래의 미니언어 유행어 대신 같은 시리즈에서 그루와 아이들이 나누는 영어 대화를 사용해요."
+        },
+        "scene_nJ9pMesA": {
+          "title": "다람쥐다!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 95–109.5초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_IuDLtAby": {
+          "title": "이제 막 만났지만!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 83.75–95.05초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_y50gF2Cn": {
+          "title": "누구나 요리할 수 있어!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 11.8–26.5초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_wr2NM2nf": {
+          "title": "비밀 재료는 없어!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 27.45–50.55초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_kuOni4tB": {
+          "title": "나 안 속상해!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 0.25–12.3초 구간을 발췌했어요. 단독 격언 대신 같은 장면에서 포와 우그웨이가 나누는 짧은 문답을 사용해요."
+        },
+        "scene_4ds3OMdO": {
+          "title": "한번 포효해 봐!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 14.5–30.9초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_HY-tFxVL": {
+          "title": "아직 멀었어?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 14.5–24.95초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_XFfwULcF": {
+          "title": "누가 너희를 보냈어?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 96.4–109.6초 구간을 발췌했어요. 늪에서 소리친 직후의 퇴거 대화를 사용해요. 군중의 반응으로 고함 장면을 늘리지 않았어요."
+        },
+        "scene_MkR1_VOc": {
+          "title": "난 준비됐어!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 18.2–28.7초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_F9ob5jiT": {
+          "title": "마요네즈도 악기야?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 9.15–24.4초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_uDawiVCK": {
+          "title": "웃으며 손을 흔들어!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 2.7–29.4초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_gCp7ClczBfE": {
+          "title": "나 어때 보여?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 564.65–589.7초 구간을 발췌했어요."
+        },
+        "scene_oHKH4UW2j7Q": {
+          "title": "엘프는 절대 무서워하지 않아!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 194–211.35초 구간을 발췌했어요."
+        },
+        "scene_ue_rpVpccbk": {
+          "title": "벤이랑 놀아도 돼?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 12.2–33.85초 구간을 발췌했어요."
+        },
+        "scene_9aW-AUNHyhc": {
+          "title": "그 위에 앉아 있었잖아요!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 243.15–258.15초 구간을 발췌했어요."
+        },
+        "scene_y5A8q-8McdQ": {
+          "title": "우리가 뭘 했는지 맞혀 봐!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 189.2–214.05초 구간을 발췌했어요."
+        },
+        "scene_dJ3aIJ7VuJ0": {
+          "title": "안경 찾는 거 도와드릴까요?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 108.15–130.5초 구간을 발췌했어요."
+        },
+        "scene_I2NmYZZ4ICk": {
+          "title": "환자에게 면회해도 되나요?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 216.3–239.7초 구간을 발췌했어요."
+        },
+        "scene_bxQM0S-Xsn4": {
+          "title": "저건 공룡이야?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 371.8–395.55초 구간을 발췌했어요."
+        },
+        "scene_ow8KQy0Ni_U": {
+          "title": "진짜 동전 좀 줄래요?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 9.65–32.35초 구간을 발췌했어요. 가상의 기계와 집안 용돈 흥정 장면이에요. 어린아이에게 외부 일을 권하는 내용이 아니에요. 원본은 호주 영어예요."
+        },
+        "scene_rWVQAIy-SYw": {
+          "title": "아빠, 불공평해요!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 84.8–106.44초 구간을 발췌했어요. 일부러 불공평하게 만든 흉내 놀이는 가족 코미디예요. 기계 소리와 시도 전체는 원본 오디오에 남겨 두었으며 효과음은 단어 연습 대상이 아니에요."
+        },
+        "scene_pZDW-Ao5SAw": {
+          "title": "팬케이크가 너무 높이 날아갔어!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 0–29.75초 구간을 발췌했어요. 뜨거운 프라이팬을 사용하는 만화 속 요리 소동이에요. 어른의 요리 활동이며 어린이가 따라 할 시범이 아니에요. 가벼운 가족 간 장난이 있어요."
+        },
+        "scene_kSciHakPXA0": {
+          "title": "조지에게 한 번 더 기회를 줘요",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 145.4–166.12초 구간을 발췌했어요. 부드러운 남매 비교 장면이에요. 페파가 다음 숫자를 세기 전에 끝나요. 내레이터는 연습할 수 있는 역할이 아니에요."
+        },
+        "scene_dc581WltScU": {
+          "title": "내 마법이 조금 잘못됐어",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 119.15–138.85초 구간을 발췌했어요. 벤이 모자가 된 판타지 장면이에요. 주문이나 가상의 마법 단어를 영어 연습 대사로 사용하지 않아요."
+        },
+        "scene_ljYOYpWoouw": {
+          "title": "내겐 간단한 계획이 있어",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 310.55–336.3초 구간을 발췌했어요. 소품만 판타지이며 대화는 일상적인 문제 해결에 관한 내용이에요. 이후의 깎아내리는 말과 새 또는 오르기 장면은 제외했어요."
+        }
+      },
+      "roles": {
+        "role_GMoleWKV": {
+          "name": "뚱이",
+          "hint": "대사 2개 · 두 가지 말투로 해 봐요"
+        },
+        "role_VMR9ThiJ": {
+          "name": "전화한 사람",
+          "hint": "대사 2개 · 같은 질문을 해 봐요"
+        },
+        "role_-pse1q5d": {
+          "name": "손님",
+          "hint": "대사 2개 · 감정 변화를 표현해 봐요"
+        },
+        "role_S1FPrc0B": {
+          "name": "뚱이",
+          "hint": "대사 1개 · 있는지 없는지 말해 봐요"
+        },
+        "role_v-seIUIJ": {
+          "name": "뚱이",
+          "hint": "대사 3개"
+        },
+        "role_llrWB6OVSyA": {
+          "name": "스폰지밥",
+          "hint": "대사 2개"
+        },
+        "role_aBTF2CU4": {
+          "name": "슈렉",
+          "hint": "대사 2개 · 설명해 봐요"
+        },
+        "role_1xuLJg1A": {
+          "name": "동키",
+          "hint": "대사 1개 · 갑자기 깨달은 느낌으로"
+        },
+        "role_k7e1KRth": {
+          "name": "도리",
+          "hint": "대사 3개"
+        },
+        "role_y7mBEj-GiRI": {
+          "name": "말린",
+          "hint": "대사 2개"
+        },
+        "role_gkU-I3wxM6c": {
+          "name": "상어들",
+          "hint": "대사 1개"
+        },
+        "role_gp1z-ZLSL6Y": {
+          "name": "첨",
+          "hint": "대사 1개"
+        },
+        "role_74zNIJOZO7U": {
+          "name": "앵커",
+          "hint": "대사 1개"
+        },
+        "role_jPzYR5J6EIU": {
+          "name": "우디",
+          "hint": "대사 3개"
+        },
+        "role_a9_OwCFQ": {
+          "name": "버즈 라이트이어",
+          "hint": "대사 4개"
+        },
+        "role_f58ELG8A": {
+          "name": "우디",
+          "hint": "대사 2개"
+        },
+        "role_q1JOcg9gD7M": {
+          "name": "버즈 라이트이어",
+          "hint": "대사 1개"
+        },
+        "role_PbbqOHSVd2c": {
+          "name": "우디",
+          "hint": "대사 2개"
+        },
+        "role_dG7FU8MF": {
+          "name": "버즈 라이트이어",
+          "hint": "대사 3개"
+        },
+        "role_MA9SyNmW": {
+          "name": "메이터",
+          "hint": "대사 1개"
+        },
+        "role_t3AskixQqcI": {
+          "name": "라이트닝 맥퀸",
+          "hint": "대사 2개"
+        },
+        "role_G8GuFY_TB7c": {
+          "name": "속도 안내 방송",
+          "hint": "대사 1개"
+        },
+        "role_NauR2jpl": {
+          "name": "라이트닝 맥퀸",
+          "hint": "대사 3개"
+        },
+        "role_wyV97y-qVtA": {
+          "name": "칙 힉스",
+          "hint": "대사 2개"
+        },
+        "role_ac_suThrxnA": {
+          "name": "마고",
+          "hint": "대사 1개"
+        },
+        "role_mZOwX2ys": {
+          "name": "아그네스",
+          "hint": "대사 1개"
+        },
+        "role_2YM2UXibtNQ": {
+          "name": "놀이공원 직원",
+          "hint": "대사 1개"
+        },
+        "role_AmEQPuK-wqk": {
+          "name": "그루",
+          "hint": "대사 3개"
+        },
+        "role_6qGKlj0DGGU": {
+          "name": "그루",
+          "hint": "대사 4개"
+        },
+        "role_ttD2BhSD_aQ": {
+          "name": "마고",
+          "hint": "대사 2개"
+        },
+        "role_Y1QH7lsWlSU": {
+          "name": "에디스",
+          "hint": "대사 2개"
+        },
+        "role_i_3nIjrN": {
+          "name": "더그",
+          "hint": "대사 4개"
+        },
+        "role_tD36hMnXUVc": {
+          "name": "칼",
+          "hint": "대사 1개"
+        },
+        "role_LMfavnX8qAw": {
+          "name": "러셀",
+          "hint": "대사 1개"
+        },
+        "role_AkxqSDuU": {
+          "name": "더그",
+          "hint": "대사 2개"
+        },
+        "role_D1aZwWlTtkk": {
+          "name": "칼",
+          "hint": "대사 1개"
+        },
+        "role_CwTyhoLe": {
+          "name": "구스토",
+          "hint": "대사 3개"
+        },
+        "role_43NdYGbMURo": {
+          "name": "레미",
+          "hint": "대사 2개"
+        },
+        "role_q93mX0oX": {
+          "name": "핑 아저씨",
+          "hint": "대사 3개"
+        },
+        "role_KLqdqSbZHmw": {
+          "name": "포",
+          "hint": "대사 2개"
+        },
+        "role__OrFsrNE": {
+          "name": "우그웨이 사부",
+          "hint": "대사 2개"
+        },
+        "role_-aBSnmfkqjk": {
+          "name": "포",
+          "hint": "대사 1개"
+        },
+        "role_fQeXDxQ7A-I": {
+          "name": "아이의 아빠",
+          "hint": "대사 1개"
+        },
+        "role_Kx8gM4db": {
+          "name": "남자아이",
+          "hint": "대사 2개"
+        },
+        "role_HxBpf2F4gNA": {
+          "name": "슈렉",
+          "hint": "대사 2개"
+        },
+        "role_c6niQ-oI2rA": {
+          "name": "피오나",
+          "hint": "대사 1개"
+        },
+        "role_OhnCGoVU": {
+          "name": "동키",
+          "hint": "대사 5개"
+        },
+        "role__qQJ8UfC": {
+          "name": "슈렉",
+          "hint": "대사 4개"
+        },
+        "role_YoD156O5n0s": {
+          "name": "피오나",
+          "hint": "대사 1개"
+        },
+        "role_Rp4xE21Pv6o": {
+          "name": "동키",
+          "hint": "대사 1개"
+        },
+        "role_stZNsPqJ3SU": {
+          "name": "피노키오",
+          "hint": "대사 3개"
+        },
+        "role_VNG5X2g-": {
+          "name": "슈렉",
+          "hint": "대사 2개"
+        },
+        "role_WP8iVeXihIk": {
+          "name": "아기 돼지",
+          "hint": "대사 2개"
+        },
+        "role_K490suAd": {
+          "name": "스폰지밥",
+          "hint": "대사 4개"
+        },
+        "role_ZsxADi00XhU": {
+          "name": "징징이",
+          "hint": "대사 2개"
+        },
+        "role_-6cZmGav": {
+          "name": "징징이",
+          "hint": "대사 4개"
+        },
+        "role_biDyZtCKZuA": {
+          "name": "플랑크톤",
+          "hint": "대사 1개"
+        },
+        "role_cGjaFVM0": {
+          "name": "뚱이",
+          "hint": "대사 1개"
+        },
+        "role_y89zbrnV": {
+          "name": "스키퍼",
+          "hint": "대사 5개"
+        },
+        "role_csUjXkRdbuM": {
+          "name": "코왈스키",
+          "hint": "대사 2개"
+        },
+        "role_48Y-QZ9fhhE": {
+          "name": "프라이빗",
+          "hint": "대사 1개"
+        },
+        "role_YMmMf1wkkD0": {
+          "name": "내니 플럼",
+          "hint": "대사 2개"
+        },
+        "role_DJntnoCh-CI": {
+          "name": "벤",
+          "hint": "대사 2개"
+        },
+        "role_VcebY2wPqqI": {
+          "name": "홀리",
+          "hint": "대사 3개"
+        },
+        "role_1eyadGyaZ-U": {
+          "name": "홀리",
+          "hint": "대사 3개"
+        },
+        "role_gYy8dSWMk40": {
+          "name": "벤",
+          "hint": "대사 2개"
+        },
+        "role_iNuzpzccAUs": {
+          "name": "홀리",
+          "hint": "대사 3개"
+        },
+        "role_BIwW3pMFQ_o": {
+          "name": "내니 플럼",
+          "hint": "대사 2개"
+        },
+        "role_JbjeUfpdQeo": {
+          "name": "엄마 돼지",
+          "hint": "대사 1개"
+        },
+        "role_kG1Vhx3plc4": {
+          "name": "아빠 돼지",
+          "hint": "대사 2개"
+        },
+        "role_Uivz-A7quiE": {
+          "name": "페파",
+          "hint": "대사 1개"
+        },
+        "role_nsjPD0zHc9g": {
+          "name": "페파",
+          "hint": "대사 4개"
+        },
+        "role_vzHo-mLf8QQ": {
+          "name": "아빠 돼지",
+          "hint": "대사 3개"
+        },
+        "role_GZ118819nuE": {
+          "name": "아빠 돼지",
+          "hint": "대사 3개"
+        },
+        "role_zYkp26hxuB0": {
+          "name": "엄마 돼지",
+          "hint": "대사 2개"
+        },
+        "role_SAm7j7Q6lfE": {
+          "name": "페파",
+          "hint": "대사 1개"
+        },
+        "role_TqcAfKZEoEo": {
+          "name": "아빠 돼지",
+          "hint": "대사 2개"
+        },
+        "role_ORPImTlyeZM": {
+          "name": "페파",
+          "hint": "대사 3개"
+        },
+        "role_5uI-c2fNuK0": {
+          "name": "수지 양",
+          "hint": "대사 1개"
+        },
+        "role_iEFhkfUkYtY": {
+          "name": "엄마 돼지",
+          "hint": "대사 1개"
+        },
+        "role__8jMontcRkc": {
+          "name": "대니 도그",
+          "hint": "대사 5개"
+        },
+        "role_MGcwyTjk6fU": {
+          "name": "페파",
+          "hint": "대사 1개"
+        },
+        "role_J5K-PqReqUY": {
+          "name": "조지",
+          "hint": "대사 2개"
+        },
+        "role_sC6qozH6L3I": {
+          "name": "가젤 선생님",
+          "hint": "대사 1개"
+        },
+        "role_7weef38VGuI": {
+          "name": "밴딧",
+          "hint": "대사 2개"
+        },
+        "role_L2VcbrWL4bA": {
+          "name": "블루이",
+          "hint": "대사 2개"
+        },
+        "role_YETwbI6_lYI": {
+          "name": "칠리",
+          "hint": "대사 2개"
+        },
+        "role_qv1zScGHWaw": {
+          "name": "블루이",
+          "hint": "대사 2개"
+        },
+        "role_3OkXi5CB_xA": {
+          "name": "밴딧",
+          "hint": "대사 2개"
+        },
+        "role_hUKB1yRtZXw": {
+          "name": "아빠 돼지",
+          "hint": "대사 5개"
+        },
+        "role_ivc93Nvkxm8": {
+          "name": "페파",
+          "hint": "대사 1개"
+        },
+        "role_k125HlEUqb8": {
+          "name": "엄마 돼지",
+          "hint": "대사 1개"
+        },
+        "role_shoymM1aoQM": {
+          "name": "페파",
+          "hint": "대사 2개"
+        },
+        "role_mUwDImJFuLo": {
+          "name": "아빠 돼지",
+          "hint": "대사 2개"
+        },
+        "role_60DwRWhXHns": {
+          "name": "내니 플럼",
+          "hint": "대사 2개"
+        },
+        "role_vRt7TOzwQLI": {
+          "name": "홀리",
+          "hint": "대사 2개"
+        },
+        "role_Wyexw2YGEUw": {
+          "name": "홀리",
+          "hint": "대사 4개"
+        },
+        "role_6um5do5ReBs": {
+          "name": "벤",
+          "hint": "대사 4개"
+        }
+      },
+      "notices": {
+        "library": "성인 대상 시제품 테스트 · 더빙은 이 브라우저에 저장되며 업로드되지 않아요. 영상 클립의 재배포 허가는 확인되지 않았어요.",
+        "scene": "이 장면은 성인을 대상으로 한 시제품 테스트용이에요. 영화 전체가 어린이 입문 학습 자료인 것은 아니에요.원작 제작자가 이 제품을 보증하는 것은 아니에요."
+      }
+    }
+  }
+}

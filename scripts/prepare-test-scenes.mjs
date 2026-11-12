@@ -1,3 +1,4 @@
+import { catalog, sceneFolder, writeCatalog } from './content-paths.mjs';
 import { readFile, writeFile, mkdir, copyFile } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import { randomBytes, createHash } from 'node:crypto';
@@ -5,7 +6,6 @@ const local='content/local-dubbing', canonical=local+'/release-metadata'; await 
 const root='https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/';
 const names={Dory:'多莉',Marlin:'马林',Sharks:'鲨鱼合声',Bruce:'布鲁斯',Chum:'查姆',Anchor:'安可',Woody:'胡迪',Buzz:'巴斯光年',Mater:'板牙','Lightning McQueen':'闪电麦昆','Chick Hicks':'奇克·海克斯',Margo:'玛戈',Agnes:'艾格尼丝',Edith:'伊迪丝','Carnival attendant':'游乐场摊主',Gru:'格鲁',Dug:'道格',Carl:'卡尔',Russell:'罗素',Gusteau:'古斯托',Remy:'小米','Mr. Ping':'平先生',Po:'阿宝',Oogway:'乌龟大师',"Boy's father":'男孩的爸爸',Boy:'小男孩',Shrek:'史莱克',Fiona:'菲奥娜',Donkey:'驴子',Pinocchio:'匹诺曹','Little pig':'小猪',SpongeBob:'海绵宝宝',Squidward:'章鱼哥',Patrick:'派大星',Plankton:'痞老板',Skipper:'队长',Kowalski:'科瓦斯基',Private:'菜鸟',Peppa:'佩奇','Daddy Pig':'猪爸爸','Mummy Pig':'猪妈妈','Danny Dog':'小狗丹尼',George:'乔治','Suzy Sheep':'小羊苏西',Holly:'霍莉',Ben:'本','Nanny Plum':'梅姨','Madame Gazelle':'羚羊夫人','Speed announcer':'测速播报员'};
 const english=Object.fromEntries(Object.entries(names).map(([en,zh])=>[zh,en]));
-const catalog=JSON.parse(await readFile('src/review-clips.json','utf8'));
 const summaries=Object.fromEntries(catalog.map(entry=>[entry.slug,entry.english]));
 const routeSlugs=Object.fromEntries(catalog.filter(entry=>entry.routeSlug).map(entry=>[entry.slug,entry.routeSlug]));
 const generated=[]; const changed=[]; const media=[]; const translations={...english};
@@ -15,7 +15,7 @@ for (const [cohort,file] of [['older-audience','content/meme-review-scenes.json'
   const libraryFolder=cohort==='younger-age-5'&&entry.beginnerSuitable!==true?'older-audience':cohort;
   const slug=cohort==='younger-age-5'?entry.slug.replace(/^\d+-/,''):entry.slug;
   const source=recipe.sources.find(s=>s.id===entry.sourceId); let previous;
-  try {previous=JSON.parse(await readFile(`public/scenes/${slug}/scene.json`,'utf8'));} catch (error) {if(error.code!=='ENOENT')throw error;}
+  try {previous=JSON.parse(await readFile(`${sceneFolder(slug, libraryFolder)}/scene.json`,'utf8'));} catch (error) {if(error.code!=='ENOENT')throw error;}
   if (entry.preserveMedia) {
    generated.push({id:previous.id,slug,title:previous.title,english:({patrick:'No, this is Patrick.',chocolate:'Chocolate!',onions:'Ogres are like onions.'}[slug]??previous.lines[0].text),note:previous.credit.title,source:previous.credit.source,cohort:libraryFolder,poster:root+slug+'/'+previous.poster});continue;
   }
@@ -34,7 +34,7 @@ for (const [cohort,file] of [['older-audience','content/meme-review-scenes.json'
   const title=cohort==='younger-age-5'||entry.editType==='replacement'?entry.titleZh:previous.title;translations[title]=entry.title;
   const offset=source.sourceOffset??0;const sourceUrl=source.url+`&t=${Math.floor(entry.start+offset)}s`;
   const scene={version:1,id:entry.sceneId,title,tags:entry.tags,description:'内部原型测试；选角色，听原声，录下自己的版本。',duration:+Number(probe.format.duration).toFixed(3),video,mediaBase:root+slug+'/',poster:`${slug}-poster-${digest}.jpg`,waveform:`waveform-${digest}.json`,roles,lines,wordTiming:entry.wordTiming,rightsStatus:'redistribution-not-cleared',credit:{title:source.series??source.title,attribution:source.attribution,source:sourceUrl,licence:'未确认再分发许可',licenceUrl:'https://www.youtube.com/howyoutubeworks/policies/copyright/',changes:`内部原型测试；原上传 ${+(entry.start+offset).toFixed(3)}–${+(entry.end+offset).toFixed(3)} 秒的节选。${entry.editNote??''}`}};
-  await mkdir(`public/scenes/${slug}`,{recursive:true});await writeFile(`public/scenes/${slug}/scene.json`,JSON.stringify(scene,null,2)+'\n');await writeFile(`${canonical}/${slug}.json`,JSON.stringify(scene,null,2)+'\n');
+  await mkdir(sceneFolder(slug, libraryFolder),{recursive:true});await writeFile(`${sceneFolder(slug, libraryFolder)}/scene.json`,JSON.stringify(scene,null,2)+'\n');await writeFile(`${canonical}/${slug}.json`,JSON.stringify(scene,null,2)+'\n');
   changed.push(slug);media.push({file:`${local}/${video}`,key:`clips/${slug}/${video}`},{file:`${local}/${scene.poster}`,key:`clips/${slug}/${scene.poster}`});
   generated.push({id:scene.id,slug,title,english:summaries[slug]??(cohort==='younger-age-5'?entry.title:entry.editType==='replacement'?entry.title:previous.lines[0].text),note:scene.credit.title,source:scene.credit.source,cohort:libraryFolder,poster:scene.mediaBase+scene.poster});
  }
@@ -45,13 +45,13 @@ await writeFile(`${canonical}/translations.json`,JSON.stringify(translations,nul
 const order=['patrick','chocolate','wumbo','onions',...JSON.parse(await readFile('content/extra-scenes.json','utf8')).map(s=>s.slug)];generated.sort((a,b)=>(a.cohort===b.cohort?(a.cohort==='older-audience'?order.indexOf(a.slug)-order.indexOf(b.slug):a.slug.localeCompare(b.slug)):a.cohort==='older-audience'?-1:1));
 const changedSlugs=new Set(generated.map(scene=>scene.slug));
 const untouched=catalog.filter(scene=>!changedSlugs.has(scene.slug));
-await writeFile('src/review-clips.json',JSON.stringify([...generated.map(entry=>({...entry,...(routeSlugs[entry.slug]?{routeSlug:routeSlugs[entry.slug]}:{})})),...untouched],null,2)+'\n');
+await writeCatalog([...generated.map(entry=>({...entry,...(routeSlugs[entry.slug]?{routeSlug:routeSlugs[entry.slug]}:{})})),...untouched]);
 console.log(`Prepared ${generated.length} catalogue entries, ${changed.length} revised/new scenes, and ${media.length} media uploads. Existing portrait work is preserved separately.`);
 
 execFileSync(process.execPath, ['scripts/prepare-waveforms.mjs', ...changed], {stdio:'inherit'});
 for (const slug of changed) {
  const clean=JSON.parse(await readFile(`${canonical}/${slug}.json`,'utf8'));
- const rendered=JSON.parse(await readFile(`public/scenes/${slug}/scene.json`,'utf8'));
+ const rendered=JSON.parse(await readFile(`${sceneFolder(slug)}/scene.json`,'utf8'));
  clean.waveform=rendered.waveform; clean.poster=rendered.poster;
  await writeFile(`${canonical}/${slug}.json`,JSON.stringify(clean,null,2)+'\n');
 }

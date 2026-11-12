@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useLayoutEffect, use
 import { createPath, useBeforeUnload, useBlocker, useLocation, useNavigate, type BlockerFunction } from 'react-router';
 import { libraryPath, readRoute, scenePath } from './routes';
 import { languagePath, type Language } from '../locale';
+import { useContent } from './ContentProvider';
 
 type Page = ReturnType<typeof readRoute>;
 function languageOnly(previous: Page, next: Page) {
@@ -24,6 +25,7 @@ export function useSceneNavigation() {
 }
 
 function useNavigationState() {
+  const { clips } = useContent();
   const location = useLocation();
   const go = useNavigate();
   const href = createPath(location);
@@ -31,18 +33,18 @@ function useNavigationState() {
   const protectedSession = useRef(false);
   // This checkpoint owns only the running player session. React Router owns URL
   // matching, history, redirects, navigation, and the blocked destination.
-  const [active, setActive] = useState(() => ({ href, page: readRoute(href), revision: 0 }));
-  if (active.href !== href) {
-    const page = readRoute(href);
+  const [active, setActive] = useState(() => ({ href, clips, page: readRoute(href, clips), revision: 0 }));
+  if (active.href !== href || active.clips !== clips) {
+    const page = readRoute(href, clips);
     const preserve = replacement.current === href || samePage(active.page, page);
     if (languageOnly(active.page, page)) page.draftId = active.page.draftId;
-    setActive({ href, page, revision: active.revision + (preserve ? 0 : 1) });
+    setActive({ href, clips, page, revision: active.revision + (preserve ? 0 : 1) });
   }
   const current = useRef(active);
   useLayoutEffect(() => { current.current = active; }, [active]);
   const blocker = useBlocker(useCallback<BlockerFunction>(({ currentLocation, nextLocation }) =>
     protectedSession.current && replacement.current !== createPath(nextLocation) &&
-    !samePage(readRoute(createPath(currentLocation)), readRoute(createPath(nextLocation))), []));
+    !samePage(readRoute(createPath(currentLocation), clips), readRoute(createPath(nextLocation), clips)), [clips]));
   const blocked = blocker.state === 'blocked';
   const blockedRef = useRef(blocked);
   useLayoutEffect(() => { blockedRef.current = blocked; }, [blocked]);
@@ -52,23 +54,23 @@ function useNavigationState() {
 
   useEffect(() => {
     // An autosave may add an ID after an older language-history entry was made.
-    const actual = readRoute(href);
+    const actual = readRoute(href, clips);
     if (active.page.draftId && !actual.draftId && actual.slug === active.page.slug) {
-      const path = scenePath(actual.slug, active.page.draftId, actual.language) + new URL(href, window.location.origin).search;
+      const path = scenePath(actual.slug, active.page.draftId, actual.language, clips) + new URL(href, window.location.origin).search;
       replacement.current = path;
       void go(path, { replace: true });
     } else if (replacement.current === href) replacement.current = undefined;
-  }, [href, active.page, go]);
+  }, [href, active.page, go, clips]);
 
   const protect = useCallback((value: boolean) => { protectedSession.current = value; }, []);
   const rememberDraft = useCallback((id?: string) => {
     if (blockedRef.current) return;
     const { page, href } = current.current;
-    const path = scenePath(page.slug, id, page.language) + new URL(href, window.location.origin).search;
+    const path = scenePath(page.slug, id, page.language, clips) + new URL(href, window.location.origin).search;
     if (path === href) return;
     replacement.current = path;
     void go(path, { replace: true });
-  }, [go]);
+  }, [go, clips]);
   return {
     ...active.page, revision: active.revision, rememberDraft, protect,
     pending: blocked,
@@ -80,7 +82,7 @@ function useNavigationState() {
     navigate(slug: string, draftId?: string) {
       const { page, href } = current.current;
       const search = new URL(href, window.location.origin).search;
-      void go((slug ? scenePath(slug, draftId, page.language) : libraryPath(page.folder, page.language)) + search);
+      void go((slug ? scenePath(slug, draftId, page.language, clips) : libraryPath(page.folder, page.language)) + search);
     },
     chooseFolder(folder: string) { void go(libraryPath(folder, current.current.page.language)); },
     confirm() { if (blocker.state === 'blocked') blocker.proceed(); },

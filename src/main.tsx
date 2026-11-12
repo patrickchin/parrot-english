@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { LanguageProvider } from './i18n';
 import { NavigationProvider } from './app/useSceneNavigation';
+import { ContentProvider } from './app/ContentProvider';
 import { createBrowserRouter, replace, RouterProvider } from 'react-router';
 import { pageRoutes } from './app/routes';
 import { languagePath, pathLanguage, preferredLanguage } from './locale';
@@ -14,7 +15,7 @@ const router = createBrowserRouter([{
     return pathLanguage(url.pathname) ? null : replace(languagePath(url.pathname, preferredLanguage()) + url.search + url.hash);
   },
   hydrateFallbackElement: <p role="status">Parrotbook…</p>,
-  element: <NavigationProvider><LanguageProvider><App /></LanguageProvider></NavigationProvider>,
+  element: <ContentProvider><NavigationProvider><LanguageProvider><App /></LanguageProvider></NavigationProvider></ContentProvider>,
   children: pageRoutes.map(route => ({ ...route, element: <></> })),
 }]);
 createRoot(document.getElementById('root')!).render(<React.StrictMode><RouterProvider router={router} /></React.StrictMode>);

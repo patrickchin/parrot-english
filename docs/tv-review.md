@@ -121,16 +121,19 @@ frame sheets are under `~/Pictures/Screenshots/Codex/parrot-english/` with the
 The batch retains `redistribution-not-cleared` status and the existing internal
 test access settings. Public-release rights have not been established.
 
-`node scripts/prepare-tv-scenes.mjs` prepares independent scenes and appends
-them to the catalogue. Their hashed MP4 and poster files are stored in the
-existing OSS bucket; ESA holds only code and structured scene/waveform metadata.
+`node scripts/prepare-tv-scenes.mjs` prepares independent scenes and updates
+their content packs. Hashed MP4 and poster files retain their existing OSS URLs;
+scene manifests, waveform metadata, search summaries, and localized content also
+publish to OSS through the [pack publishing workflow](content-packs.md). ESA
+holds application code and interface assets.
 The upload manifest is generated under the ignored `tv-release/media.json`.
 The first batch uploaded 16 media objects; the second batch adds 24 objects.
 Uploads are checked against MD5/size metadata.
 The temporary exact-object uploader and credentials were deleted after upload.
 
-The application now has 52 scenes across four folders: 24 film/animation clips,
-eight younger-child scenes, nine ages-10–12 TV scenes, and 11 teen TV scenes.
+At this batch's release, the application had 52 scenes across four folders:
+24 film/animation clips, eight younger-child scenes, nine ages-10–12 TV scenes,
+and 11 teen TV scenes.
 The shared sofa response is preserved as an incidental non-selectable role.
 The driving captions retain Ted’s Zitch-dog game call; the cake captions retain
 Rachel’s off-screen response. Prompt boundaries are kept between speaker changes.

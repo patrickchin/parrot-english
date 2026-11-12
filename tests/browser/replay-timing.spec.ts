@@ -1,3 +1,4 @@
+import { readScene } from '../content-fixtures';
 import { test, expect } from './fixtures';
 
 test('replay reuses decoded takes and aligns a rendered audio transient with the picture', async ({ page }) => {
@@ -23,12 +24,12 @@ test('replay reuses decoded takes and aligns a rendered audio transient with the
     } } });
   });
   await page.route('**/scenes/onions/scene.json', async route => {
-    const scene = await (await route.fetch()).json();
+    const scene = readScene('onions');
     delete scene.backing;
     await route.fulfill({ json: scene });
   });
   await page.goto('/scenes/onions');
-  const scene = await (await page.request.get('/scenes/onions/scene.json')).json();
+  const scene = readScene('onions');
   const line = scene.lines[0];
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();

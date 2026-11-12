@@ -1,3 +1,4 @@
+import { readScene } from '../content-fixtures';
 import { test, expect } from './fixtures';
 import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
@@ -42,7 +43,7 @@ test('a short Joey line has moving video context and retains early and late voic
     } } });
   });
   await page.goto('/scenes/friends-thesaurus');
-  const scene = await (await page.request.get('/scenes/friends-thesaurus/scene.json')).json();
+  const scene = readScene('friends-thesaurus');
   await page.getByRole('button', { name: '乔伊', exact: true }).click();
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: "第 2 句：What'd I just say?", exact: true }).click();

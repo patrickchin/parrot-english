@@ -1,3 +1,4 @@
+import { catalog, sceneFolder, writeCatalog } from './content-paths.mjs';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { randomBytes } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
@@ -35,7 +36,7 @@ const scenes = [
 const id = prefix => prefix + '_' + randomBytes(6).toString('base64url');
 await mkdir(directory, { recursive: true });
 for (const entry of scenes) {
-  const path = `public/scenes/${entry.slug}`;
+  const path = sceneFolder(entry.slug);
   await mkdir(path, { recursive: true });
   let previous;
   try { previous = JSON.parse(await readFile(path + '/scene.json', 'utf8')); } catch (error) { if (error.code !== 'ENOENT') throw error; }
@@ -59,3 +60,5 @@ for (const entry of scenes) {
   console.log(`Prepared ${entry.slug}: ${entry.duration}s, ${scene.lines.length} turns. Upload the prepared file to its OSS clip path.`);
 }
 await writeFile(`${directory}/START-HERE.txt`, 'Parrotbook private test clips\n\nOpen https://parrotbook.com/ and choose the matching scene, the hosted clips now open directly. These files are retained as local authoring copies.\n\nThese third-party clips have not been cleared for redistribution or public hosting. No licence is granted by this prototype.\n');
+
+await writeCatalog(catalog);

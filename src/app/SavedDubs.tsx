@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../compon
 import { AppHeader } from './AppHeader';
 import { libraryPath } from './routes';
 import { useSceneNavigation } from './useSceneNavigation';
+import { useContent } from './ContentProvider';
 
 type ShelfState =
   | { status: 'loading' | 'ready'; dubs: SavedDub[] }
@@ -20,6 +21,7 @@ export function SavedDubs({ onChoose }: { onChoose: (slug: string, id: string) =
   const { language } = useLanguage();
   const { t } = useTranslation();
   const navigation = useSceneNavigation();
+  const content = useContent();
   const [shelf, setShelf] = useState<ShelfState>({ status: 'loading', dubs: [] });
   const { dubs } = shelf;
   const [attempt, setAttempt] = useState(0);
@@ -62,11 +64,12 @@ export function SavedDubs({ onChoose }: { onChoose: (slug: string, id: string) =
         </div>}
         {shelf.status === 'error' && <div className="mt-2"><p role="alert">{t(shelf.error, { defaultValue: t('errors.unexpected') })}</p><Button tone="quiet" onClick={() => setAttempt(n => n + 1)}>{t("dubs.retry")}</Button></div>}
         {!!dubs.length && <ul className="mt-6 grid gap-3">{dubs.map(dub => <li key={dub.id} className="saved-dub-row flex min-w-0 items-center gap-2">
-          <button className="min-h-14 min-w-0 flex-1 rounded-lg px-2 py-1 text-left focus-visible:outline-3 focus-visible:outline-brand" onClick={() => onChoose(dub.slug, dub.id)} aria-label={t("dubs.continueLabel", { title: t(`scenes.${dub.sceneId}.title`, { defaultValue: dub.title }), role: t(`roles.${dub.roleId}.name`, { defaultValue: dub.roleName }) })}>
-            <span className="block font-semibold">{t(`scenes.${dub.sceneId}.title`, { defaultValue: dub.title })} · {t(`roles.${dub.roleId}.name`, { defaultValue: dub.roleName })}</span>
+          <button className="min-h-14 min-w-0 flex-1 rounded-lg px-2 py-1 text-left focus-visible:outline-3 focus-visible:outline-brand" onClick={() => onChoose(dub.slug, dub.id)} aria-label={t("dubs.continueLabel", { title: t(`content:scenes.${dub.sceneId}.title`, { defaultValue: dub.title }), role: t(`content:roles.${dub.roleId}.name`, { defaultValue: dub.roleName }) })}>
+            <span className="block font-semibold">{t(`content:scenes.${dub.sceneId}.title`, { defaultValue: dub.title })} · {t(`content:roles.${dub.roleId}.name`, { defaultValue: dub.roleName })}</span>
             <span className="block text-xs leading-5 text-muted-foreground">{t(dub.step === 'result' ? "dubs.complete" : "dubs.inProgress")} · {t("dubs.recordedLines", { recorded: dub.recorded, total: dub.total })} · <time dateTime={new Date(dub.updatedAt).toISOString()}>{new Intl.DateTimeFormat(language, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(dub.updatedAt)}</time></span>
+            {content.state.status === 'ready' && !content.clips.some(clip => clip.id === dub.sceneId) && <span className="block text-xs text-muted-foreground">{t('library.unavailable')}</span>}
           </button>
-          <Button tone="quiet" aria-label={t("dubs.deleteLabel", { title: t(`scenes.${dub.sceneId}.title`, { defaultValue: dub.title }) })} onClick={() => setRemoval({ status: 'confirming', dub })} className="size-11 min-h-11 p-2"><Icon name="trash" /></Button>
+          <Button tone="quiet" aria-label={t("dubs.deleteLabel", { title: t(`content:scenes.${dub.sceneId}.title`, { defaultValue: dub.title }) })} onClick={() => setRemoval({ status: 'confirming', dub })} className="size-11 min-h-11 p-2"><Icon name="trash" /></Button>
         </li>)}</ul>}
         <Dialog open={removal.status !== 'idle'} onOpenChange={open => { if (!open && !deletion.current) setRemoval({ status: 'idle' }); }}><DialogContent>
           <DialogTitle>{t("dubs.deleteThisDub")}</DialogTitle>

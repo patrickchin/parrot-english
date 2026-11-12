@@ -1,8 +1,9 @@
-import { readFile, writeFile, readdir } from 'node:fs/promises';
+import { catalog, sceneFolder, writeCatalog } from './content-paths.mjs';
+import { readFile, writeFile } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 const rate = 16000, step = 0.005;
-for (const slug of process.argv.slice(2).length ? process.argv.slice(2) : (await readdir('public/scenes', { withFileTypes: true })).filter(entry => entry.isDirectory()).map(entry => entry.name)) {
-  const folder = `public/scenes/${slug}`;
+for (const slug of process.argv.slice(2).length ? process.argv.slice(2) : catalog.map(entry => entry.slug)) {
+  const folder = sceneFolder(slug);
   const scene = JSON.parse(await readFile(`${folder}/scene.json`, 'utf8'));
   const source = `${slug === 'sintel' ? 'content/media/sintel' : 'content/local-dubbing'}/${scene.video}`;
   const decoded = spawnSync('ffmpeg', ['-v', 'error', '-i', source, '-vn', '-ac', '1', '-ar', String(rate), '-f', 'f32le', 'pipe:1'], { maxBuffer: 16 * 1024 * 1024 });
@@ -23,3 +24,5 @@ for (const slug of process.argv.slice(2).length ? process.argv.slice(2) : (await
   await writeFile(`${folder}/scene.json`, JSON.stringify(scene, null, 2) + '\n');
   console.log(`${slug}: ${peaks.length} peak windows; media stays outside the app bundle.`);
 }
+
+await writeCatalog(catalog);

@@ -1,5 +1,5 @@
 import { test, expect, setLanguage } from './fixtures';
-import { clips } from '../../src/catalog';
+import { clips } from '../content-fixtures';
 
 test('scene search finds tags and full dialogue while preserving audience folders', async ({ page }) => {
   await page.goto('/');

@@ -43,9 +43,9 @@ test('the styled language popup supports keyboard selection, Escape and phone-si
 test('UI language persists across navigation and reload while English dialogue and Chinese hints stay independent', async ({ page }, info) => {
   await page.goto('/');
   await setLanguage(page, 'en');
-  await expect(page.getByRole('heading', { level: 1, name: 'No, this is Patrick!' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Who are you looking for?' })).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
-  await page.getByRole('button', { name: 'Choose scene: No, this is Patrick!', exact: true }).click();
+  await page.getByRole('button', { name: 'Choose scene: Who are you looking for?', exact: true }).click();
   await page.getByRole('button', { name: 'Start dubbing', exact: true }).click();
   await expect(page.getByText('Thank you.', { exact: true })).toHaveAttribute('lang', 'en');
   await expect(page.getByText('谢谢你。', { exact: true })).toBeVisible();
@@ -75,7 +75,7 @@ test('UI language persists across navigation and reload while English dialogue a
   await page.getByRole('button', { name: 'Back to scenes', exact: true }).click();
   await page.reload();
   await expect(selector(page)).toContainText('English');
-  await expect(page.getByRole('heading', { level: 1, name: 'No, this is Patrick!' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Who are you looking for?' })).toBeVisible();
 });
 
 test('switching language during recording keeps the take, waveform and replay', async ({ page, browserName }) => {

@@ -21,7 +21,7 @@ function mediaBlob(media?: SavedMedia) {
 }
 
 function signature(scene: Scene) {
-  return JSON.stringify([scene.id, scene.video, scene.mediaBase, scene.duration, scene.roles.map(role => [role.id, role.selectable]),
+  return JSON.stringify([scene.id, scene.video, scene.mediaBase ?? scene.base, scene.duration, scene.roles.map(role => [role.id, role.selectable]),
     scene.lines.map(line => [line.id, line.roleId, line.start, line.end, line.text])]);
 }
 

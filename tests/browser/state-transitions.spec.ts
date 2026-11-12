@@ -28,7 +28,7 @@ test('completed recording releases its operation so late capture errors cannot c
 test('browser Back keeps saved takes and Forward restores the same session', async ({ page, browserName }) => {
   test.skip(browserName !== 'chromium', 'Synthetic microphone capture is configured for Chromium.');
   await page.goto('/');
-  await page.getByRole('button', { name: '选择片段：不，这是派大星！', exact: true }).click();
+  await page.getByRole('button', { name: '选择片段：你在找谁？', exact: true }).click();
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   const listen = page.getByRole('button', { name: '听我的录音', exact: true });

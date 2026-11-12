@@ -30,9 +30,12 @@ Both links remain documented rather than presenting the hosted excerpt as an
 officially authorized scene.
 
 `scripts/prepare-meme-scenes.mjs` records the exact source offsets, edit choices,
-dialogue timings, Chinese hints, and role definitions. It writes metadata to
-`public/scenes/<scene>/scene.json` and normalized H.264/AAC video to the ignored
-authoring directory for a separate upload to OSS.
+dialogue timings, Chinese hints, and role definitions. It resolves each scene
+through `scripts/content-paths.mjs` and writes metadata to
+`content/packs/<pack_id>/scenes/<slug>/scene.json`, updating that pack's searchable
+summary. Normalized H.264/AAC video goes to the ignored authoring directory for
+a separate upload to OSS. Publish the changed pack through the
+[content publishing workflow](content-packs.md), independently of the application.
 Existing opaque scene/role/line IDs are retained on reruns.
 It requires FFmpeg and the named private source files; it does not fetch files
 or credentials during app builds.
@@ -102,10 +105,11 @@ The app does not imply endorsement by any film or television producer.
 
 `node scripts/prepare-waveforms.mjs` derives 5 ms peak envelopes from the actual
 prepared clips and extracts small scene thumbnails. Numeric envelopes are
-scene metadata; video/audio/JPEG media stays in OSS. Thumbnails use the same source
-excerpts and credits above. Learner envelopes are sampled from the microphone
-and retained only with the in-memory take. See [UI notes](ui-design.md) for the
-shared loudness scale, alignment, source-mix limitation, and recording controls.
+scene metadata and publish with their packs in OSS, alongside video/audio/JPEG
+media. Thumbnails use the same source excerpts and credits above. Learner envelopes
+are sampled from the microphone and autosave with accepted takes in local browser
+storage. See [UI notes](ui-design.md) for the shared loudness scale, alignment,
+source-mix limitation, and recording controls.
 
 ## Character avatars — 2026-11-11
 
@@ -125,8 +129,8 @@ Run `uv run scripts/prepare-portraits.py` to produce 192-pixel JPEGs in the igno
 `content/local-dubbing/` authoring directory. The picker displays them at 64 pixels.
 The command updates only role portrait references and writes
 `content/local-dubbing/avatar-uploads.json`. Upload those objects to their existing
-scene directories in OSS before releasing the manifests. Filenames include the
-image content hash so cached older stills cannot replace the new avatars.
+scene directories in OSS before publishing the changed packs. Filenames include
+the image content hash so cached older stills cannot replace the new avatars.
 Scene-authoring commands preserve existing portrait references; rerun avatar
 preparation when adding or changing roles. Media stays outside the ESA bundle.
 

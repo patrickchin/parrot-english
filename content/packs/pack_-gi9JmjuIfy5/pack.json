@@ -1,0 +1,2015 @@
+{
+  "version": 1,
+  "id": "pack_-gi9JmjuIfy5",
+  "title": "First English",
+  "description": "Short beginner conversations for internal prototype testing.",
+  "author": "Parrotbook",
+  "scenes": [
+    {
+      "id": "scene_X42Wva5CnXM",
+      "slug": "first-english-good-morning",
+      "routeSlug": "first-english-good-morning",
+      "title": "早上好！你好吗？",
+      "english": "Good morning! How are you?",
+      "note": "English Singsing",
+      "source": "https://www.youtube.com/watch?v=AA5hOCxlRaI&t=4s",
+      "cohort": "younger-age-5",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/first-english-good-morning/first-english-good-morning-poster-ed7e4a5c9236.jpg",
+      "tags": [
+        "English Singsing",
+        "beginner",
+        "first English",
+        "英语启蒙",
+        "greetings",
+        "good morning",
+        "how are you",
+        "问好"
+      ],
+      "quotes": [
+        "Good morning.",
+        "早上好。",
+        "Good morning, everyone.",
+        "大家早上好。",
+        "How are you?",
+        "你好吗？",
+        "Fine, thanks. How are you?",
+        "我很好，谢谢。你们好吗？",
+        "Great!",
+        "很好！"
+      ],
+      "manifest": "scenes/first-english-good-morning/scene.json"
+    },
+    {
+      "id": "scene_nvIB2uFTLc8",
+      "slug": "first-english-nice-to-meet-you",
+      "routeSlug": "first-english-nice-to-meet-you",
+      "title": "很高兴认识你",
+      "english": "Nice to meet you",
+      "note": "English Singsing",
+      "source": "https://www.youtube.com/watch?v=AA5hOCxlRaI&t=16s",
+      "cohort": "younger-age-5",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/first-english-nice-to-meet-you/first-english-nice-to-meet-you-poster-34f9c54930f9.jpg",
+      "tags": [
+        "English Singsing",
+        "beginner",
+        "first English",
+        "英语启蒙",
+        "introductions",
+        "please",
+        "thank you",
+        "classroom",
+        "认识朋友"
+      ],
+      "quotes": [
+        "Come in, please.",
+        "请进。",
+        "Nice to meet you.",
+        "很高兴认识你。",
+        "My name is Kate.",
+        "我叫凯特。",
+        "Nice to meet you, too.",
+        "我们也很高兴认识你。",
+        "Sit down, please.",
+        "请坐。",
+        "Thank you.",
+        "谢谢。"
+      ],
+      "manifest": "scenes/first-english-nice-to-meet-you/scene.json"
+    },
+    {
+      "id": "scene_cjkZKJp7Wq0",
+      "slug": "first-english-book-and-box",
+      "routeSlug": "first-english-book-and-box",
+      "title": "这是什么？一本书！",
+      "english": "What's this? A book!",
+      "note": "English Singsing",
+      "source": "https://www.youtube.com/watch?v=eUazfCkQq84&t=14s",
+      "cohort": "younger-age-5",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/first-english-book-and-box/first-english-book-and-box-poster-7936e27ebfad.jpg",
+      "tags": [
+        "English Singsing",
+        "beginner",
+        "first English",
+        "英语启蒙",
+        "book",
+        "box",
+        "this",
+        "that",
+        "书",
+        "盒子"
+      ],
+      "quotes": [
+        "What's this?",
+        "这是什么？",
+        "It's a book.",
+        "这是一本书。",
+        "What's that?",
+        "那是什么？",
+        "Haha, it's a box!",
+        "哈哈，那是一个盒子！",
+        "Wow!",
+        "哇！"
+      ],
+      "manifest": "scenes/first-english-book-and-box/scene.json"
+    },
+    {
+      "id": "scene_xF5xlXcwdvw",
+      "slug": "first-english-can-you-swim",
+      "routeSlug": "first-english-can-you-swim",
+      "title": "你会游泳吗？",
+      "english": "Can you swim?",
+      "note": "English Singsing",
+      "source": "https://www.youtube.com/watch?v=LMs5M_IiQbc&t=28s",
+      "cohort": "younger-age-5",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/first-english-can-you-swim/first-english-can-you-swim-poster-ad7761660c8a.jpg",
+      "tags": [
+        "English Singsing",
+        "beginner",
+        "first English",
+        "英语启蒙",
+        "swim",
+        "can",
+        "yes",
+        "no",
+        "游泳"
+      ],
+      "quotes": [
+        "Can you swim?",
+        "你会游泳吗？",
+        "Yes, I can.",
+        "是的，我会。",
+        "Can you swim?",
+        "你会游泳吗？",
+        "No, I can't.",
+        "不，我不会。"
+      ],
+      "manifest": "scenes/first-english-can-you-swim/scene.json"
+    },
+    {
+      "id": "scene_soM_ejjEqc0",
+      "slug": "first-english-birthday-present",
+      "routeSlug": "first-english-birthday-present",
+      "title": "这是送给你的",
+      "english": "This is for you",
+      "note": "English Singsing",
+      "source": "https://www.youtube.com/watch?v=LMs5M_IiQbc&t=45s",
+      "cohort": "younger-age-5",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/first-english-birthday-present/first-english-birthday-present-poster-f51f0fc3f84a.jpg",
+      "tags": [
+        "English Singsing",
+        "beginner",
+        "first English",
+        "英语启蒙",
+        "birthday",
+        "present",
+        "thank you",
+        "生日",
+        "礼物"
+      ],
+      "quotes": [
+        "Welcome, everyone.",
+        "欢迎大家。",
+        "Happy birthday!",
+        "生日快乐！",
+        "This is for you.",
+        "这是送给你的。",
+        "Thank you.",
+        "谢谢。"
+      ],
+      "manifest": "scenes/first-english-birthday-present/scene.json"
+    },
+    {
+      "id": "scene_YEtT30gD2zw",
+      "slug": "gogo-magic-flowers",
+      "routeSlug": "gogo-magic-flowers",
+      "title": "花朵变颜色了！",
+      "english": "Magic flowers!",
+      "note": "Gogo's Adventures with English",
+      "source": "https://www.youtube.com/watch?v=As5kCF2ydXQ&t=83s",
+      "cohort": "younger-age-5",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-magic-flowers/gogo-magic-flowers-poster-5b4cb8f6b25e.jpg",
+      "tags": [
+        "Gogo's Adventures with English",
+        "Gogo",
+        "Tony",
+        "Jenny",
+        "dragon",
+        "beginner",
+        "first English",
+        "funny",
+        "英语启蒙",
+        "龙",
+        "趣味故事",
+        "magic",
+        "flowers",
+        "colours",
+        "colors",
+        "blue",
+        "red",
+        "yellow",
+        "魔法",
+        "花朵",
+        "颜色"
+      ],
+      "quotes": [
+        "This is yellow.",
+        "这是黄色。",
+        "Wow!",
+        "哇！",
+        "Oh!",
+        "哦！",
+        "That flower is blue.",
+        "那朵花是蓝色的。",
+        "Oops!",
+        "哎呀！",
+        "That flower is red.",
+        "那朵花是红色的。",
+        "That flower is yellow.",
+        "那朵花是黄色的。"
+      ],
+      "manifest": "scenes/gogo-magic-flowers/scene.json"
+    },
+    {
+      "id": "scene_GlNQxic6XKU",
+      "slug": "gogo-picnic-doughnuts",
+      "routeSlug": "gogo-picnic-doughnuts",
+      "title": "你喜欢甜甜圈吗？",
+      "english": "Do you like doughnuts?",
+      "note": "Gogo's Adventures with English",
+      "source": "https://www.youtube.com/watch?v=LHV46j9vkm8&t=64s",
+      "cohort": "younger-age-5",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-picnic-doughnuts/gogo-picnic-doughnuts-poster-b46806a52ee1.jpg",
+      "tags": [
+        "Gogo's Adventures with English",
+        "Gogo",
+        "Tony",
+        "Jenny",
+        "dragon",
+        "beginner",
+        "first English",
+        "funny",
+        "英语启蒙",
+        "龙",
+        "趣味故事",
+        "picnic",
+        "food",
+        "sausages",
+        "doughnuts",
+        "donuts",
+        "likes",
+        "野餐",
+        "香肠",
+        "甜甜圈"
+      ],
+      "quotes": [
+        "These are sausages, Gogo.",
+        "Gogo，这些是香肠。",
+        "Do you like sausages?",
+        "你喜欢香肠吗？",
+        "Yes, I do.",
+        "是的，我喜欢。",
+        "I like sausages.",
+        "我喜欢香肠。",
+        "What are these?",
+        "这些是什么？",
+        "Those are doughnuts.",
+        "那些是甜甜圈。",
+        "Do you like doughnuts?",
+        "你喜欢甜甜圈吗？",
+        "Yes, I do.",
+        "是的，我喜欢。",
+        "Do you like doughnuts?",
+        "你喜欢甜甜圈吗？",
+        "Yes, I do.",
+        "是的，我喜欢。",
+        "I like sausages and doughnuts.",
+        "我喜欢香肠和甜甜圈。"
+      ],
+      "manifest": "scenes/gogo-picnic-doughnuts/scene.json"
+    },
+    {
+      "id": "scene_A6AHrPGux9Y",
+      "slug": "gogo-picnic-ants",
+      "routeSlug": "gogo-picnic-ants",
+      "title": "我不喜欢蚂蚁！",
+      "english": "I don't like ants!",
+      "note": "Gogo's Adventures with English",
+      "source": "https://www.youtube.com/watch?v=LHV46j9vkm8&t=99s",
+      "cohort": "younger-age-5",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-picnic-ants/gogo-picnic-ants-poster-20d836bc633a.jpg",
+      "tags": [
+        "Gogo's Adventures with English",
+        "Gogo",
+        "Tony",
+        "Jenny",
+        "dragon",
+        "beginner",
+        "first English",
+        "funny",
+        "英语启蒙",
+        "龙",
+        "趣味故事",
+        "picnic",
+        "ants",
+        "sandwiches",
+        "pond",
+        "dislikes",
+        "野餐",
+        "蚂蚁",
+        "三明治"
+      ],
+      "quotes": [
+        "What are those, Gogo?",
+        "Gogo，那些是什么？",
+        "I don't know.",
+        "我不知道。",
+        "Those are sandwiches.",
+        "那些是三明治。",
+        "No, thank you.",
+        "不了，谢谢。",
+        "Ants, Gogo.",
+        "是蚂蚁，Gogo。",
+        "Those are ants.",
+        "那些是蚂蚁。",
+        "I don't like ants.",
+        "我不喜欢蚂蚁。"
+      ],
+      "manifest": "scenes/gogo-picnic-ants/scene.json"
+    },
+    {
+      "id": "scene_-1fU_8OJfvw",
+      "slug": "gogo-elephant-guess",
+      "routeSlug": "gogo-elephant-guess",
+      "title": "是老虎吗？",
+      "english": "Is it a tiger?",
+      "note": "Gogo's Adventures with English",
+      "source": "https://www.youtube.com/watch?v=XREZd9YAuFY&t=146s",
+      "cohort": "younger-age-5",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-elephant-guess/gogo-elephant-guess-poster-188f5a6eb28d.jpg",
+      "tags": [
+        "Gogo's Adventures with English",
+        "Gogo",
+        "Tony",
+        "Jenny",
+        "dragon",
+        "beginner",
+        "first English",
+        "funny",
+        "英语启蒙",
+        "龙",
+        "趣味故事",
+        "zoo",
+        "animals",
+        "elephant",
+        "tiger",
+        "zebra",
+        "guessing",
+        "动物",
+        "大象",
+        "老虎",
+        "斑马"
+      ],
+      "quotes": [
+        "Is that a zebra?",
+        "那是一匹斑马吗？",
+        "No, it isn't.",
+        "不，不是。",
+        "Is it a tiger?",
+        "是老虎吗？",
+        "No, it isn't.",
+        "不，不是。",
+        "What is it?",
+        "它是什么？",
+        "It's an elephant.",
+        "是一头大象。",
+        "It's an elephant.",
+        "是一头大象。",
+        "Very good, Gogo.",
+        "说得很好，Gogo。"
+      ],
+      "manifest": "scenes/gogo-elephant-guess/scene.json"
+    },
+    {
+      "id": "scene_sbQursTISog",
+      "slug": "gogo-mirror-big-small",
+      "routeSlug": "gogo-mirror-big-small",
+      "title": "我变大了！",
+      "english": "Now I'm big!",
+      "note": "Gogo's Adventures with English",
+      "source": "https://www.youtube.com/watch?v=hAwEoUiKxYg&t=51s",
+      "cohort": "younger-age-5",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-mirror-big-small/gogo-mirror-big-small-poster-1e5fd4bb5d67.jpg",
+      "tags": [
+        "Gogo's Adventures with English",
+        "Gogo",
+        "beginner",
+        "first English",
+        "funny",
+        "英语启蒙",
+        "龙",
+        "趣味故事",
+        "mirrors",
+        "big",
+        "small",
+        "sizes",
+        "Tony",
+        "Jenny",
+        "镜子",
+        "大小"
+      ],
+      "quotes": [
+        "You're big, Gogo.",
+        "Gogo，你变大了。",
+        "Now I'm big.",
+        "现在我变大了。",
+        "I'm small.",
+        "我变小了。",
+        "Now I'm small.",
+        "现在我变小了。",
+        "She's big.",
+        "她变大了。",
+        "That's right, Gogo.",
+        "说得对，Gogo。",
+        "She's big.",
+        "她变大了。",
+        "Now I'm big.",
+        "现在我变大了。"
+      ],
+      "manifest": "scenes/gogo-mirror-big-small/scene.json"
+    },
+    {
+      "id": "scene_Omoo6OXIfiE",
+      "slug": "gogo-mirror-tall-short",
+      "routeSlug": "gogo-mirror-tall-short",
+      "title": "变高了还是变矮了？",
+      "english": "Tall or short?",
+      "note": "Gogo's Adventures with English",
+      "source": "https://www.youtube.com/watch?v=hAwEoUiKxYg&t=80s",
+      "cohort": "younger-age-5",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-mirror-tall-short/gogo-mirror-tall-short-poster-902650ba9c11.jpg",
+      "tags": [
+        "Gogo's Adventures with English",
+        "Gogo",
+        "beginner",
+        "first English",
+        "funny",
+        "英语启蒙",
+        "龙",
+        "趣味故事",
+        "mirrors",
+        "tall",
+        "short",
+        "Tony",
+        "Jenny",
+        "镜子",
+        "高矮"
+      ],
+      "quotes": [
+        "Look at me. I'm tall.",
+        "看我，我变高了。",
+        "Now you're tall, Jenny.",
+        "珍妮，现在你变高了。",
+        "I'm not tall.",
+        "我不高。",
+        "No, you aren't tall.",
+        "对，你不高。",
+        "You're short.",
+        "你变矮了。"
+      ],
+      "manifest": "scenes/gogo-mirror-tall-short/scene.json"
+    },
+    {
+      "id": "scene_KuCSY-iiLBg",
+      "slug": "gogo-school-pen",
+      "routeSlug": "gogo-school-pen",
+      "title": "你有笔吗？",
+      "english": "Have you got a pen?",
+      "note": "Gogo's Adventures with English",
+      "source": "https://www.youtube.com/watch?v=ckHMqT9Nw7o&t=133s",
+      "cohort": "younger-age-5",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-school-pen/gogo-school-pen-poster-d7c47226b543.jpg",
+      "tags": [
+        "Gogo's Adventures with English",
+        "Gogo",
+        "beginner",
+        "first English",
+        "funny",
+        "英语启蒙",
+        "龙",
+        "趣味故事",
+        "school",
+        "pen",
+        "ruler",
+        "notebook",
+        "classroom",
+        "学校",
+        "笔",
+        "尺子",
+        "笔记本"
+      ],
+      "quotes": [
+        "Stand up, please, Gogo.",
+        "Gogo，请站起来。",
+        "Have you got a pen?",
+        "你有笔吗？",
+        "Yes, I have.",
+        "是的，我有。",
+        "I've got a pen.",
+        "我有一支笔。",
+        "Have you got a ruler?",
+        "你有尺子吗？",
+        "Yes, yes, I have.",
+        "有，有，我有。",
+        "Have you got a notebook?",
+        "你有笔记本吗？",
+        "Yes, I have.",
+        "是的，我有。",
+        "I've got a notebook.",
+        "我有一本笔记本。"
+      ],
+      "manifest": "scenes/gogo-school-pen/scene.json"
+    },
+    {
+      "id": "scene_2hAmFois_LI",
+      "slug": "gogo-missing-pen",
+      "routeSlug": "gogo-missing-pen",
+      "title": "我的笔不见了！",
+      "english": "I haven't got a pen!",
+      "note": "Gogo's Adventures with English",
+      "source": "https://www.youtube.com/watch?v=ckHMqT9Nw7o&t=165s",
+      "cohort": "younger-age-5",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-missing-pen/gogo-missing-pen-poster-d6c9b8341576.jpg",
+      "tags": [
+        "Gogo's Adventures with English",
+        "Gogo",
+        "beginner",
+        "first English",
+        "funny",
+        "英语启蒙",
+        "龙",
+        "趣味故事",
+        "school",
+        "pen",
+        "ruler",
+        "notebook",
+        "missing",
+        "classroom",
+        "学校",
+        "笔",
+        "尺子",
+        "笔记本",
+        "不见了"
+      ],
+      "quotes": [
+        "Stand up, please, Tony.",
+        "托尼，请站起来。",
+        "Have you got a pen?",
+        "你有笔吗？",
+        "Yes, I have.",
+        "是的，我有。",
+        "Oh, I'm sorry.",
+        "哦，对不起。",
+        "I haven't got a pen.",
+        "我没有笔。",
+        "Have you got a ruler?",
+        "你有尺子吗？",
+        "No, I haven't.",
+        "不，我没有。",
+        "I haven't got a ruler.",
+        "我没有尺子。",
+        "Have you got a notebook?",
+        "你有笔记本吗？",
+        "No, I haven't.",
+        "不，我没有。",
+        "I haven't got a notebook.",
+        "我没有笔记本。",
+        "Gogo!",
+        "Gogo！"
+      ],
+      "manifest": "scenes/gogo-missing-pen/scene.json"
+    },
+    {
+      "id": "scene_kvazEdhTetI",
+      "slug": "gogo-counting-steps",
+      "routeSlug": "gogo-counting-steps",
+      "title": "一共有多少级台阶？",
+      "english": "How many steps?",
+      "note": "Gogo's Adventures with English",
+      "source": "https://www.youtube.com/watch?v=ZvD4DLnfeo0&t=137s",
+      "cohort": "younger-age-5",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-counting-steps/gogo-counting-steps-poster-5c0dddfaddec.jpg",
+      "tags": [
+        "Gogo's Adventures with English",
+        "Gogo",
+        "beginner",
+        "first English",
+        "funny",
+        "英语启蒙",
+        "龙",
+        "趣味故事",
+        "counting",
+        "numbers",
+        "one",
+        "ten",
+        "steps",
+        "Tony",
+        "Jenny",
+        "数数",
+        "数字",
+        "台阶"
+      ],
+      "quotes": [
+        "How many are there, Gogo?",
+        "Gogo，一共有多少级？",
+        "One, two, three, four, five.",
+        "一、二、三、四、五。",
+        "One, two, three.",
+        "一、二、三。",
+        "Four, five, six.",
+        "四、五、六。",
+        "Seven, eight, nine, ten.",
+        "七、八、九、十。",
+        "There are ten steps, Gogo.",
+        "Gogo，一共有十级台阶。"
+      ],
+      "manifest": "scenes/gogo-counting-steps/scene.json"
+    },
+    {
+      "id": "scene_yF-Ktpm3Rec",
+      "slug": "gogo-growing-flower",
+      "routeSlug": "gogo-growing-flower",
+      "title": "一会儿大，一会儿小！",
+      "english": "Big, then small!",
+      "note": "Gogo's Adventures with English",
+      "source": "https://www.youtube.com/watch?v=hAwEoUiKxYg&t=201s",
+      "cohort": "younger-age-5",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gogo-growing-flower/gogo-growing-flower-poster-9bc044ed2556.jpg",
+      "tags": [
+        "Gogo's Adventures with English",
+        "Gogo",
+        "beginner",
+        "first English",
+        "funny",
+        "英语启蒙",
+        "龙",
+        "趣味故事",
+        "magic",
+        "flower",
+        "big",
+        "small",
+        "Jeeby",
+        "friend",
+        "魔法",
+        "花朵",
+        "大小",
+        "朋友"
+      ],
+      "quotes": [
+        "What's that, Jeeby?",
+        "Jeeby，那是什么？",
+        "It's a flower, Gogo.",
+        "Gogo，那是一朵花。",
+        "It's small, Jeeby.",
+        "Jeeby，它很小。",
+        "Oh, Gogo!",
+        "哦，Gogo！",
+        "It isn't small now, Jeeby.",
+        "Jeeby，它现在不小了。",
+        "It's big.",
+        "它变大了。",
+        "It isn't big now.",
+        "它现在不大了。",
+        "Ha! Ha! It's small.",
+        "哈哈！它变小了。"
+      ],
+      "manifest": "scenes/gogo-growing-flower/scene.json"
+    }
+  ],
+  "locales": {
+    "en": {
+      "scenes": {
+        "scene_X42Wva5CnXM": {
+          "title": "Good morning! How are you?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype review; continuous excerpt from 4.35–16.2 seconds of the source upload. A classroom greeting, with the class chorus retained as one practice role. No jokes, tense changes, or implied meanings."
+        },
+        "scene_nvIB2uFTLc8": {
+          "title": "Nice to meet you",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype review; continuous excerpt from 16.6–34 seconds of the source upload. Original source name Kate is preserved in text and audio. The class reply is a chorus; the child in blue offers a seat. All roles provide a complete reusable phrase."
+        },
+        "scene_cjkZKJp7Wq0": {
+          "title": "What's this? A book!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype review; continuous excerpt from 14.9–35.95 seconds of the source upload. Cartoon dog speaks. Stops after the box reveal and reaction, before the next pencil reveal. Original English captions remain on screen."
+        },
+        "scene_xF5xlXcwdvw": {
+          "title": "Can you swim?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype review; continuous excerpt from 28.7–39.2 seconds of the source upload. Children discuss a swimming-party invitation, with visible gestures. This is language practice, not swimming instruction; the later pool sequence is excluded."
+        },
+        "scene_soM_ejjEqc0": {
+          "title": "This is for you",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype review; continuous excerpt from 45.7–56.5 seconds of the source upload. Birthday scene beside a supervised pool; no swimming action in the selected exchange. Stops before the song and later montage."
+        },
+        "scene_YEtT30gD2zw": {
+          "title": "Magic flowers!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype review; continuous source excerpt 83.7–112.2 s. Giant flowers surprise the children. The shared wow and the dragon’s isolated oops stay as supporting original voices."
+        },
+        "scene_GlNQxic6XKU": {
+          "title": "Do you like doughnuts?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype review; continuous source excerpt 64.0–99.35 s. Gogo fills the picnic with sausages and doughnuts. Tony says the final sentence about liking both foods."
+        },
+        "scene_A6AHrPGux9Y": {
+          "title": "I don't like ants!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype review; continuous source excerpt 99.7–136.5 s. Ants interrupt the picnic; Gogo splashes into the pond and says he does not like ants. Nonverbal yelps remain original."
+        },
+        "scene_-1fU_8OJfvw": {
+          "title": "Is it a tiger?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype review; continuous source excerpt 146.4–165.5 s. Gogo guesses the wrong animals in front of a friendly elephant. Jenny gives the first no and final praise; Tony gives the second no and identifies the elephant."
+        },
+        "scene_sbQursTISog": {
+          "title": "Now I'm big!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype review; continuous source excerpt 51.7–75.7 s. Funny mirrors make the children and Gogo look big or small. Stops after Gogo says he is big."
+        },
+        "scene_Omoo6OXIfiE": {
+          "title": "Tall or short?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype review; continuous source excerpt 80.45–97.7 s. Jenny looks tall in a mirror, while Gogo looks short. Tony responds to both."
+        },
+        "scene_KuCSY-iiLBg": {
+          "title": "Have you got a pen?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype review; continuous source excerpt 133.7–164.95 s. Gogo answers the teacher while taking supplies from Tony’s case. Cartoon mischief stays visible."
+        },
+        "scene_2hAmFois_LI": {
+          "title": "I haven't got a pen!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype review; continuous source excerpt 165.15–204.85 s. Tony finds his case empty. The teacher asks about a pen, ruler and notebook; Gogo holds the missing things behind him."
+        },
+        "scene_kvazEdhTetI": {
+          "title": "How many steps?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype review; continuous source excerpt 137.7–163.0 s. Gogo stumbles on the steps and counts again. Jenny asks the question; Tony gives the final answer."
+        },
+        "scene_yF-Ktpm3Rec": {
+          "title": "Big, then small!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype review; continuous source excerpt 201.1–228.4 s. A flower grows and shrinks. Jeeby is the blue friend; the green friend says the final lines. The short Oh, Gogo reaction remains an original supporting voice with no individual attribution."
+        }
+      },
+      "roles": {
+        "role_9C7GkSJ3GZ4": {
+          "name": "Class",
+          "hint": "3 lines"
+        },
+        "role_z7O3Brz5bTs": {
+          "name": "Teacher",
+          "hint": "2 lines"
+        },
+        "role_NbJyPNcbblM": {
+          "name": "Teacher",
+          "hint": "1 line"
+        },
+        "role_aj7joqDnZyA": {
+          "name": "Kate",
+          "hint": "3 lines"
+        },
+        "role_sWh9h03ep24": {
+          "name": "Class",
+          "hint": "1 line"
+        },
+        "role_JbyyfeuB93Q": {
+          "name": "Child in blue",
+          "hint": "1 line"
+        },
+        "role_HDH0Ul9i7F8": {
+          "name": "Sally",
+          "hint": "2 lines"
+        },
+        "role_biGkzogETqI": {
+          "name": "Child in blue",
+          "hint": "1 line"
+        },
+        "role_Hh6xcW9eG7g": {
+          "name": "Child in purple",
+          "hint": "1 line"
+        },
+        "role_MXwPkAvrD98": {
+          "name": "Dog",
+          "hint": "1 line"
+        },
+        "role_Ex6aSXisvvs": {
+          "name": "Child in blue",
+          "hint": "2 lines"
+        },
+        "role_-0NxEbZrU68": {
+          "name": "Child in purple",
+          "hint": "1 line"
+        },
+        "role_VTNuIGSirwY": {
+          "name": "Dog",
+          "hint": "1 line"
+        },
+        "role_qMDOxsX3cME": {
+          "name": "Sally",
+          "hint": "2 lines"
+        },
+        "role_c20cLSGQdAQ": {
+          "name": "Child in blue",
+          "hint": "2 lines"
+        },
+        "role_QlsPddNBXGQ": {
+          "name": "Jenny",
+          "hint": "2 lines"
+        },
+        "role_TfRZb1jojO8": {
+          "name": "Tony",
+          "hint": "3 lines"
+        },
+        "role_GqmpVhh4sXc": {
+          "name": "Gogo",
+          "hint": "1 line"
+        },
+        "role_ml1pMwDvf3A": {
+          "name": "Tony and Jenny",
+          "hint": "1 line"
+        },
+        "role_pMbWuJAc6TM": {
+          "name": "Gogo",
+          "hint": "5 lines"
+        },
+        "role_6PoExuj3NZc": {
+          "name": "Tony",
+          "hint": "3 lines"
+        },
+        "role_N8xc7CSXiA0": {
+          "name": "Jenny",
+          "hint": "3 lines"
+        },
+        "role_ekd_7mmBAJ8": {
+          "name": "Gogo",
+          "hint": "3 lines"
+        },
+        "role_1de8iaC5BVQ": {
+          "name": "Tony",
+          "hint": "2 lines"
+        },
+        "role_5cqjyxmLDbQ": {
+          "name": "Jenny",
+          "hint": "2 lines"
+        },
+        "role_uoIAOk7SIc8": {
+          "name": "Gogo",
+          "hint": "4 lines"
+        },
+        "role_JAL2Cnx5A48": {
+          "name": "Jenny",
+          "hint": "2 lines"
+        },
+        "role_rkFjPTbuc7A": {
+          "name": "Tony",
+          "hint": "2 lines"
+        },
+        "role_9_Yfz6qh2ws": {
+          "name": "Gogo",
+          "hint": "3 lines"
+        },
+        "role_SGbqPDmh6YY": {
+          "name": "Tony",
+          "hint": "4 lines"
+        },
+        "role_gNZA2PGNGt4": {
+          "name": "Jenny",
+          "hint": "1 line"
+        },
+        "role_ilinUHluLog": {
+          "name": "Tony",
+          "hint": "3 lines"
+        },
+        "role_N_A_p_Xj_LM": {
+          "name": "Jenny",
+          "hint": "1 line"
+        },
+        "role_ce_NFDBs8jw": {
+          "name": "Gogo",
+          "hint": "1 line"
+        },
+        "role_7giqsA-v7kA": {
+          "name": "Gogo",
+          "hint": "5 lines"
+        },
+        "role_MYPM5mjEiuk": {
+          "name": "Teacher",
+          "hint": "4 lines"
+        },
+        "role_-B3qQVi8XkE": {
+          "name": "Tony",
+          "hint": "8 lines"
+        },
+        "role_SrKIbbNYflA": {
+          "name": "Teacher",
+          "hint": "4 lines"
+        },
+        "role_TswQKem2LCM": {
+          "name": "Gogo",
+          "hint": "4 lines"
+        },
+        "role_SdXqOYmlXcg": {
+          "name": "Jenny",
+          "hint": "1 line"
+        },
+        "role_7Vi0O1v-C2o": {
+          "name": "Tony",
+          "hint": "1 line"
+        },
+        "role_SJXtL6AHKYc": {
+          "name": "Gogo",
+          "hint": "4 lines"
+        },
+        "role_8-K5CgHvc0U": {
+          "name": "Jeeby",
+          "hint": "1 line"
+        },
+        "role_vmvZHeTGKSg": {
+          "name": "Green friend",
+          "hint": "2 lines"
+        },
+        "role_SzpEQCemp48": {
+          "name": "Friend",
+          "hint": "1 line"
+        }
+      },
+      "notices": {
+        "library": "Adult prototype testing · Dubs save in this browser. No uploads. Redistribution permission for the meme clips is unconfirmed.",
+        "scene": "This scene is for adult prototype testing. The full film is not beginner learning material for children.The creators do not endorse this product."
+      }
+    },
+    "zh-CN": {
+      "scenes": {
+        "scene_X42Wva5CnXM": {
+          "title": "早上好！你好吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 4.35–16.2 秒的连续节选。A classroom greeting, with the class chorus retained as one practice role. No jokes, tense changes, or implied meanings."
+        },
+        "scene_nvIB2uFTLc8": {
+          "title": "很高兴认识你",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 16.6–34 秒的连续节选。Original source name Kate is preserved in text and audio. The class reply is a chorus; the individual boy offers a seat. All roles provide a complete reusable phrase."
+        },
+        "scene_cjkZKJp7Wq0": {
+          "title": "这是什么？一本书！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 14.9–35.95 秒的连续节选。Cartoon dog speaks. Stops after the box reveal and reaction, before the next pencil reveal. Original English captions remain on screen."
+        },
+        "scene_xF5xlXcwdvw": {
+          "title": "你会游泳吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 28.7–39.2 秒的连续节选。Children discuss a swimming-party invitation, with visible gestures. This is language practice, not swimming instruction; the later pool sequence is excluded."
+        },
+        "scene_soM_ejjEqc0": {
+          "title": "这是送给你的",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 45.7–56.5 秒的连续节选。Birthday scene beside a supervised pool; no swimming action in the selected exchange. Stops before the song and later montage."
+        },
+        "scene_YEtT30gD2zw": {
+          "title": "花朵变颜色了！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原片连续节选 83.7–112.2 s. 巨大花朵让小朋友们吃了一惊。合声“哇”和小龙单独的“哎呀”保留原声。"
+        },
+        "scene_GlNQxic6XKU": {
+          "title": "你喜欢甜甜圈吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原片连续节选 64.0–99.35 s. Gogo在野餐时变出许多香肠和甜甜圈。最后说喜欢这两种食物的是托尼。"
+        },
+        "scene_A6AHrPGux9Y": {
+          "title": "我不喜欢蚂蚁！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原片连续节选 99.7–136.5 s. 蚂蚁打断了野餐；Gogo扑通跳进池塘，说自己不喜欢蚂蚁。没有词义的叫声保留原声。"
+        },
+        "scene_-1fU_8OJfvw": {
+          "title": "是老虎吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原片连续节选 146.4–165.5 s. 面对友好的大象，Gogo猜错了动物。珍妮先说“不”并在最后表扬Gogo；托尼第二次说“不”，并说出是大象。"
+        },
+        "scene_sbQursTISog": {
+          "title": "我变大了！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原片连续节选 51.7–75.7 s. 哈哈镜让小朋友们和Gogo一会儿变大，一会儿变小。节选在Gogo说自己变大后结束。"
+        },
+        "scene_Omoo6OXIfiE": {
+          "title": "变高了还是变矮了？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原片连续节选 80.45–97.7 s. 珍妮在镜子里变高，Gogo却变矮了。托尼分别回应他们。"
+        },
+        "scene_KuCSY-iiLBg": {
+          "title": "你有笔吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原片连续节选 133.7–164.95 s. Gogo一边回答老师，一边从托尼的文具盒里拿走文具。保留动画中的调皮情节。"
+        },
+        "scene_2hAmFois_LI": {
+          "title": "我的笔不见了！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原片连续节选 165.15–204.85 s. 托尼发现文具盒空了。老师问笔、尺子和笔记本，Gogo却在后面拿着那些东西。"
+        },
+        "scene_kvazEdhTetI": {
+          "title": "一共有多少级台阶？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原片连续节选 137.7–163.0 s. Gogo在台阶上绊了一下，只好重新数数。珍妮提问，托尼给出最后的答案。"
+        },
+        "scene_yF-Ktpm3Rec": {
+          "title": "一会儿大，一会儿小！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原片连续节选 201.1–228.4 s. 花朵一会儿长大，一会儿缩小。Jeeby是蓝色朋友；绿色朋友说最后几句。简短的“Oh, Gogo”保留原声，不指定是哪一位朋友。"
+        }
+      },
+      "roles": {
+        "role_9C7GkSJ3GZ4": {
+          "name": "同学们",
+          "hint": "3 句台词"
+        },
+        "role_z7O3Brz5bTs": {
+          "name": "老师",
+          "hint": "2 句台词"
+        },
+        "role_NbJyPNcbblM": {
+          "name": "老师",
+          "hint": "1 句台词"
+        },
+        "role_aj7joqDnZyA": {
+          "name": "凯特",
+          "hint": "3 句台词"
+        },
+        "role_sWh9h03ep24": {
+          "name": "同学们",
+          "hint": "1 句台词"
+        },
+        "role_JbyyfeuB93Q": {
+          "name": "蓝衣小朋友",
+          "hint": "1 句台词"
+        },
+        "role_HDH0Ul9i7F8": {
+          "name": "萨莉",
+          "hint": "2 句台词"
+        },
+        "role_biGkzogETqI": {
+          "name": "蓝衣小朋友",
+          "hint": "1 句台词"
+        },
+        "role_Hh6xcW9eG7g": {
+          "name": "紫衣小朋友",
+          "hint": "1 句台词"
+        },
+        "role_MXwPkAvrD98": {
+          "name": "小狗",
+          "hint": "1 句台词"
+        },
+        "role_Ex6aSXisvvs": {
+          "name": "蓝衣小朋友",
+          "hint": "2 句台词"
+        },
+        "role_-0NxEbZrU68": {
+          "name": "紫衣小朋友",
+          "hint": "1 句台词"
+        },
+        "role_VTNuIGSirwY": {
+          "name": "小狗",
+          "hint": "1 句台词"
+        },
+        "role_qMDOxsX3cME": {
+          "name": "萨莉",
+          "hint": "2 句台词"
+        },
+        "role_c20cLSGQdAQ": {
+          "name": "蓝衣小朋友",
+          "hint": "2 句台词"
+        },
+        "role_QlsPddNBXGQ": {
+          "name": "珍妮",
+          "hint": "2 句台词"
+        },
+        "role_TfRZb1jojO8": {
+          "name": "托尼",
+          "hint": "3 句台词"
+        },
+        "role_GqmpVhh4sXc": {
+          "name": "Gogo",
+          "hint": "1 句台词"
+        },
+        "role_ml1pMwDvf3A": {
+          "name": "托尼和珍妮",
+          "hint": "1 句台词"
+        },
+        "role_pMbWuJAc6TM": {
+          "name": "Gogo",
+          "hint": "5 句台词"
+        },
+        "role_6PoExuj3NZc": {
+          "name": "托尼",
+          "hint": "3 句台词"
+        },
+        "role_N8xc7CSXiA0": {
+          "name": "珍妮",
+          "hint": "3 句台词"
+        },
+        "role_ekd_7mmBAJ8": {
+          "name": "Gogo",
+          "hint": "3 句台词"
+        },
+        "role_1de8iaC5BVQ": {
+          "name": "托尼",
+          "hint": "2 句台词"
+        },
+        "role_5cqjyxmLDbQ": {
+          "name": "珍妮",
+          "hint": "2 句台词"
+        },
+        "role_uoIAOk7SIc8": {
+          "name": "Gogo",
+          "hint": "4 句台词"
+        },
+        "role_JAL2Cnx5A48": {
+          "name": "珍妮",
+          "hint": "2 句台词"
+        },
+        "role_rkFjPTbuc7A": {
+          "name": "托尼",
+          "hint": "2 句台词"
+        },
+        "role_9_Yfz6qh2ws": {
+          "name": "Gogo",
+          "hint": "3 句台词"
+        },
+        "role_SGbqPDmh6YY": {
+          "name": "托尼",
+          "hint": "4 句台词"
+        },
+        "role_gNZA2PGNGt4": {
+          "name": "珍妮",
+          "hint": "1 句台词"
+        },
+        "role_ilinUHluLog": {
+          "name": "托尼",
+          "hint": "3 句台词"
+        },
+        "role_N_A_p_Xj_LM": {
+          "name": "珍妮",
+          "hint": "1 句台词"
+        },
+        "role_ce_NFDBs8jw": {
+          "name": "Gogo",
+          "hint": "1 句台词"
+        },
+        "role_7giqsA-v7kA": {
+          "name": "Gogo",
+          "hint": "5 句台词"
+        },
+        "role_MYPM5mjEiuk": {
+          "name": "Gogo的老师",
+          "hint": "4 句台词"
+        },
+        "role_-B3qQVi8XkE": {
+          "name": "托尼",
+          "hint": "8 句台词"
+        },
+        "role_SrKIbbNYflA": {
+          "name": "Gogo的老师",
+          "hint": "4 句台词"
+        },
+        "role_TswQKem2LCM": {
+          "name": "Gogo",
+          "hint": "4 句台词"
+        },
+        "role_SdXqOYmlXcg": {
+          "name": "珍妮",
+          "hint": "1 句台词"
+        },
+        "role_7Vi0O1v-C2o": {
+          "name": "托尼",
+          "hint": "1 句台词"
+        },
+        "role_SJXtL6AHKYc": {
+          "name": "Gogo",
+          "hint": "4 句台词"
+        },
+        "role_8-K5CgHvc0U": {
+          "name": "Jeeby",
+          "hint": "1 句台词"
+        },
+        "role_vmvZHeTGKSg": {
+          "name": "绿色朋友",
+          "hint": "2 句台词"
+        },
+        "role_SzpEQCemp48": {
+          "name": "朋友（惊叹）",
+          "hint": "1 句台词"
+        }
+      },
+      "notices": {
+        "library": "成人原型测试 · 配音保存在此浏览器，不会上传。影视梗片段尚未确认再分发许可。",
+        "scene": "本片段用于成人原型测试；完整电影并非儿童入门教材。创作者未对本产品作出背书。"
+      }
+    },
+    "es": {
+      "scenes": {
+        "scene_X42Wva5CnXM": {
+          "title": "¡Buenos días! ¿Cómo estás?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 4.35–16.2 del vídeo original. Saludo en el aula; la respuesta en coro se conserva como un personaje practicable. No hay bromas, cambios de tiempo verbal ni significados implícitos."
+        },
+        "scene_nvIB2uFTLc8": {
+          "title": "Encantado de conocerte",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 16.6–34 del vídeo original. El nombre original Kate se conserva en el texto y el audio. La clase responde en grupo y el personaje de azul ofrece un asiento. Todos los personajes tienen una frase completa y reutilizable."
+        },
+        "scene_cjkZKJp7Wq0": {
+          "title": "¿Qué es esto? ¡Un libro!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 14.9–35.95 del vídeo original. Habla un perro de dibujos animados. Termina después de mostrar la caja y la reacción, antes de mostrar el siguiente lápiz. Se conservan los subtítulos originales en inglés."
+        },
+        "scene_xF5xlXcwdvw": {
+          "title": "¿Sabes nadar?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 28.7–39.2 del vídeo original. Los niños hablan de una invitación a una fiesta en la piscina y se ven sus gestos. Es práctica de idiomas, no una clase de natación. Se excluye la secuencia posterior en la piscina."
+        },
+        "scene_soM_ejjEqc0": {
+          "title": "Esto es para ti",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 45.7–56.5 del vídeo original. Escena de cumpleaños junto a una piscina vigilada. No se nada durante el diálogo elegido. Termina antes de la canción y el montaje posterior."
+        },
+        "scene_YEtT30gD2zw": {
+          "title": "¡Flores mágicas!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Revisión interna del prototipo; fragmento continuo del original 83.7–112.2 s. Unas flores gigantes sorprenden a los niños. El asombro de ambos y la breve reacción del dragón se conservan con sus voces originales."
+        },
+        "scene_GlNQxic6XKU": {
+          "title": "¿Te gustan los dónuts?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Revisión interna del prototipo; fragmento continuo del original 64.0–99.35 s. Gogo llena el pícnic de salchichas y dónuts. Tony dice la última frase sobre las dos comidas."
+        },
+        "scene_A6AHrPGux9Y": {
+          "title": "¡No me gustan las hormigas!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Revisión interna del prototipo; fragmento continuo del original 99.7–136.5 s. Las hormigas interrumpen el pícnic; Gogo salta al estanque y dice que no le gustan las hormigas. Los gritos no verbales conservan el audio original."
+        },
+        "scene_-1fU_8OJfvw": {
+          "title": "¿Es un tigre?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Revisión interna del prototipo; fragmento continuo del original 146.4–165.5 s. Gogo confunde a un elefante amistoso con otros animales. Jenny da la primera respuesta negativa y el elogio final; Tony da la segunda respuesta negativa e identifica al elefante."
+        },
+        "scene_sbQursTISog": {
+          "title": "¡Ahora soy grande!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Revisión interna del prototipo; fragmento continuo del original 51.7–75.7 s. Los espejos deformantes hacen que los niños y Gogo parezcan grandes o pequeños. El fragmento termina cuando Gogo dice que es grande."
+        },
+        "scene_Omoo6OXIfiE": {
+          "title": "¿Alto o bajo?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Revisión interna del prototipo; fragmento continuo del original 80.45–97.7 s. Jenny parece alta en el espejo y Gogo parece bajo. Tony responde a los dos."
+        },
+        "scene_KuCSY-iiLBg": {
+          "title": "¿Tienes un bolígrafo?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Revisión interna del prototipo; fragmento continuo del original 133.7–164.95 s. Gogo contesta a la profesora mientras toma los útiles del estuche de Tony. Se conserva la travesura del dibujo animado."
+        },
+        "scene_2hAmFois_LI": {
+          "title": "¡No tengo bolígrafo!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Revisión interna del prototipo; fragmento continuo del original 165.15–204.85 s. Tony encuentra su estuche vacío. La profesora pregunta por un bolígrafo, una regla y un cuaderno; Gogo tiene los objetos detrás de él."
+        },
+        "scene_kvazEdhTetI": {
+          "title": "¿Cuántos escalones hay?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Revisión interna del prototipo; fragmento continuo del original 137.7–163.0 s. Gogo tropieza en la escalera y vuelve a contar. Jenny pregunta y Tony da la respuesta final."
+        },
+        "scene_yF-Ktpm3Rec": {
+          "title": "¡Grande y luego pequeña!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Revisión interna del prototipo; fragmento continuo del original 201.1–228.4 s. Una flor crece y se encoge. Jeeby es el amigo azul; el personaje verde dice las últimas frases. La breve reacción Oh, Gogo conserva la voz original sin atribuirla a un personaje concreto."
+        }
+      },
+      "roles": {
+        "role_9C7GkSJ3GZ4": {
+          "name": "Clase",
+          "hint": "3 frases"
+        },
+        "role_z7O3Brz5bTs": {
+          "name": "Profesor",
+          "hint": "2 frases"
+        },
+        "role_NbJyPNcbblM": {
+          "name": "Profesor",
+          "hint": "1 frase"
+        },
+        "role_aj7joqDnZyA": {
+          "name": "Kate",
+          "hint": "3 frases"
+        },
+        "role_sWh9h03ep24": {
+          "name": "Clase",
+          "hint": "1 frase"
+        },
+        "role_JbyyfeuB93Q": {
+          "name": "Niño de azul",
+          "hint": "1 frase"
+        },
+        "role_HDH0Ul9i7F8": {
+          "name": "Sally",
+          "hint": "2 frases"
+        },
+        "role_biGkzogETqI": {
+          "name": "Niño de azul",
+          "hint": "1 frase"
+        },
+        "role_Hh6xcW9eG7g": {
+          "name": "Niño de morado",
+          "hint": "1 frase"
+        },
+        "role_MXwPkAvrD98": {
+          "name": "Perro",
+          "hint": "1 frase"
+        },
+        "role_Ex6aSXisvvs": {
+          "name": "Niño de azul",
+          "hint": "2 frases"
+        },
+        "role_-0NxEbZrU68": {
+          "name": "Niño de morado",
+          "hint": "1 frase"
+        },
+        "role_VTNuIGSirwY": {
+          "name": "Perro",
+          "hint": "1 frase"
+        },
+        "role_qMDOxsX3cME": {
+          "name": "Sally",
+          "hint": "2 frases"
+        },
+        "role_c20cLSGQdAQ": {
+          "name": "Niño de azul",
+          "hint": "2 frases"
+        },
+        "role_QlsPddNBXGQ": {
+          "name": "Jenny",
+          "hint": "2 frases"
+        },
+        "role_TfRZb1jojO8": {
+          "name": "Tony",
+          "hint": "3 frases"
+        },
+        "role_GqmpVhh4sXc": {
+          "name": "Gogo",
+          "hint": "1 frase"
+        },
+        "role_ml1pMwDvf3A": {
+          "name": "Tony y Jenny",
+          "hint": "1 frase"
+        },
+        "role_pMbWuJAc6TM": {
+          "name": "Gogo",
+          "hint": "5 frases"
+        },
+        "role_6PoExuj3NZc": {
+          "name": "Tony",
+          "hint": "3 frases"
+        },
+        "role_N8xc7CSXiA0": {
+          "name": "Jenny",
+          "hint": "3 frases"
+        },
+        "role_ekd_7mmBAJ8": {
+          "name": "Gogo",
+          "hint": "3 frases"
+        },
+        "role_1de8iaC5BVQ": {
+          "name": "Tony",
+          "hint": "2 frases"
+        },
+        "role_5cqjyxmLDbQ": {
+          "name": "Jenny",
+          "hint": "2 frases"
+        },
+        "role_uoIAOk7SIc8": {
+          "name": "Gogo",
+          "hint": "4 frases"
+        },
+        "role_JAL2Cnx5A48": {
+          "name": "Jenny",
+          "hint": "2 frases"
+        },
+        "role_rkFjPTbuc7A": {
+          "name": "Tony",
+          "hint": "2 frases"
+        },
+        "role_9_Yfz6qh2ws": {
+          "name": "Gogo",
+          "hint": "3 frases"
+        },
+        "role_SGbqPDmh6YY": {
+          "name": "Tony",
+          "hint": "4 frases"
+        },
+        "role_gNZA2PGNGt4": {
+          "name": "Jenny",
+          "hint": "1 frase"
+        },
+        "role_ilinUHluLog": {
+          "name": "Tony",
+          "hint": "3 frases"
+        },
+        "role_N_A_p_Xj_LM": {
+          "name": "Jenny",
+          "hint": "1 frase"
+        },
+        "role_ce_NFDBs8jw": {
+          "name": "Gogo",
+          "hint": "1 frase"
+        },
+        "role_7giqsA-v7kA": {
+          "name": "Gogo",
+          "hint": "5 frases"
+        },
+        "role_MYPM5mjEiuk": {
+          "name": "Profesora",
+          "hint": "4 frases"
+        },
+        "role_-B3qQVi8XkE": {
+          "name": "Tony",
+          "hint": "8 frases"
+        },
+        "role_SrKIbbNYflA": {
+          "name": "Profesora",
+          "hint": "4 frases"
+        },
+        "role_TswQKem2LCM": {
+          "name": "Gogo",
+          "hint": "4 frases"
+        },
+        "role_SdXqOYmlXcg": {
+          "name": "Jenny",
+          "hint": "1 frase"
+        },
+        "role_7Vi0O1v-C2o": {
+          "name": "Tony",
+          "hint": "1 frase"
+        },
+        "role_SJXtL6AHKYc": {
+          "name": "Gogo",
+          "hint": "4 frases"
+        },
+        "role_8-K5CgHvc0U": {
+          "name": "Jeeby",
+          "hint": "1 frase"
+        },
+        "role_vmvZHeTGKSg": {
+          "name": "Personaje verde",
+          "hint": "2 frases"
+        },
+        "role_SzpEQCemp48": {
+          "name": "Amigo",
+          "hint": "1 frase"
+        }
+      },
+      "notices": {
+        "library": "Pruebas del prototipo con adultos · Los doblajes se guardan en este navegador y no se suben. No se ha confirmado el permiso de redistribución de estos fragmentos.",
+        "scene": "Esta escena es para pruebas del prototipo con adultos. La película completa no es material de iniciación para niños.Los creadores no respaldan este producto."
+      }
+    },
+    "ja": {
+      "scenes": {
+        "scene_X42Wva5CnXM": {
+          "title": "おはよう！元気？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の4.35–16.2秒の抜粋です。 教室でのあいさつです。クラス全員の返事は1つの練習用の役にしています。冗談、時制の変化、暗に示す意味はありません。"
+        },
+        "scene_nvIB2uFTLc8": {
+          "title": "はじめまして",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の16.6–34秒の抜粋です。 元の名前Kateは文字と音声でそのままにしています。クラスの返事は全員で言い、青い服の子が席を勧めます。どの役にも、ほかでも使える完全なフレーズがあります。"
+        },
+        "scene_cjkZKJp7Wq0": {
+          "title": "これは何？本だよ！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の14.9–35.95秒の抜粋です。 アニメの犬が話します。箱を見せた後の反応までで、次に鉛筆を見せる前で終わります。元の英語字幕は画面に残っています。"
+        },
+        "scene_xF5xlXcwdvw": {
+          "title": "泳げる？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の28.7–39.2秒の抜粋です。 子どもたちが身ぶりを交え、水泳パーティーの招待について話します。語学練習であり、水泳の指導ではありません。その後のプールの場面は含みません。"
+        },
+        "scene_soM_ejjEqc0": {
+          "title": "これ、どうぞ",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の45.7–56.5秒の抜粋です。 監督者のいるプールのそばの誕生日の場面です。選んだ会話中に泳ぐ動作はありません。歌や、その後の編集シーンの前で終わります。"
+        },
+        "scene_YEtT30gD2zw": {
+          "title": "お花の色が変わった！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部プロトタイプ確認用。原動画からの連続した抜粋 83.7–112.2 s. 大きな花が現れて子どもたちはびっくり。二人の驚きの声とドラゴンの短い反応は原音を残しています。"
+        },
+        "scene_GlNQxic6XKU": {
+          "title": "ドーナツは好き？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部プロトタイプ確認用。原動画からの連続した抜粋 64.0–99.35 s. ゴーゴーがピクニックでソーセージとドーナツをたくさん出します。両方が好きだという最後のセリフはトニーです。"
+        },
+        "scene_A6AHrPGux9Y": {
+          "title": "アリはきらい！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部プロトタイプ確認用。原動画からの連続した抜粋 99.7–136.5 s. ピクニックにアリがやってきます。ゴーゴーは池に飛び込み、アリはきらいと言います。言葉にならない叫び声は原音を残しています。"
+        },
+        "scene_-1fU_8OJfvw": {
+          "title": "トラかな？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部プロトタイプ確認用。原動画からの連続した抜粋 146.4–165.5 s. 目の前のやさしいゾウを、ゴーゴーは別の動物だと思います。最初の否定と最後のほめ言葉はジェニー、二度目の否定とゾウを教えるセリフはトニーです。"
+        },
+        "scene_sbQursTISog": {
+          "title": "大きくなった！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部プロトタイプ確認用。原動画からの連続した抜粋 51.7–75.7 s. 変形する鏡で子どもたちとゴーゴーが大きくなったり小さくなったりします。ゴーゴーが大きくなったと言うところで終わります。"
+        },
+        "scene_Omoo6OXIfiE": {
+          "title": "背が高い？低い？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部プロトタイプ確認用。原動画からの連続した抜粋 80.45–97.7 s. 鏡の中でジェニーは背が高く、ゴーゴーは低くなります。トニーが二人に答えます。"
+        },
+        "scene_KuCSY-iiLBg": {
+          "title": "ペンはある？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部プロトタイプ確認用。原動画からの連続した抜粋 133.7–164.95 s. ゴーゴーはトニーの筆箱から文房具を取りながら先生に答えます。アニメのいたずらをそのまま残しています。"
+        },
+        "scene_2hAmFois_LI": {
+          "title": "ペンがない！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部プロトタイプ確認用。原動画からの連続した抜粋 165.15–204.85 s. トニーの筆箱は空っぽ。先生がペン、定規、ノートについて聞く後ろで、ゴーゴーが持っています。"
+        },
+        "scene_kvazEdhTetI": {
+          "title": "階段は何段？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部プロトタイプ確認用。原動画からの連続した抜粋 137.7–163.0 s. 階段でつまずいたゴーゴーが数え直します。ジェニーが質問し、トニーが最後に答えます。"
+        },
+        "scene_yF-Ktpm3Rec": {
+          "title": "大きくなったり小さくなったり！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部プロトタイプ確認用。原動画からの連続した抜粋 201.1–228.4 s. 花が大きくなったり小さくなったりします。青い友だちはジービー。最後は緑の友だちが話します。短いOh, Gogoの反応は話者を特定せず原音を残しています。"
+        }
+      },
+      "roles": {
+        "role_9C7GkSJ3GZ4": {
+          "name": "クラスのみんな",
+          "hint": "セリフ3行"
+        },
+        "role_z7O3Brz5bTs": {
+          "name": "先生",
+          "hint": "セリフ2行"
+        },
+        "role_NbJyPNcbblM": {
+          "name": "先生",
+          "hint": "セリフ1行"
+        },
+        "role_aj7joqDnZyA": {
+          "name": "ケイト",
+          "hint": "セリフ3行"
+        },
+        "role_sWh9h03ep24": {
+          "name": "クラスのみんな",
+          "hint": "セリフ1行"
+        },
+        "role_JbyyfeuB93Q": {
+          "name": "青い服の子",
+          "hint": "セリフ1行"
+        },
+        "role_HDH0Ul9i7F8": {
+          "name": "サリー",
+          "hint": "セリフ2行"
+        },
+        "role_biGkzogETqI": {
+          "name": "青い服の子",
+          "hint": "セリフ1行"
+        },
+        "role_Hh6xcW9eG7g": {
+          "name": "紫の服の子",
+          "hint": "セリフ1行"
+        },
+        "role_MXwPkAvrD98": {
+          "name": "犬",
+          "hint": "セリフ1行"
+        },
+        "role_Ex6aSXisvvs": {
+          "name": "青い服の子",
+          "hint": "セリフ2行"
+        },
+        "role_-0NxEbZrU68": {
+          "name": "紫の服の子",
+          "hint": "セリフ1行"
+        },
+        "role_VTNuIGSirwY": {
+          "name": "犬",
+          "hint": "セリフ1行"
+        },
+        "role_qMDOxsX3cME": {
+          "name": "サリー",
+          "hint": "セリフ2行"
+        },
+        "role_c20cLSGQdAQ": {
+          "name": "青い服の子",
+          "hint": "セリフ2行"
+        },
+        "role_QlsPddNBXGQ": {
+          "name": "ジェニー",
+          "hint": "セリフ2行"
+        },
+        "role_TfRZb1jojO8": {
+          "name": "トニー",
+          "hint": "セリフ3行"
+        },
+        "role_GqmpVhh4sXc": {
+          "name": "ゴーゴー",
+          "hint": "セリフ1行"
+        },
+        "role_ml1pMwDvf3A": {
+          "name": "トニーとジェニー",
+          "hint": "セリフ1行"
+        },
+        "role_pMbWuJAc6TM": {
+          "name": "ゴーゴー",
+          "hint": "セリフ5行"
+        },
+        "role_6PoExuj3NZc": {
+          "name": "トニー",
+          "hint": "セリフ3行"
+        },
+        "role_N8xc7CSXiA0": {
+          "name": "ジェニー",
+          "hint": "セリフ3行"
+        },
+        "role_ekd_7mmBAJ8": {
+          "name": "ゴーゴー",
+          "hint": "セリフ3行"
+        },
+        "role_1de8iaC5BVQ": {
+          "name": "トニー",
+          "hint": "セリフ2行"
+        },
+        "role_5cqjyxmLDbQ": {
+          "name": "ジェニー",
+          "hint": "セリフ2行"
+        },
+        "role_uoIAOk7SIc8": {
+          "name": "ゴーゴー",
+          "hint": "セリフ4行"
+        },
+        "role_JAL2Cnx5A48": {
+          "name": "ジェニー",
+          "hint": "セリフ2行"
+        },
+        "role_rkFjPTbuc7A": {
+          "name": "トニー",
+          "hint": "セリフ2行"
+        },
+        "role_9_Yfz6qh2ws": {
+          "name": "ゴーゴー",
+          "hint": "セリフ3行"
+        },
+        "role_SGbqPDmh6YY": {
+          "name": "トニー",
+          "hint": "セリフ4行"
+        },
+        "role_gNZA2PGNGt4": {
+          "name": "ジェニー",
+          "hint": "セリフ1行"
+        },
+        "role_ilinUHluLog": {
+          "name": "トニー",
+          "hint": "セリフ3行"
+        },
+        "role_N_A_p_Xj_LM": {
+          "name": "ジェニー",
+          "hint": "セリフ1行"
+        },
+        "role_ce_NFDBs8jw": {
+          "name": "ゴーゴー",
+          "hint": "セリフ1行"
+        },
+        "role_7giqsA-v7kA": {
+          "name": "ゴーゴー",
+          "hint": "セリフ5行"
+        },
+        "role_MYPM5mjEiuk": {
+          "name": "先生",
+          "hint": "セリフ4行"
+        },
+        "role_-B3qQVi8XkE": {
+          "name": "トニー",
+          "hint": "セリフ8行"
+        },
+        "role_SrKIbbNYflA": {
+          "name": "先生",
+          "hint": "セリフ4行"
+        },
+        "role_TswQKem2LCM": {
+          "name": "ゴーゴー",
+          "hint": "セリフ4行"
+        },
+        "role_SdXqOYmlXcg": {
+          "name": "ジェニー",
+          "hint": "セリフ1行"
+        },
+        "role_7Vi0O1v-C2o": {
+          "name": "トニー",
+          "hint": "セリフ1行"
+        },
+        "role_SJXtL6AHKYc": {
+          "name": "ゴーゴー",
+          "hint": "セリフ4行"
+        },
+        "role_8-K5CgHvc0U": {
+          "name": "ジービー",
+          "hint": "セリフ1行"
+        },
+        "role_vmvZHeTGKSg": {
+          "name": "緑の友だち",
+          "hint": "セリフ2行"
+        },
+        "role_SzpEQCemp48": {
+          "name": "友だち",
+          "hint": "セリフ1行"
+        }
+      },
+      "notices": {
+        "library": "大人向け試作版テスト・吹き替えはこのブラウザに保存され、アップロードされません。使用している映像の再配布許諾は未確認です。",
+        "scene": "このシーンは大人による試作版のテスト用です。映画全編は、子ども向けの入門教材ではありません。作品の制作者がこの製品を推奨しているわけではありません。"
+      }
+    },
+    "ko": {
+      "scenes": {
+        "scene_X42Wva5CnXM": {
+          "title": "좋은 아침! 잘 지내?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 4.35–16.2초 구간을 발췌했어요. 교실 인사 장면이며 학급 전체의 응답을 하나의 연습 역할로 유지해요. 농담, 시제 변화나 숨은 뜻은 없어요."
+        },
+        "scene_nvIB2uFTLc8": {
+          "title": "만나서 반가워",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 16.6–34초 구간을 발췌했어요. 원본 이름 Kate를 글과 오디오에 그대로 유지해요. 학급 전체가 함께 답하고 파란 옷을 입은 아이가 자리를 권해요. 모든 역할에 다른 상황에도 쓸 수 있는 완전한 표현이 있어요."
+        },
+        "scene_cjkZKJp7Wq0": {
+          "title": "이게 뭐야? 책이야!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 14.9–35.95초 구간을 발췌했어요. 만화 속 강아지가 말해요. 상자를 보여 주고 반응한 뒤, 다음 연필을 보여 주기 전에 끝나요. 원본 영어 자막은 화면에 남아 있어요."
+        },
+        "scene_xF5xlXcwdvw": {
+          "title": "수영할 수 있어?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 28.7–39.2초 구간을 발췌했어요. 아이들이 몸짓을 보이며 수영 파티 초대를 이야기해요. 언어 연습이며 수영 교육이 아니에요. 이후의 수영장 장면은 제외했어요."
+        },
+        "scene_soM_ejjEqc0": {
+          "title": "이거 네 거야",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 45.7–56.5초 구간을 발췌했어요. 감독자가 있는 수영장 옆 생일 장면이에요. 선택한 대화에는 수영 동작이 없어요. 노래와 이후의 편집 영상 전에 끝나요."
+        },
+        "scene_YEtT30gD2zw": {
+          "title": "꽃 색깔이 바뀌었어요!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 검토용. 원본의 연속 장면 발췌 83.7–112.2 s. 커다란 꽃이 나타나 아이들이 놀라요. 두 아이의 감탄과 용의 짧은 반응은 원래 목소리를 유지해요."
+        },
+        "scene_GlNQxic6XKU": {
+          "title": "도넛을 좋아하니?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 검토용. 원본의 연속 장면 발췌 64.0–99.35 s. 고고가 소풍에서 소시지와 도넛을 잔뜩 꺼내요. 두 음식을 좋아한다는 마지막 대사는 토니가 말해요."
+        },
+        "scene_A6AHrPGux9Y": {
+          "title": "개미는 싫어!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 검토용. 원본의 연속 장면 발췌 99.7–136.5 s. 개미들이 소풍을 방해해요. 고고는 연못에 뛰어들고 개미가 싫다고 말해요. 말이 아닌 비명은 원음을 유지해요."
+        },
+        "scene_-1fU_8OJfvw": {
+          "title": "호랑이일까?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 검토용. 원본의 연속 장면 발췌 146.4–165.5 s. 고고는 눈앞의 친근한 코끼리를 다른 동물로 착각해요. 첫 번째 부정과 마지막 칭찬은 제니가, 두 번째 부정과 코끼리를 알려 주는 말은 토니가 해요."
+        },
+        "scene_sbQursTISog": {
+          "title": "이제 커졌어!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 검토용. 원본의 연속 장면 발췌 51.7–75.7 s. 요술 거울 속에서 아이들과 고고가 커졌다 작아져요. 고고가 커졌다고 말한 뒤 장면이 끝나요."
+        },
+        "scene_Omoo6OXIfiE": {
+          "title": "키가 클까, 작을까?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 검토용. 원본의 연속 장면 발췌 80.45–97.7 s. 거울 속에서 제니는 키가 커지고 고고는 작아져요. 토니가 둘에게 대답해요."
+        },
+        "scene_KuCSY-iiLBg": {
+          "title": "펜이 있니?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 검토용. 원본의 연속 장면 발췌 133.7–164.95 s. 고고는 토니의 필통에서 학용품을 가져가면서 선생님께 대답해요. 만화 속 장난 장면을 그대로 남겼어요."
+        },
+        "scene_2hAmFois_LI": {
+          "title": "펜이 없어!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 검토용. 원본의 연속 장면 발췌 165.15–204.85 s. 토니의 필통이 텅 비었어요. 선생님이 펜, 자, 공책을 물어보는데 고고가 뒤에서 물건을 들고 있어요."
+        },
+        "scene_kvazEdhTetI": {
+          "title": "계단이 몇 개일까?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 검토용. 원본의 연속 장면 발췌 137.7–163.0 s. 고고가 계단에서 발을 헛디뎌 다시 세어요. 제니가 질문하고 토니가 마지막 답을 말해요."
+        },
+        "scene_yF-Ktpm3Rec": {
+          "title": "커졌다 작아졌다!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 검토용. 원본의 연속 장면 발췌 201.1–228.4 s. 꽃이 커졌다 작아져요. 파란 친구는 지비이고 마지막 대사는 초록색 친구가 말해요. 짧은Oh, Gogo반응은 특정 친구로 지정하지 않고 원음을 유지해요."
+        }
+      },
+      "roles": {
+        "role_9C7GkSJ3GZ4": {
+          "name": "학급 친구들",
+          "hint": "대사 3개"
+        },
+        "role_z7O3Brz5bTs": {
+          "name": "선생님",
+          "hint": "대사 2개"
+        },
+        "role_NbJyPNcbblM": {
+          "name": "선생님",
+          "hint": "대사 1개"
+        },
+        "role_aj7joqDnZyA": {
+          "name": "케이트",
+          "hint": "대사 3개"
+        },
+        "role_sWh9h03ep24": {
+          "name": "학급 친구들",
+          "hint": "대사 1개"
+        },
+        "role_JbyyfeuB93Q": {
+          "name": "파란 옷을 입은 아이",
+          "hint": "대사 1개"
+        },
+        "role_HDH0Ul9i7F8": {
+          "name": "샐리",
+          "hint": "대사 2개"
+        },
+        "role_biGkzogETqI": {
+          "name": "파란 옷을 입은 아이",
+          "hint": "대사 1개"
+        },
+        "role_Hh6xcW9eG7g": {
+          "name": "보라색 옷을 입은 아이",
+          "hint": "대사 1개"
+        },
+        "role_MXwPkAvrD98": {
+          "name": "강아지",
+          "hint": "대사 1개"
+        },
+        "role_Ex6aSXisvvs": {
+          "name": "파란 옷을 입은 아이",
+          "hint": "대사 2개"
+        },
+        "role_-0NxEbZrU68": {
+          "name": "보라색 옷을 입은 아이",
+          "hint": "대사 1개"
+        },
+        "role_VTNuIGSirwY": {
+          "name": "강아지",
+          "hint": "대사 1개"
+        },
+        "role_qMDOxsX3cME": {
+          "name": "샐리",
+          "hint": "대사 2개"
+        },
+        "role_c20cLSGQdAQ": {
+          "name": "파란 옷을 입은 아이",
+          "hint": "대사 2개"
+        },
+        "role_QlsPddNBXGQ": {
+          "name": "제니",
+          "hint": "대사 2개"
+        },
+        "role_TfRZb1jojO8": {
+          "name": "토니",
+          "hint": "대사 3개"
+        },
+        "role_GqmpVhh4sXc": {
+          "name": "고고",
+          "hint": "대사 1개"
+        },
+        "role_ml1pMwDvf3A": {
+          "name": "토니와 제니",
+          "hint": "대사 1개"
+        },
+        "role_pMbWuJAc6TM": {
+          "name": "고고",
+          "hint": "대사 5개"
+        },
+        "role_6PoExuj3NZc": {
+          "name": "토니",
+          "hint": "대사 3개"
+        },
+        "role_N8xc7CSXiA0": {
+          "name": "제니",
+          "hint": "대사 3개"
+        },
+        "role_ekd_7mmBAJ8": {
+          "name": "고고",
+          "hint": "대사 3개"
+        },
+        "role_1de8iaC5BVQ": {
+          "name": "토니",
+          "hint": "대사 2개"
+        },
+        "role_5cqjyxmLDbQ": {
+          "name": "제니",
+          "hint": "대사 2개"
+        },
+        "role_uoIAOk7SIc8": {
+          "name": "고고",
+          "hint": "대사 4개"
+        },
+        "role_JAL2Cnx5A48": {
+          "name": "제니",
+          "hint": "대사 2개"
+        },
+        "role_rkFjPTbuc7A": {
+          "name": "토니",
+          "hint": "대사 2개"
+        },
+        "role_9_Yfz6qh2ws": {
+          "name": "고고",
+          "hint": "대사 3개"
+        },
+        "role_SGbqPDmh6YY": {
+          "name": "토니",
+          "hint": "대사 4개"
+        },
+        "role_gNZA2PGNGt4": {
+          "name": "제니",
+          "hint": "대사 1개"
+        },
+        "role_ilinUHluLog": {
+          "name": "토니",
+          "hint": "대사 3개"
+        },
+        "role_N_A_p_Xj_LM": {
+          "name": "제니",
+          "hint": "대사 1개"
+        },
+        "role_ce_NFDBs8jw": {
+          "name": "고고",
+          "hint": "대사 1개"
+        },
+        "role_7giqsA-v7kA": {
+          "name": "고고",
+          "hint": "대사 5개"
+        },
+        "role_MYPM5mjEiuk": {
+          "name": "선생님",
+          "hint": "대사 4개"
+        },
+        "role_-B3qQVi8XkE": {
+          "name": "토니",
+          "hint": "대사 8개"
+        },
+        "role_SrKIbbNYflA": {
+          "name": "선생님",
+          "hint": "대사 4개"
+        },
+        "role_TswQKem2LCM": {
+          "name": "고고",
+          "hint": "대사 4개"
+        },
+        "role_SdXqOYmlXcg": {
+          "name": "제니",
+          "hint": "대사 1개"
+        },
+        "role_7Vi0O1v-C2o": {
+          "name": "토니",
+          "hint": "대사 1개"
+        },
+        "role_SJXtL6AHKYc": {
+          "name": "고고",
+          "hint": "대사 4개"
+        },
+        "role_8-K5CgHvc0U": {
+          "name": "지비",
+          "hint": "대사 1개"
+        },
+        "role_vmvZHeTGKSg": {
+          "name": "초록색 친구",
+          "hint": "대사 2개"
+        },
+        "role_SzpEQCemp48": {
+          "name": "친구",
+          "hint": "대사 1개"
+        }
+      },
+      "notices": {
+        "library": "성인 대상 시제품 테스트 · 더빙은 이 브라우저에 저장되며 업로드되지 않아요. 영상 클립의 재배포 허가는 확인되지 않았어요.",
+        "scene": "이 장면은 성인을 대상으로 한 시제품 테스트용이에요. 영화 전체가 어린이 입문 학습 자료인 것은 아니에요.원작 제작자가 이 제품을 보증하는 것은 아니에요."
+      }
+    }
+  }
+}

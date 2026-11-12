@@ -7,14 +7,15 @@
     "node": "24.x"
   },
   "scripts": {
-    "prepare:search": "node scripts/prepare-scene-search.mjs",
-    "predev": "npm run prepare:search",
     "dev": "vite --host 127.0.0.1",
     "preview": "vite preview --host 127.0.0.1",
-    "prebuild": "npm run prepare:search",
     "build": "tsc --noEmit && vite build && node scripts/build-edge.mjs",
     "test": "node --test tests/*.test.mjs",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "content:validate": "node scripts/content.mjs validate",
+    "content:stage": "node scripts/content.mjs stage",
+    "content:publish": "node scripts/content.mjs publish",
+    "content:remove": "node scripts/content.mjs remove"
   },
   "dependencies": {
     "@base-ui/react": "1.9.0",
