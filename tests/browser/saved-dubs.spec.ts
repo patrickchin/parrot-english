@@ -1,3 +1,4 @@
+import { waveformImage } from './waveform-pixels';
 import { test, expect, setLanguage, headerDestination, routeContent } from './fixtures';
 import { readFile, mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
@@ -77,13 +78,13 @@ test('partial dubs survive reload and a new tab with exact audio, waveform, role
   await page.goto('/scenes/patrick'); await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await record(page);
   const wave = page.getByRole('img', { name: '你的声音波形', exact: true });
-  const originalPath = await wave.locator('path').getAttribute('d');
+  const originalPath = await waveformImage(wave);
   const url = page.url();
   await page.getByRole('button', { name: '下一步', exact: true }).click(); await saved(page);
   await page.reload();
   await expect(page.getByRole('button', { name: "第 2 句：I'm searching for someone.", exact: true })).toHaveAttribute('aria-current', 'step');
   await page.getByRole('button', { name: '第 1 句：Thank you.', exact: true }).click();
-  await expect(wave.locator('path')).toHaveAttribute('d', originalPath!);
+  await expect.poll(() => waveformImage(wave)).toBe(originalPath);
   await page.getByRole('button', { name: '听我的录音', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '停止播放', exact: true }).click(); await saved(page);
@@ -96,12 +97,12 @@ test('partial dubs survive reload and a new tab with exact audio, waveform, role
   await routeShortScene(second);
   await second.goto(url);
   await expect(second.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
-  await expect(second.getByRole('img', { name: '你的声音波形', exact: true }).locator('path')).toHaveAttribute('d', originalPath!);
+  await expect.poll(() => waveformImage(second.getByRole('img', { name: '你的声音波形', exact: true }))).toBe(originalPath);
   await second.close();
   // Reopening in the main page keeps the routed fixture's exact manifest as well.
   await page.goto('/'); await page.goto(url);
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
-  await expect(wave.locator('path')).toHaveAttribute('d', originalPath!);
+  await expect.poll(() => waveformImage(wave)).toBe(originalPath);
   await page.getByRole('button', { name: '第 1 句：Thank you.', exact: true }).click();
   await page.getByRole('button', { name: '返回片段', exact: true }).click();
   await expect(page.getByRole('searchbox')).toBeVisible();

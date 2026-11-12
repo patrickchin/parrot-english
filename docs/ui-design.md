@@ -184,9 +184,9 @@ voice is muted for that turn; stopping or reaching the padded window's end pause
 ## Signal and alignment
 
 - Original traces retain the maximum absolute PCM sample in each 5 ms window,
-  prepared with FFmpeg (mono, 16 kHz). Version 2 metadata replaces the previous
-  20 ms RMS envelope; the renderer retains up to 4,000 points per turn rather
-  than the previous fixed 240 bins. No decorative waveform samples are added.
+  prepared with FFmpeg (mono, 16 kHz). Version 2 metadata uses peak amplitudes.
+  Canvas rendering retains the largest peak in each displayed pixel column.
+  Original and learner signals occupy two aligned lanes with one time axis.
 - Microphone peaks use the same 5 ms windows in a native AudioWorklet, so samples
   between UI animation frames are preserved. Fractional sample windows avoid
   cumulative drift at 44.1 kHz. The same worklet captures PCM samples and their
@@ -200,7 +200,11 @@ voice is muted for that turn; stopping or reaching the padded window's end pause
   echo cancellation, noise suppression, and browser gain affect microphone levels.
   Compare timing and relative emphasis; absolute vocal loudness is approximate.
 - The playhead samples the video clock on every animation frame, without a
-  separate easing animation. Saved waveform paths are cached while it moves.
+  separate easing animation or per-frame React updates. Reference and saved
+  signals redraw only when their data, window, size, or appearance changes.
+  Live capture appends newly received columns, revisiting only the partial last
+  column; uncaptured regions remain blank and the live trace stops at the cursor.
+  Recording cancels if the capture/video clock mapping drifts by more than 120 ms.
   Takes retain the clip position corresponding to blob sample zero, including
   capture preroll, for both drawing and replay.
   Recording ends at the video turn boundary and pauses the picture before

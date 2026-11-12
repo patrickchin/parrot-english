@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { runInNewContext } from 'node:vm';
 import { readFile } from 'node:fs/promises';
 import { encodePcmWav } from '../src/pcm-recording.ts';
-import { validateWaveform, waveformHeight, waveformPath } from '../src/waveform.ts';
+import { validateWaveform, waveformHeight, drawWaveform } from '../src/waveform.ts';
 
 test('waveform validation enforces peak windows on a shared scale', () => {
   assert.equal(waveformHeight(0), 0);
@@ -12,11 +12,24 @@ test('waveform validation enforces peak windows on a shared scale', () => {
   for (const invalid of [{ ...valid, step: 0 }, { ...valid, peaks: [0.1] }, { ...valid, peaks: [-1, 0] }, { ...valid, peaks: [2, 0] }]) assert.throws(() => validateWaveform(invalid));
 });
 
-test('recorded traces remain silent outside their own time window', () => {
-  const path = waveformPath([0.2, 0.2], 0, 0.12, 0.06);
-  assert.match(path, /^M0 40 L0\.0 40\.0 /);
-  assert.match(path, /L1000\.0 40\.0/);
-  assert.notEqual(path, waveformPath([], 0, 0.12));
+test('canvas preserves peak timing, clips future samples and supports incremental drawing', () => {
+  const rects = [];
+  const context = { fillRect: (...rect) => rects.push(rect) };
+  const take = { start: 0.06, peaks: [0.2, 0.8] };
+  drawWaveform(context, take, 0, 0.12, 120, 40);
+  assert.equal(rects[0][0], 60);
+  assert.ok(Math.abs(rects.at(-1)[0] + rects.at(-1)[2] - 70) < 1e-9);
+  assert.ok(rects[5][3] > rects[0][3], 'retain the larger peak at its own time');
+  rects.length = 0;
+  drawWaveform(context, take, 0, 0.12, 120, 40, 0, 0.0635);
+  assert.ok(rects.every(([x, , w]) => x >= 60 && x + w <= 63.5), 'never draw beyond the playhead');
+  rects.length = 0;
+  drawWaveform(context, take, 0, 0.12, 120, 40, 66);
+  assert.ok(rects.every(([x]) => x >= 66), 'append without visiting the earlier samples');
+  rects.length = 0;
+  drawWaveform(context, { start: 0, peaks: [] }, 0, 1, 120, 40);
+  drawWaveform(context, { start: 0, peaks: [0, 0] }, 0, 1, 120, 40);
+  assert.deepEqual(rects, [], 'silence and uncaptured regions add no colored baseline');
 });
 
 

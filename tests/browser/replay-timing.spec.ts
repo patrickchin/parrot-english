@@ -1,3 +1,4 @@
+import { waveformOnset } from './waveform-pixels';
 import { readScene } from '../content-fixtures';
 import { test, expect } from './fixtures';
 
@@ -39,10 +40,7 @@ test('replay reuses decoded takes and aligns a rendered audio transient with the
   await page.getByRole('button', { name: '停止录音', exact: true }).click();
   const listen = page.getByRole('button', { name: '听我的录音', exact: true });
   await expect(listen).toBeEnabled();
-  const onset = await page.getByRole('img', { name: '你的声音波形', exact: true }).locator('path').evaluate((path, line) => {
-    const first = [...path.getAttribute('d')!.matchAll(/L([\d.]+) ([\d.]+)/g)].find(point => Number(point[2]) < 35)!;
-    return line.start + Number(first[1]) / 1000 * (line.end - line.start);
-  }, line);
+  const onset = await waveformOnset(page.getByRole('img', { name: '你的声音波形', exact: true }), line.start, line.end);
   expect(onset).toBeGreaterThan(line.start + 0.1);
   const before = await page.evaluate(async () => {
     const audit = (window as unknown as { replayAudit: { context: AudioContext; decodes: number; transient?: number; frames: { now: number; media: number }[] } }).replayAudit;

@@ -1,5 +1,8 @@
 export const waveformStep = 0.005;
 export type ReferenceWaveform = { version: 2; duration: number; step: number; peaks: number[] };
+export type WaveformRecording = { start: number; peaks: number[] };
+// Mutable frame data stays outside React. Saved takes still use immutable state.
+export type WaveformTimeline = { time: number; capture: WaveformRecording | null };
 
 export function validateWaveform(value: unknown): ReferenceWaveform {
   const wave = value as ReferenceWaveform;
@@ -15,17 +18,22 @@ export function waveformHeight(peak: number) {
   return peak <= 0.002 ? 0 : Math.sqrt(Math.min(1, Math.max(0, peak)));
 }
 
-export function waveformPath(peaks: number[], start: number, end: number, offset = 0) {
-  const points: [number, number][] = [];
-  const bins = Math.min(4000, Math.max(2, Math.ceil((end - start) / waveformStep)));
-  for (let i = 0; i < bins; i++) {
-    const first = Math.floor((start + (end - start) * i / bins - offset) / waveformStep);
-    const from = Math.max(0, first);
-    const to = Math.min(peaks.length, Math.max(first + 1, Math.ceil((start + (end - start) * (i + 1) / bins - offset) / waveformStep)));
-    let amplitude = 0;
-    for (let j = from; j < to; j++) amplitude = Math.max(amplitude, peaks[j]);
-    points.push([i * 1000 / (bins - 1), waveformHeight(amplitude) * 38]);
+// One column per display pixel, retaining the largest peak in that time range.
+// Restrict both ends to real samples: an empty/future interval paints nothing.
+// fromX lets live capture repaint only its last column and newly received data.
+export function drawWaveform(context: Pick<CanvasRenderingContext2D, 'fillRect'>, recording: WaveformRecording,
+  start: number, end: number, width: number, height: number, fromX = 0, until = end) {
+  const { peaks, start: offset } = recording;
+  const scale = width / (end - start);
+  const left = Math.max(0, fromX, (offset - start) * scale);
+  const right = Math.min(width, (Math.min(until, offset + peaks.length * waveformStep) - start) * scale);
+  for (let x = Math.floor(left); x < right; x++) {
+    const first = Math.max(0, Math.floor((start + x / scale - offset) / waveformStep));
+    const last = Math.min(peaks.length, Math.ceil((Math.min(until, start + (x + 1) / scale) - offset) / waveformStep));
+    let peak = 0;
+    for (let i = first; i < last; i++) peak = Math.max(peak, peaks[i]);
+    const amplitude = waveformHeight(peak) * Math.max(0, height / 2 - 2);
+    if (amplitude) context.fillRect(Math.max(x, left), height / 2 - amplitude, Math.min(x + 1, right) - Math.max(x, left), amplitude * 2);
   }
-  return 'M0 40 ' + points.map(([x, y]) => `L${x.toFixed(1)} ${(40 - y).toFixed(1)}`).join(' ') + ' ' +
-    points.reverse().map(([x, y]) => `L${x.toFixed(1)} ${(40 + y).toFixed(1)}`).join(' ') + ' Z';
+  return Math.max(0, right);
 }
