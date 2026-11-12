@@ -24,5 +24,11 @@ authoring. Published videos, audio, posters, portraits, pack JSON, and waveforms
 belong in OSS. Upload media referenced by `mediaBase` before publishing the pack;
 media bytes never belong in the application function bundle.
 
+To check a content-only merge, record the `release/player` commit and
+`/api/health` revision beforehand. After its **Deploy player** workflow finishes,
+confirm that the deployment job was skipped and both recorded values remain
+unchanged. This checks application deployment only; publishing reviewed pack
+changes still requires the separate `npm run content:publish` step.
+
 See [the pack format and publishing guide](../docs/content-packs.md) for the
 complete format, validation, staging, and withdrawal workflow.
