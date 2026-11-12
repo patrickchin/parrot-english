@@ -1,13 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import { i18n } from '../src/i18n-engine.ts';
 import en from '../src/locales/en/translation.json' with { type: 'json' };
 import zhCN from '../src/locales/zh-CN/translation.json' with { type: 'json' };
 import es from '../src/locales/es/translation.json' with { type: 'json' };
 import ja from '../src/locales/ja/translation.json' with { type: 'json' };
 import ko from '../src/locales/ko/translation.json' with { type: 'json' };
-import { clips, packs, sceneFile } from './content-fixtures.ts';
 
 function messages(resource, prefix = '') {
   return Object.entries(resource).flatMap(([key, value]) => typeof value === 'string'
@@ -40,19 +38,4 @@ test('i18next renders semantic keys and named variables in either language', () 
   assert.equal(i18n.t('library.sceneCount', { lng: 'zh-CN', count: 3 }), '3 个片段');
   assert.equal(i18n.t('navigation.library', { lng: 'en' }), 'Scene library');
   assert.equal(i18n.t('errors.microphoneDenied', { lng: 'en' }), 'Microphone access is off. Allow it in your browser’s site settings, then press record.');
-});
-
-test('every catalogued scene and role has localized content using its record ID', () => {
-  for (const clip of clips) {
-    const scene = JSON.parse(readFileSync(sceneFile(clip.slug)));
-    assert.equal(clip.id, scene.id);
-    const pack = packs.find(pack => pack.entry.id === clip.packId).data;
-    for (const language of ['en', 'zh-CN', 'es', 'ja', 'ko']) {
-      const content = pack.locales[language];
-      for (const field of ['title', 'licence', 'changes']) assert.equal(typeof content.scenes[scene.id][field], 'string');
-      for (const role of scene.roles) {
-        for (const field of ['name', 'hint']) assert.equal(typeof content.roles[role.id][field], 'string');
-      }
-    }
-  }
 });

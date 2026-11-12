@@ -2,5 +2,5 @@
   "name": "parrotbook-prototype",
   "entry": "./build/edge-worker.mjs",
   "installCommand": "npm ci",
-  "buildCommand": "npm test && npm run build"
+  "buildCommand": "npm run test:app && npm run build"
 }

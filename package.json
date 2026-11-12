@@ -9,13 +9,17 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "preview": "vite preview --host 127.0.0.1",
-    "build": "tsc --noEmit && vite build && node scripts/build-edge.mjs",
-    "test": "node --test tests/*.test.mjs",
+    "build": "tsc -p tsconfig.app.json --noEmit && vite build && node scripts/build-edge.mjs",
+    "test": "npm run test:typecheck && npm run test:app && npm run test:content && npm run test:boundary",
     "test:browser": "playwright test",
     "content:validate": "node scripts/content.mjs validate",
     "content:stage": "node scripts/content.mjs stage",
     "content:publish": "node scripts/content.mjs publish",
-    "content:remove": "node scripts/content.mjs remove"
+    "content:remove": "node scripts/content.mjs remove",
+    "test:typecheck": "tsc --noEmit",
+    "test:app": "node --test tests/*.test.mjs",
+    "test:content": "node --test tests/content/*.test.mjs",
+    "test:boundary": "node --test tests/boundary/*.test.mjs"
   },
   "dependencies": {
     "@base-ui/react": "1.9.0",
