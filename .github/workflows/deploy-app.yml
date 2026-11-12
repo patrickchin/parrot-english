@@ -32,6 +32,8 @@ jobs:
     if: github.ref == 'refs/heads/main' && needs.changes.outputs.app_changed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      ALIBABA_CLOUD_REGION_ID: cn-hangzhou
     permissions:
       contents: read
       id-token: write
