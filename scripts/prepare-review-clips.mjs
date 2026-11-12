@@ -5,8 +5,13 @@ import { spawnSync } from 'node:child_process';
 const [cohort, ...args] = process.argv.slice(2);
 const captionsOnly = args.includes('--captions-only');
 const selected = args.filter(arg => arg !== '--captions-only');
-if (!['younger-age-5', 'older-audience'].includes(cohort)) throw new Error('Usage: node scripts/prepare-review-clips.mjs <younger-age-5|older-audience> [slug ...|--check]');
-const recipe = JSON.parse(await readFile(cohort === 'older-audience' ? 'content/meme-review-scenes.json' : 'content/preschool-review-scenes.json', 'utf8'));
+const recipeFiles = {
+  'younger-age-5': 'content/preschool-review-scenes.json',
+  'older-audience': 'content/meme-review-scenes.json',
+  'social-memes': 'content/social-meme-review-scenes.json',
+};
+if (!Object.hasOwn(recipeFiles, cohort)) throw new Error('Usage: node scripts/prepare-review-clips.mjs <younger-age-5|older-audience|social-memes> [slug ...|--check]');
+const recipe = JSON.parse(await readFile(recipeFiles[cohort], 'utf8'));
 const root = `content/local-dubbing/review/${cohort}`;
 const checkOnly = selected.includes('--check');
 await mkdir(root, { recursive: true });
@@ -39,12 +44,12 @@ for (const scene of recipe.scenes.filter(s => !selected.length || checkOnly || s
   }
   const lines = scene.lines.map(l => ({ ...l, start: +(l.start - scene.start).toFixed(3), end: +(l.end - scene.start).toFixed(3) }));
   await writeFile(`${root}/${scene.slug}.vtt`, 'WEBVTT\n\n' + lines.map((l, i) => `${i + 1}\n${timestamp(l.start)} --> ${timestamp(l.end)}\n${l.text}\n${l.hint}\n`).join('\n'));
-  await writeFile(`${root}/${scene.slug}.txt`, `${scene.title}\n${scene.titleZh}\nPractice: ${scene.practice ?? scene.editNote}\nSource: ${source.url}&t=${Math.floor(scene.start + (source.sourceOffset ?? 0))}s\nSource cut: ${scene.start + (source.sourceOffset ?? 0)}–${scene.end + (source.sourceOffset ?? 0)}s${source.kind === 'prepared-benchmark' ? `; preserved prepared benchmark. Original edits: ${source.changes}` : ''}\n${source.attribution}\nRights: redistribution-not-cleared; private review only.\n\n` + lines.map(l => `${l.speaker}: ${l.text}\n${l.hint}\n`).join('\n'));
+  await writeFile(`${root}/${scene.slug}.txt`, `${scene.title}\n${scene.titleZh}\nPractice: ${scene.practice ?? scene.editNote}\nReview: ${scene.reviewStatus ?? 'adult-review-pending'}\nSource: ${source.url}&t=${Math.floor(scene.start + (source.sourceOffset ?? 0))}s\nSource cut: ${scene.start + (source.sourceOffset ?? 0)}–${scene.end + (source.sourceOffset ?? 0)}s${source.kind === 'prepared-benchmark' ? `; preserved prepared benchmark. Original edits: ${source.changes}` : ''}\n${source.attribution}\nRights: redistribution-not-cleared; private review only.\n\n` + lines.map(l => `${l.speaker}: ${l.text}\n${l.hint}\n`).join('\n'));
   console.log(`${file}: ${duration.toFixed(3)}s, ${roles.size} characters, ${turns.length} dialogue turns`);
 }
 
 if (!selected.length) {
-  const index = recipe.scenes.map(s => ({ ...s, file: s.file ?? `${s.slug}.mp4`, duration: +(s.end - s.start).toFixed(3), characters: s.roles.length, dialogueTurns: s.lines.filter((l, i, all) => !i || l.roleId !== all[i - 1].roleId).length, formatReview: s.preserveMedia ? 'user-selected-benchmark' : 're-edited', subtitles: `${s.slug}.vtt`, source: recipe.sources.find(source => source.id === s.sourceId), rightsStatus: recipe.rightsStatus, reviewStatus: 'adult-review-pending' }));
+  const index = recipe.scenes.map(s => ({ ...s, file: s.file ?? `${s.slug}.mp4`, duration: +(s.end - s.start).toFixed(3), characters: s.roles.length, dialogueTurns: s.lines.filter((l, i, all) => !i || l.roleId !== all[i - 1].roleId).length, formatReview: s.preserveMedia ? 'user-selected-benchmark' : 're-edited', subtitles: `${s.slug}.vtt`, source: recipe.sources.find(source => source.id === s.sourceId), rightsStatus: recipe.rightsStatus, reviewStatus: s.reviewStatus ?? 'adult-review-pending' }));
   await writeFile(`${root}/index.json`, JSON.stringify(index, null, 2) + '\n');
   await writeFile(`${root}/play-all.m3u8`, '#EXTM3U\n' + index.map(s => `#EXTINF:${(s.end - s.start).toFixed(2)},${s.title}\n${s.file}`).join('\n') + '\n');
   if (cohort === 'younger-age-5') await writeFile(`${root}/README.txt`, `YOUNGER AUDIENCE — AROUND AGE FIVE\n\n${index.length} continuous Peppa Pig and Ben and Holly dialogue scenes for private adult review.\nEvery scene has at least two speaking characters and three dialogue turns.\nOpen any MP4 in QuickTime/Finder, or play-all.m3u8 in a playlist-capable player.\nEach MP4 has a matching bilingual .vtt subtitle and .txt dialogue/source record.\nSuggested age fit is an editorial starting point, not a formal age rating.\nAdult review of speech, pacing and suitability remains pending.\nRights: redistribution-not-cleared.\n\n` + index.map((s, i) => `${String(i + 1).padStart(2, '0')}. ${s.title} / ${s.titleZh}\n    ${s.file} — ${(s.end - s.start).toFixed(2)} seconds\n    Characters: ${s.roles.map(r => r.name).join(', ')}\n    ${s.practice}\n`).join('\n'));

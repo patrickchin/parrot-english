@@ -5,6 +5,12 @@ summaries, search text, translations, and references to scene manifests. The
 editable `content/catalog.json` lists the packs to publish. Review recipes in
 this directory remain authoring inputs, separate from the player source.
 
+`meme-discovery.json` tracks deduplicated social-video candidates, source links,
+dated popularity evidence, language fit, and the next authoring step. It is a
+research queue, separate from the playable catalog. Follow the
+[meme discovery workflow](../docs/meme-discovery.md) for the requested hourly
+scan, source verification, local review cuts, and pack publication.
+
 Run the content workflow from the repository root:
 
 ```sh
