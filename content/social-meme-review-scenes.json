@@ -1,0 +1,81 @@
+{
+  "version": 1,
+  "audience": "Private adult editorial review; child appearance in source is not an age rating or reuse consent.",
+  "purpose": "private-adult-review",
+  "rightsStatus": "redistribution-not-cleared",
+  "selectionCriteria": "Internet-native meme with a complete setup, reply, and payoff. One continuous range, at least two speaking roles and three actual turns.",
+  "sources": [
+    {
+      "id": "1VbZE6YhjKk",
+      "url": "https://www.youtube.com/watch?v=1VbZE6YhjKk",
+      "localFile": "content/local-dubbing/review/social-memes/sources/1VbZE6YhjKk.mp4",
+      "sourceOffset": 0,
+      "title": "The CEO of Corn | Recess Therapy #cornboy",
+      "attribution": "Original interview: Recess Therapy; Tariq and Julian Shapiro-Barnum.",
+      "channel": "Recess Therapy",
+      "uploadDate": "2022-08-04",
+      "duration": 85,
+      "kind": "original-publisher-upload",
+      "sha256": "e88e67ca7eb796f80468fce8181c09815cb0c20f1b39ea9adfa33cdc416c10fe"
+    }
+  ],
+  "scenes": [
+    {
+      "id": "clip_tL2q0W_AsEbl",
+      "slug": "corn-corntastic-day",
+      "title": "A corntastic day!",
+      "titleZh": "祝你有玉米般美好的一天！",
+      "sourceId": "1VbZE6YhjKk",
+      "start": 59.22,
+      "end": 71.4,
+      "roles": [
+        {
+          "id": "role_WDa2qw2rRSIE",
+          "name": "Tariq"
+        },
+        {
+          "id": "role_5T_dtN_VZNtx",
+          "name": "Julian"
+        }
+      ],
+      "practice": "Give a cheerful wish, echo a surprising phrase, and explain a pun. Corntastic combines corn and fantastic; it is wordplay, not a standard adjective.",
+      "editNote": "Continuous source interval. Preserve the family laughter and the child’s What? before the explanation. No song remix or generated speech.",
+      "reviewStatus": "human-listening-and-transcript-review-pending",
+      "verification": {
+        "sourceContext": "Inspected source frames/captions and independent tiny.en recognition on 55–74 seconds, including material beyond both cut boundaries.",
+        "dialogue": "Draft corrected against burned-in captions; source automatic captions and tiny.en disagree on parts of the first wish and pun. Human listening must confirm wording and timing before pack authoring.",
+        "roles": "Source frames identify Tariq delivering the wish and explanation; Julian repeats the wish as a question. The woman’s laughter remains in the original audio.",
+        "cut": "Draft cut begins after the preceding dollar answer, retains the corn release and laughter, and stops before the next sentence around 72.7 seconds. ASR word times are supporting evidence, not proof of final syllable completeness."
+      },
+      "lines": [
+        {
+          "id": "line_FynLC-7usOc_",
+          "roleId": "role_WDa2qw2rRSIE",
+          "speaker": "Tariq",
+          "start": 59.28,
+          "end": 62.2,
+          "text": "I hope you guys have a corntastic day!",
+          "hint": "祝你们有玉米般美好的一天！这里把 corn 和 fantastic 合成一个双关词。"
+        },
+        {
+          "id": "line_s5-seD8g3xfC",
+          "roleId": "role_5T_dtN_VZNtx",
+          "speaker": "Julian",
+          "start": 62.32,
+          "end": 64.5,
+          "text": "A corntastic day?",
+          "hint": "玉米般美好的一天？"
+        },
+        {
+          "id": "line_8h7glDyTqHEG",
+          "roleId": "role_WDa2qw2rRSIE",
+          "speaker": "Tariq",
+          "start": 65.2,
+          "end": 68.6,
+          "text": "What? It’s just a pun about corn!",
+          "hint": "怎么了？这只是一个关于玉米的双关语！"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,511 @@
+{
+  "version": 1,
+  "updatedOn": "2026-11-12",
+  "timezone": "Asia/Shanghai",
+  "requestedCadence": "hourly",
+  "schedulerStatus": "not-configured-tool-unavailable",
+  "lastResearchOn": "2026-11-12",
+  "popularityPolicy": "All metrics are dated retrieval snapshots. UNKNOWN when absent. Repost counts are not original counts; no cross-platform total, rank, or growth claim without comparable observations.",
+  "platformCoverage": {
+    "bilibili": {
+      "status": "public-page-checked",
+      "note": "An explainer for Emotional Damage was retrieved. No sitewide ranking.",
+      "checkedOn": "2026-11-12"
+    },
+    "douyin": {
+      "status": "index-only",
+      "note": "Indexed example pages found; direct page extraction returned navigation shell.",
+      "checkedOn": "2026-11-12"
+    },
+    "xiaohongshu": {
+      "status": "secondary-evidence-only",
+      "note": "No usable individual post verified. Do not infer popularity from a generic explore URL.",
+      "checkedOn": "2026-11-12"
+    },
+    "weibo": {
+      "status": "search-attempted",
+      "note": "No verified candidate retained in this first batch.",
+      "checkedOn": "2026-11-12"
+    },
+    "kuaishou": {
+      "status": "search-attempted",
+      "note": "No verified candidate retained in this first batch.",
+      "checkedOn": "2026-11-12"
+    },
+    "tiktok": {
+      "status": "index-only",
+      "note": "Direct posts not played; search/discussion leads retained. Discover-page totals are not per-meme counts.",
+      "checkedOn": "2026-11-12"
+    },
+    "reddit": {
+      "status": "index-only",
+      "note": "Reuse discussions found; no hot/top feed or vote counts verified.",
+      "checkedOn": "2026-11-12"
+    },
+    "instagram": {
+      "status": "publisher-page-checked",
+      "note": "Original Recess Therapy reel retrieved; no platform-wide ranking.",
+      "checkedOn": "2026-11-12"
+    },
+    "facebook": {
+      "status": "index-only",
+      "note": "Creator and broadcaster links found. Firecrawl returned unsupported-site error.",
+      "checkedOn": "2026-11-12"
+    },
+    "youtube": {
+      "status": "publisher-metadata-and-source",
+      "note": "Original Corn Kid and Apparently Kid media downloaded for local review. Emotional Damage source metadata retrieved.",
+      "checkedOn": "2026-11-12"
+    }
+  },
+  "candidates": [
+    {
+      "id": "candidate_g2c1LmEOgeX8",
+      "key": "corn-kid",
+      "title": "Corn Kid / A corntastic day",
+      "priority": "high",
+      "trendStatus": "evergreen-candidate",
+      "status": "local-review-draft",
+      "originalLanguage": "en",
+      "source": {
+        "url": "https://www.youtube.com/watch?v=1VbZE6YhjKk",
+        "providerId": "1VbZE6YhjKk",
+        "creator": "Recess Therapy",
+        "uploadedOn": "2022-08-04",
+        "localFile": "content/local-dubbing/review/social-memes/sources/1VbZE6YhjKk.mp4"
+      },
+      "evidence": [
+        {
+          "platform": "youtube",
+          "url": "https://www.youtube.com/watch?v=1VbZE6YhjKk",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "publisher-metadata",
+          "note": "Original Recess Therapy upload; metadata retrieved with yt-dlp and Firecrawl.",
+          "metrics": {
+            "views": 14109446,
+            "likes": 289905
+          }
+        },
+        {
+          "platform": "instagram",
+          "url": "https://www.instagram.com/reel/Cg14y_1Ilq0/",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "publisher-page",
+          "note": "Original Recess Therapy reel; counters returned by Firecrawl.",
+          "metrics": {
+            "likes": 2165042,
+            "comments": 19894
+          }
+        }
+      ],
+      "englishPractice": "Food, wishes, repetition, and a pun; use the spoken interview, separate from the song.",
+      "contentNotes": "A child appears in the source. Source permissions and suitability need review; do not infer consent to reuse from a public upload. Corntastic is a pun, not standard vocabulary.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "not-published",
+      "nextAction": "Human listening must confirm first-line wording, pun, and exact prompt/cut boundaries before making a playable pack. See recipe verification notes.",
+      "reviewRecipe": "content/social-meme-review-scenes.json"
+    },
+    {
+      "id": "candidate_0aZMDCHRU2s9",
+      "key": "emotional-damage",
+      "title": "Emotional Damage",
+      "priority": "high",
+      "trendStatus": "evergreen-candidate",
+      "status": "source-review-pending",
+      "originalLanguage": "en",
+      "source": {
+        "url": "https://www.youtube.com/watch?v=miD_TWmdGIY",
+        "providerId": "miD_TWmdGIY",
+        "creator": "Steven He",
+        "uploadedOn": "2021-09-21"
+      },
+      "evidence": [
+        {
+          "platform": "youtube",
+          "url": "https://www.youtube.com/watch?v=miD_TWmdGIY",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "publisher-metadata",
+          "note": "Steven He original sketch, retrieved by Firecrawl.",
+          "metrics": {
+            "views": 73001395,
+            "likes": 2235318
+          }
+        },
+        {
+          "platform": "bilibili",
+          "url": "https://www.bilibili.com/video/BV1ZZ4y1f7eP/",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "platform-page",
+          "note": "Meme Guide explainer returned a rounded 3.1M views. This is recognition evidence, not the original source or reuse permission.",
+          "metrics": {
+            "viewsDisplay": "3.1M"
+          }
+        },
+        {
+          "platform": "facebook",
+          "url": "https://www.facebook.com/thestevenhe/videos/emotional-damage/1437662827918852/",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "search-index",
+          "note": "Creator-page lead; direct Firecrawl retrieval is unsupported. Counters UNKNOWN."
+        }
+      ],
+      "englishPractice": "Expressive reaction with surrounding creator-sketch dialogue; inspect the full sketch for a complete exchange.",
+      "contentNotes": "Parental put-downs, ethnic stereotypes, threats, and profanity in the wider sketch. Adult review; no child suitability claim.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "not-published",
+      "nextAction": "Verify the original performance, speakers, continuous source range, and complete final syllables before authoring a playable scene."
+    },
+    {
+      "id": "candidate_Cydaa18op7a7",
+      "key": "apparently-kid",
+      "title": "Apparently Kid",
+      "priority": "high",
+      "trendStatus": "evergreen-candidate",
+      "status": "source-review-pending",
+      "originalLanguage": "en",
+      "source": {
+        "url": "https://www.youtube.com/watch?v=rz5TGN7eUcM",
+        "providerId": "rz5TGN7eUcM",
+        "creator": "WNEP",
+        "uploadedOn": "2014-08-04",
+        "localFile": "content/local-dubbing/review/social-memes/sources/rz5TGN7eUcM.mp4"
+      },
+      "evidence": [
+        {
+          "platform": "youtube",
+          "url": "https://www.youtube.com/watch?v=rz5TGN7eUcM",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "publisher-metadata",
+          "note": "WNEP original upload; metadata retrieved by yt-dlp.",
+          "metrics": {
+            "views": 73377142,
+            "likes": 956939
+          }
+        },
+        {
+          "platform": "youtube",
+          "url": "https://www.youtube.com/watch?v=sKR9yFz0btk",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "search-index",
+          "note": "WNEP ten-year follow-up supports endurance, not current trend velocity."
+        }
+      ],
+      "englishPractice": "Interview questions and an enthusiastic answer; preserve spontaneous English rather than treating fillers as a grammar model.",
+      "contentNotes": "A child appears in the source. Automatic subtitle download returned HTTP 429; no verified transcript or cut yet.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "not-published",
+      "nextAction": "Verify the original performance, speakers, continuous source range, and complete final syllables before authoring a playable scene."
+    },
+    {
+      "id": "candidate_r41ygan5y3BZ",
+      "key": "can-i-pet-that-dog",
+      "title": "Can I pet that dog?",
+      "priority": "medium",
+      "trendStatus": "evergreen-candidate",
+      "status": "source-review-pending",
+      "originalLanguage": "en",
+      "source": {
+        "url": "https://www.youtube.com/shorts/YYx51ZrSn3g",
+        "providerId": "YYx51ZrSn3g",
+        "creator": null
+      },
+      "evidence": [
+        {
+          "platform": "youtube",
+          "url": "https://www.youtube.com/shorts/YYx51ZrSn3g",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "search-index",
+          "note": "Uploader describes this as the original video of their son; attribution still needs independent verification."
+        },
+        {
+          "platform": "tiktok",
+          "url": "https://www.tiktok.com/@dessiebaby.__/video/7271396203659644203",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "search-index",
+          "note": "A derivative lead, not verified as the original."
+        }
+      ],
+      "englishPractice": "Requests and repeated rising emphasis; retain the adult response if present.",
+      "contentNotes": "Several unrelated dog/bear remixes use this sound. Do not attribute the remix footage to the original family or present wildlife interaction as advice.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "not-published",
+      "nextAction": "Verify the original performance, speakers, continuous source range, and complete final syllables before authoring a playable scene."
+    },
+    {
+      "id": "candidate_ipPFTi4JQWSf",
+      "key": "weather-boy",
+      "title": "Wouldn’t you like to know, weather boy?",
+      "priority": "medium",
+      "trendStatus": "evergreen-candidate",
+      "status": "source-review-pending",
+      "originalLanguage": "en",
+      "source": null,
+      "evidence": [
+        {
+          "platform": "knowyourmeme",
+          "url": "https://knowyourmeme.com/memes/wouldnt-you-like-to-know-weather-boy",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "secondary-history",
+          "note": "History identifies a staged Fox 5 encounter with the reporter’s son. Original rights-holder source still needed."
+        },
+        {
+          "platform": "reddit",
+          "url": "https://www.reddit.com/r/SmallishBeans/comments/18cws73/",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "search-index",
+          "note": "Reuse discussion is recognition evidence only; counts UNKNOWN."
+        }
+      ],
+      "englishPractice": "Short question, evasive reply, and reaction; sarcasm and conversational tone.",
+      "contentNotes": "This was a staged sketch. Do not label it a genuine hostile interview or as a Weather Channel production.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "not-published",
+      "nextAction": "Verify the original performance, speakers, continuous source range, and complete final syllables before authoring a playable scene."
+    },
+    {
+      "id": "candidate_3TF9sKCsfx4u",
+      "key": "very-demure",
+      "title": "Very demure, very mindful",
+      "priority": "medium",
+      "trendStatus": "evergreen-candidate",
+      "status": "source-review-pending",
+      "originalLanguage": "en",
+      "source": {
+        "url": "https://www.tiktok.com/@joolieannie/video/7399736793119247662",
+        "providerId": "7399736793119247662",
+        "creator": "Jools Lebron"
+      },
+      "evidence": [
+        {
+          "platform": "tiktok",
+          "url": "https://www.tiktok.com/@joolieannie/video/7399736793119247662",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "secondary-linked-original",
+          "note": "Original-post lead linked by reporting; direct playback and current counters unverified."
+        },
+        {
+          "platform": "reddit",
+          "url": "https://www.reddit.com/r/OutOfTheLoop/comments/1f05iwy/",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "search-index",
+          "note": "Independent discussion of the phrase; not evidence of popularity today."
+        }
+      ],
+      "englishPractice": "Adjectives and delivery; find a self-contained spoken passage, not a compilation.",
+      "contentNotes": "Contextual irony; review the exact passage for age fit. Solo speech may suit performance practice, but the current review tool requires a multi-speaker exchange.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "not-published",
+      "nextAction": "Verify the original performance, speakers, continuous source range, and complete final syllables before authoring a playable scene."
+    },
+    {
+      "id": "candidate_-1ykKgJ4MQWP",
+      "key": "city-bu-city",
+      "title": "city不city",
+      "priority": "hold",
+      "trendStatus": "evergreen-candidate",
+      "status": "language-fit-hold",
+      "originalLanguage": "zh/en-mixed",
+      "source": null,
+      "evidence": [
+        {
+          "platform": "douyin",
+          "url": "https://www.douyin.com/video/7381453938089905471",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "search-index",
+          "note": "Public explainer and discussion indexed. Direct scrape returned the site shell; engagement controls are unlabelled, so counts UNKNOWN."
+        },
+        {
+          "platform": "xiaohongshu",
+          "url": "https://languagelog.ldc.upenn.edu/nll/?p=67359",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "secondary-history",
+          "note": "Language Log discusses Xiaohongshu spread and Paul Mike Ashton. No individual Xiaohongshu source post verified."
+        }
+      ],
+      "englishPractice": "Chinese cultural reference; consider a separately authored English scene about a city or countryside.",
+      "contentNotes": "City不city is a mixed-language meme, not ordinary English grammar. Do not silently translate the original audio and call it an English source.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "not-published",
+      "nextAction": "Verify the original performance, speakers, continuous source range, and complete final syllables before authoring a playable scene."
+    },
+    {
+      "id": "candidate_7tFi_vjk5RSP",
+      "key": "lei-jun-are-you-ok",
+      "title": "雷军 / Are you OK?",
+      "priority": "hold",
+      "trendStatus": "evergreen-candidate",
+      "status": "source-and-language-review-hold",
+      "originalLanguage": "en",
+      "source": null,
+      "evidence": [
+        {
+          "platform": "bilibili",
+          "url": "https://www.bilibili.com/video/BV1es411D7sW/",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "search-index",
+          "note": "Known remix lead. Search snippets include unrelated recommendation counters: no numeric popularity value retained."
+        },
+        {
+          "platform": "bilibili",
+          "url": "https://www.bilibili.com/video/BV1XE411q7Nj/",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "search-index",
+          "note": "Source-speech repost lead; not verified as a Xiaomi rights-holder upload."
+        }
+      ],
+      "englishPractice": "Possible reference for a commissioned comic exchange; original speech and remix must be distinguished.",
+      "contentNotes": "A remix is not a natural continuous conversation. Do not mock accents or teach edited/nonstandard lines as standard English.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "not-published",
+      "nextAction": "Verify the original performance, speakers, continuous source range, and complete final syllables before authoring a playable scene."
+    },
+    {
+      "id": "candidate_YcEKMquQG5ja",
+      "key": "bing-chilling",
+      "title": "Bing chilling / 早上好中国",
+      "priority": "hold",
+      "trendStatus": "evergreen-candidate",
+      "status": "language-fit-hold",
+      "originalLanguage": "zh",
+      "source": null,
+      "evidence": [
+        {
+          "platform": "reference",
+          "url": "https://zh.wikipedia.org/wiki/早上好中国，现在我有冰淇淋",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "secondary-history",
+          "note": "Lead to a John Cena Mandarin promotional performance and later remixes. Original post not verified in this run."
+        }
+      ],
+      "englishPractice": "Recognition research only; original performance is Mandarin.",
+      "contentNotes": "Not an English practice source. Any English adaptation needs its own performance, credits, and review.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "not-published",
+      "nextAction": "Verify the original performance, speakers, continuous source range, and complete final syllables before authoring a playable scene."
+    },
+    {
+      "id": "candidate_e28uRxjh0fRu",
+      "key": "bombastic-side-eye",
+      "title": "Bombastic Side Eye",
+      "priority": "hold",
+      "trendStatus": "evergreen-candidate",
+      "status": "insufficient-dialogue-hold",
+      "originalLanguage": "en-fragments",
+      "source": null,
+      "evidence": [
+        {
+          "platform": "knowyourmeme",
+          "url": "https://knowyourmeme.com/memes/bombastic-side-eye-side-eye-tiktok-trend",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "secondary-history",
+          "note": "Distinguishes Cynthia Mmasi side-eye audio from the later bombastic variation; some originals deleted."
+        },
+        {
+          "platform": "douyin",
+          "url": "https://groovedynasty.cn/china-trends-2024/",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "secondary-history",
+          "note": "A retrospective describes Douyin adoption; direct Chinese-platform source not verified."
+        }
+      ],
+      "englishPractice": "Reaction performance; too little dialogue in the sound alone.",
+      "contentNotes": "Do not conflate bilibili.tv international reposts with Bilibili mainland popularity. Creator attribution needs checking.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "not-published",
+      "nextAction": "Verify the original performance, speakers, continuous source range, and complete final syllables before authoring a playable scene."
+    },
+    {
+      "id": "candidate_DVxGE6UyZ9wr",
+      "key": "fries-in-the-bag",
+      "title": "Just put the fries in the bag",
+      "priority": "hold",
+      "trendStatus": "evergreen-candidate",
+      "status": "source-and-suitability-hold",
+      "originalLanguage": "en",
+      "source": null,
+      "evidence": [
+        {
+          "platform": "reddit",
+          "url": "https://www.reddit.com/r/OutOfTheLoop/comments/1gfvxqd/whats_the_new_put_the_fries_in_the_bag_meme_about/",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "search-index",
+          "note": "Discussion supports recognizability but not current popularity."
+        },
+        {
+          "platform": "tiktok",
+          "url": "https://www.tiktok.com/@official_careful/video/7651853971111316757",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "search-index",
+          "note": "Search labels this original; that label is not verified provenance."
+        }
+      ],
+      "englishPractice": "Can illustrate a dismissive response in context; find a complete attributable sketch first.",
+      "contentNotes": "Often belittles service workers; keep social meaning visible. Do not treat it as a polite ordering phrase.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "not-published",
+      "nextAction": "Verify the original performance, speakers, continuous source range, and complete final syllables before authoring a playable scene."
+    },
+    {
+      "id": "candidate_PJJj3x5RCVLW",
+      "key": "november-2026-polar-bear",
+      "title": "Remember November 2026 is coming",
+      "priority": "hold",
+      "trendStatus": "recent-lead-unverified",
+      "status": "insufficient-dialogue-hold",
+      "originalLanguage": "en-song-fragment",
+      "source": null,
+      "evidence": [
+        {
+          "platform": "knowyourmeme",
+          "url": "https://knowyourmeme.com/memes/remember-november-2026-is-coming",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "search-index",
+          "note": "Recent-date search returned a history describing September 2026 spread; no current velocity or original source verified."
+        },
+        {
+          "platform": "tiktok",
+          "url": "https://www.tiktok.com/@cadx20/video/7705574549223410965",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "search-index",
+          "note": "Recent-date query returned this derivative lead. Search recency is not proof of upload date."
+        }
+      ],
+      "englishPractice": "Recent discovery lead; insufficient spoken exchange for the present format.",
+      "contentNotes": "AI-generated/sung meme; do not add an invented transcript or silently generate speech.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "not-published",
+      "nextAction": "Verify the original performance, speakers, continuous source range, and complete final syllables before authoring a playable scene."
+    },
+    {
+      "id": "candidate_pHbIISuqMTj9",
+      "key": "democracy-manifest",
+      "title": "Democracy Manifest / Succulent Chinese Meal",
+      "priority": "hold",
+      "trendStatus": "evergreen-candidate",
+      "status": "source-and-suitability-hold",
+      "originalLanguage": "en",
+      "source": null,
+      "evidence": [
+        {
+          "platform": "youtube",
+          "url": "https://www.youtube.com/watch?v=3FVSuHIjN4Y",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "search-index",
+          "note": "7NEWS Australia follow-up lead. Original arrest footage and any repost must be distinguished."
+        },
+        {
+          "platform": "facebook",
+          "url": "https://www.facebook.com/7NEWSQld/videos/gentlemen-this-is-democracy-manifest-7news-tracks-down-the-man-behind-the-succul/480755653140410/",
+          "checkedOn": "2026-11-12",
+          "evidenceType": "search-index",
+          "note": "Broadcaster post lead; direct retrieval unsupported; counts UNKNOWN."
+        }
+      ],
+      "englishPractice": "Expressive rhetorical questions; adult-only source review candidate.",
+      "contentNotes": "Arrest, physical restraint, and sexual/anatomical remarks in the wider footage. No child-suitability claim.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "not-published",
+      "nextAction": "Verify the original performance, speakers, continuous source range, and complete final syllables before authoring a playable scene."
+    }
+  ]
+}

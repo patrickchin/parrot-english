@@ -9,6 +9,25 @@ surfaces, yellow actions, and a small parrot mark. Scene content and language
 level tailor the experience; the global interface should welcome every age.
 Guardian consent and privacy requirements still apply before child use.
 
+Content direction updated 2026-11-12: prioritize recognizable, memeable internet
+moments, including creator sketches, reactions, interviews, livestream exchanges,
+and viral clips. Film and TV scenes remain eligible when the particular moment
+has evidence of recognition or reuse. Discover on Douyin, Bilibili, Xiaohongshu,
+Weibo, Kuaishou, TikTok, Reddit, Instagram, Facebook, and YouTube. Chinese
+platforms guide what learners recognize; original spoken English and a complete
+comic beat determine whether a clip fits this player. Chinese-only, silent,
+music-only, and invented-language memes belong in the research queue unless a
+separate original English adaptation is commissioned and labelled as such.
+
+The owner requested **hourly** discovery. Maintain a deduplicated source queue,
+separate enduring favorites from recent trends, and record dated evidence rather
+than claiming a universal popularity ranking. Continue adding suitable local
+review scenes through the existing authoring workflow. Keep original speakers,
+complete exchanges, source credits, age guidance, and publication review. See
+[the discovery workflow](meme-discovery.md) and its first research batch.
+The hourly schedule is requested but is not yet active; see the workflow's
+scheduler status before promising unattended runs.
+
 Prototype status: the browser dubbing flow offers 24 founder-selected meme
 scenes, with grid and list views. The earlier Sintel sample was removed from the
 product on 2026-10-29; licensed footage remains only as an internal test fixture. Media is served from Alibaba OSS object storage, separately from the

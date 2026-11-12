@@ -12,6 +12,11 @@ Read the [product plan](docs/product-plan.md) for scope, content permissions,
 hosting, domain options, and the pilot sequence. The earlier application remains
 archived; the current player and GitHub deployment configuration are on `main`.
 
+New content prioritizes **memeable internet moments**: creator comedy, reactions,
+interviews, and viral exchanges, alongside recognizable film/TV memes. The
+[discovery queue and hourly workflow](docs/meme-discovery.md) cover Chinese and
+Western platforms. The requested hourly task is prepared but not yet scheduled.
+
 The first player is live at <https://parrotbook.com/>. Choose a scene and role,
 listen to the original dialogue, record each turn, then replay with your voice.
 The adult POC autosaves partial and completed attempts in this browser's
