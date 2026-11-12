@@ -185,7 +185,7 @@ voice is muted for that turn; stopping or reaching the padded window's end pause
 
 - Original traces retain the maximum absolute PCM sample in each 5 ms window,
   prepared with FFmpeg (mono, 16 kHz). Version 2 metadata uses peak amplitudes.
-  Canvas rendering retains the largest peak in each displayed pixel column.
+  Canvas rendering retains the largest peak in each physical pixel column.
   Original and learner signals occupy two aligned lanes with one time axis.
 - Microphone peaks use the same 5 ms windows in a native AudioWorklet, so samples
   between UI animation frames are preserved. Fractional sample windows avoid

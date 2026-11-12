@@ -45,15 +45,15 @@ export function VoiceWaveform({ scene, start, end, target, timeline, recordings,
       }
       if (recording && live) {
         const until = Math.min(time, live.start + live.peaks.length * waveformStep);
-        const nextX = Math.max(0, Math.min(width, (until - start) / (end - start) * width));
+        const nextX = Math.max(0, Math.min(recorded.width, (until - start) / (end - start) * recorded.width));
         if (capture !== live || nextX < drawnX) {
-          recordedContext.clearRect(0, 0, width, height); drawnX = 0; capture = live;
+          recordedContext.clearRect(0, 0, recorded.width, height); drawnX = 0; capture = live;
         }
         if (nextX > drawnX) {
           // Revisit the partial last column; all earlier columns are immutable.
           const from = Math.max(0, Math.floor(drawnX) - 1);
           recordedContext.clearRect(from, 0, Math.ceil(nextX) - from, height);
-          drawnX = drawWaveform(recordedContext, live, start, end, width, height, from, until);
+          drawnX = drawWaveform(recordedContext, live, start, end, recorded.width, height, from, until);
         }
       }
     };
@@ -64,11 +64,13 @@ export function VoiceWaveform({ scene, start, end, target, timeline, recordings,
       const ratio = window.devicePixelRatio || 1;
       for (const [canvas, context] of [[original, originalContext], [recorded, recordedContext]] as const) {
         canvas.width = Math.max(1, Math.round(width * ratio)); canvas.height = Math.max(1, Math.round(height * ratio));
-        context.setTransform(canvas.width / width, 0, 0, canvas.height / height, 0, 0);
+        // Sample horizontally at physical-pixel resolution. CSS-pixel bins can
+        // shift visible onsets by over 20 ms on a narrow, high-DPI phone.
+        context.setTransform(1, 0, 0, canvas.height / height, 0, 0);
         context.fillStyle = getComputedStyle(canvas).color;
       }
-      if (reference) drawWaveform(originalContext, { start: 0, peaks: reference.peaks }, start, end, width, height);
-      if (!recording) for (const take of recordings) drawWaveform(recordedContext, take, start, end, width, height);
+      if (reference) drawWaveform(originalContext, { start: 0, peaks: reference.peaks }, start, end, original.width, height);
+      if (!recording) for (const take of recordings) drawWaveform(recordedContext, take, start, end, recorded.width, height);
       capture = null; drawnX = 0; paintFrame();
     };
     const tick = () => { paintFrame(); frame = requestAnimationFrame(tick); };

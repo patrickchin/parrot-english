@@ -59,7 +59,7 @@ test('live canvas stays behind its cursor, appends incrementally, and keeps both
     const video = document.querySelector('video')!;
     const duration = Number(progress.getAttribute('aria-valuemax'));
     const context = canvas.getContext('2d')!;
-    const width = canvas.getBoundingClientRect().width;
+    const width = canvas.width;
     const frames: { now: number; cursor: number; x: number; frontier: number; media: number }[] = [];
     const until = performance.now() + 1200;
     await new Promise<void>(resolve => {
