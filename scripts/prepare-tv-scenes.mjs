@@ -26,7 +26,7 @@ for (const entry of scenes) {
   try { previous = JSON.parse(await readFile(`${sceneFolder(slug, entry.cohort)}/scene.json`, 'utf8')); } catch (error) { if (error.code !== 'ENOENT') throw error; }
   if (!entry.sceneId || !entry.lines?.length || !entry.lines.every(line => line.words?.length)) throw new Error(`Align the dialogue before preparing ${slug}`);
   const source = recipe.sources.find(source => source.id === entry.sourceId);
-  const original = `${local}/review/${entry.cohort}/${entry.slug}.mp4`;
+  const original = `${local}/review/${recipe.reviewFolder ?? entry.cohort}/${entry.slug}.mp4`;
   const hash = createHash('sha256').update(await readFile(original)).digest('hex').slice(0, 12);
   const video = `${slug}-review-${hash}.mp4`;
   await copyFile(original, `${local}/${video}`);

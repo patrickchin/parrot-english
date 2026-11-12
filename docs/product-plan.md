@@ -19,14 +19,15 @@ comic beat determine whether a clip fits this player. Chinese-only, silent,
 music-only, and invented-language memes belong in the research queue unless a
 separate original English adaptation is commissioned and labelled as such.
 
-The owner requested **hourly** discovery. Maintain a deduplicated source queue,
+The owner requested **ongoing discovery with periodic additions**, superseding
+the earlier hourly cadence. Maintain a deduplicated source queue,
 separate enduring favorites from recent trends, and record dated evidence rather
 than claiming a universal popularity ranking. Continue adding suitable local
 review scenes through the existing authoring workflow. Keep original speakers,
 complete exchanges, source credits, age guidance, and publication review. See
 [the discovery workflow](meme-discovery.md) and its first research batch.
-The hourly schedule is requested but is not yet active; see the workflow's
-scheduler status before promising unattended runs.
+No fixed schedule or unattended worker is configured; continue discovery during
+content authoring and publish verified batches when ready.
 
 Prototype status: the browser dubbing flow offers 24 founder-selected meme
 scenes, with grid and list views. The earlier Sintel sample was removed from the

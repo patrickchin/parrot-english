@@ -12,7 +12,7 @@ test('audience folders keep the younger scenes separate and survive playback, la
   await page.goto('/');
   const categories = page.getByRole('group', { name: '片段分类', exact: true });
   const younger = categories.getByRole('button', { name: /^英语启蒙/ });
-  await expect(categories.getByRole('button', { pressed: true })).toContainText('电影与动画');
+  await expect(categories.getByRole('button', { pressed: true })).toContainText('热梗与片段');
   await expect(page.getByRole('combobox', { name: '片段文件夹', exact: true })).toHaveCount(0);
   await expect(categories.getByRole('button')).toHaveCount(4);
   await expect(page.getByRole('listitem')).toHaveCount(filmCount);
@@ -64,7 +64,7 @@ test('audience folders keep the younger scenes separate and survive playback, la
   await expect(translatedCategories.getByRole('button', { name: /^Ages 10–12/ })).toBeFocused();
   await page.keyboard.press('Shift+Tab');
   await page.keyboard.press('Shift+Tab');
-  const films = translatedCategories.getByRole('button', { name: /^Films & animation/ });
+  const films = translatedCategories.getByRole('button', { name: /^Memes & clips/ });
   await expect(films).toBeFocused();
   await films.press('Enter');
   await expect(films).toHaveAttribute('aria-pressed', 'true');

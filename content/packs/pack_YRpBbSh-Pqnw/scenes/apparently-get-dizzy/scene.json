@@ -1,0 +1,342 @@
+{
+  "version": 1,
+  "id": "scene_8PxHtlQ-Kmz2",
+  "title": "显然，你会晕！",
+  "tags": [
+    "meme",
+    "internet",
+    "viral",
+    "Apparently Kid",
+    "Noah Ritter",
+    "WNEP",
+    "apparently",
+    "显然男孩",
+    "采访",
+    "rides",
+    "dizzy"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 15.015,
+  "video": "apparently-get-dizzy-review-f16b038cc33c.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/apparently-get-dizzy/",
+  "poster": "apparently-get-dizzy-poster-f16b038cc33c.jpg",
+  "waveform": "waveform-f16b038cc33c.json",
+  "roles": [
+    {
+      "id": "role_Yy-b9OPmi2zq",
+      "name": "Sofia",
+      "label": "Sofia",
+      "hint": "4 句台词",
+      "portrait": "apparently-get-dizzy-role_Yy-b9OPmi2zq-portrait-d1f55832f3d0.jpg"
+    },
+    {
+      "id": "role_RY510V7EvoEG",
+      "name": "Noah",
+      "label": "Noah",
+      "hint": "4 句台词",
+      "portrait": "apparently-get-dizzy-role_RY510V7EvoEG-portrait-5ae0513db40a.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_DP1NSF9q9bSZ",
+      "roleId": "role_Yy-b9OPmi2zq",
+      "start": 0.09,
+      "end": 2.19,
+      "text": "Tell me about the ride. What did you think about the ride?",
+      "hint": "说说这个游乐项目吧，你觉得怎么样？",
+      "words": [
+        {
+          "text": "Tell",
+          "start": 0.171,
+          "end": 0.292
+        },
+        {
+          "text": "me",
+          "start": 0.332,
+          "end": 0.393
+        },
+        {
+          "text": "about",
+          "start": 0.453,
+          "end": 0.635
+        },
+        {
+          "text": "the",
+          "start": 0.655,
+          "end": 0.736
+        },
+        {
+          "text": "ride.",
+          "start": 0.797,
+          "end": 1.059
+        },
+        {
+          "text": "What",
+          "start": 1.12,
+          "end": 1.201
+        },
+        {
+          "text": "did",
+          "start": 1.221,
+          "end": 1.281
+        },
+        {
+          "text": "you",
+          "start": 1.302,
+          "end": 1.362
+        },
+        {
+          "text": "think",
+          "start": 1.403,
+          "end": 1.503
+        },
+        {
+          "text": "about",
+          "start": 1.544,
+          "end": 1.705
+        },
+        {
+          "text": "the",
+          "start": 1.746,
+          "end": 1.806
+        },
+        {
+          "text": "ride?",
+          "start": 1.867,
+          "end": 2.17
+        }
+      ]
+    },
+    {
+      "id": "line_1bVqj-B-hXIk",
+      "roleId": "role_RY510V7EvoEG",
+      "start": 2.31,
+      "end": 3.59,
+      "text": "Well, it was great.",
+      "hint": "嗯，太棒了。",
+      "words": [
+        {
+          "text": "Well,",
+          "start": 2.351,
+          "end": 2.655
+        },
+        {
+          "text": "it",
+          "start": 2.676,
+          "end": 2.716
+        },
+        {
+          "text": "was",
+          "start": 2.798,
+          "end": 2.899
+        },
+        {
+          "text": "great.",
+          "start": 3.062,
+          "end": 3.448
+        }
+      ]
+    },
+    {
+      "id": "line_G9QRQMgUfcL9",
+      "roleId": "role_Yy-b9OPmi2zq",
+      "start": 3.79,
+      "end": 4.2,
+      "text": "Why?",
+      "hint": "为什么？",
+      "words": [
+        {
+          "text": "Why?",
+          "start": 3.893,
+          "end": 4.139
+        }
+      ]
+    },
+    {
+      "id": "line_vgRbl_e7bRi5",
+      "roleId": "role_RY510V7EvoEG",
+      "start": 4.63,
+      "end": 10.2,
+      "text": "Because apparently you're spinning around, and apparently every time you get dizzy.",
+      "hint": "因为显然你会转来转去，而且显然每次都会晕。",
+      "words": [
+        {
+          "text": "Because",
+          "start": 4.83,
+          "end": 5.111
+        },
+        {
+          "text": "apparently",
+          "start": 5.191,
+          "end": 5.852
+        },
+        {
+          "text": "you're",
+          "start": 6.073,
+          "end": 6.293
+        },
+        {
+          "text": "spinning",
+          "start": 6.373,
+          "end": 6.694
+        },
+        {
+          "text": "around,",
+          "start": 6.774,
+          "end": 7.335
+        },
+        {
+          "text": "and",
+          "start": 7.495,
+          "end": 7.575
+        },
+        {
+          "text": "apparently",
+          "start": 7.635,
+          "end": 8.016
+        },
+        {
+          "text": "every",
+          "start": 8.076,
+          "end": 8.257
+        },
+        {
+          "text": "time",
+          "start": 8.317,
+          "end": 8.577
+        },
+        {
+          "text": "you",
+          "start": 8.637,
+          "end": 8.717
+        },
+        {
+          "text": "get",
+          "start": 8.777,
+          "end": 9.238
+        },
+        {
+          "text": "dizzy.",
+          "start": 9.639,
+          "end": 10.1
+        }
+      ]
+    },
+    {
+      "id": "line_BJqAY7slcds6",
+      "roleId": "role_Yy-b9OPmi2zq",
+      "start": 10.24,
+      "end": 10.67,
+      "text": "Yeah?",
+      "hint": "是吗？",
+      "words": [
+        {
+          "text": "Yeah?",
+          "start": 10.363,
+          "end": 10.67
+        }
+      ]
+    },
+    {
+      "id": "line_QsiO0LrDtBI5",
+      "roleId": "role_RY510V7EvoEG",
+      "start": 10.69,
+      "end": 12.7,
+      "text": "That's all you do is get dizzy.",
+      "hint": "你做的就是晕来晕去。",
+      "words": [
+        {
+          "text": "That's",
+          "start": 10.71,
+          "end": 10.851
+        },
+        {
+          "text": "all",
+          "start": 10.992,
+          "end": 11.092
+        },
+        {
+          "text": "you",
+          "start": 11.152,
+          "end": 11.273
+        },
+        {
+          "text": "do",
+          "start": 11.414,
+          "end": 11.534
+        },
+        {
+          "text": "is",
+          "start": 11.655,
+          "end": 11.695
+        },
+        {
+          "text": "get",
+          "start": 11.775,
+          "end": 11.956
+        },
+        {
+          "text": "dizzy.",
+          "start": 12.037,
+          "end": 12.358
+        }
+      ]
+    },
+    {
+      "id": "line_07g8NTtUnoFM",
+      "roleId": "role_Yy-b9OPmi2zq",
+      "start": 12.76,
+      "end": 13.63,
+      "text": "Is it fun?",
+      "hint": "好玩吗？",
+      "words": [
+        {
+          "text": "Is",
+          "start": 12.841,
+          "end": 12.983
+        },
+        {
+          "text": "it",
+          "start": 13.104,
+          "end": 13.185
+        },
+        {
+          "text": "fun?",
+          "start": 13.286,
+          "end": 13.63
+        }
+      ]
+    },
+    {
+      "id": "line_0ZabaJrh2BtM",
+      "roleId": "role_RY510V7EvoEG",
+      "start": 14.28,
+      "end": 14.93,
+      "text": "Yeah.",
+      "hint": "好玩。",
+      "words": [
+        {
+          "text": "Yeah.",
+          "start": 14.442,
+          "end": 14.747
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Apparently Kid — WNEP fair interview",
+    "attribution": "Original performance: WNEP.",
+    "source": "https://www.youtube.com/watch?v=rz5TGN7eUcM&t=24s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 24.15–39.15 秒的连续节选。Original spontaneous interview; repetition and nonstandard phrasing are preserved as a performance, not a grammar model. No child age-rating claim. The other child’s later television remark starts after this continuous excerpt."
+  }
+}

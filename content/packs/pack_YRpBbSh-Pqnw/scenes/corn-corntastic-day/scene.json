@@ -1,0 +1,178 @@
+{
+  "version": 1,
+  "id": "scene_FpZe9z38b59Y",
+  "title": "祝你有玉米般美好的一天！",
+  "tags": [
+    "meme",
+    "internet",
+    "viral",
+    "Recess Therapy",
+    "Corn Kid",
+    "Tariq",
+    "Julian",
+    "玉米男孩",
+    "网络热梗",
+    "food",
+    "wishes",
+    "pun"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 12.43,
+  "video": "corn-corntastic-day-review-b3f6e9729984.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/corn-corntastic-day/",
+  "poster": "corn-corntastic-day-poster-b3f6e9729984.jpg",
+  "waveform": "waveform-b3f6e9729984.json",
+  "roles": [
+    {
+      "id": "role_WDa2qw2rRSIE",
+      "name": "Tariq",
+      "label": "Tariq",
+      "hint": "2 句台词",
+      "portrait": "corn-corntastic-day-role_WDa2qw2rRSIE-portrait-d91ecd013a03.jpg"
+    },
+    {
+      "id": "role_5T_dtN_VZNtx",
+      "name": "Julian",
+      "label": "Julian",
+      "hint": "1 句台词",
+      "portrait": "corn-corntastic-day-role_5T_dtN_VZNtx-portrait-9977cc1a5c47.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_FynLC-7usOc_",
+      "roleId": "role_WDa2qw2rRSIE",
+      "start": 0.12,
+      "end": 2.94,
+      "text": "I hope you really have a corntastic day!",
+      "hint": "祝你们有玉米般美好的一天！这里把 corn 和 fantastic 合成一个双关词。",
+      "words": [
+        {
+          "text": "I",
+          "start": 0.523,
+          "end": 0.563
+        },
+        {
+          "text": "hope",
+          "start": 0.664,
+          "end": 0.845
+        },
+        {
+          "text": "you",
+          "start": 0.906,
+          "end": 0.986
+        },
+        {
+          "text": "really",
+          "start": 1.067,
+          "end": 1.329
+        },
+        {
+          "text": "have",
+          "start": 1.409,
+          "end": 1.55
+        },
+        {
+          "text": "a",
+          "start": 1.631,
+          "end": 1.651
+        },
+        {
+          "text": "corntastic",
+          "start": 1.731,
+          "end": 2.376
+        },
+        {
+          "text": "day!",
+          "start": 2.859,
+          "end": 2.92
+        }
+      ]
+    },
+    {
+      "id": "line_s5-seD8g3xfC",
+      "roleId": "role_5T_dtN_VZNtx",
+      "start": 3,
+      "end": 5.07,
+      "text": "A corntastic day?",
+      "hint": "玉米般美好的一天？",
+      "words": [
+        {
+          "text": "A",
+          "start": 3.261,
+          "end": 3.281
+        },
+        {
+          "text": "corntastic",
+          "start": 3.402,
+          "end": 4.286
+        },
+        {
+          "text": "day?",
+          "start": 4.407,
+          "end": 4.97
+        }
+      ]
+    },
+    {
+      "id": "line_8h7glDyTqHEG",
+      "roleId": "role_WDa2qw2rRSIE",
+      "start": 6.07,
+      "end": 9.17,
+      "text": "What? It's just a pun about corn!",
+      "hint": "怎么了？这只是一个关于玉米的双关语！",
+      "words": [
+        {
+          "text": "What?",
+          "start": 6.553,
+          "end": 6.915
+        },
+        {
+          "text": "It's",
+          "start": 7.056,
+          "end": 7.177
+        },
+        {
+          "text": "just",
+          "start": 7.238,
+          "end": 7.378
+        },
+        {
+          "text": "a",
+          "start": 7.479,
+          "end": 7.499
+        },
+        {
+          "text": "pun",
+          "start": 7.58,
+          "end": 7.741
+        },
+        {
+          "text": "about",
+          "start": 7.841,
+          "end": 8.103
+        },
+        {
+          "text": "corn!",
+          "start": 8.949,
+          "end": 9.029
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Recess Therapy — The CEO of Corn",
+    "attribution": "Original performance: Recess Therapy.",
+    "source": "https://www.youtube.com/watch?v=1VbZE6YhjKk&t=58s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 58.98–71.4 秒的连续节选。Original interview, not the song remix. Corntastic is a playful blend of corn and fantastic, not standard vocabulary. Original child performance; source reuse rights remain unconfirmed. Adult prototype testing only."
+  }
+}

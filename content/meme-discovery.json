@@ -2,8 +2,8 @@
   "version": 1,
   "updatedOn": "2026-11-12",
   "timezone": "Asia/Shanghai",
-  "requestedCadence": "hourly",
-  "schedulerStatus": "not-configured-tool-unavailable",
+  "requestedCadence": "ongoing-discovery-periodic-additions",
+  "schedulerStatus": "no-fixed-schedule-requested",
   "lastResearchOn": "2026-11-12",
   "popularityPolicy": "All metrics are dated retrieval snapshots. UNKNOWN when absent. Repost counts are not original counts; no cross-platform total, rank, or growth claim without comparable observations.",
   "platformCoverage": {
@@ -65,7 +65,7 @@
       "title": "Corn Kid / A corntastic day",
       "priority": "high",
       "trendStatus": "evergreen-candidate",
-      "status": "local-review-draft",
+      "status": "playable-pack-prepared",
       "originalLanguage": "en",
       "source": {
         "url": "https://www.youtube.com/watch?v=1VbZE6YhjKk",
@@ -102,8 +102,9 @@
       "contentNotes": "A child appears in the source. Source permissions and suitability need review; do not infer consent to reuse from a public upload. Corntastic is a pun, not standard vocabulary.",
       "rightsStatus": "redistribution-not-cleared",
       "publicationStatus": "not-published",
-      "nextAction": "Human listening must confirm first-line wording, pun, and exact prompt/cut boundaries before making a playable pack. See recipe verification notes.",
-      "reviewRecipe": "content/social-meme-review-scenes.json"
+      "nextAction": "Publish the prepared media and staged catalog through the authenticated OSS publisher, then verify the live scene. Alibaba Cloud publishing is not connected in this remote chat.",
+      "reviewRecipe": "content/social-meme-review-scenes.json",
+      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/corn-corntastic-day/scene.json"
     },
     {
       "id": "candidate_0aZMDCHRU2s9",
@@ -111,7 +112,7 @@
       "title": "Emotional Damage",
       "priority": "high",
       "trendStatus": "evergreen-candidate",
-      "status": "source-review-pending",
+      "status": "playable-pack-prepared",
       "originalLanguage": "en",
       "source": {
         "url": "https://www.youtube.com/watch?v=miD_TWmdGIY",
@@ -153,7 +154,9 @@
       "contentNotes": "Parental put-downs, ethnic stereotypes, threats, and profanity in the wider sketch. Adult review; no child suitability claim.",
       "rightsStatus": "redistribution-not-cleared",
       "publicationStatus": "not-published",
-      "nextAction": "Verify the original performance, speakers, continuous source range, and complete final syllables before authoring a playable scene."
+      "nextAction": "Publish the prepared media and staged catalog through the authenticated OSS publisher, then verify the live scene. Alibaba Cloud publishing is not connected in this remote chat.",
+      "reviewRecipe": "content/social-meme-review-scenes.json",
+      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/emotional-damage/scene.json"
     },
     {
       "id": "candidate_Cydaa18op7a7",
@@ -161,7 +164,7 @@
       "title": "Apparently Kid",
       "priority": "high",
       "trendStatus": "evergreen-candidate",
-      "status": "source-review-pending",
+      "status": "playable-pack-prepared",
       "originalLanguage": "en",
       "source": {
         "url": "https://www.youtube.com/watch?v=rz5TGN7eUcM",
@@ -194,7 +197,9 @@
       "contentNotes": "A child appears in the source. Automatic subtitle download returned HTTP 429; no verified transcript or cut yet.",
       "rightsStatus": "redistribution-not-cleared",
       "publicationStatus": "not-published",
-      "nextAction": "Verify the original performance, speakers, continuous source range, and complete final syllables before authoring a playable scene."
+      "nextAction": "Publish the prepared media and staged catalog through the authenticated OSS publisher, then verify the live scene. Alibaba Cloud publishing is not connected in this remote chat.",
+      "reviewRecipe": "content/social-meme-review-scenes.json",
+      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/apparently-get-dizzy/scene.json"
     },
     {
       "id": "candidate_r41ygan5y3BZ",

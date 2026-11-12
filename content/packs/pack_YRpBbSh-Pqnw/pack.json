@@ -1,8 +1,8 @@
 {
   "version": 1,
   "id": "pack_YRpBbSh-Pqnw",
-  "title": "Films & animation",
-  "description": "Film and animation scenes for internal prototype testing.",
+  "title": "Memes & clips",
+  "description": "Recognizable internet, film and animation clips for internal adult prototype testing.",
   "author": "Parrotbook",
   "scenes": [
     {
@@ -2396,6 +2396,117 @@
         "见解。看来已经没有了？"
       ],
       "manifest": "scenes/ratatouille-a-little-perspective/scene.json"
+    },
+    {
+      "id": "scene_FpZe9z38b59Y",
+      "slug": "corn-corntastic-day",
+      "routeSlug": "corn-corntastic-day",
+      "title": "祝你有玉米般美好的一天！",
+      "english": "A corntastic day!",
+      "note": "Recess Therapy",
+      "source": "https://www.youtube.com/watch?v=1VbZE6YhjKk&t=58s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/corn-corntastic-day/corn-corntastic-day-poster-b3f6e9729984.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "viral",
+        "Recess Therapy",
+        "Corn Kid",
+        "Tariq",
+        "Julian",
+        "玉米男孩",
+        "网络热梗",
+        "food",
+        "wishes",
+        "pun"
+      ],
+      "quotes": [
+        "I hope you really have a corntastic day!",
+        "祝你们有玉米般美好的一天！这里把 corn 和 fantastic 合成一个双关词。",
+        "A corntastic day?",
+        "玉米般美好的一天？",
+        "What? It's just a pun about corn!",
+        "怎么了？这只是一个关于玉米的双关语！"
+      ],
+      "manifest": "scenes/corn-corntastic-day/scene.json"
+    },
+    {
+      "id": "scene_8PxHtlQ-Kmz2",
+      "slug": "apparently-get-dizzy",
+      "routeSlug": "apparently-get-dizzy",
+      "title": "显然，你会晕！",
+      "english": "Apparently, you get dizzy!",
+      "note": "Apparently Kid",
+      "source": "https://www.youtube.com/watch?v=rz5TGN7eUcM&t=24s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/apparently-get-dizzy/apparently-get-dizzy-poster-f16b038cc33c.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "viral",
+        "Apparently Kid",
+        "Noah Ritter",
+        "WNEP",
+        "apparently",
+        "显然男孩",
+        "采访",
+        "rides",
+        "dizzy"
+      ],
+      "quotes": [
+        "Tell me about the ride. What did you think about the ride?",
+        "说说这个游乐项目吧，你觉得怎么样？",
+        "Well, it was great.",
+        "嗯，太棒了。",
+        "Why?",
+        "为什么？",
+        "Because apparently you're spinning around, and apparently every time you get dizzy.",
+        "因为显然你会转来转去，而且显然每次都会晕。",
+        "Yeah?",
+        "是吗？",
+        "That's all you do is get dizzy.",
+        "你做的就是晕来晕去。",
+        "Is it fun?",
+        "好玩吗？",
+        "Yeah.",
+        "好玩。"
+      ],
+      "manifest": "scenes/apparently-get-dizzy/scene.json"
+    },
+    {
+      "id": "scene_j-QpbSVYvMHT",
+      "slug": "emotional-damage",
+      "routeSlug": "emotional-damage",
+      "title": "精神伤害！",
+      "english": "Emotional damage!",
+      "note": "Steven He",
+      "source": "https://www.youtube.com/watch?v=miD_TWmdGIY&t=61s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/emotional-damage/emotional-damage-poster-9d648afab2f2.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "viral",
+        "Steven He",
+        "Emotional Damage",
+        "精神伤害",
+        "破防",
+        "gaming",
+        "reaction",
+        "comedy"
+      ],
+      "quotes": [
+        "Steven, when you get so fat?",
+        "史蒂文，你什么时候变得这么胖了？这是一句不礼貌的讽刺台词。",
+        "Emotional damage!",
+        "精神伤害！",
+        "You want some therapy?",
+        "你想来点心理治疗吗？",
+        "You probably could just hold down the block button.",
+        "你也许只要一直按住格挡键就行了。"
+      ],
+      "manifest": "scenes/emotional-damage/scene.json"
     }
   ],
   "locales": {
@@ -2720,6 +2831,21 @@
           "title": "A little perspective",
           "licence": "Redistribution permission not confirmed",
           "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_FpZe9z38b59Y": {
+          "title": "A corntastic day!",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "Continuous excerpt of the original spoken interview. Corntastic is a pun combining corn and fantastic."
+        },
+        "scene_8PxHtlQ-Kmz2": {
+          "title": "Apparently, you get dizzy!",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "Continuous excerpt of the original fair interview. Spontaneous repetition and informal grammar are preserved."
+        },
+        "scene_j-QpbSVYvMHT": {
+          "title": "Emotional damage!",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "Continuous excerpt of the original comedy sketch. Includes an insulting body comment and nonstandard grammar; intended for adult prototype testing."
         }
       },
       "roles": {
@@ -3350,6 +3476,34 @@
         "role_Lbe3H2XSU5Y": {
           "name": "Anton Ego",
           "hint": "3 lines"
+        },
+        "role_WDa2qw2rRSIE": {
+          "name": "Tariq",
+          "hint": "2 lines"
+        },
+        "role_5T_dtN_VZNtx": {
+          "name": "Julian",
+          "hint": "1 line"
+        },
+        "role_Yy-b9OPmi2zq": {
+          "name": "Sofia",
+          "hint": "4 lines"
+        },
+        "role_RY510V7EvoEG": {
+          "name": "Noah",
+          "hint": "4 lines"
+        },
+        "role_8rsUvsJbhZ0u": {
+          "name": "Aunty",
+          "hint": "1 line"
+        },
+        "role_HX_rjb--3ZnC": {
+          "name": "Steven's dad",
+          "hint": "2 lines"
+        },
+        "role_PvfiRglGg5ME": {
+          "name": "Steven",
+          "hint": "1 line"
         }
       },
       "notices": {
@@ -3678,6 +3832,21 @@
           "title": "来一点见解",
           "licence": "未确认再分发许可",
           "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_FpZe9z38b59Y": {
+          "title": "祝你有玉米般美好的一天！",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "原始采访的连续节选。Corntastic 是 corn 与 fantastic 组成的双关词。"
+        },
+        "scene_8PxHtlQ-Kmz2": {
+          "title": "显然，你会晕！",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "原始游乐场采访的连续节选。保留即兴重复与口语表达。"
+        },
+        "scene_j-QpbSVYvMHT": {
+          "title": "精神伤害！",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "原始喜剧短片的连续节选。含身材嘲讽和非标准语法，仅供内部成人原型测试。"
         }
       },
       "roles": {
@@ -4308,6 +4477,34 @@
         "role_Lbe3H2XSU5Y": {
           "name": "安东·伊戈",
           "hint": "3 句台词"
+        },
+        "role_WDa2qw2rRSIE": {
+          "name": "Tariq",
+          "hint": "2 句台词"
+        },
+        "role_5T_dtN_VZNtx": {
+          "name": "Julian",
+          "hint": "1 句台词"
+        },
+        "role_Yy-b9OPmi2zq": {
+          "name": "Sofia",
+          "hint": "4 句台词"
+        },
+        "role_RY510V7EvoEG": {
+          "name": "Noah",
+          "hint": "4 句台词"
+        },
+        "role_8rsUvsJbhZ0u": {
+          "name": "Aunty",
+          "hint": "1 句台词"
+        },
+        "role_HX_rjb--3ZnC": {
+          "name": "Steven's dad",
+          "hint": "2 句台词"
+        },
+        "role_PvfiRglGg5ME": {
+          "name": "Steven",
+          "hint": "1 句台词"
         }
       },
       "notices": {
@@ -4636,6 +4833,21 @@
           "title": "Un poco de perspectiva",
           "licence": "Permiso de redistribución no confirmado",
           "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_FpZe9z38b59Y": {
+          "title": "¡Que tengas un día maiztástico!",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Fragmento continuo de la entrevista original. Corntastic es un juego de palabras con corn y fantastic."
+        },
+        "scene_8PxHtlQ-Kmz2": {
+          "title": "¡Al parecer, te mareas!",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Fragmento continuo de la entrevista en la feria. Conserva repeticiones y gramática informal."
+        },
+        "scene_j-QpbSVYvMHT": {
+          "title": "¡Daño emocional!",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Fragmento continuo de una comedia. Incluye un comentario ofensivo sobre el cuerpo y gramática no estándar; pruebas internas con adultos."
         }
       },
       "roles": {
@@ -5266,6 +5478,34 @@
         "role_Lbe3H2XSU5Y": {
           "name": "Anton Ego",
           "hint": "3 frases"
+        },
+        "role_WDa2qw2rRSIE": {
+          "name": "Tariq",
+          "hint": "2 líneas"
+        },
+        "role_5T_dtN_VZNtx": {
+          "name": "Julian",
+          "hint": "1 línea"
+        },
+        "role_Yy-b9OPmi2zq": {
+          "name": "Sofia",
+          "hint": "4 líneas"
+        },
+        "role_RY510V7EvoEG": {
+          "name": "Noah",
+          "hint": "4 líneas"
+        },
+        "role_8rsUvsJbhZ0u": {
+          "name": "Aunty",
+          "hint": "1 línea"
+        },
+        "role_HX_rjb--3ZnC": {
+          "name": "Steven's dad",
+          "hint": "2 líneas"
+        },
+        "role_PvfiRglGg5ME": {
+          "name": "Steven",
+          "hint": "1 línea"
         }
       },
       "notices": {
@@ -5594,6 +5834,21 @@
           "title": "少しの見識",
           "licence": "再配布の許可は未確認",
           "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_FpZe9z38b59Y": {
+          "title": "コーンな素敵な一日を！",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "元のインタビューの連続した抜粋。Corntastic は corn と fantastic を合わせた言葉遊びです。"
+        },
+        "scene_8PxHtlQ-Kmz2": {
+          "title": "どうやら目が回るみたい！",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "遊園地での元のインタビューの連続した抜粋。自然な繰り返しと口語表現を残しています。"
+        },
+        "scene_j-QpbSVYvMHT": {
+          "title": "精神的ダメージ！",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "元のコメディーの連続した抜粋。体型への侮辱と非標準的な文法を含みます。成人の内部テスト用です。"
         }
       },
       "roles": {
@@ -6224,6 +6479,34 @@
         "role_Lbe3H2XSU5Y": {
           "name": "Anton Ego",
           "hint": "セリフ 3 行"
+        },
+        "role_WDa2qw2rRSIE": {
+          "name": "Tariq",
+          "hint": "セリフ 2 個"
+        },
+        "role_5T_dtN_VZNtx": {
+          "name": "Julian",
+          "hint": "セリフ 1 個"
+        },
+        "role_Yy-b9OPmi2zq": {
+          "name": "Sofia",
+          "hint": "セリフ 4 個"
+        },
+        "role_RY510V7EvoEG": {
+          "name": "Noah",
+          "hint": "セリフ 4 個"
+        },
+        "role_8rsUvsJbhZ0u": {
+          "name": "Aunty",
+          "hint": "セリフ 1 個"
+        },
+        "role_HX_rjb--3ZnC": {
+          "name": "Steven's dad",
+          "hint": "セリフ 2 個"
+        },
+        "role_PvfiRglGg5ME": {
+          "name": "Steven",
+          "hint": "セリフ 1 個"
         }
       },
       "notices": {
@@ -6552,6 +6835,21 @@
           "title": "약간의 안목",
           "licence": "재배포 허가 미확인",
           "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_FpZe9z38b59Y": {
+          "title": "옥수수처럼 멋진 하루!",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "원본 인터뷰의 연속 발췌. Corntastic은 corn과 fantastic을 합친 말장난입니다."
+        },
+        "scene_8PxHtlQ-Kmz2": {
+          "title": "아무래도 어지러워지나 봐요!",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "원본 놀이공원 인터뷰의 연속 발췌. 즉흥적인 반복과 구어체 문법을 유지했습니다."
+        },
+        "scene_j-QpbSVYvMHT": {
+          "title": "정신적 충격!",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "원본 코미디의 연속 발췌. 외모 비하 발언과 비표준 문법을 포함하며 성인 내부 테스트용입니다."
         }
       },
       "roles": {
@@ -7182,6 +7480,34 @@
         "role_Lbe3H2XSU5Y": {
           "name": "Anton Ego",
           "hint": "대사 3줄"
+        },
+        "role_WDa2qw2rRSIE": {
+          "name": "Tariq",
+          "hint": "대사 2개"
+        },
+        "role_5T_dtN_VZNtx": {
+          "name": "Julian",
+          "hint": "대사 1개"
+        },
+        "role_Yy-b9OPmi2zq": {
+          "name": "Sofia",
+          "hint": "대사 4개"
+        },
+        "role_RY510V7EvoEG": {
+          "name": "Noah",
+          "hint": "대사 4개"
+        },
+        "role_8rsUvsJbhZ0u": {
+          "name": "Aunty",
+          "hint": "대사 1개"
+        },
+        "role_HX_rjb--3ZnC": {
+          "name": "Steven's dad",
+          "hint": "대사 2개"
+        },
+        "role_PvfiRglGg5ME": {
+          "name": "Steven",
+          "hint": "대사 1개"
         }
       },
       "notices": {
