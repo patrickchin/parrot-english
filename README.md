@@ -14,8 +14,9 @@ archived; the current player and GitHub deployment configuration are on `main`.
 
 New content prioritizes **memeable internet moments**: creator comedy, reactions,
 interviews, and viral exchanges, alongside recognizable film/TV memes. The
-[discovery queue and hourly workflow](docs/meme-discovery.md) cover Chinese and
-Western platforms. The requested hourly task is prepared but not yet scheduled.
+[discovery queue and batch workflow](docs/meme-discovery.md) cover Chinese and
+Western platforms. Discovery continues during authoring, with periodic additions
+when a verified batch is ready.
 
 The first player is live at <https://parrotbook.com/>. Choose a scene and role,
 listen to the original dialogue, record each turn, then replay with your voice.
@@ -42,8 +43,8 @@ captions show the current turn. This is timing and emphasis feedback, not
 pronunciation scoring. See
 [the UI and waveform notes](docs/ui-design.md).
 
-The internal-test shelf has four folders: **38 film/animation scenes**,
-**15 First English conversations**, **12 Young Sheldon/Harry Potter conversations for
+The internal-test shelf has four folders: **67 meme, film and animation scenes**,
+**15 First English conversations**, **15 Young Sheldon/Harry Potter conversations for
 ages 10–12**, and **14 Friends/HIMYM/Big Bang Theory conversations for teens**.
 The First English folder uses language level, with five foundational English Singsing
 conversations and ten playful Gogo stories built from short, concrete phrases;
@@ -53,6 +54,7 @@ See [the latest 12 scenes](docs/clip-expansion-2026-11-11-c.md) and
 exchanges; Patrick, Chocolate, and Onions retain their original edits.
 The category tabs show scene previews and counts, and keep the selected folder
 across playback, language changes, and reloads.
+Three social-video additions are prepared in [the social meme batch](docs/social-meme-scenes.md); OSS publication is pending.
 See [the meme re-edits](docs/meme-review.md) and
 [the younger scenes](docs/preschool-review.md) for the current cuts.
 Browse the thumbnail grid or search within the selected folder by title, series,
@@ -71,7 +73,7 @@ npm test
 npm run test:browser
 ```
 
-Content is authored separately under `content/packs/`. The existing 79 scenes
+Content is authored separately under `content/packs/`. The authored 111 scenes
 are grouped into four packs, each containing its scene manifests, subtitles,
 word timings, search data, credits, and five-language scene/role text.
 `content/catalog.json` lists the available packs. The player fetches that catalog

@@ -7,7 +7,8 @@ comedy, reaction exchanges, funny interviews, livestream moments, and recognizab
 internet clips. A film or show is one possible source. Recognition, the comic
 beat, and usable English determine the choice; a famous franchise alone does not.
 
-The owner requested **hourly discovery**. The first batch contains **13 distinct
+The owner requested **ongoing discovery with periodic scene batches**, replacing
+the earlier hourly request. The first batch contains **13 distinct
 meme families** in [`content/meme-discovery.json`](../content/meme-discovery.json).
 That file is the maintained research queue. Candidates are not playable catalog
 entries, published scenes, or a claim to rank the most popular memes globally.
@@ -15,15 +16,15 @@ entries, published scenes, or a claim to rank the most popular memes globally.
 ## First batch
 
 The following priorities are editorial judgments. Counters are snapshots returned
-by source extraction on 2026-11-12, not proof of hourly growth or popularity today.
+by source extraction on 2026-11-12, not proof of recent growth or popularity today.
 These established memes should anchor the enduring-favorites track while later
 scans look for emerging material.
 
 | Priority | Moment | Evidence and English fit | Next step |
 | --- | --- | --- | --- |
-| High | Emotional Damage | [Steven He original](https://www.youtube.com/watch?v=miD_TWmdGIY): 73,001,395 views returned. [Bilibili explainer](https://www.bilibili.com/video/BV1ZZ4y1f7eP/): rounded 3.1M views, evidence of Chinese recognition. | Inspect a complete exchange around the reaction; review put-downs, stereotypes, threats, and profanity. |
-| High | Corn Kid | [Original interview](https://www.youtube.com/watch?v=1VbZE6YhjKk): 14,109,446 views. [Creator’s Instagram reel](https://www.instagram.com/reel/Cg14y_1Ilq0/): 2,165,042 likes returned. | Prepare the spoken corntastic-day exchange. Source downloaded; use the interview separately from the musical remix. |
-| High | Apparently Kid | [WNEP original](https://www.youtube.com/watch?v=rz5TGN7eUcM): 73,377,142 views returned. | Source downloaded. Select a short interview exchange; captions download hit HTTP 429, so dialogue and cuts remain unverified. |
+| High | Emotional Damage | [Steven He original](https://www.youtube.com/watch?v=miD_TWmdGIY): 73,001,395 views returned. [Bilibili explainer](https://www.bilibili.com/video/BV1ZZ4y1f7eP/): rounded 3.1M views, evidence of Chinese recognition. | Playable reaction exchange prepared with the insulting support line retained but not selectable; adult prototype only. |
+| High | Corn Kid | [Original interview](https://www.youtube.com/watch?v=1VbZE6YhjKk): 14,109,446 views. [Creator’s Instagram reel](https://www.instagram.com/reel/Cg14y_1Ilq0/): 2,165,042 likes returned. | Playable spoken exchange prepared; publication pending. The interview is separate from the musical remix. |
+| High | Apparently Kid | [WNEP original](https://www.youtube.com/watch?v=rz5TGN7eUcM): 73,377,142 views returned. | Playable ride interview prepared after source/speaker checks and independent recognition; publication pending. |
 | Medium | Can I pet that dog? | [Family-upload lead](https://www.youtube.com/shorts/YYx51ZrSn3g). Simple request and escalating emphasis. | Verify uploader and adult responses; distinguish the original family footage from bear/dog remixes. |
 | Medium | Weather boy | [Source history](https://knowyourmeme.com/memes/wouldnt-you-like-to-know-weather-boy). Question, evasive answer, comic reaction. | Find the rights-holder footage. It is a staged father/son exchange, not an authentic hostile interview. |
 | Medium | Very demure, very mindful | [Jools Lebron original-post lead](https://www.tiktok.com/@joolieannie/video/7399736793119247662), corroborated by [reuse discussion](https://www.reddit.com/r/OutOfTheLoop/comments/1f05iwy/). | Verify playback and a self-contained spoken passage; counts UNKNOWN. Solo performance needs an explicit format decision before changing the current exchange-oriented review tool. |
@@ -38,15 +39,12 @@ scans look for emerging material.
 No comparable current platform-wide ranking or trend velocity was verified.
 High priority means promising for review, not cleared or suitable for all ages.
 
-The first local draft is `corn-corntastic-day.mp4`: a continuous source interval
-59.22–71.40 seconds, two speakers, three turns, approximately 12.22 seconds after
-encoding. The matching VTT, TXT, recipe, index, and playlist preserve the draft
-review status. Source frames and burned-in captions identify the speakers;
-recognition on the surrounding 55–74-second source window supports the speech
-and next-sentence boundaries. Automatic transcripts disagree on parts of the
-wish and pun, so human listening must confirm wording and exact prompt/cut
-boundaries before making a playable pack. The source woman's laughter stays in
-the original audio. No catalog entry, OSS upload, or publication was added.
+The first three playable additions are prepared: Corn Kid, Apparently Kid, and
+Emotional Damage. Their manifests, timed words, Chinese hints, five-language
+metadata, source credits, waveforms, and role portraits are in the pack. See
+[the scene batch](social-meme-scenes.md) for source ranges and verification.
+Publication is pending authenticated OSS access in this remote chat. They are
+not live merely because their metadata is committed.
 
 ## Coverage and evidence
 
@@ -84,79 +82,30 @@ as rising when repeated comparable observations support that claim. Cross-
 platform reuse is valuable recognition evidence but must not be summed into a
 made-up global audience count.
 
-## Hourly task
+## Ongoing discovery and periodic additions
 
-**Status: not scheduled.** No automation creation tool is exposed in this chat;
-computer use also denied access to Codex’s scheduler. No cron job, cloud monitor,
-or background authoring service has been created. This document and the queue
-are durable handoff inputs, not an active schedule.
+Keep researching while authoring and publish useful batches when they are ready.
+The owner replaced the hourly cadence with continuous discovery and additions
+from time to time. There is no fixed schedule or unattended worker configured.
+This workflow describes work to continue, not a background service.
 
-Create one project-attached recurring task when scheduler access is available:
+For each batch:
 
-- Title: **Find memeable English scenes**
-- Schedule: **Every hour**, Asia/Shanghai
-- Workspace: `/Users/patchin/Workspace/test/Parrot English`
-- Prompt:
-
-```text
-Continue Parrotbook meme discovery in this workspace. Read AGENTS.md,
-docs/product-plan.md, docs/meme-discovery.md, content/meme-discovery.json,
-and the existing content packs before editing.
-
-Run this as an hourly incremental scan. Search Douyin, Bilibili, Xiaohongshu,
-Weibo, Kuaishou, TikTok, Reddit, Instagram, Facebook, and YouTube for memorable
-creator sketches, reactions, funny interviews, livestream exchanges, and
-recognizable meme clips. Search Chinese names and original English phrases.
-Look for recent material and enduring favorites separately. Prefer a bounded
-scan of 2–3 platforms per run, choosing the least recently checked platforms;
-cover every platform across successive runs. Record checks, failures, and dates.
-Limit research to 10 searches and 5 page fetches per run. Reuse retained evidence;
-never purchase credits or upgrade a plan. Report quota failures and stop paid
-requests on exhaustion. Do not repeatedly retry login walls or rate limits.
-
-Update content/meme-discovery.json with genuinely new candidates or substantive
-new evidence. Deduplicate meme families, reposts, and existing catalog scenes.
-Preserve opaque IDs and provider IDs. Retain original source links, creator
-attribution, dated labelled engagement metrics, evidence type, English fit,
-audience/content notes, rights status, and a concrete next action. Counts and
-access remain UNKNOWN when unavailable. Do not infer a global ranking from
-incompatible counts, search order, recommendation cards, or hashtag totals.
-Only claim current growth from repeated comparable observations.
-
-Advance the strongest verified English candidate through local authoring when
-the source is available, even if the run finds nothing new. Keep a coherent
-setup, response, and payoff. Follow the existing multi-speaker review format;
-do not loosen it just to accept a fragment. Verify each actual speaker, including
-off-screen lines, against the source. Preserve incidental speakers and mark
-non-practice roles selectable:false where appropriate. Check cut boundaries
-against the uncut source and keep the next speaker out of per-line prompts.
-Correct automatic captions against the performance; never invent dialogue,
-timings, popularity, or permissions. No local/browser/system TTS. Preserve
-learner-supplied names. Chinese-only, silent, music-only, and invented-language
-memes stay research references unless a separately commissioned original
-English adaptation is explicitly authorized and clearly labelled.
-
-Use the existing authoring scripts and scene/pack format. Source media and
-review exports stay in ignored content/local-dubbing/; runtime content and
-media belong in Alibaba OSS, player code in ESA, learner recordings on-device.
-Keep draft research separate from content/catalog.json. Add reviewed scene
-metadata to a pack only when its actual media and checks support it. Run the
-review clip --check and content validation as applicable; run browser tests
-for any rendered UI change. Preserve others' local edits. Do not commit/push,
-merge, upload, content:publish, deploy, change access, or contact creators during
-this recurring discovery task. Prepare additions for review and report the
-exact remaining publication step. Never deploy unmerged feature code.
-
-Finish with a concise delta: new/updated candidates, prepared scene files,
-why the strongest finds fit English practice, dated source evidence, checks
-run, and unresolved access/source/suitability/publication blockers. If there
-is no substantive change, report that plainly without inventing additions.
-Update this workflow document only for substantive editorial or process changes.
-```
-
-The bounded rotation avoids running a full ten-platform crawl 24 times a day.
-It is hourly discovery, not a promise to publish a scene every hour. Recording
-check dates and the queue’s last-research date lets subsequent runs resume.
+- Search Chinese platforms and Western platforms, rotating coverage and retaining
+  dated sources. Keep emerging material separate from enduring favorites.
+- Deduplicate families and reposts against the queue and playable catalog. Record
+  access failures and unknown metrics without inventing rankings or growth.
+- Advance promising English clips through source, speaker, dialogue, cut, and
+  suitability checks. Keep complete exchanges and original performances.
+- Prepare actual playable pack entries, bilingual dialogue, timed words,
+  waveforms, posters, portraits, credits, and notices. Research alone is not a
+  scene addition.
+- Validate and test the new scenes, merge through a PR, then explicitly publish
+  their media and content catalog to OSS. Verify the live scene links and report
+  the actual published count. If upload access is unavailable, report that
+  specific blocker; do not describe merged metadata as live scenes.
+- Update the queue with concrete scene paths and publication state. Keep adding
+  to the research pool while the current batch moves through authoring.
 
 ## From a find to a scene
 

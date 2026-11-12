@@ -1,0 +1,209 @@
+{
+  "version": 1,
+  "id": "scene_j-QpbSVYvMHT",
+  "title": "精神伤害！",
+  "tags": [
+    "meme",
+    "internet",
+    "viral",
+    "Steven He",
+    "Emotional Damage",
+    "精神伤害",
+    "破防",
+    "gaming",
+    "reaction",
+    "comedy"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 11.887,
+  "video": "emotional-damage-review-9d648afab2f2.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/emotional-damage/",
+  "poster": "emotional-damage-poster-9d648afab2f2.jpg",
+  "waveform": "waveform-9d648afab2f2.json",
+  "roles": [
+    {
+      "id": "role_8rsUvsJbhZ0u",
+      "name": "Aunty",
+      "label": "Aunty",
+      "hint": "1 句台词",
+      "portrait": "emotional-damage-role_8rsUvsJbhZ0u-portrait-8fbd4074b64a.jpg",
+      "selectable": false
+    },
+    {
+      "id": "role_HX_rjb--3ZnC",
+      "name": "Steven's dad",
+      "label": "Steven's dad",
+      "hint": "2 句台词",
+      "portrait": "emotional-damage-role_HX_rjb--3ZnC-portrait-228f10c28dab.jpg"
+    },
+    {
+      "id": "role_PvfiRglGg5ME",
+      "name": "Steven",
+      "label": "Steven",
+      "hint": "1 句台词",
+      "portrait": "emotional-damage-role_PvfiRglGg5ME-portrait-6924413934ca.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_p9W_WkhkO_zC",
+      "roleId": "role_8rsUvsJbhZ0u",
+      "start": 0.08,
+      "end": 2.25,
+      "text": "Steven, when you get so fat?",
+      "hint": "史蒂文，你什么时候变得这么胖了？这是一句不礼貌的讽刺台词。",
+      "words": [
+        {
+          "text": "Steven,",
+          "start": 0.12,
+          "end": 0.482
+        },
+        {
+          "text": "when",
+          "start": 0.542,
+          "end": 0.663
+        },
+        {
+          "text": "you",
+          "start": 0.723,
+          "end": 0.783
+        },
+        {
+          "text": "get",
+          "start": 0.864,
+          "end": 0.984
+        },
+        {
+          "text": "so",
+          "start": 1.044,
+          "end": 1.125
+        },
+        {
+          "text": "fat?",
+          "start": 1.326,
+          "end": 1.507
+        }
+      ]
+    },
+    {
+      "id": "line_ZTM0giQM1zwW",
+      "roleId": "role_HX_rjb--3ZnC",
+      "start": 7,
+      "end": 8.72,
+      "text": "Emotional damage!",
+      "hint": "精神伤害！",
+      "words": [
+        {
+          "text": "Emotional",
+          "start": 7,
+          "end": 7.971
+        },
+        {
+          "text": "damage!",
+          "start": 8.153,
+          "end": 8.7
+        }
+      ]
+    },
+    {
+      "id": "line_C6dk0kxXSvm7",
+      "roleId": "role_HX_rjb--3ZnC",
+      "start": 8.8,
+      "end": 9.65,
+      "text": "You want some therapy?",
+      "hint": "你想来点心理治疗吗？",
+      "words": [
+        {
+          "text": "You",
+          "start": 8.82,
+          "end": 8.881
+        },
+        {
+          "text": "want",
+          "start": 8.942,
+          "end": 9.083
+        },
+        {
+          "text": "some",
+          "start": 9.144,
+          "end": 9.326
+        },
+        {
+          "text": "therapy?",
+          "start": 9.387,
+          "end": 9.65
+        }
+      ]
+    },
+    {
+      "id": "line_-JOglx1Y9c3g",
+      "roleId": "role_PvfiRglGg5ME",
+      "start": 9.7,
+      "end": 11.82,
+      "text": "You probably could just hold down the block button.",
+      "hint": "你也许只要一直按住格挡键就行了。",
+      "words": [
+        {
+          "text": "You",
+          "start": 9.821,
+          "end": 9.902
+        },
+        {
+          "text": "probably",
+          "start": 9.983,
+          "end": 10.225
+        },
+        {
+          "text": "could",
+          "start": 10.265,
+          "end": 10.386
+        },
+        {
+          "text": "just",
+          "start": 10.427,
+          "end": 10.528
+        },
+        {
+          "text": "hold",
+          "start": 10.81,
+          "end": 10.992
+        },
+        {
+          "text": "down",
+          "start": 11.053,
+          "end": 11.194
+        },
+        {
+          "text": "the",
+          "start": 11.275,
+          "end": 11.335
+        },
+        {
+          "text": "block",
+          "start": 11.376,
+          "end": 11.558
+        },
+        {
+          "text": "button.",
+          "start": 11.618,
+          "end": 11.8
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Steven He — When Asian Is a Difficulty Mode",
+    "attribution": "Original performance: Steven He.",
+    "source": "https://www.youtube.com/watch?v=miD_TWmdGIY&t=61s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 61–72.88 秒的连续节选。A staged comedy sketch with an insulting body comment and stereotyped characters; adult prototype material. Aunty’s nonstandard question is preserved from the performance, not taught as polite/standard English. Therapy is part of the joke, not health advice."
+  }
+}
