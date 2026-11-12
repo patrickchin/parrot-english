@@ -106,8 +106,11 @@ scene routes, referenced local files, and scene timings. External media remains
 an explicit reference; check its accessibility and review audiovisual cuts before
 publication. Packs contain data and media, never executable code or HTML.
 
-Staging produces an uploadable release under `content/local-packs/` with a
-content-derived revision and a catalog pointing to the revisioned objects.
+Staging produces an uploadable release under `content/local-packs/`. Each pack
+has its own content-derived revision in `releases/<pack-revision>/`, including
+all local files it references. Editing or withdrawing another pack leaves an
+unchanged pack's URLs stable, so its saved dubs can still reopen. The staging
+folder's aggregate revision identifies the complete catalog snapshot.
 Inspect staged output before uploading. Source packs remain outside `public/`
 and are never imported into application JavaScript. `npm run build` rejects pack
 folders, scene manifests, waveforms, and media accidentally copied into `dist/`.

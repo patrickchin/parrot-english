@@ -15,7 +15,8 @@ const json = body => JSON.stringify(body, null, 2) + '\n';
 
 export async function validateDirectory(root = 'content') {
   root = resolve(root);
-  const files = new Map(), remote = new Set(), ids = new Set(), slugs = new Set(), routes = new Set();
+  const files = new Map(), packFiles = new Map(), remote = new Set(), ids = new Set(), slugs = new Set(), routes = new Set();
+  let referencedFiles;
   async function file(path, max = 2 * 1024 * 1024) {
     if (!relativeContentPath(path, 'json|mp4|m4a|jpg')) throw new Error(`Unsafe content path: ${path}`);
     let current = root;
@@ -26,6 +27,7 @@ export async function validateDirectory(root = 'content') {
     if ((await lstat(current)).size > max) throw new Error(`Content file too large: ${path}`);
     const body = await readFile(current);
     files.set(path, body);
+    referencedFiles?.set(path, body);
     return body;
   }
   async function readJson(path, max) { return JSON.parse((await file(path, max)).toString()); }
@@ -33,6 +35,8 @@ export async function validateDirectory(root = 'content') {
   files.delete('catalog.json');
   const claim = id => { if (ids.has(id)) throw new Error(`Duplicate content ID: ${id}`); ids.add(id); };
   for (const entry of catalog.packs) {
+    referencedFiles = new Map();
+    packFiles.set(entry.id, referencedFiles);
     const pack = validatePack(await readJson(entry.manifest), entry.id);
     const packFolder = dirname(entry.manifest);
     const roleIds = new Set();
@@ -63,22 +67,33 @@ export async function validateDirectory(root = 'content') {
       if (Object.keys(resource.roles).some(id => !roleIds.has(id))) throw new Error(`Pack translations refer to an absent role: ${entry.id}`);
     }
   }
-  return { catalog, files, remote: [...remote], sceneCount: slugs.size };
+  return { catalog, files, packFiles, remote: [...remote], sceneCount: slugs.size };
+}
+
+function contentRevision(value, files) {
+  const hash = createHash('sha256').update(json(value));
+  for (const [path, body] of [...files].sort(([a], [b]) => a.localeCompare(b))) hash.update(path).update('\0').update(body).update('\0');
+  return hash.digest('hex').slice(0, 24);
 }
 
 export async function stageDirectory(root = 'content', destination) {
   const validated = await validateDirectory(root);
-  const hash = createHash('sha256').update(json(validated.catalog));
-  for (const [path, body] of [...validated.files].sort(([a], [b]) => a.localeCompare(b))) hash.update(path).update('\0').update(body).update('\0');
-  const revision = hash.digest('hex').slice(0, 24);
+  const revision = contentRevision(validated.catalog, validated.files);
   const folder = resolve(destination ?? join('content/local-packs', revision));
   await rm(join(folder, 'objects'), { recursive: true, force: true });
-  for (const [path, body] of validated.files) {
-    const target = join(folder, 'objects', path);
-    await mkdir(dirname(target), { recursive: true });
-    await writeFile(target, body);
+  await mkdir(join(folder, 'objects'), { recursive: true });
+  const packs = [];
+  for (const pack of validated.catalog.packs) {
+    const files = validated.packFiles.get(pack.id);
+    const prefix = `releases/${contentRevision(pack, files)}/`;
+    for (const [path, body] of files) {
+      const target = join(folder, 'objects', prefix, path);
+      await mkdir(dirname(target), { recursive: true });
+      await writeFile(target, body);
+    }
+    packs.push({ ...pack, manifest: prefix + pack.manifest });
   }
-  const catalog = { version: 1, packs: validated.catalog.packs.map(pack => ({ ...pack, manifest: `releases/${revision}/${pack.manifest}` })) };
+  const catalog = { version: 1, packs };
   await mkdir(folder, { recursive: true });
   await writeFile(join(folder, 'catalog.json'), json(catalog));
   return { ...validated, revision, folder, catalog };
@@ -100,7 +115,7 @@ export async function publishDirectory(root = 'content') {
       if (!response.ok) throw new Error(`Referenced media is unavailable (${response.status}): ${url}`);
     }));
   }
-  oss('cp', join(release.folder, 'objects') + '/', remoteRoot + `releases/${release.revision}/`, '--recursive', '--force', '--meta', 'Cache-Control:public,max-age=31536000,immutable');
+  oss('cp', join(release.folder, 'objects') + '/', remoteRoot, '--recursive', '--force', '--meta', 'Cache-Control:public,max-age=31536000,immutable');
   uploadCatalog(join(release.folder, 'catalog.json'));
   return release;
 }
