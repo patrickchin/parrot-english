@@ -2,6 +2,13 @@
 
 Date: 2026-10-28
 
+Audience and visual direction updated 2026-11-12: Parrotbook serves independent
+learners across ages, including children, teens, and adults. Use the green Pop
+Studio identity throughout the application: vivid green, forest ink, mint
+surfaces, yellow actions, and a small parrot mark. Scene content and language
+level tailor the experience; the global interface should welcome every age.
+Guardian consent and privacy requirements still apply before child use.
+
 Prototype status: the browser dubbing flow offers 24 founder-selected meme
 scenes, with grid and list views. The earlier Sintel sample was removed from the
 product on 2026-10-29; licensed footage remains only as an internal test fixture. Media is served from Alibaba OSS object storage, separately from the
@@ -33,8 +40,9 @@ dubbing player inspired by The Choicer Voicer. The initial route to market is
 through the founder's contacts who work with children. Keep the player usable
 by older learners through different scene content and language levels.
 
-The first release is designed for children to use themselves, with three
-separate starter scenes. Learners hear a line, perform it, and watch the scene
+The interface is designed for independent use across ages. The proposed child
+pilot still uses three separate starter scenes. Learners hear a line, perform
+it, and watch the scene
 with their own voices. A guardian handles necessary consent and save/share
 settings; the activity does not depend on a teacher. Prototype playback and recording locally before adding
 accounts, cloud recordings, automated assessment, or public community hosting.
@@ -71,7 +79,9 @@ on the [official game page](https://yeahmaybe.itch.io/the-choicer-voicer).
 
 Design the first pilot around a child choosing and completing an activity on
 their own device. Prioritize touch interaction on phones and tablets, while
-keeping larger screens usable. Confirm actual devices before choosing the
+keeping larger screens usable. The same controls and visual identity also serve
+teen and adult learners; select suitable content for each audience. Confirm
+actual devices before choosing the
 delivery platform. Pre-A1/A1 English is the proposed starter-scene level; exact
 ages and learning needs should come from pilot families. The founder's contacts
 can help recruit families; teacher tools are outside the initial scope.

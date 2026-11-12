@@ -9,6 +9,7 @@ const selector = (page: import('@playwright/test').Page) => page.getByRole('comb
 
 test('the styled language popup supports keyboard selection, Escape and phone-sized touch targets', async ({ page }, info) => {
   await page.goto('/');
+  await expect(page.getByRole('searchbox')).toBeVisible();
   const trigger = selector(page);
   await trigger.focus();
   await trigger.press('ArrowDown');
@@ -43,7 +44,7 @@ test('the styled language popup supports keyboard selection, Escape and phone-si
 test('UI language persists across navigation and reload while English dialogue and Chinese hints stay independent', async ({ page }, info) => {
   await page.goto('/');
   await setLanguage(page, 'en');
-  await expect(page.getByRole('heading', { level: 1, name: 'Who are you looking for?' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'The scene is set. Your voice is next.' })).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await page.getByRole('button', { name: 'Choose scene: Who are you looking for?', exact: true }).click();
   await page.getByRole('button', { name: 'Start dubbing', exact: true }).click();
@@ -75,7 +76,7 @@ test('UI language persists across navigation and reload while English dialogue a
   await page.getByRole('button', { name: 'Back to scenes', exact: true }).click();
   await page.reload();
   await expect(selector(page)).toContainText('English');
-  await expect(page.getByRole('heading', { level: 1, name: 'Who are you looking for?' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'The scene is set. Your voice is next.' })).toBeVisible();
 });
 
 test('switching language during recording keeps the take, waveform and replay', async ({ page, browserName }) => {

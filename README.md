@@ -1,7 +1,7 @@
 # Parrotbook
 
-An English dubbing player for children, designed for independent use on phones
-and tablets and delivery through Chinese infrastructure.
+An English dubbing player for learners across ages, designed for independent
+use on phones and tablets and delivery through Chinese infrastructure.
 
 Choose a scene and character, hear each line, record your version, and watch
 the finished scene with your own voice. The player and scene content are
@@ -25,12 +25,13 @@ the interface preference on this browser; switching languages keeps the current
 scene and recordings. English dialogue/audio and the optional Chinese meaning
 hints are independent of the UI language.
 
-The Playhouse interface uses forest green and lime, starting in light mode
+The green Pop Studio interface uses vivid green, forest ink, mint surfaces,
+yellow primary actions, and pink recording controls. It starts in light mode
 regardless of the device theme. The header's sun/moon button switches appearance
 and remembers that choice on this browser, including across scene navigation.
 Changing appearance preserves the current scene and recordings.
 
-The warm player shows detailed teal original-audio and coral learner waveforms
+The player shows detailed green original-audio and coral learner waveforms
 with a synchronized playhead during listening, capture, and replay. Dialogue
 captions show the current turn. This is timing and emphasis feedback, not
 pronunciation scoring. See

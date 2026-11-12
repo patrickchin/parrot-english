@@ -163,7 +163,10 @@
     "allShowsAndFilms": "全部剧集与电影",
     "loading": "正在加载片段库…",
     "empty": "这个分类暂时没有片段。",
-    "unavailable": "这个片段已不可用。你保存的配音仍在这台设备上。"
+    "unavailable": "这个片段已不可用。你保存的配音仍在这台设备上。",
+    "headlineLead": "片段已就位。",
+    "headlineEnd": "轮到你发声。",
+    "introduction": "用你喜欢的片段，练习英语。"
   },
   "waveform": {
     "voiceWaveformComparison": "声音波形对比",
@@ -197,6 +200,6 @@
     "teens": "青少年"
   },
   "app": {
-    "title": "Parrotbook · 小小配音员"
+    "title": "Parrotbook · 英语配音"
   }
 }

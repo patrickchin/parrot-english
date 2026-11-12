@@ -163,7 +163,10 @@
     "allShowsAndFilms": "All shows & films",
     "loading": "Loading the scene library…",
     "empty": "There are no scenes in this category yet.",
-    "unavailable": "This scene is no longer available. Your saved dubs are still on this device."
+    "unavailable": "This scene is no longer available. Your saved dubs are still on this device.",
+    "headlineLead": "The scene is set.",
+    "headlineEnd": "Your voice is next.",
+    "introduction": "Practice English with scenes you love."
   },
   "waveform": {
     "voiceWaveformComparison": "Voice waveform comparison",

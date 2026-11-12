@@ -10,5 +10,5 @@ export function Icon({ name, className }: { name: keyof typeof icons; className?
 }
 
 export function Button({ tone = 'primary', className, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { tone?: 'primary' | 'quiet' | 'record' | 'danger' }) {
-  return <ShadcnButton variant={tone === 'primary' ? 'default' : tone === 'quiet' ? 'outline' : 'danger'} size="lg" className={cn('h-auto min-h-13 gap-3 px-5 py-3 text-lg font-semibold', className)} {...props} />;
+  return <ShadcnButton variant={tone === 'primary' ? 'highlight' : tone === 'quiet' ? 'outline' : tone === 'record' ? 'record' : 'danger'} size="lg" className={cn('h-auto min-h-13 gap-3 px-5 py-3 text-lg font-semibold', className)} {...props} />;
 }

@@ -163,7 +163,10 @@
     "allShowsAndFilms": "Todas las series y películas",
     "loading": "Cargando la biblioteca…",
     "empty": "Todavía no hay escenas en esta categoría.",
-    "unavailable": "Esta escena ya no está disponible. Tus doblajes guardados siguen en este dispositivo."
+    "unavailable": "Esta escena ya no está disponible. Tus doblajes guardados siguen en este dispositivo.",
+    "headlineLead": "La escena está lista.",
+    "headlineEnd": "Ahora, tu voz.",
+    "introduction": "Practica inglés con tus escenas favoritas."
   },
   "waveform": {
     "voiceWaveformComparison": "Comparación de las ondas de voz",

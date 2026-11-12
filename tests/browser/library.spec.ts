@@ -9,7 +9,7 @@ const filmCount = clips.filter(clip => clip.cohort === 'older-audience').length;
 
 test('the simplified shelf keeps scenes, privacy and source details accessible without a Help button', async ({ page }, info) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { level: 1, name: '不，这是派大星！' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: '片段已就位。 轮到你发声。' })).toBeVisible();
   await expect(page.getByRole('button', { name: /Sintel/ })).toHaveCount(0);
   for (const clip of clips.filter(clip => clip.cohort === 'older-audience')) {
     await expect(page.getByRole('button', { name: `选择片段：${clip.title}`, exact: true })).toBeVisible();
@@ -33,7 +33,7 @@ test('the simplified shelf keeps scenes, privacy and source details accessible w
   await expect(page.getByRole('dialog').getByRole('link', { name: '观看原片' })).toBeVisible();
   await page.getByRole('dialog').getByRole('button', { name: '关闭', exact: true }).click();
   await page.getByRole('button', { name: '返回片段', exact: true }).click();
-  await expect(page.getByRole('heading', { level: 1, name: '不，这是派大星！' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: '片段已就位。 轮到你发声。' })).toBeVisible();
 });
 
 for (const clip of [...clips.slice(0, 4), ...clips.filter(c => ['infinity', 'mayonnaise'].includes(c.slug))]) test(`hosted clip ${clip.slug} can play and record a turn`, async ({ page, browserName }) => {
