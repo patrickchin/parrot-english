@@ -251,7 +251,7 @@
       "title": "Wouldn't you like to know, weather boy?",
       "priority": "high",
       "trendStatus": "evergreen-candidate",
-      "status": "authored",
+      "status": "published",
       "originalLanguage": "en",
       "source": {
         "url": "https://www.youtube.com/watch?v=XOi2jFIhZhA",
@@ -303,11 +303,13 @@
       "englishPractice": "Ask for a recommendation, perform a sarcastic reply, and hand back to a studio.",
       "contentNotes": "Planned joke between FOX5 reporter Ted Pretty and his son, not a spontaneous confrontation. Fireworks sales appear in the background. Sketchy is informal; the sarcastic reply is not a model for polite conversation. Adult prototype; source reuse permission unconfirmed.",
       "rightsStatus": "redistribution-not-cleared",
-      "publicationStatus": "authored",
-      "nextAction": "Publish the verified batch from merged main, then collect adult prototype feedback. Reuse permission remains unconfirmed.",
+      "publicationStatus": "published",
+      "nextAction": "Collect adult prototype feedback and continue discovery for the next batch; source reuse permissions remain unconfirmed.",
       "reviewRecipe": "content/social-meme-review-scenes.json",
       "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/weather-boy/scene.json",
-      "sceneUrl": "https://parrotbook.com/en/scenes/weather-boy"
+      "sceneUrl": "https://parrotbook.com/en/scenes/weather-boy",
+      "publishedOn": "2026-11-13",
+      "contentRevision": "d6d4b08b481818c6541fc053"
     },
     {
       "id": "candidate_3TF9sKCsfx4u",
@@ -560,7 +562,7 @@
       "title": "I like turtles!",
       "priority": "high",
       "trendStatus": "evergreen-candidate",
-      "status": "authored",
+      "status": "published",
       "originalLanguage": "en",
       "source": {
         "url": "https://www.youtube.com/watch?v=CMNry4PE93Y",
@@ -574,11 +576,11 @@
       "englishPractice": "Introduce someone, ask an open question, and perform a confident unexpected answer.",
       "contentNotes": "Original 2007 broadcast, not the 2023 promotional recreation. Zombie face paint may unsettle some viewers. Preserve the unexpected answer; it is a comic non sequitur rather than a recommended interview response. Adult prototype; source reuse permission unconfirmed.",
       "rightsStatus": "redistribution-not-cleared",
-      "publicationStatus": "authored",
+      "publicationStatus": "published",
       "reviewRecipe": "content/social-meme-review-scenes.json",
       "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/i-like-turtles/scene.json",
       "sceneUrl": "https://parrotbook.com/en/scenes/i-like-turtles",
-      "nextAction": "Publish the verified batch from merged main, then collect adult prototype feedback. Reuse permission remains unconfirmed.",
+      "nextAction": "Collect adult prototype feedback and continue discovery for the next batch; source reuse permissions remain unconfirmed.",
       "evidence": [
         {
           "platform": "youtube",
@@ -602,7 +604,9 @@
             "likes": "UNKNOWN"
           }
         }
-      ]
+      ],
+      "publishedOn": "2026-11-13",
+      "contentRevision": "d6d4b08b481818c6541fc053"
     }
   ],
   "researchBatches": [

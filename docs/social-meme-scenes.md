@@ -112,10 +112,10 @@ The earlier hourly schedule request has been replaced; no timer is configured.
 
 ## Second batch — 2026-11-13
 
-Two more scenes are authored for the same adult prototype, bringing the local
-catalog to 113 scenes (69 in Memes & clips). All 111 earlier scene manifests are
-preserved byte-for-byte. Publication is a separate catalog-last step after the
-PR merges; authoring alone does not make the clips live.
+Two more scenes were published and live-verified on 2026-11-13 for the same
+adult prototype, bringing the live catalog to 113 scenes (69 in Memes & clips).
+All 111 earlier scene manifests are preserved byte-for-byte. Publication followed
+PR #266 merging; media and immutable JSON were verified before catalog activation.
 
 | Scene | Source archive | Continuous range | Encoded duration | Practice roles |
 | --- | --- | --- | --- | --- |
@@ -143,3 +143,25 @@ change. Reuse permission remains unconfirmed under the existing adult prototype
 notices. Chinese-platform queries supplied BBC Dad research leads but no
 verified Chinese popularity evidence for these two clips; archive view counts
 are dated observations, not current rankings.
+
+
+Second-batch verification:
+
+- `npm test`: 37 application, 14 content, and one boundary test passed. The
+  production build passed. All five meme review clips passed complete FFmpeg
+  decoding and caption checks.
+- Browser suite: 20 passed, one expected WebKit microphone skip. Both new clips
+  passed discovery, portraits, roles, subtitles/credits, and original playback
+  on desktop Chromium, phone Chromium, and WebKit. Chromium also passed
+  recording, save, reload, and replay on both layouts.
+- Content revision: `d6d4b08b481818c6541fc053`; 230 staged JSON objects and eight
+  media objects passed SHA-256 verification. All 465 referenced media objects
+  were available before catalog activation; the catalog uses `no-store`.
+- Six live scene/surface checks passed against production and real OSS media.
+  All four Chromium checks also recorded, saved, reloaded, and replayed a take.
+  No upload requests or page errors occurred. Physical-device microphone testing
+  remains separate from the browser checks.
+- Player workflow 43377801528 succeeded; production health matched its actual
+  build commit `e3b21a4f838eadfae494bc4f50dc5d39105a1cdf`. Content has its own
+  revision above. Media/structured content remain in OSS and learner recordings
+  remain on-device.
