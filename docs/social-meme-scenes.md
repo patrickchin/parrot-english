@@ -306,9 +306,9 @@ Fourth-batch verification:
 
 ## Fifth batch — ten more memes — 2026-11-13
 
-Ten distinct meme performances are authored, bringing the local catalog to 128
-scenes and the shared Memes tag to 20 clips. All 118 preceding scene manifests,
-pack summaries, and translations are preserved. Single-line meme quotes are now
+Ten distinct meme performances were published and live-verified on 2026-11-13,
+bringing the live catalog to 128 scenes and the shared Memes tag to 20 clips.
+All 118 preceding scene manifests, pack summaries, and translations are preserved. Single-line meme quotes are now
 accepted by the social authoring check, alongside solo performances and exchanges;
 the longer-conversation guards for other cohorts remain. A CLI regression covers
 a 2.8-second single-line quote and rejection of an empty draft. The social guard
@@ -369,3 +369,25 @@ content stay in OSS, code in ESA, and learner recordings on-device. Reuse permis
 remains unconfirmed under the existing adult-prototype notices. These enduring
 memes are not claimed as a current platform-wide popularity ranking. Publication
 follows PR merge and immutable-file verification, with catalog activation last.
+
+Fifth-batch verification:
+
+- `npm test` passed: 38 application tests, 15 content tests, and one boundary
+  test. The production build passed. All twenty meme cuts passed full decoding
+  and caption checks.
+- Browser suite: 68 passed, one expected WebKit microphone skip. After tightening
+  the God and Anime edit, six focused scene/tag checks passed across all three
+  browser surfaces, and the full unit/content checks passed again.
+- Content revision `9c6b6bfd65e9bca8b3aea0c8`: all 260 JSON objects and 31 media
+  objects passed SHA-256 verification. All 513 media references were available
+  before catalog activation. The catalog remained last with `no-store`.
+- Thirty live scene checks passed against production and actual OSS: ten new
+  clips on desktop Chromium, phone Chromium, and WebKit. All twenty Chromium
+  flows also recorded, saved, reloaded, and replayed takes. No upload requests or
+  page errors occurred. All ten video range requests and CORS checks passed.
+- Three live tag checks confirmed all twenty members under Memes, no separate
+  source/creator tags, working creator-name search, and retained film tags.
+  All source posters loaded; screenshots are in the Codex screenshot folder.
+- Player workflow 43389741184 succeeded; production health matched its actual
+  successful build commit `4a20e2466c0891f304c32e32d9fb9e07dc092086`.
+  Physical-device microphone testing remains separate from browser verification.
