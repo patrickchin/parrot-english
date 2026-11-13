@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "id": "scene_x9PNzvY9pXSb",
+  "title": "我差点把羊角面包掉了！",
+  "tags": [
+    "meme",
+    "internet",
+    "croissant",
+    "Terry",
+    "Terrel",
+    "羊角面包",
+    "reaction"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 6.451,
+  "video": "dropped-my-croissant-review-e7cfa9488a19.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/dropped-my-croissant/",
+  "poster": "dropped-my-croissant-poster-e7cfa9488a19.jpg",
+  "waveform": "waveform-e7cfa9488a19.json",
+  "roles": [
+    {
+      "id": "role_4EIlJI3iuyqG",
+      "name": "Terrel",
+      "label": "Terrel",
+      "hint": "2 句台词",
+      "portrait": "dropped-my-croissant-role_4EIlJI3iuyqG-portrait-c58cca330493.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_qtzdMYnnccxs",
+      "roleId": "role_4EIlJI3iuyqG",
+      "start": 1.26,
+      "end": 2.95,
+      "text": "Stop!",
+      "hint": "停！",
+      "words": [
+        {
+          "text": "Stop!",
+          "start": 1.743,
+          "end": 2.628
+        }
+      ]
+    },
+    {
+      "id": "line_D-F1iBhfwVgE",
+      "roleId": "role_4EIlJI3iuyqG",
+      "start": 3.75,
+      "end": 5.78,
+      "text": "I could've dropped my croissant!",
+      "hint": "我差点把羊角面包掉了！",
+      "words": [
+        {
+          "text": "I",
+          "start": 3.77,
+          "end": 3.79
+        },
+        {
+          "text": "could've",
+          "start": 3.891,
+          "end": 4.092
+        },
+        {
+          "text": "dropped",
+          "start": 4.273,
+          "end": 4.514
+        },
+        {
+          "text": "my",
+          "start": 4.574,
+          "end": 4.654
+        },
+        {
+          "text": "croissant!",
+          "start": 4.735,
+          "end": 5.338
+        }
+      ]
+    }
+  ],
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Terry and Terrel — I could’ve dropped my croissant!",
+    "attribution": "Original performance credited to Terry and Terrel. Archive/source uploader: LDTBest Vines. Startle reaction and laughter are retained. The Vine is attributed to Terry (@terryjr12) and Terrel; archive uploader LDTBest Vines is not claimed as creator.",
+    "source": "https://www.youtube.com/watch?v=ZzWqfJFxC0w&t=0s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 0–6.45 秒的连续节选。Startle reaction and laughter are retained. The Vine is attributed to Terry (@terryjr12) and Terrel; archive uploader LDTBest Vines is not claimed as creator."
+  },
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  }
+}

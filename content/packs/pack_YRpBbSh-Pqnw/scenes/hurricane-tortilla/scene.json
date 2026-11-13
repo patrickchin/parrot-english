@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "id": "scene_s_HPfmp4LrgV",
+  "title": "墨西哥薄饼飓风！",
+  "tags": [
+    "meme",
+    "internet",
+    "Hurricane Tortilla",
+    "Hurricane Katrina",
+    "飓风薄饼",
+    "wordplay"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 6.257,
+  "video": "hurricane-tortilla-review-622375fbdd5f.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/hurricane-tortilla/",
+  "poster": "hurricane-tortilla-poster-622375fbdd5f.jpg",
+  "waveform": "waveform-622375fbdd5f.json",
+  "roles": [
+    {
+      "id": "role_w29WAhLT0w0_",
+      "name": "Boy",
+      "label": "Boy",
+      "hint": "2 句台词",
+      "portrait": "hurricane-tortilla-role_w29WAhLT0w0_-portrait-5ed286700520.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_kPcbYJ74SGrJ",
+      "roleId": "role_w29WAhLT0w0_",
+      "start": 0.02,
+      "end": 3.7,
+      "text": "Whoa! Hurricane Katrina!",
+      "hint": "哇！卡特里娜飓风！",
+      "words": [
+        {
+          "text": "Whoa!",
+          "start": 0.422,
+          "end": 1.327
+        },
+        {
+          "text": "Hurricane",
+          "start": 2.212,
+          "end": 2.775
+        },
+        {
+          "text": "Katrina!",
+          "start": 2.795,
+          "end": 3.599
+        }
+      ]
+    },
+    {
+      "id": "line_Jxb1doTL4Q67",
+      "roleId": "role_w29WAhLT0w0_",
+      "start": 4.1,
+      "end": 6.23,
+      "text": "More like Hurricane Tortilla!",
+      "hint": "还不如叫“墨西哥薄饼飓风”！这是押韵的玩笑。",
+      "words": [
+        {
+          "text": "More",
+          "start": 4.321,
+          "end": 4.462
+        },
+        {
+          "text": "like",
+          "start": 4.502,
+          "end": 4.663
+        },
+        {
+          "text": "Hurricane",
+          "start": 4.743,
+          "end": 5.306
+        },
+        {
+          "text": "Tortilla!",
+          "start": 5.386,
+          "end": 6.15
+        }
+      ]
+    }
+  ],
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Hurricane Tortilla — Hurricane Tortilla!",
+    "attribution": "Original performance credited to Hurricane Tortilla. Archive/source uploader: Jakrispy. Name-based wordplay with an exaggerated tortilla pronunciation; not a weather report or a standard pronunciation model. Performer identity unverified; archive uploader Jakrispy is credited separately.",
+    "source": "https://www.youtube.com/watch?v=21jLmc_Il3o&t=0s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 0–6.25 秒的连续节选。Name-based wordplay with an exaggerated tortilla pronunciation; not a weather report or a standard pronunciation model. Performer identity unverified; archive uploader Jakrispy is credited separately."
+  },
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  }
+}

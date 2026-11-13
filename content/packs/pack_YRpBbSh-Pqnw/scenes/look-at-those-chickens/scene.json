@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "id": "scene_gTwFs3Tea1zC",
+  "title": "快看那些小鸡！",
+  "tags": [
+    "meme",
+    "internet",
+    "look at all those chickens",
+    "chickens",
+    "geese",
+    "小鸡",
+    "鹅",
+    "reaction"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 6.856,
+  "video": "look-at-those-chickens-review-438a99a49d21.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/look-at-those-chickens/",
+  "poster": "look-at-those-chickens-poster-438a99a49d21.jpg",
+  "waveform": "waveform-438a99a49d21.json",
+  "roles": [
+    {
+      "id": "role_jW130fBXYF3P",
+      "name": "Girl",
+      "label": "Girl",
+      "hint": "1 句台词",
+      "portrait": "look-at-those-chickens-role_jW130fBXYF3P-portrait-eea76b44798f.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_TOu_8l8ap0fN",
+      "roleId": "role_jW130fBXYF3P",
+      "start": 1.98,
+      "end": 5.28,
+      "text": "Look at all those chickens!",
+      "hint": "快看那些小鸡！画面中实际是鹅，把它们叫成鸡就是笑点。",
+      "words": [
+        {
+          "text": "Look",
+          "start": 2.906,
+          "end": 3.046
+        },
+        {
+          "text": "at",
+          "start": 3.207,
+          "end": 3.248
+        },
+        {
+          "text": "all",
+          "start": 3.55,
+          "end": 3.831
+        },
+        {
+          "text": "those",
+          "start": 3.912,
+          "end": 4.193
+        },
+        {
+          "text": "chickens!",
+          "start": 4.455,
+          "end": 5.179
+        }
+      ]
+    }
+  ],
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Look at all those chickens — Look at all those chickens!",
+    "attribution": "Original performance credited to Look at all those chickens. Archive/source uploader: raw uncut vines. The birds shown are geese, not chickens. The source misidentification is the joke, not an animal-vocabulary model. The child’s identity and archive uploader’s rights are not assumed.",
+    "source": "https://www.youtube.com/watch?v=NsLKQTh-Bqo&t=0s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 0–6.85 秒的连续节选。The birds shown are geese, not chickens. The source misidentification is the joke, not an animal-vocabulary model. The child’s identity and archive uploader’s rights are not assumed."
+  },
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  }
+}

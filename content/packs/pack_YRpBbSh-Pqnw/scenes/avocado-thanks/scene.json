@@ -1,0 +1,87 @@
+{
+  "version": 1,
+  "id": "scene_HzKQCXHxvTWx",
+  "title": "是牛油果！谢谢！",
+  "tags": [
+    "meme",
+    "internet",
+    "avocado",
+    "thanks",
+    "gift",
+    "牛油果",
+    "礼物",
+    "gratitude"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 6.587,
+  "video": "avocado-thanks-review-ca466899b29e.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/avocado-thanks/",
+  "poster": "avocado-thanks-poster-ca466899b29e.jpg",
+  "waveform": "waveform-ca466899b29e.json",
+  "roles": [
+    {
+      "id": "role_sGpDGpEdpXqm",
+      "name": "Boy",
+      "label": "Boy",
+      "hint": "2 句台词",
+      "portrait": "avocado-thanks-role_sGpDGpEdpXqm-portrait-e0e2bafbf397.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_sg7ROjol0G4M",
+      "roleId": "role_sGpDGpEdpXqm",
+      "start": 1.55,
+      "end": 3.65,
+      "text": "It's an avocado!",
+      "hint": "是一个牛油果！",
+      "words": [
+        {
+          "text": "It's",
+          "start": 1.873,
+          "end": 2.095
+        },
+        {
+          "text": "an",
+          "start": 2.317,
+          "end": 2.519
+        },
+        {
+          "text": "avocado!",
+          "start": 2.681,
+          "end": 3.367
+        }
+      ]
+    },
+    {
+      "id": "line_mFiNJyJ_eQ1X",
+      "roleId": "role_sGpDGpEdpXqm",
+      "start": 4.42,
+      "end": 6.15,
+      "text": "Thanks!",
+      "hint": "谢谢！",
+      "words": [
+        {
+          "text": "Thanks!",
+          "start": 4.903,
+          "end": 5.707
+        }
+      ]
+    }
+  ],
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Avocado gift — It’s an avocado! Thanks!",
+    "attribution": "Original performance credited to Avocado gift. Archive/source uploader: Awfully. Original gift-opening performance; a child thanks the giver for an avocado. Archive uploader Awfully is not claimed as the original family or rights holder.",
+    "source": "https://www.youtube.com/watch?v=k-cavEKkirc&t=0s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 0–6.58 秒的连续节选。Original gift-opening performance; a child thanks the giver for an avocado. Archive uploader Awfully is not claimed as the original family or rights holder."
+  },
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  }
+}

@@ -21,8 +21,8 @@ test('staging is deterministic, includes only referenced content, and rejects sy
   const second = await stageDirectory('content', join(folder, 'second'));
   assert.equal(first.revision, second.revision);
   assert.deepEqual(first.catalog, second.catalog);
-  assert.equal(first.sceneCount, 118);
-  assert.equal(first.files.size, 240);
+  assert.equal(first.sceneCount, 128);
+  assert.equal(first.files.size, 260);
   assert.ok(first.catalog.packs.every(pack => /^releases\/[a-f0-9]{24}\/packs\//.test(pack.manifest)));
   assert.ok([...first.files.keys()].every(path => path.startsWith('packs/')));
   const expected = first.catalog.packs.flatMap(pack => {

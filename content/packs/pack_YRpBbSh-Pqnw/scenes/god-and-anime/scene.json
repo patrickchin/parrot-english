@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "id": "scene_0WS9Utc_6kb7",
+  "title": "上帝和动漫的力量！",
+  "tags": [
+    "meme",
+    "internet",
+    "Sensai Matt",
+    "God and anime",
+    "动漫之力",
+    "reaction"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 2.9,
+  "video": "god-and-anime-review-ac123d4ea900.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/god-and-anime/",
+  "poster": "god-and-anime-poster-ac123d4ea900.jpg",
+  "waveform": "waveform-ac123d4ea900.json",
+  "roles": [
+    {
+      "id": "role_0m__GRbzTzYd",
+      "name": "Matt",
+      "label": "Matt",
+      "hint": "1 句台词",
+      "portrait": "god-and-anime-role_0m__GRbzTzYd-portrait-184b8f8ac1cb.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_UBFemNYfYxr_",
+      "roleId": "role_0m__GRbzTzYd",
+      "start": 0.06,
+      "end": 2.86,
+      "text": "I have the power of God and anime on my side!",
+      "hint": "我有上帝和动漫的力量站在我这边！这是夸张的角色表演。",
+      "words": [
+        {
+          "text": "I",
+          "start": 0.161,
+          "end": 0.181
+        },
+        {
+          "text": "have",
+          "start": 0.261,
+          "end": 0.423
+        },
+        {
+          "text": "the",
+          "start": 0.483,
+          "end": 0.564
+        },
+        {
+          "text": "power",
+          "start": 0.604,
+          "end": 0.846
+        },
+        {
+          "text": "of",
+          "start": 0.886,
+          "end": 0.926
+        },
+        {
+          "text": "God",
+          "start": 1.067,
+          "end": 1.309
+        },
+        {
+          "text": "and",
+          "start": 1.551,
+          "end": 1.651
+        },
+        {
+          "text": "anime",
+          "start": 1.873,
+          "end": 2.115
+        },
+        {
+          "text": "on",
+          "start": 2.175,
+          "end": 2.215
+        },
+        {
+          "text": "my",
+          "start": 2.316,
+          "end": 2.477
+        },
+        {
+          "text": "side!",
+          "start": 2.558,
+          "end": 2.779
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Sensai Matt — The power of God and anime!",
+    "attribution": "Original performance credited to @sensaimatt. Archive uploader: Le Carlton. The excerpt contains the famous roleplay boast; surrounding profanity and interruptions are excluded.",
+    "source": "https://www.youtube.com/watch?v=iOv6RVpE4RY&t=3s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 3–5.87 秒的连续节选。Playful exaggerated roleplay, not a religious or safety claim. The surrounding profanity, following speaker and scream are outside this excerpt. Original credited Instagram handle: @sensaimatt; archive uploader Le Carlton. Adult prototype; reuse permission unconfirmed."
+  }
+}

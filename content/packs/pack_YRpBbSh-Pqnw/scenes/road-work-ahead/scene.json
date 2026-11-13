@@ -1,0 +1,115 @@
+{
+  "version": 1,
+  "id": "scene_qptUJeRGWMoo",
+  "title": "前方道路施工？",
+  "tags": [
+    "meme",
+    "internet",
+    "Drew Gooden",
+    "Road work ahead",
+    "前方施工",
+    "wordplay"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 5.907,
+  "video": "road-work-ahead-review-a4b0b7fd3134.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/road-work-ahead/",
+  "poster": "road-work-ahead-poster-a4b0b7fd3134.jpg",
+  "waveform": "waveform-a4b0b7fd3134.json",
+  "roles": [
+    {
+      "id": "role_lrh2SduXQHbr",
+      "name": "Drew",
+      "label": "Drew",
+      "hint": "2 句台词",
+      "portrait": "road-work-ahead-role_lrh2SduXQHbr-portrait-11152416d9f1.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_M_baXdG90iHr",
+      "roleId": "role_lrh2SduXQHbr",
+      "start": 0.05,
+      "end": 2.55,
+      "text": "Road work ahead?",
+      "hint": "前方道路施工？",
+      "words": [
+        {
+          "text": "Road",
+          "start": 1.018,
+          "end": 1.36
+        },
+        {
+          "text": "work",
+          "start": 1.481,
+          "end": 1.723
+        },
+        {
+          "text": "ahead?",
+          "start": 1.885,
+          "end": 2.49
+        }
+      ]
+    },
+    {
+      "id": "line_pzYF-oSbbZ-t",
+      "roleId": "role_lrh2SduXQHbr",
+      "start": 2.92,
+      "end": 5.72,
+      "text": "Uh, yeah, I sure hope it does.",
+      "hint": "呃，是啊，我当然希望它能正常工作。笑点把 work 从“施工”读成“工作”。",
+      "words": [
+        {
+          "text": "Uh,",
+          "start": 3.081,
+          "end": 3.142
+        },
+        {
+          "text": "yeah,",
+          "start": 3.464,
+          "end": 3.826
+        },
+        {
+          "text": "I",
+          "start": 4.088,
+          "end": 4.108
+        },
+        {
+          "text": "sure",
+          "start": 4.249,
+          "end": 4.491
+        },
+        {
+          "text": "hope",
+          "start": 4.612,
+          "end": 4.854
+        },
+        {
+          "text": "it",
+          "start": 4.975,
+          "end": 5.035
+        },
+        {
+          "text": "does.",
+          "start": 5.156,
+          "end": 5.498
+        }
+      ]
+    }
+  ],
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Drew Gooden — Road work ahead?",
+    "attribution": "Original performance credited to Drew Gooden. Archive/source uploader: Moss. Original Drew Gooden road-sign wordplay; work changes from a construction noun to a verb in the joke. Archive uploader Moss is not claimed as rights holder.",
+    "source": "https://www.youtube.com/watch?v=6tJkvKbQ8J8&t=0s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 0–5.9 秒的连续节选。Original Drew Gooden road-sign wordplay; work changes from a construction noun to a verb in the joke. Archive uploader Moss is not claimed as rights holder."
+  },
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  }
+}

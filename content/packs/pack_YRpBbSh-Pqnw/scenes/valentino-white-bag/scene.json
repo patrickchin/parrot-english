@@ -1,0 +1,164 @@
+{
+  "version": 1,
+  "id": "scene_JON3IWC7bnZz",
+  "title": "口红洒进我的白包里了！",
+  "tags": [
+    "meme",
+    "internet",
+    "Valentino",
+    "lipstick",
+    "white bag",
+    "华伦天奴",
+    "口红",
+    "reaction"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 6.657,
+  "video": "valentino-white-bag-review-e3f4ae70b0f3.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/valentino-white-bag/",
+  "poster": "valentino-white-bag-poster-e3f4ae70b0f3.jpg",
+  "waveform": "waveform-e3f4ae70b0f3.json",
+  "roles": [
+    {
+      "id": "role_Ro8znii84V-S",
+      "name": "First speaker",
+      "label": "First speaker",
+      "hint": "1 句台词",
+      "portrait": "valentino-white-bag-role_Ro8znii84V-S-portrait-22575d33c224.jpg"
+    },
+    {
+      "id": "role_V6rQaU_ALv9Q",
+      "name": "Bag owner",
+      "label": "Bag owner",
+      "hint": "2 句台词",
+      "portrait": "valentino-white-bag-role_V6rQaU_ALv9Q-portrait-65120048a4a9.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_Db1tlWjufWpW",
+      "roleId": "role_Ro8znii84V-S",
+      "start": 0,
+      "end": 2.18,
+      "text": "I spilled lipstick in your Valentino bag.",
+      "hint": "我把口红洒进你的华伦天奴包里了。",
+      "words": [
+        {
+          "text": "I",
+          "start": 0.121,
+          "end": 0.141
+        },
+        {
+          "text": "spilled",
+          "start": 0.242,
+          "end": 0.505
+        },
+        {
+          "text": "lipstick",
+          "start": 0.525,
+          "end": 0.908
+        },
+        {
+          "text": "in",
+          "start": 0.989,
+          "end": 1.029
+        },
+        {
+          "text": "your",
+          "start": 1.09,
+          "end": 1.211
+        },
+        {
+          "text": "Valentino",
+          "start": 1.231,
+          "end": 1.716
+        },
+        {
+          "text": "bag.",
+          "start": 1.776,
+          "end": 2.019
+        }
+      ]
+    },
+    {
+      "id": "line_egNaX7yENuc5",
+      "roleId": "role_V6rQaU_ALv9Q",
+      "start": 2.24,
+      "end": 4.47,
+      "text": "Oh, you spilled—",
+      "hint": "哦，你洒了——",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 2.361,
+          "end": 2.421
+        },
+        {
+          "text": "you",
+          "start": 2.461,
+          "end": 2.521
+        },
+        {
+          "text": "spilled—",
+          "start": 2.682,
+          "end": 3.064
+        }
+      ]
+    },
+    {
+      "id": "line_WduUXsMuuvyq",
+      "roleId": "role_V6rQaU_ALv9Q",
+      "start": 4.48,
+      "end": 6.64,
+      "text": "Lipstick in my Valentino white bag!",
+      "hint": "口红洒进了我的华伦天奴白包里！",
+      "words": [
+        {
+          "text": "Lipstick",
+          "start": 4.48,
+          "end": 4.985
+        },
+        {
+          "text": "in",
+          "start": 5.146,
+          "end": 5.187
+        },
+        {
+          "text": "my",
+          "start": 5.308,
+          "end": 5.388
+        },
+        {
+          "text": "Valentino",
+          "start": 5.489,
+          "end": 6.095
+        },
+        {
+          "text": "white",
+          "start": 6.216,
+          "end": 6.398
+        },
+        {
+          "text": "bag!",
+          "start": 6.438,
+          "end": 6.519
+        }
+      ]
+    }
+  ],
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Valentino bag reaction — Lipstick in my Valentino white bag!",
+    "attribution": "Original performance credited to Valentino bag reaction. Archive/source uploader: Luke Martin. Dramatic surprise with repeated stammered fragments. Identities and relationship of the two source speakers remain unverified; no family relationship is invented. Brand reference is part of the original performance, not an endorsement.",
+    "source": "https://www.youtube.com/watch?v=M1eNd_5T1DM&t=0s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 0–6.65 秒的连续节选。Dramatic surprise with stammering retained in the original audio. Identities and relationship of the two source speakers remain unverified; no family relationship is invented. Brand reference is part of the original performance, not an endorsement."
+  },
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  }
+}

@@ -45,5 +45,12 @@ test('short social exchanges and solo performances produce captions while film s
   assert.equal(solo.status, 0, solo.stderr);
   recipe.scenes[0].lines = recipe.scenes[0].lines.slice(0, 1);
   await writeFile(join(root, 'content/social-meme-review-scenes.json'), JSON.stringify(recipe));
-  assert.match(run('social-memes').stderr, /Needs a complete character exchange/);
+  recipe.scenes[0].end = 2.8;
+  await writeFile(join(root, 'content/social-meme-review-scenes.json'), JSON.stringify(recipe));
+  await writeFile(join(root, 'bin/ffprobe'), '#!/usr/bin/env node\nconsole.log(JSON.stringify({format:{duration:2.8},streams:[{codec_type:"audio"},{codec_type:"video"}]}));\n', { mode: 0o700 });
+  const oneLine = run('social-memes');
+  assert.equal(oneLine.status, 0, oneLine.stderr);
+  recipe.scenes[0].lines = [];
+  await writeFile(join(root, 'content/social-meme-review-scenes.json'), JSON.stringify(recipe));
+  assert.match(run('social-memes').stderr, /Invalid timings/);
 });
