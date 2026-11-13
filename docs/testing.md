@@ -25,7 +25,9 @@ access to the developer's microphone or uploading recordings.
 Both test servers always start from the current checkout. An occupied port is
 an error, so another worktree's app cannot silently substitute for the code
 under test. Browser fixtures block development hot reload so source edits cannot
-reset an in-flight lesson. Choose a different pair when necessary (the preview uses port + 2):
+reset an in-flight lesson. WebKit uses one worker to isolate native audio sessions;
+parallel sessions interrupted each other's clock checks during stress testing.
+Choose a different pair when necessary (the preview uses port + 2):
 
 ```sh
 PLAYWRIGHT_PORT=14317 npm run test:all
@@ -61,7 +63,7 @@ UI sequences, not load tests of OSS or the deployment service. They run in
 isolated browser storage and do not touch a tester's saved dubs.
 
 Failed runs retain Playwright traces under `test-results/`. Stress tests attach
-the seed, action sequence, capture frames/peaks, input clocks, and alerts as
+the seed, action sequence, capture frames/peaks, input and output clocks, and alerts as
 `stress-actions`; replay the seed to investigate:
 
 ```sh

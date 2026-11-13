@@ -13,7 +13,8 @@ export default defineConfig({
   projects: [
     { name: 'chromium', testIgnore: '**/production.spec.ts', use: { ...devices['Desktop Chrome'], permissions: ['microphone'], launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] } } },
     { name: 'mobile', testIgnore: '**/production.spec.ts', use: { ...devices['Pixel 7'], permissions: ['microphone'], launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] } } },
-    { name: 'webkit', testIgnore: '**/production.spec.ts', use: { ...devices['iPhone 13'] } },
+    // Native WebKit audio sessions must not compete across browser workers.
+    { name: 'webkit', workers: 1, testIgnore: '**/production.spec.ts', use: { ...devices['iPhone 13'] } },
     { name: 'production', testMatch: '**/production.spec.ts', use: { ...devices['Desktop Chrome'], baseURL: productionURL } },
     { name: 'production-media', testMatch: '**/media-*.spec.ts', use: { ...devices['Desktop Chrome'], baseURL: productionURL } },
   ],

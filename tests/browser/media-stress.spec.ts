@@ -111,6 +111,7 @@ for (const seed of seeds) test(`@stress mixed recording actions preserve takes a
       const audit = (window as unknown as { mediaAudit: MediaAudit }).mediaAudit;
       return {
         captures: audit?.captures,
+        playback: audit?.playback,
         inputs: audit?.inputs.map(context => ({ time: context.currentTime, state: context.state })),
         alerts: [...document.querySelectorAll('[role="alert"]')].map(alert => alert.textContent),
       };

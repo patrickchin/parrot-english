@@ -20,8 +20,22 @@ export async function prepareMediaTest(page: Page) {
       tracks: [] as MediaStreamTrack[], sources: new Set<AudioBufferSourceNode>(), microphoneDelay: 0,
       context: undefined as AudioContext | undefined, inputs: [] as AudioContext[],
       captures: [] as { frames: number; peak: number; sampleRate: number; started?: number; stopped?: number; inputClock?: number }[],
+      playback: [] as Record<string, unknown>[],
     };
     (window as unknown as { mediaAudit: typeof audit }).mediaAudit = audit;
+    let wasActive = false;
+    const samplePlayback = () => {
+      const video = document.querySelector('video'), context = audit.context;
+      const active = !!video && (!video.paused || audit.sources.size > 0);
+      if (video && context && (active || wasActive)) {
+        audit.playback.push({ now: performance.now(), video: video.currentTime, paused: video.paused, seeking: video.seeking,
+          readyState: video.readyState, audio: context.currentTime, state: context.state, timestamp: context.getOutputTimestamp(),
+          baseLatency: context.baseLatency, outputLatency: context.outputLatency });
+        if (audit.playback.length > 240) audit.playback.shift();
+      }
+      wasActive = active; requestAnimationFrame(samplePlayback);
+    };
+    requestAnimationFrame(samplePlayback);
     const NativeContext = AudioContext;
     window.AudioContext = class extends NativeContext {
       constructor(options?: AudioContextOptions) { super(options); audit.context = this; }
@@ -82,4 +96,5 @@ export async function prepareMediaTest(page: Page) {
 export type MediaAudit = {
   tracks: MediaStreamTrack[]; sources: Set<AudioBufferSourceNode>; microphoneDelay: number; context?: AudioContext;
   inputs: AudioContext[]; captures: { frames: number; peak: number; sampleRate: number; started?: number; stopped?: number; inputClock?: number }[];
+  playback: Record<string, unknown>[];
 };
