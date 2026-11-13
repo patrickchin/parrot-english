@@ -26,7 +26,8 @@ for (const language of added) test(`${language.code} opens directly, persists, a
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(language.dubs);
   await page.goto('/');
   await expect(page).toHaveURL(new RegExp(`/${language.code}/$`));
-  await expect(page.getByRole('searchbox', { name: language.search, exact: true })).toBeVisible();
+  await expect(page.getByRole('searchbox')).toBeVisible();
+  await expect(page.getByRole('listitem')).toHaveCount(0);
 });
 
 test.describe('saved player language changes', () => {

@@ -168,7 +168,13 @@
     "unavailable": "这个片段已不可用。你保存的配音仍在这台设备上。",
     "headlineLead": "片段已就位。",
     "headlineEnd": "轮到你发声。",
-    "introduction": "用你喜欢的片段，练习英语。"
+    "introduction": "用你喜欢的片段，练习英语。",
+    "browseTags": "浏览标签",
+    "allScenes": "全部片段",
+    "findATag": "查找系列或标签",
+    "searchTags": "搜索系列或标签",
+    "noTagsFound": "没有找到匹配的标签。",
+    "memes": "网络梗"
   },
   "waveform": {
     "voiceWaveformComparison": "声音波形对比",

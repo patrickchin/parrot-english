@@ -5,7 +5,7 @@ import { useLanguage } from '../i18n';
 import { Button, Icon } from '../shared/ui';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '../components/ui/dialog';
 import { AppHeader } from './AppHeader';
-import { libraryPath } from './routes';
+import { languagePath } from '../locale';
 import { useSceneNavigation } from './useSceneNavigation';
 import { useContent } from './ContentProvider';
 
@@ -60,7 +60,7 @@ export function SavedDubs({ onChoose }: { onChoose: (slug: string, id: string) =
         {shelf.status === 'ready' && !dubs.length && <div className="saved-dubs-empty mt-6 p-6 sm:p-8">
           <h2 className="text-lg font-semibold">{t("dubs.noDubsYet")}</h2>
           <p className="mt-2 text-muted-foreground">{t("dubs.emptyDescription")}</p>
-          <Button className="mt-5" onClick={() => navigation.navigateTo(libraryPath(navigation.folder, language))}>{t("dubs.browseScenes")}<Icon name="arrow" /></Button>
+          <Button className="mt-5" onClick={() => navigation.navigateTo(languagePath('/', language))}>{t("dubs.browseScenes")}<Icon name="arrow" /></Button>
         </div>}
         {shelf.status === 'error' && <div className="mt-2"><p role="alert">{t(shelf.error, { defaultValue: t('errors.unexpected') })}</p><Button tone="quiet" onClick={() => setAttempt(n => n + 1)}>{t("dubs.retry")}</Button></div>}
         {!!dubs.length && <ul className="mt-6 grid gap-3">{dubs.map(dub => <li key={dub.id} className="saved-dub-row flex min-w-0 items-center gap-2">

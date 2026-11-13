@@ -31,10 +31,11 @@ export function readRoute(href: string, clips: readonly Clip[] = []) {
   const route = match?.route.id;
   const sceneRoute = (route === 'scene' || route === 'dub') && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(params.sceneName ?? '');
   return {
-    page: route === 'dubs' ? 'dubs' : sceneRoute ? 'scene' : route === 'home' || route === 'library' && folder ? 'library' : 'not-found',
+    page: route === 'dubs' ? 'dubs' : sceneRoute ? 'scene' : route === 'home' || route === 'library' && (folder || params.folder === 'all') ? 'library' : 'not-found',
+    directory: route === 'home',
     language: pathLanguage(url.pathname) ?? 'zh-CN',
     slug: clip?.slug ?? (sceneRoute ? params.sceneName! : ''),
     draftId: sceneRoute ? params.draftId : undefined,
-    folder: clip?.cohort ?? folder?.value ?? folders[0].value,
+    folder: clip?.cohort ?? folder?.value ?? 'all',
   };
 }
