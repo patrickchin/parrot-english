@@ -414,7 +414,7 @@
       "title": "Are you OK?",
       "priority": "high",
       "trendStatus": "evergreen-candidate",
-      "status": "authored",
+      "status": "published",
       "originalLanguage": "en",
       "source": {
         "url": "https://www.youtube.com/watch?v=rKT-169biQw",
@@ -477,11 +477,13 @@
       "englishPractice": "Practise gratitude, rising questions, and engaging a crowd while preserving the original performance.",
       "contentNotes": "Raw original English stage speech, not the music remix. Practise thanks and rising-question intonation without mocking an accent. Are you okay asks about someone’s condition; its use here is a crowd interaction, not a model for a formal opening greeting. Historical 2015 launch footage includes Mi Band branding, not a current product offer or endorsement. Adult prototype; reuse permission unconfirmed.",
       "rightsStatus": "redistribution-not-cleared",
-      "publicationStatus": "authored",
-      "nextAction": "Publish the verified batch from merged main, then collect adult prototype feedback. Reuse permission remains unconfirmed.",
+      "publicationStatus": "published",
+      "nextAction": "Collect adult prototype feedback and continue discovery under the shared Memes tag; source reuse permissions remain unconfirmed.",
       "reviewRecipe": "content/social-meme-review-scenes.json",
       "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/lei-jun-are-you-ok/scene.json",
-      "sceneUrl": "https://parrotbook.com/en/scenes/lei-jun-are-you-ok"
+      "sceneUrl": "https://parrotbook.com/en/scenes/lei-jun-are-you-ok",
+      "publishedOn": "2026-11-13",
+      "contentRevision": "edbaa3405315e81cfc5e7420"
     },
     {
       "id": "candidate_YcEKMquQG5ja",
@@ -793,7 +795,7 @@
       "title": "I'm in me mum's car!",
       "priority": "high",
       "trendStatus": "evergreen-candidate",
-      "status": "authored",
+      "status": "published",
       "originalLanguage": "en",
       "source": {
         "url": "https://www.instagram.com/reel/B_Pzd8yh8ZT/",
@@ -807,11 +809,11 @@
       "englishPractice": "Perform a playful announcement, an engine sound, a firm instruction, and a disappointed reaction.",
       "contentNotes": "Original family performance, not a song or reenactment. Regional me-for-my and the short imperative are preserved as performed, not offered as standard written English. Broom broom imitates an engine. Adult prototype; source reuse permission unconfirmed.",
       "rightsStatus": "redistribution-not-cleared",
-      "publicationStatus": "authored",
+      "publicationStatus": "published",
       "reviewRecipe": "content/social-meme-review-scenes.json",
       "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/in-me-mums-car/scene.json",
       "sceneUrl": "https://parrotbook.com/en/scenes/in-me-mums-car",
-      "nextAction": "Publish the verified batch from merged main, then collect adult prototype feedback. Reuse permission remains unconfirmed.",
+      "nextAction": "Collect adult prototype feedback and continue discovery under the shared Memes tag; source reuse permissions remain unconfirmed.",
       "evidence": [
         {
           "platform": "instagram",
@@ -824,7 +826,9 @@
             "likes": 498
           }
         }
-      ]
+      ],
+      "publishedOn": "2026-11-13",
+      "contentRevision": "edbaa3405315e81cfc5e7420"
     }
   ],
   "researchBatches": [

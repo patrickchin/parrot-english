@@ -239,8 +239,8 @@ Third-batch verification:
 
 ## Fourth batch and shared Memes tag — 2026-11-13
 
-Two more performances are authored, bringing the local catalog to 118 scenes,
-including ten internet memes. All ten use a single **Memes** browse tag; they do
+Two more performances were published and live-verified on 2026-11-13, bringing
+the live catalog to 118 scenes, including ten internet memes. All ten use a single **Memes** browse tag; they do
 not create separate creator/source tags. The directory now derives this grouping
 from the existing `meme` and `internet` metadata rather than three hard-coded
 creator names. Creator/source names remain on scene cards, in credits, and in
@@ -280,3 +280,25 @@ scene/role/credit text, CTC words, waveforms, and actual speaker portraits.
 Reuse permission remains unconfirmed under the existing adult-prototype notices.
 Code remains in ESA, media/structured content in OSS, and learner takes on-device.
 Publication follows merge and immutable-file verification, with the catalog last.
+
+
+Fourth-batch verification:
+
+- `npm test` passed: 38 application tests, 15 content tests, and one boundary
+  test. The production build passed. All ten meme cuts passed full decoding and
+  caption checks.
+- Browser suite: 38 passed, one expected WebKit microphone skip. The independent
+  catalog-backed tag regression also passed on all three browser surfaces.
+- Live tag checks passed on desktop Chromium, phone Chromium, and WebKit: one
+  Memes tag with all ten members, no separate creator/source tags, working
+  creator-name search, and retained film-franchise tags. Source names remain on
+  scene cards and credits. Screenshots are in the Codex screenshot folder.
+- Content revision `edbaa3405315e81cfc5e7420`: 240 JSON objects and seven media
+  objects passed SHA-256 verification; all 482 media references were available
+  before catalog activation. Catalog activation remained last with `no-store`.
+- Both new scenes passed six production browser checks using actual OSS media.
+  All four Chromium flows also recorded, saved, reloaded, and replayed takes.
+  No upload requests or page errors occurred. Range requests and CORS passed.
+- Player workflow 43384472869 succeeded; production health matched its actual
+  build commit `833d81db17f762bc8a308bac81126812fa609c7c`. Physical-device
+  microphone testing remains separate from these browser checks.
