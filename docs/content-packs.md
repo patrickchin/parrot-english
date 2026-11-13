@@ -6,7 +6,7 @@ recordings remain in the browser. Both sources stay in this repository. Content
 publication remains an explicit OSS operation; committing content alone does not
 publish it. No database or new service is introduced.
 
-The current 113 scenes are packaged into Memes & clips, First English,
+The current 116 scenes are packaged into Memes & clips, First English,
 Ages 10–12, and Teenagers. Each pack owns its library summaries, searchable text,
 scene manifests, timed English subtitles, Chinese hints, roles, portraits,
 credits, and localized scene/role text. Existing media references continue to

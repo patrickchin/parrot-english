@@ -1,0 +1,126 @@
+{
+  "version": 1,
+  "id": "scene_DmadrOyxIpf-",
+  "title": "她们居然是室友！",
+  "tags": [
+    "meme",
+    "internet",
+    "Vine",
+    "Matt Sukkar",
+    "roommates",
+    "and they were roommates",
+    "室友",
+    "舍友",
+    "reaction",
+    "deadpan"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 4.38,
+  "video": "they-were-roommates-review-113b72896224.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/they-were-roommates/",
+  "poster": "they-were-roommates-poster-113b72896224.jpg",
+  "waveform": "waveform-113b72896224.json",
+  "roles": [
+    {
+      "id": "role_3PfScUczuh1u",
+      "name": "Woman",
+      "label": "Woman",
+      "hint": "1 句台词",
+      "portrait": "they-were-roommates-role_3PfScUczuh1u-portrait-a5a4c93db531.jpg"
+    },
+    {
+      "id": "role_obiKywJtOR7o",
+      "name": "Matt",
+      "label": "Matt",
+      "hint": "1 句台词",
+      "portrait": "they-were-roommates-role_obiKywJtOR7o-portrait-414f2b5020b9.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_JNw3hc23ETyo",
+      "roleId": "role_3PfScUczuh1u",
+      "start": 0.38,
+      "end": 2.16,
+      "text": "And they were roommates!",
+      "hint": "而且她们还是室友！",
+      "words": [
+        {
+          "text": "And",
+          "start": 0.825,
+          "end": 0.906
+        },
+        {
+          "text": "they",
+          "start": 0.946,
+          "end": 1.047
+        },
+        {
+          "text": "were",
+          "start": 1.128,
+          "end": 1.25
+        },
+        {
+          "text": "roommates!",
+          "start": 1.351,
+          "end": 1.715
+        }
+      ]
+    },
+    {
+      "id": "line_vZi0bzQOagST",
+      "roleId": "role_obiKywJtOR7o",
+      "start": 2.18,
+      "end": 4.28,
+      "text": "Oh my God, they were roommates.",
+      "hint": "天哪，她们居然是室友。",
+      "words": [
+        {
+          "text": "Oh",
+          "start": 2.402,
+          "end": 2.443
+        },
+        {
+          "text": "my",
+          "start": 2.564,
+          "end": 2.644
+        },
+        {
+          "text": "God,",
+          "start": 2.745,
+          "end": 2.968
+        },
+        {
+          "text": "they",
+          "start": 3.028,
+          "end": 3.149
+        },
+        {
+          "text": "were",
+          "start": 3.21,
+          "end": 3.351
+        },
+        {
+          "text": "roommates.",
+          "start": 3.432,
+          "end": 4.098
+        }
+      ]
+    }
+  ],
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Matt Sukkar — And they were roommates",
+    "attribution": "Original Vine: Matt Sukkar, vine.co/v/OhP767KHxxJ (2014). Archive upload: von. Attribution and wording cross-checked against VICE’s history; the walking woman is unidentified.",
+    "source": "https://www.youtube.com/watch?v=y-P0m0M_8pc&t=0s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 0–4.38 秒的连续节选。An overheard fragment and a deadpan echo; no claim about the people’s relationships beyond the spoken word roommates. The woman is unidentified; archive uploader is not the original creator. Includes Oh my God. Adult prototype; source reuse permission unconfirmed."
+  },
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  }
+}

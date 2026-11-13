@@ -3,7 +3,7 @@
   "audience": "Private adult editorial review; child appearance in source is not an age rating or reuse consent.",
   "purpose": "private-adult-review",
   "rightsStatus": "redistribution-not-cleared",
-  "selectionCriteria": "Continuous social-video English performances with at least two useful practice roles, setup and payoff. Preserve incidental speech and source-specific content notes.",
+  "selectionCriteria": "Complete original spoken meme exchanges, including short Vines with two useful speakers and two turns. Preserve setup, payoff, incidental speech, source-specific content notes, and complete releases; do not pad or loop short clips.",
   "sources": [
     {
       "id": "1VbZE6YhjKk",
@@ -79,6 +79,51 @@
       "duration": 17,
       "kind": "broadcast-archive-repost",
       "sha256": "61f4cdb54d19f5d50957f2ec34fceb93d77c3be9ffec5b1042d9dbb6596fce5f"
+    },
+    {
+      "id": "wSRHxVDMzvc",
+      "url": "https://www.youtube.com/watch?v=wSRHxVDMzvc",
+      "localFile": "content/local-dubbing/review/social-memes/sources/wSRHxVDMzvc.mp4",
+      "sourceOffset": 0,
+      "title": "21 Vine (Original)",
+      "series": "9 + 10 = 21",
+      "episode": "Vine archive",
+      "attribution": "Archive of the 9 + 10 = 21 Vine; uploader: The Unknown. Original performer identities and original account ownership remain unverified; the uploader is not claimed as the creator.",
+      "channel": "The Unknown",
+      "uploadDate": "20141113",
+      "duration": 11,
+      "kind": "vine-archive-repost",
+      "sha256": "a96195a1f0a96a7d4497535c5cd94935a885e414c73b7b0d172dd1a786d22cf4"
+    },
+    {
+      "id": "y-P0m0M_8pc",
+      "url": "https://www.youtube.com/watch?v=y-P0m0M_8pc",
+      "localFile": "content/local-dubbing/review/social-memes/sources/y-P0m0M_8pc.mp4",
+      "sourceOffset": 0,
+      "title": "and they were roomates",
+      "series": "Matt Sukkar",
+      "episode": "And they were roommates",
+      "attribution": "Original Vine: Matt Sukkar, vine.co/v/OhP767KHxxJ (2014). Archive upload: von. Attribution and wording cross-checked against VICE’s history; the walking woman is unidentified.",
+      "channel": "von",
+      "uploadDate": "20161029",
+      "duration": 4,
+      "kind": "vine-archive-repost",
+      "sha256": "88931a74bcaf14bd93013c7392cd96d468533e3a7eaca7207473ad5e2bf4b372"
+    },
+    {
+      "id": "YYx51ZrSn3g",
+      "url": "https://www.youtube.com/watch?v=YYx51ZrSn3g",
+      "localFile": "content/local-dubbing/review/social-memes/sources/YYx51ZrSn3g.mp4",
+      "sourceOffset": 0,
+      "title": "The original viral video, “CAN I PET THAT DOG!”",
+      "series": "Kayla Holley and Acesyn",
+      "episode": "Can I pet that dog?",
+      "attribution": "Original family performance: Kayla Holley and her son Acesyn; creator channel Can I pet that DOG! !. Identity, indoor footage and repeated request corroborated by FOX 13’s March 2020 report. This is not the bear remix.",
+      "channel": "Can I pet that DOG! !",
+      "uploadDate": "20200317",
+      "duration": 22,
+      "kind": "creator-claimed-original",
+      "sha256": "367631cf01a04aba76e77c9a7cc201069b4edeb1d7384c29822fa20b0a5c8468"
     }
   ],
   "scenes": [
@@ -1466,6 +1511,543 @@
         "method": "Uncut source frames and independent small.en recognition; CTC alignment of final authored dialogue.",
         "roles": "Nancy Francis introduces Jonathon, asks the question, and delivers the closing reaction. Jonathon gives the one-line punchline and remains selectable. Name spelling follows KGW’s retrospective.",
         "cut": "The original 17-second archive is the uncut comparison source. Zombie finishes around 12.64; release retained to 13.08, before Good times begins around 13.38. The archive’s final broadcast sentence is outside the selected exchange."
+      },
+      "wordTiming": {
+        "method": "CTC forced alignment",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_6P0anXy1e1Kp",
+      "sceneId": "scene_wdxzuqi-c3ht",
+      "slug": "nine-plus-ten",
+      "publicSlug": "nine-plus-ten",
+      "cohort": "older-audience",
+      "batch": "2026-11-13",
+      "sourceId": "wSRHxVDMzvc",
+      "title": "What's nine plus ten?",
+      "titleZh": "九加十等于多少？",
+      "start": 0,
+      "end": 5.6,
+      "roles": [
+        {
+          "id": "role_BBo6bXnMNXuh",
+          "name": "Questioner"
+        },
+        {
+          "id": "role_RbHL9yEzn11-",
+          "name": "Boy",
+          "portraitSource": {
+            "sourceId": "wSRHxVDMzvc",
+            "time": 1.9,
+            "normalizedCrop": [
+              0.32,
+              0.03,
+              0.38,
+              0.6
+            ]
+          },
+          "portrait": "nine-plus-ten-role_RbHL9yEzn11--portrait-2402f8c08e0f.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_wNGCJOxUYiDu",
+          "roleId": "role_BBo6bXnMNXuh",
+          "speaker": "Questioner",
+          "start": 0,
+          "end": 0.78,
+          "text": "You stupid.",
+          "hint": "你真笨。这是原片中的不礼貌说法。",
+          "words": [
+            {
+              "text": "You",
+              "start": 0.0,
+              "end": 0.062
+            },
+            {
+              "text": "stupid.",
+              "start": 0.144,
+              "end": 0.698
+            }
+          ]
+        },
+        {
+          "id": "line_U3n9DSET_EP1",
+          "roleId": "role_RbHL9yEzn11-",
+          "speaker": "Boy",
+          "start": 0.9,
+          "end": 1.68,
+          "text": "No, I'm not.",
+          "hint": "不，我不笨。",
+          "words": [
+            {
+              "text": "No,",
+              "start": 1.167,
+              "end": 1.208
+            },
+            {
+              "text": "I'm",
+              "start": 1.249,
+              "end": 1.311
+            },
+            {
+              "text": "not.",
+              "start": 1.413,
+              "end": 1.618
+            }
+          ]
+        },
+        {
+          "id": "line_xhK6DFAKZ84N",
+          "roleId": "role_BBo6bXnMNXuh",
+          "speaker": "Questioner",
+          "start": 1.76,
+          "end": 3.05,
+          "text": "What's nine plus ten?",
+          "hint": "九加十等于多少？",
+          "words": [
+            {
+              "text": "What's",
+              "start": 1.841,
+              "end": 1.982
+            },
+            {
+              "text": "nine",
+              "start": 2.083,
+              "end": 2.304
+            },
+            {
+              "text": "plus",
+              "start": 2.345,
+              "end": 2.566
+            },
+            {
+              "text": "ten?",
+              "start": 2.647,
+              "end": 2.949
+            }
+          ]
+        },
+        {
+          "id": "line_Wx8tdvdD4Tbl",
+          "roleId": "role_RbHL9yEzn11-",
+          "speaker": "Boy",
+          "start": 3.74,
+          "end": 4.76,
+          "text": "Twenty-one.",
+          "hint": "二十一。这是搞笑的错误答案；正确答案是十九。",
+          "words": [
+            {
+              "text": "Twenty-one.",
+              "start": 4.107,
+              "end": 4.678
+            }
+          ]
+        },
+        {
+          "id": "line_ASC5r9-gVdJw",
+          "roleId": "role_BBo6bXnMNXuh",
+          "speaker": "Questioner",
+          "start": 4.82,
+          "end": 5.58,
+          "text": "You stupid.",
+          "hint": "你真笨。保留原始玩笑台词。",
+          "words": [
+            {
+              "text": "You",
+              "start": 4.902,
+              "end": 4.984
+            },
+            {
+              "text": "stupid.",
+              "start": 5.128,
+              "end": 5.518
+            }
+          ]
+        }
+      ],
+      "tags": [
+        "meme",
+        "internet",
+        "Vine",
+        "9+10",
+        "21",
+        "nine plus ten",
+        "twenty-one",
+        "九加十",
+        "二十一",
+        "math",
+        "reaction"
+      ],
+      "contentNotes": "Contains a repeated insult and informal/nonstandard speech, retained as a performance rather than a model for polite conversation. The answer 21 is deliberately wrong; 9 + 10 = 19. Source identities and reuse permission unconfirmed. Adult prototype only.",
+      "practice": "Ask a simple question, deny a claim, and perform the famous deadpan answer.",
+      "reviewStatus": "source-and-speaker-checked-private-adult-prototype",
+      "verification": {
+        "method": "Uncut source frames and independent small.en recognition; CTC alignment of final authored dialogue.",
+        "roles": "The off-screen questioner gives the question and both insults; the visible boy denies the claim and gives the answer. No questioner portrait is invented.",
+        "cut": "The archive repeats the same Vine twice. Keep only the first complete exchange, ending at 5.60 before the second copy starts around 5.70. Final stupid ends around 5.42; release retained. No looping or padding is added."
+      },
+      "wordTiming": {
+        "method": "CTC forced alignment",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_oaFL4HO-aqHi",
+      "sceneId": "scene_DmadrOyxIpf-",
+      "slug": "they-were-roommates",
+      "publicSlug": "they-were-roommates",
+      "cohort": "older-audience",
+      "batch": "2026-11-13",
+      "sourceId": "y-P0m0M_8pc",
+      "title": "And they were roommates!",
+      "titleZh": "她们居然是室友！",
+      "start": 0,
+      "end": 4.38,
+      "roles": [
+        {
+          "id": "role_3PfScUczuh1u",
+          "name": "Woman",
+          "portraitSource": {
+            "sourceId": "y-P0m0M_8pc",
+            "time": 0.6,
+            "normalizedCrop": [
+              0.02,
+              0.08,
+              0.3,
+              0.42
+            ]
+          },
+          "portrait": "they-were-roommates-role_3PfScUczuh1u-portrait-a5a4c93db531.jpg"
+        },
+        {
+          "id": "role_obiKywJtOR7o",
+          "name": "Matt",
+          "portraitSource": {
+            "sourceId": "y-P0m0M_8pc",
+            "time": 3.2,
+            "normalizedCrop": [
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          "portrait": "they-were-roommates-role_obiKywJtOR7o-portrait-414f2b5020b9.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_JNw3hc23ETyo",
+          "roleId": "role_3PfScUczuh1u",
+          "speaker": "Woman",
+          "start": 0.38,
+          "end": 2.16,
+          "text": "And they were roommates!",
+          "hint": "而且她们还是室友！",
+          "words": [
+            {
+              "text": "And",
+              "start": 0.825,
+              "end": 0.906
+            },
+            {
+              "text": "they",
+              "start": 0.946,
+              "end": 1.047
+            },
+            {
+              "text": "were",
+              "start": 1.128,
+              "end": 1.25
+            },
+            {
+              "text": "roommates!",
+              "start": 1.351,
+              "end": 1.715
+            }
+          ]
+        },
+        {
+          "id": "line_vZi0bzQOagST",
+          "roleId": "role_obiKywJtOR7o",
+          "speaker": "Matt",
+          "start": 2.18,
+          "end": 4.28,
+          "text": "Oh my God, they were roommates.",
+          "hint": "天哪，她们居然是室友。",
+          "words": [
+            {
+              "text": "Oh",
+              "start": 2.402,
+              "end": 2.443
+            },
+            {
+              "text": "my",
+              "start": 2.564,
+              "end": 2.644
+            },
+            {
+              "text": "God,",
+              "start": 2.745,
+              "end": 2.968
+            },
+            {
+              "text": "they",
+              "start": 3.028,
+              "end": 3.149
+            },
+            {
+              "text": "were",
+              "start": 3.21,
+              "end": 3.351
+            },
+            {
+              "text": "roommates.",
+              "start": 3.432,
+              "end": 4.098
+            }
+          ]
+        }
+      ],
+      "tags": [
+        "meme",
+        "internet",
+        "Vine",
+        "Matt Sukkar",
+        "roommates",
+        "and they were roommates",
+        "室友",
+        "舍友",
+        "reaction",
+        "deadpan"
+      ],
+      "contentNotes": "An overheard fragment and a deadpan echo; no claim about the people’s relationships beyond the spoken word roommates. The woman is unidentified; archive uploader is not the original creator. Includes Oh my God. Adult prototype; source reuse permission unconfirmed.",
+      "practice": "Echo unexpected news with contrasting emotion and deadpan delivery.",
+      "reviewStatus": "source-and-speaker-checked-private-adult-prototype",
+      "verification": {
+        "method": "Uncut source frames and independent small.en recognition; CTC alignment of final authored dialogue.",
+        "roles": "The woman walking past supplies the first line. Matt turns the camera onto himself and supplies the echo. Portraits use the actual source frames.",
+        "cut": "Preserve the entire 4.389-second source archive through the last roommates and its release; no artificial extension. Two original speakers and two turns form the complete joke. The reply finishes around 4.12 before the source ends."
+      },
+      "wordTiming": {
+        "method": "CTC forced alignment",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_WGtJ4idP6mzg",
+      "sceneId": "scene_PXO6Cy4dTP3o",
+      "slug": "can-i-pet-that-dog",
+      "publicSlug": "can-i-pet-that-dog",
+      "cohort": "older-audience",
+      "batch": "2026-11-13",
+      "sourceId": "YYx51ZrSn3g",
+      "title": "Can I pet that dog?",
+      "titleZh": "我能摸摸那只狗吗？",
+      "start": 3.82,
+      "end": 10.72,
+      "roles": [
+        {
+          "id": "role_z-ONdnV-mP49",
+          "name": "Acesyn",
+          "portraitSource": {
+            "sourceId": "YYx51ZrSn3g",
+            "time": 4.4,
+            "normalizedCrop": [
+              0.23,
+              0.17,
+              0.55,
+              0.26
+            ]
+          },
+          "portrait": "can-i-pet-that-dog-role_z-ONdnV-mP49-portrait-dc5f42b36c1e.jpg"
+        },
+        {
+          "id": "role_D4pxGfyfhQpD",
+          "name": "Kayla"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_vCxxH7jvPsA8",
+          "roleId": "role_z-ONdnV-mP49",
+          "speaker": "Acesyn",
+          "start": 3.92,
+          "end": 5.14,
+          "text": "Can I pet that dog?",
+          "hint": "我能摸摸那只狗吗？",
+          "words": [
+            {
+              "text": "Can",
+              "start": 4.123,
+              "end": 4.225
+            },
+            {
+              "text": "I",
+              "start": 4.266,
+              "end": 4.286
+            },
+            {
+              "text": "pet",
+              "start": 4.367,
+              "end": 4.469
+            },
+            {
+              "text": "that",
+              "start": 4.571,
+              "end": 4.672
+            },
+            {
+              "text": "dog?",
+              "start": 4.774,
+              "end": 5.018
+            }
+          ]
+        },
+        {
+          "id": "line_5B-RlV1IWpRf",
+          "roleId": "role_D4pxGfyfhQpD",
+          "speaker": "Kayla",
+          "start": 5.3,
+          "end": 6.0,
+          "text": "No.",
+          "hint": "不行。",
+          "words": [
+            {
+              "text": "No.",
+              "start": 5.712,
+              "end": 5.876
+            }
+          ]
+        },
+        {
+          "id": "line_yzbo-G75TDy1",
+          "roleId": "role_z-ONdnV-mP49",
+          "speaker": "Acesyn",
+          "start": 6.04,
+          "end": 7.48,
+          "text": "Can I pet that dog?",
+          "hint": "我能摸摸那只狗吗？",
+          "words": [
+            {
+              "text": "Can",
+              "start": 6.162,
+              "end": 6.324
+            },
+            {
+              "text": "I",
+              "start": 6.385,
+              "end": 6.405
+            },
+            {
+              "text": "pet",
+              "start": 6.446,
+              "end": 6.588
+            },
+            {
+              "text": "that",
+              "start": 6.709,
+              "end": 6.831
+            },
+            {
+              "text": "dog?",
+              "start": 6.953,
+              "end": 7.379
+            }
+          ]
+        },
+        {
+          "id": "line_dSztYpnlQBU9",
+          "roleId": "role_D4pxGfyfhQpD",
+          "speaker": "Kayla",
+          "start": 7.62,
+          "end": 8.68,
+          "text": "No, he's sleeping.",
+          "hint": "不行，它在睡觉。",
+          "words": [
+            {
+              "text": "No,",
+              "start": 7.926,
+              "end": 8.09
+            },
+            {
+              "text": "he's",
+              "start": 8.253,
+              "end": 8.355
+            },
+            {
+              "text": "sleeping.",
+              "start": 8.376,
+              "end": 8.58
+            }
+          ]
+        },
+        {
+          "id": "line_U7TEgp6UOvkE",
+          "roleId": "role_z-ONdnV-mP49",
+          "speaker": "Acesyn",
+          "start": 8.72,
+          "end": 10.6,
+          "text": "Can I pet that dog?",
+          "hint": "我能摸摸那只狗吗？这次声音更响、语气更急切。",
+          "words": [
+            {
+              "text": "Can",
+              "start": 8.841,
+              "end": 9.023
+            },
+            {
+              "text": "I",
+              "start": 9.084,
+              "end": 9.104
+            },
+            {
+              "text": "pet",
+              "start": 9.205,
+              "end": 9.428
+            },
+            {
+              "text": "that",
+              "start": 9.529,
+              "end": 9.711
+            },
+            {
+              "text": "dog?",
+              "start": 9.953,
+              "end": 10.216
+            }
+          ]
+        }
+      ],
+      "tags": [
+        "meme",
+        "internet",
+        "TikTok",
+        "can I pet that dog",
+        "can I pet that dawg",
+        "Acesyn",
+        "Kayla Holley",
+        "我能摸狗吗",
+        "狗",
+        "requests",
+        "permission",
+        "repetition"
+      ],
+      "contentNotes": "Original indoor family video, not the unrelated bear/wildlife remix. Repeated requests and raised voice are preserved for performance, not presented as advice to ignore an adult’s answer or approach an unfamiliar animal. Adult prototype; source reuse permission unconfirmed.",
+      "practice": "Ask permission, say no, and perform increasingly insistent repetition.",
+      "reviewStatus": "source-and-speaker-checked-private-adult-prototype",
+      "verification": {
+        "method": "Original 22-second source frames, FOX 13’s identification and quoted dialogue, full-source base.en/small.en recognition, and CTC word alignment. Automatic recognition mistranscribes the child’s accent; authored wording follows the source phrase corroborated by the publisher, not those substitutions.",
+        "roles": "Acesyn repeatedly requests permission; his mother Kayla gives the off-screen refusals. Her face is not shown, so the shared initials fallback is used; no portrait is invented.",
+        "cut": "Start before the second complete request, excluding the unclear opening. Keep three requests, both refusals, and the final raised-voice release to 10.72. The next exchange begins after 11 seconds. Per-line windows exclude the following speaker."
       },
       "wordTiming": {
         "method": "CTC forced alignment",

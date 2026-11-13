@@ -214,14 +214,18 @@
       "id": "candidate_r41ygan5y3BZ",
       "key": "can-i-pet-that-dog",
       "title": "Can I pet that dog?",
-      "priority": "medium",
+      "priority": "high",
       "trendStatus": "evergreen-candidate",
-      "status": "source-review-pending",
+      "status": "authored",
       "originalLanguage": "en",
       "source": {
-        "url": "https://www.youtube.com/shorts/YYx51ZrSn3g",
+        "url": "https://www.youtube.com/watch?v=YYx51ZrSn3g",
         "providerId": "YYx51ZrSn3g",
-        "creator": null
+        "creator": "Kayla Holley and Acesyn",
+        "uploader": "Can I pet that DOG! !",
+        "kind": "creator-claimed-original",
+        "uploadedOn": "2020-03-17",
+        "localFile": "content/local-dubbing/review/social-memes/sources/YYx51ZrSn3g.mp4"
       },
       "evidence": [
         {
@@ -237,13 +241,38 @@
           "checkedOn": "2026-11-12",
           "evidenceType": "search-index",
           "note": "A derivative lead, not verified as the original."
+        },
+        {
+          "platform": "youtube",
+          "url": "https://www.youtube.com/watch?v=YYx51ZrSn3g",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "source-and-metadata",
+          "note": "Full source checked; archive uploader is not assumed to own the performance. Dated counters do not establish current cross-platform rank.",
+          "metrics": {
+            "views": 6196746,
+            "likes": 134707
+          }
+        },
+        {
+          "platform": "publisher-context",
+          "url": "https://www.fox13news.com/news/hilarious-video-shows-texas-boy-refusing-to-go-to-sleep-until-he-pet-that-dog",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "publisher-page",
+          "note": "FOX 13 identifies Kayla Holley and Acesyn and quotes the repeated request/refusal in the original indoor video.",
+          "metrics": {
+            "views": "UNKNOWN",
+            "likes": "UNKNOWN"
+          }
         }
       ],
-      "englishPractice": "Requests and repeated rising emphasis; retain the adult response if present.",
-      "contentNotes": "Several unrelated dog/bear remixes use this sound. Do not attribute the remix footage to the original family or present wildlife interaction as advice.",
+      "englishPractice": "Ask permission, say no, and perform increasingly insistent repetition.",
+      "contentNotes": "Original indoor family video, not the unrelated bear/wildlife remix. Repeated requests and raised voice are preserved for performance, not presented as advice to ignore an adult’s answer or approach an unfamiliar animal. Adult prototype; source reuse permission unconfirmed.",
       "rightsStatus": "redistribution-not-cleared",
-      "publicationStatus": "not-published",
-      "nextAction": "Verify the original performance, speakers, continuous source range, and complete final syllables before authoring a playable scene."
+      "publicationStatus": "authored",
+      "nextAction": "Publish the verified batch from merged main, then collect adult prototype feedback. Reuse permission remains unconfirmed.",
+      "reviewRecipe": "content/social-meme-review-scenes.json",
+      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/can-i-pet-that-dog/scene.json",
+      "sceneUrl": "https://parrotbook.com/en/scenes/can-i-pet-that-dog"
     },
     {
       "id": "candidate_ipPFTi4JQWSf",
@@ -607,6 +636,106 @@
       ],
       "publishedOn": "2026-11-13",
       "contentRevision": "d6d4b08b481818c6541fc053"
+    },
+    {
+      "id": "candidate_9Nzw0R5PHb1z",
+      "key": "nine-plus-ten",
+      "title": "What's nine plus ten?",
+      "priority": "high",
+      "trendStatus": "evergreen-candidate",
+      "status": "authored",
+      "originalLanguage": "en",
+      "source": {
+        "url": "https://www.youtube.com/watch?v=wSRHxVDMzvc",
+        "providerId": "wSRHxVDMzvc",
+        "creator": "9 + 10 = 21",
+        "uploader": "The Unknown",
+        "kind": "vine-archive-repost",
+        "uploadedOn": "2014-11-13",
+        "localFile": "content/local-dubbing/review/social-memes/sources/wSRHxVDMzvc.mp4"
+      },
+      "englishPractice": "Ask a simple question, deny a claim, and perform the famous deadpan answer.",
+      "contentNotes": "Contains a repeated insult and informal/nonstandard speech, retained as a performance rather than a model for polite conversation. The answer 21 is deliberately wrong; 9 + 10 = 19. Source identities and reuse permission unconfirmed. Adult prototype only.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "authored",
+      "reviewRecipe": "content/social-meme-review-scenes.json",
+      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/nine-plus-ten/scene.json",
+      "sceneUrl": "https://parrotbook.com/en/scenes/nine-plus-ten",
+      "nextAction": "Publish the verified batch from merged main, then collect adult prototype feedback. Reuse permission remains unconfirmed.",
+      "evidence": [
+        {
+          "platform": "youtube",
+          "url": "https://www.youtube.com/watch?v=wSRHxVDMzvc",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "source-and-metadata",
+          "note": "Full source checked; archive uploader is not assumed to own the performance. Dated counters do not establish current cross-platform rank.",
+          "metrics": {
+            "views": 675104,
+            "likes": 6753
+          }
+        },
+        {
+          "platform": "reddit",
+          "url": "https://www.reddit.com/r/videos/comments/pn9vr2/kid_thinks_9_10_21/",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "search-index",
+          "note": "Indexed reuse discussion; no creator identity or current ranking claimed.",
+          "metrics": {
+            "views": "UNKNOWN",
+            "likes": "UNKNOWN"
+          }
+        }
+      ]
+    },
+    {
+      "id": "candidate__7x2O5__RifU",
+      "key": "they-were-roommates",
+      "title": "And they were roommates!",
+      "priority": "high",
+      "trendStatus": "evergreen-candidate",
+      "status": "authored",
+      "originalLanguage": "en",
+      "source": {
+        "url": "https://www.youtube.com/watch?v=y-P0m0M_8pc",
+        "providerId": "y-P0m0M_8pc",
+        "creator": "Matt Sukkar",
+        "uploader": "von",
+        "kind": "vine-archive-repost",
+        "uploadedOn": "2016-10-29",
+        "localFile": "content/local-dubbing/review/social-memes/sources/y-P0m0M_8pc.mp4"
+      },
+      "englishPractice": "Echo unexpected news with contrasting emotion and deadpan delivery.",
+      "contentNotes": "An overheard fragment and a deadpan echo; no claim about the people’s relationships beyond the spoken word roommates. The woman is unidentified; archive uploader is not the original creator. Includes Oh my God. Adult prototype; source reuse permission unconfirmed.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "authored",
+      "reviewRecipe": "content/social-meme-review-scenes.json",
+      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/they-were-roommates/scene.json",
+      "sceneUrl": "https://parrotbook.com/en/scenes/they-were-roommates",
+      "nextAction": "Publish the verified batch from merged main, then collect adult prototype feedback. Reuse permission remains unconfirmed.",
+      "evidence": [
+        {
+          "platform": "youtube",
+          "url": "https://www.youtube.com/watch?v=y-P0m0M_8pc",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "source-and-metadata",
+          "note": "Full source checked; archive uploader is not assumed to own the performance. Dated counters do not establish current cross-platform rank.",
+          "metrics": {
+            "views": 22789230,
+            "likes": 120214
+          }
+        },
+        {
+          "platform": "publisher-context",
+          "url": "https://www.vice.com/en/article/why-and-they-were-roommates-was-the-best-vine-ever/",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "publisher-page",
+          "note": "Article identifies Matt Sukkar, original Vine OhP767KHxxJ, and both spoken lines; its historical loop count is not a current metric.",
+          "metrics": {
+            "views": "UNKNOWN",
+            "likes": "UNKNOWN"
+          }
+        }
+      ]
     }
   ],
   "researchBatches": [
@@ -629,6 +758,16 @@
           "reason": "Search found reposts; no verified original complete exchange retained."
         }
       ]
+    },
+    {
+      "date": "2026-11-13",
+      "batch": "third-social-batch",
+      "authoredScenes": [
+        "nine-plus-ten",
+        "they-were-roommates",
+        "can-i-pet-that-dog"
+      ],
+      "chinesePlatformResult": "Bilibili and Douyin queries returned unrelated or weak index results for these clips. No verified Chinese popularity metric or ranking retained. Lei Jun raw speech remains on source/language hold; remix evidence is not an original English exchange."
     }
   ]
 }
