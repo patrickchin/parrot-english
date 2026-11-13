@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useLanguage } from './i18n';
-import { useEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react';
 import { AppHeader } from './app/AppHeader';
 import { DubDownload } from './app/DubDownload';
 import { Button, Icon } from './shared/ui';
@@ -90,6 +90,12 @@ function Player({ scene, slug, notice, initial, rememberDraft, onBack, leaving, 
   const window = lineWindow(scene, line);
   const role = scene.roles.find(r => r.id === roleId)!;
   const media = useDubbing(video, scene, saveTake);
+  const restoreActionFocus = useRef(false);
+  const mediaActionRef = useCallback((node: HTMLButtonElement | null) => {
+    if (!node) return;
+    if (restoreActionFocus.current) node.focus({ preventScroll: true });
+    return () => { restoreActionFocus.current = document.activeElement === node; };
+  }, []);
   const [exporting, setExporting] = useState(false);
   const busy = media.phase !== 'idle';
   const capturing = media.phase === 'recording' || media.phase === 'saving';
@@ -185,7 +191,8 @@ function Player({ scene, slug, notice, initial, rememberDraft, onBack, leaving, 
           <div className="player-controls">
             <div className={`practice-actions ${step !== 'practice' ? 'invisible' : ''}`} inert={step !== 'practice'} aria-hidden={step !== 'practice'} role="group" aria-label={t("player.dubbingControls")}>
               <Button tone="quiet" aria-label={t("player.listenToTheOriginalLine")} disabled={busy || !videoReady} onClick={() => void media.preview(line)}><Icon name="sound" />{t("recording.listenOriginal")}</Button>
-              {media.phase === 'recording' ? <Button tone="danger" onClick={media.finish}><Icon name="stop" />{t("player.stopRecording")}</Button> : busy ? <Button tone="quiet" onClick={media.stop}><Icon name="stop" />{capturing || media.phase === 'loading' ? t("player.cancel") : t("player.stopPlayback")}</Button> : <Button tone={currentTake ? 'quiet' : 'record'} aria-label={currentTake ? t("player.recordThisLineAgain") : t("player.record")} disabled={!videoReady} onClick={() => void media.record(line)}><Icon name="mic" />{currentTake ? t("player.recordAgain") : t("player.record")}</Button>}
+              {/* Keep each action's DOM identity: a Stop pointer gesture must not become Record after an asynchronous stop. */}
+              {media.phase === 'recording' ? <Button key="finish-recording" ref={mediaActionRef} tone="danger" onClick={media.finish}><Icon name="stop" />{t("player.stopRecording")}</Button> : busy ? <Button key="stop-media" ref={mediaActionRef} tone="quiet" onClick={media.stop}><Icon name="stop" />{capturing || media.phase === 'loading' ? t("player.cancel") : t("player.stopPlayback")}</Button> : <Button key="start-recording" ref={mediaActionRef} tone={currentTake ? 'quiet' : 'record'} aria-label={currentTake ? t("player.recordThisLineAgain") : t("player.record")} disabled={!videoReady} onClick={() => void media.record(line)}><Icon name="mic" />{currentTake ? t("player.recordAgain") : t("player.record")}</Button>}
               <Button tone={currentTake ? 'primary' : 'quiet'} aria-label={t("player.myRecording")} disabled={busy || !currentTake} onClick={() => { if (currentTake) void media.listen(currentTake, line); }}><Icon name="play" />{t("player.myRecording")}</Button>
               <div className="practice-navigation">
                 <Button tone="quiet" aria-label={t("player.previousLine")} title={t("player.previousLine")} disabled={busy || lineIndex === 0} onClick={() => chooseLine(lineIndex - 1)}><Icon name="back" /></Button>

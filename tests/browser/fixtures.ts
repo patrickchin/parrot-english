@@ -33,6 +33,8 @@ export async function routeContent(page: Page, sampleScene = false) {
 export const test = base.extend<{ sampleScene: boolean }>({
   sampleScene: [false, { option: true }],
   page: async ({ page, sampleScene }, use) => {
+    // A source edit in another local tool must not reset an in-flight lesson.
+    await page.routeWebSocket(/^ws:\/\/127\.0\.0\.1:\d+\//, socket => socket.close());
     await routeContent(page, sampleScene);
     // Licensed internal fixture exercises multi-line capture without publishing it in the app.
     if (sampleScene) await page.route('**/scenes/patrick/*.json', async route => {

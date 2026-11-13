@@ -15,7 +15,6 @@ async function shortScene() {
   return scene;
 }
 test.beforeEach(async ({ page }) => {
-  await page.routeWebSocket('ws://127.0.0.1:4317/**', socket => socket.close());
   await page.route('**/scenes/patrick/scene.json', async route => route.fulfill({ json: await shortScene() }));
   await routeShortScene(page);
   await page.addInitScript(() => {
@@ -91,7 +90,7 @@ test('partial dubs survive reload and a new tab with exact audio, waveform, role
   // A fresh page in the same browser has the same IndexedDB, not the old JS state.
   const second = await context.newPage();
   await routeContent(second, true);
-  await second.routeWebSocket('ws://127.0.0.1:4317/**', socket => socket.close());
+  await second.routeWebSocket(/^ws:\/\/127\.0\.0\.1:\d+\//, socket => socket.close());
   await second.route('**/scenes/patrick/*.json', async route => route.fulfill({ body: await readFile('tests/fixtures/sintel/' + new URL(route.request().url()).pathname.split('/').pop()), contentType: 'application/json' }));
   await second.route('**/scenes/patrick/scene.json', async route => route.fulfill({ json: await shortScene() }));
   await routeShortScene(second);

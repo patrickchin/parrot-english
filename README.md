@@ -73,6 +73,10 @@ npm test
 npm run test:browser
 ```
 
+`npm run test:all` runs all checks, including the browser suite. See the
+[testing guide](docs/testing.md) for prerequisites, seeded recording stress
+tests, failure traces, and the limits of emulated devices.
+
 Content is authored separately under `content/packs/`. The authored 111 scenes
 are grouped into four packs, each containing its scene manifests, subtitles,
 word timings, search data, credits, and five-language scene/role text.

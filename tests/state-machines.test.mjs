@@ -86,4 +86,9 @@ test('video startup times out, aborts, and follows playing rather than a delayed
   rejectPlay(new Error('late failure'));
   await Promise.resolve();
   assert.equal(lateError.message, 'late failure');
+  const failedReady = waitForVideo(video, 'playing', signal, {
+    onReady: () => { throw new Error('audio scheduling failed'); },
+  });
+  video.dispatchEvent(new Event('playing'));
+  await assert.rejects(failedReady, /audio scheduling failed/);
 });
