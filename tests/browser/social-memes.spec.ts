@@ -4,7 +4,7 @@ import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-for (const slug of ['corn-corntastic-day', 'apparently-get-dizzy', 'emotional-damage', 'weather-boy', 'i-like-turtles']) {
+for (const slug of ['corn-corntastic-day', 'apparently-get-dizzy', 'emotional-damage', 'weather-boy', 'i-like-turtles', 'nine-plus-ten', 'they-were-roommates', 'can-i-pet-that-dog']) {
   test(`social meme ${slug} supports discovery, original playback and saved recording`, async ({ page, browserName }, info) => {
     const scene = readScene(slug);
     const clip = clips.find(clip => clip.slug === slug)!;
@@ -21,7 +21,8 @@ for (const slug of ['corn-corntastic-day', 'apparently-get-dizzy', 'emotional-da
         await expect(button).toHaveCount(0);
       } else {
         await expect(button).toBeVisible();
-        await expect.poll(() => button.locator('img').evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+        if (role.portrait) await expect.poll(() => button.locator('img').evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+        else await expect(button.locator('img')).toHaveCount(0);
       }
     }
     await page.getByRole('button', { name: 'Scene credits', exact: true }).click();

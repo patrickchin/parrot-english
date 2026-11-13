@@ -2582,6 +2582,111 @@
         "好吧。你是个很棒的僵尸。"
       ],
       "manifest": "scenes/i-like-turtles/scene.json"
+    },
+    {
+      "id": "scene_wdxzuqi-c3ht",
+      "slug": "nine-plus-ten",
+      "routeSlug": "nine-plus-ten",
+      "title": "九加十等于多少？",
+      "english": "What's nine plus ten?",
+      "note": "9 + 10 = 21",
+      "source": "https://www.youtube.com/watch?v=wSRHxVDMzvc&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/nine-plus-ten/nine-plus-ten-poster-1beb60757213.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "Vine",
+        "9+10",
+        "21",
+        "nine plus ten",
+        "twenty-one",
+        "九加十",
+        "二十一",
+        "math",
+        "reaction"
+      ],
+      "quotes": [
+        "You stupid.",
+        "你真笨。这是原片中的不礼貌说法。",
+        "No, I'm not.",
+        "不，我不笨。",
+        "What's nine plus ten?",
+        "九加十等于多少？",
+        "Twenty-one.",
+        "二十一。这是搞笑的错误答案；正确答案是十九。",
+        "You stupid.",
+        "你真笨。保留原始玩笑台词。"
+      ],
+      "manifest": "scenes/nine-plus-ten/scene.json"
+    },
+    {
+      "id": "scene_DmadrOyxIpf-",
+      "slug": "they-were-roommates",
+      "routeSlug": "they-were-roommates",
+      "title": "她们居然是室友！",
+      "english": "And they were roommates!",
+      "note": "Matt Sukkar",
+      "source": "https://www.youtube.com/watch?v=y-P0m0M_8pc&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/they-were-roommates/they-were-roommates-poster-113b72896224.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "Vine",
+        "Matt Sukkar",
+        "roommates",
+        "and they were roommates",
+        "室友",
+        "舍友",
+        "reaction",
+        "deadpan"
+      ],
+      "quotes": [
+        "And they were roommates!",
+        "而且她们还是室友！",
+        "Oh my God, they were roommates.",
+        "天哪，她们居然是室友。"
+      ],
+      "manifest": "scenes/they-were-roommates/scene.json"
+    },
+    {
+      "id": "scene_PXO6Cy4dTP3o",
+      "slug": "can-i-pet-that-dog",
+      "routeSlug": "can-i-pet-that-dog",
+      "title": "我能摸摸那只狗吗？",
+      "english": "Can I pet that dog?",
+      "note": "Kayla Holley and Acesyn",
+      "source": "https://www.youtube.com/watch?v=YYx51ZrSn3g&t=3s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/can-i-pet-that-dog/can-i-pet-that-dog-poster-d246bf829c14.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "TikTok",
+        "can I pet that dog",
+        "can I pet that dawg",
+        "Acesyn",
+        "Kayla Holley",
+        "我能摸狗吗",
+        "狗",
+        "requests",
+        "permission",
+        "repetition"
+      ],
+      "quotes": [
+        "Can I pet that dog?",
+        "我能摸摸那只狗吗？",
+        "No.",
+        "不行。",
+        "Can I pet that dog?",
+        "我能摸摸那只狗吗？",
+        "No, he's sleeping.",
+        "不行，它在睡觉。",
+        "Can I pet that dog?",
+        "我能摸摸那只狗吗？这次声音更响、语气更急切。"
+      ],
+      "manifest": "scenes/can-i-pet-that-dog/scene.json"
     }
   ],
   "locales": {
@@ -2931,6 +3036,21 @@
           "title": "I like turtles!",
           "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
           "changes": "Original 2007 KGW broadcast, not the later promotional recreation. Zombie face paint; an unexpected comic answer."
+        },
+        "scene_wdxzuqi-c3ht": {
+          "title": "What's nine plus ten?",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "One complete Vine exchange, without the archive’s duplicate loop. Includes an insult and informal grammar. Twenty-one is the joke; the correct answer is nineteen. Original identities unverified."
+        },
+        "scene_DmadrOyxIpf-": {
+          "title": "And they were roommates!",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "Original two-speaker Vine exchange; Matt Sukkar echoes an unidentified woman. No relationship is inferred beyond the words. Includes Oh my God."
+        },
+        "scene_PXO6Cy4dTP3o": {
+          "title": "Can I pet that dog?",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "Original indoor family video of Acesyn and his mother Kayla, not a bear remix. Repeated requests and raised voice are preserved; respect an adult’s refusal."
         }
       },
       "roles": {
@@ -3605,6 +3725,30 @@
         "role_53AOEvhSt-HG": {
           "name": "Jonathon",
           "hint": "1 line"
+        },
+        "role_BBo6bXnMNXuh": {
+          "name": "Questioner",
+          "hint": "3 lines"
+        },
+        "role_RbHL9yEzn11-": {
+          "name": "Boy",
+          "hint": "2 lines"
+        },
+        "role_3PfScUczuh1u": {
+          "name": "Woman",
+          "hint": "1 line"
+        },
+        "role_obiKywJtOR7o": {
+          "name": "Matt",
+          "hint": "1 line"
+        },
+        "role_z-ONdnV-mP49": {
+          "name": "Acesyn",
+          "hint": "3 lines"
+        },
+        "role_D4pxGfyfhQpD": {
+          "name": "Kayla",
+          "hint": "2 lines"
         }
       },
       "notices": {
@@ -3958,6 +4102,21 @@
           "title": "我喜欢乌龟！",
           "licence": "未确认再分发许可；仅供内部成人原型测试。",
           "changes": "2007年KGW原始采访，并非后来的宣传重演。含僵尸彩绘和出人意料的搞笑回答。"
+        },
+        "scene_wdxzuqi-c3ht": {
+          "title": "九加十等于多少？",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "原始Vine的一次完整对话，去除档案中的重复循环。含不礼貌说法和非标准语法。二十一是笑点，正确答案是十九。原始身份未核实。"
+        },
+        "scene_DmadrOyxIpf-": {
+          "title": "她们居然是室友！",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "原始双人Vine对话；马特·苏卡重复一位身份未知女士的话。不推断人物关系。含Oh my God感叹语。"
+        },
+        "scene_PXO6Cy4dTP3o": {
+          "title": "我能摸摸那只狗吗？",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "Acesyn与母亲Kayla的原始室内家庭视频，并非配熊画面的混剪。保留反复请求和提高音量的表现；应尊重成人的拒绝。"
         }
       },
       "roles": {
@@ -4632,6 +4791,30 @@
         "role_53AOEvhSt-HG": {
           "name": "Jonathon",
           "hint": "1 句台词"
+        },
+        "role_BBo6bXnMNXuh": {
+          "name": "提问者",
+          "hint": "3 句台词"
+        },
+        "role_RbHL9yEzn11-": {
+          "name": "男孩",
+          "hint": "2 句台词"
+        },
+        "role_3PfScUczuh1u": {
+          "name": "路过的女士",
+          "hint": "1 句台词"
+        },
+        "role_obiKywJtOR7o": {
+          "name": "马特",
+          "hint": "1 句台词"
+        },
+        "role_z-ONdnV-mP49": {
+          "name": "Acesyn",
+          "hint": "3 句台词"
+        },
+        "role_D4pxGfyfhQpD": {
+          "name": "凯拉",
+          "hint": "2 句台词"
         }
       },
       "notices": {
@@ -4985,6 +5168,21 @@
           "title": "¡Me gustan las tortugas!",
           "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
           "changes": "Emisión original de KGW de 2007, no la recreación promocional. Maquillaje de zombi y una respuesta inesperada."
+        },
+        "scene_wdxzuqi-c3ht": {
+          "title": "¿Cuánto es nueve más diez?",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Un intercambio completo de Vine, sin repetición. Incluye un insulto y gramática informal. Veintiuno es la broma; la respuesta correcta es diecinueve. Identidades sin verificar."
+        },
+        "scene_DmadrOyxIpf-": {
+          "title": "¡Y eran compañeras de piso!",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Diálogo original de Vine: Matt Sukkar repite a una mujer no identificada. No se infiere su relación. Incluye Oh my God."
+        },
+        "scene_PXO6Cy4dTP3o": {
+          "title": "¿Puedo acariciar a ese perro?",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Vídeo familiar original de Acesyn y su madre Kayla en casa, no el montaje con un oso. Peticiones repetidas y voz elevada; hay que respetar la negativa de un adulto."
         }
       },
       "roles": {
@@ -5659,6 +5857,30 @@
         "role_53AOEvhSt-HG": {
           "name": "Jonathon",
           "hint": "1 línea"
+        },
+        "role_BBo6bXnMNXuh": {
+          "name": "Quien pregunta",
+          "hint": "3 líneas"
+        },
+        "role_RbHL9yEzn11-": {
+          "name": "Niño",
+          "hint": "2 líneas"
+        },
+        "role_3PfScUczuh1u": {
+          "name": "Mujer",
+          "hint": "1 línea"
+        },
+        "role_obiKywJtOR7o": {
+          "name": "Matt",
+          "hint": "1 línea"
+        },
+        "role_z-ONdnV-mP49": {
+          "name": "Acesyn",
+          "hint": "3 líneas"
+        },
+        "role_D4pxGfyfhQpD": {
+          "name": "Kayla",
+          "hint": "2 líneas"
         }
       },
       "notices": {
@@ -6012,6 +6234,21 @@
           "title": "カメが好き！",
           "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
           "changes": "2007年のKGWの元の放送。後年の宣伝用再現ではありません。ゾンビのメイクと意外な返答を含みます。"
+        },
+        "scene_wdxzuqi-c3ht": {
+          "title": "9足す10は？",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "Vineの一度の完全なやり取り。重複ループは除外。侮辱と非標準的な文法を含みます。21は冗談で、正解は19です。元の人物の身元は未確認。"
+        },
+        "scene_DmadrOyxIpf-": {
+          "title": "しかもルームメイトだった！",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "元の二人のVineのやり取り。マット・サッカーが身元不明の女性の言葉を繰り返します。関係は推測しません。Oh my Godを含みます。"
+        },
+        "scene_PXO6Cy4dTP3o": {
+          "title": "あの犬をなでてもいい？",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "Acesynと母親Kaylaの元の室内映像で、クマとの合成ではありません。繰り返すお願いと大声を含みます。大人の拒否を尊重してください。"
         }
       },
       "roles": {
@@ -6686,6 +6923,30 @@
         "role_53AOEvhSt-HG": {
           "name": "Jonathon",
           "hint": "セリフ1行"
+        },
+        "role_BBo6bXnMNXuh": {
+          "name": "質問する人",
+          "hint": "セリフ3行"
+        },
+        "role_RbHL9yEzn11-": {
+          "name": "男の子",
+          "hint": "セリフ2行"
+        },
+        "role_3PfScUczuh1u": {
+          "name": "通りかかった女性",
+          "hint": "セリフ1行"
+        },
+        "role_obiKywJtOR7o": {
+          "name": "マット",
+          "hint": "セリフ1行"
+        },
+        "role_z-ONdnV-mP49": {
+          "name": "Acesyn",
+          "hint": "セリフ3行"
+        },
+        "role_D4pxGfyfhQpD": {
+          "name": "Kayla",
+          "hint": "セリフ2行"
         }
       },
       "notices": {
@@ -7039,6 +7300,21 @@
           "title": "거북이가 좋아요!",
           "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
           "changes": "2007년 KGW 원본 방송이며 이후의 홍보 재연이 아닙니다. 좀비 분장과 엉뚱한 답변이 나옵니다."
+        },
+        "scene_wdxzuqi-c3ht": {
+          "title": "9 더하기 10은?",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "중복 반복을 제외한 원본 Vine 대화 한 번. 모욕과 비표준 문법이 나옵니다. 21은 농담이며 정답은 19입니다. 원래 인물의 신원은 미확인입니다."
+        },
+        "scene_DmadrOyxIpf-": {
+          "title": "그런데 룸메이트였어!",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "Matt Sukkar가 신원 미상의 여성의 말을 반복하는 원본 Vine 대화. 두 사람의 관계를 추측하지 않습니다. Oh my God이 나옵니다."
+        },
+        "scene_PXO6Cy4dTP3o": {
+          "title": "저 개를 쓰다듬어도 돼요?",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "Acesyn과 엄마 Kayla의 원래 실내 가족 영상이며 곰 합성 영상이 아닙니다. 반복되는 부탁과 큰 목소리가 나오며 어른의 거절을 존중해야 합니다."
         }
       },
       "roles": {
@@ -7713,6 +7989,30 @@
         "role_53AOEvhSt-HG": {
           "name": "Jonathon",
           "hint": "대사 1개"
+        },
+        "role_BBo6bXnMNXuh": {
+          "name": "질문하는 사람",
+          "hint": "대사 3개"
+        },
+        "role_RbHL9yEzn11-": {
+          "name": "소년",
+          "hint": "대사 2개"
+        },
+        "role_3PfScUczuh1u": {
+          "name": "지나가던 여성",
+          "hint": "대사 1개"
+        },
+        "role_obiKywJtOR7o": {
+          "name": "맷",
+          "hint": "대사 1개"
+        },
+        "role_z-ONdnV-mP49": {
+          "name": "Acesyn",
+          "hint": "대사 3개"
+        },
+        "role_D4pxGfyfhQpD": {
+          "name": "Kayla",
+          "hint": "대사 2개"
         }
       },
       "notices": {

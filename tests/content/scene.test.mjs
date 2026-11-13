@@ -5,15 +5,15 @@ import { readFile, readdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { validateScene } from '../../src/scene.ts';
 
-test('all 113 internal-test scenes have valid scenes, timed words, waveforms and separate audience folders', async () => {
+test('all 116 internal-test scenes have valid scenes, timed words, waveforms and separate audience folders', async () => {
   const scenes = clips;
   const { validateWaveform } = await import('../../src/waveform.ts');
-  assert.equal(scenes.length, 113);
+  assert.equal(scenes.length, 116);
   assert.equal(scenes.filter(s => s.cohort === 'younger-age-5').length, 15);
-  assert.equal(scenes.filter(s => s.cohort === 'older-audience').length, 69);
+  assert.equal(scenes.filter(s => s.cohort === 'older-audience').length, 72);
   assert.equal(scenes.filter(s => s.cohort === 'older-children').length, 15);
   assert.equal(scenes.filter(s => s.cohort === 'teens').length, 14);
-  assert.equal(new Set(scenes.map(s => s.slug)).size, 113);
+  assert.equal(new Set(scenes.map(s => s.slug)).size, 116);
   assert.equal(new Set(scenes.map(s => s.routeSlug ?? s.slug)).size, scenes.length, 'public scene names must be unique');
   const ids = new Set();
   for (const entry of scenes) {

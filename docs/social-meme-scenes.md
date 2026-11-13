@@ -1,7 +1,7 @@
 # Playable internet meme scenes
 
 Published for the existing adult prototype: original spoken performances from
-Recess Therapy, WNEP, and Steven He. The library has 113 authored scenes: 69 in
+Recess Therapy, WNEP, and Steven He. The library has 116 authored scenes: 72 in
 Memes & clips, 15 First English, 15 Ages 10–12, and 14 Teenagers. Existing scene
 manifests and media references are unchanged.
 
@@ -165,3 +165,53 @@ Second-batch verification:
   build commit `e3b21a4f838eadfae494bc4f50dc5d39105a1cdf`. Content has its own
   revision above. Media/structured content remain in OSS and learner recordings
   remain on-device.
+
+
+## Third batch — 2026-11-13
+
+Three more scenes are authored for the adult prototype. The local catalog has
+116 scenes, including 72 in Memes & clips; all 113 preceding scene manifests and
+all their translations remain unchanged. Publication follows PR merge and
+verification of immutable objects, with the catalog activated last.
+
+| Scene | Source archive | Continuous range | Duration | Practice roles |
+| --- | --- | --- | --- | --- |
+| What's nine plus ten? | [Vine archive](https://www.youtube.com/watch?v=wSRHxVDMzvc) | 0–5.60 s | 5.607 s | Questioner, Boy |
+| And they were roommates! | [Matt Sukkar Vine archive](https://www.youtube.com/watch?v=y-P0m0M_8pc) | 0–4.38 s | 4.380 s | Woman, Matt |
+| Can I pet that dog? | [Family upload](https://www.youtube.com/watch?v=YYx51ZrSn3g) | 3.82–10.72 s | 6.900 s | Acesyn, Kayla |
+
+The social review authoring guard now accepts complete two-speaker exchanges
+from four seconds and two turns, while retaining the longer conversation guards
+for other cohorts. No looping or padding is added to satisfy a duration target.
+A CLI regression check verifies short social captions and continued rejection of
+the same short film edit or a single-speaker exchange.
+
+The 9 + 10 archive repeats its Vine twice; the player uses only the first complete
+exchange and ends before the second copy. Both insults remain as performed,
+with an adult-prototype content note. The answer 21 is the joke; the Chinese hint
+and all five credit translations state that the correct answer is 19. The
+questioner is off-screen and the performers’ identities remain unverified. The
+archive uploader is credited separately from the original performance.
+
+[VICE’s history](https://www.vice.com/en/article/why-and-they-were-roommates-was-the-best-vine-ever/)
+identifies Matt Sukkar, the original Vine `OhP767KHxxJ`, and the two spoken lines.
+The walking woman remains unidentified. No relationship is inferred beyond the
+spoken word roommates. Both portraits use the actual source frames. The final
+roommates and its release remain before the original archive ends.
+
+[FOX 13’s report](https://www.fox13news.com/news/hilarious-video-shows-texas-boy-refusing-to-go-to-sleep-until-he-pet-that-dog)
+identifies Acesyn and his mother Kayla Holley. This is the original indoor family
+footage, not the bear remix. The cut keeps three complete requests and both
+refusals, then the raised-voice release before the next exchange. The child’s
+accent confuses automatic recognition; authored wording follows the repeated
+source phrase corroborated by the publisher. Kayla stays selectable with her
+own off-screen lines. She has no source portrait, so the shared initials display
+is used. The 9 + 10 questioner uses the same fallback. No portraits are invented.
+
+All three include original source audio, Chinese hints, CTC words, waveforms,
+and five-language title/role/credit text. Source checks include context beyond
+the chosen cuts and the next speaker; alignment alone is not treated as proof
+of a complete ending. Media and structured content remain in OSS, application
+code in ESA, and learner recordings on-device. Reuse permission remains
+unconfirmed under the existing adult-prototype notices. Chinese-platform queries
+did not supply verified popularity metrics for this batch.

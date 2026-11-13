@@ -1,0 +1,202 @@
+{
+  "version": 1,
+  "id": "scene_PXO6Cy4dTP3o",
+  "title": "我能摸摸那只狗吗？",
+  "tags": [
+    "meme",
+    "internet",
+    "TikTok",
+    "can I pet that dog",
+    "can I pet that dawg",
+    "Acesyn",
+    "Kayla Holley",
+    "我能摸狗吗",
+    "狗",
+    "requests",
+    "permission",
+    "repetition"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 6.9,
+  "video": "can-i-pet-that-dog-review-d246bf829c14.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/can-i-pet-that-dog/",
+  "poster": "can-i-pet-that-dog-poster-d246bf829c14.jpg",
+  "waveform": "waveform-d246bf829c14.json",
+  "roles": [
+    {
+      "id": "role_z-ONdnV-mP49",
+      "name": "Acesyn",
+      "label": "Acesyn",
+      "hint": "3 句台词",
+      "portrait": "can-i-pet-that-dog-role_z-ONdnV-mP49-portrait-dc5f42b36c1e.jpg"
+    },
+    {
+      "id": "role_D4pxGfyfhQpD",
+      "name": "Kayla",
+      "label": "Kayla",
+      "hint": "2 句台词"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_vCxxH7jvPsA8",
+      "roleId": "role_z-ONdnV-mP49",
+      "start": 0.1,
+      "end": 1.32,
+      "text": "Can I pet that dog?",
+      "hint": "我能摸摸那只狗吗？",
+      "words": [
+        {
+          "text": "Can",
+          "start": 0.303,
+          "end": 0.405
+        },
+        {
+          "text": "I",
+          "start": 0.446,
+          "end": 0.466
+        },
+        {
+          "text": "pet",
+          "start": 0.547,
+          "end": 0.649
+        },
+        {
+          "text": "that",
+          "start": 0.751,
+          "end": 0.852
+        },
+        {
+          "text": "dog?",
+          "start": 0.954,
+          "end": 1.198
+        }
+      ]
+    },
+    {
+      "id": "line_5B-RlV1IWpRf",
+      "roleId": "role_D4pxGfyfhQpD",
+      "start": 1.48,
+      "end": 2.18,
+      "text": "No.",
+      "hint": "不行。",
+      "words": [
+        {
+          "text": "No.",
+          "start": 1.892,
+          "end": 2.056
+        }
+      ]
+    },
+    {
+      "id": "line_yzbo-G75TDy1",
+      "roleId": "role_z-ONdnV-mP49",
+      "start": 2.22,
+      "end": 3.66,
+      "text": "Can I pet that dog?",
+      "hint": "我能摸摸那只狗吗？",
+      "words": [
+        {
+          "text": "Can",
+          "start": 2.342,
+          "end": 2.504
+        },
+        {
+          "text": "I",
+          "start": 2.565,
+          "end": 2.585
+        },
+        {
+          "text": "pet",
+          "start": 2.626,
+          "end": 2.768
+        },
+        {
+          "text": "that",
+          "start": 2.889,
+          "end": 3.011
+        },
+        {
+          "text": "dog?",
+          "start": 3.133,
+          "end": 3.559
+        }
+      ]
+    },
+    {
+      "id": "line_dSztYpnlQBU9",
+      "roleId": "role_D4pxGfyfhQpD",
+      "start": 3.8,
+      "end": 4.86,
+      "text": "No, he's sleeping.",
+      "hint": "不行，它在睡觉。",
+      "words": [
+        {
+          "text": "No,",
+          "start": 4.106,
+          "end": 4.27
+        },
+        {
+          "text": "he's",
+          "start": 4.433,
+          "end": 4.535
+        },
+        {
+          "text": "sleeping.",
+          "start": 4.556,
+          "end": 4.76
+        }
+      ]
+    },
+    {
+      "id": "line_U7TEgp6UOvkE",
+      "roleId": "role_z-ONdnV-mP49",
+      "start": 4.9,
+      "end": 6.78,
+      "text": "Can I pet that dog?",
+      "hint": "我能摸摸那只狗吗？这次声音更响、语气更急切。",
+      "words": [
+        {
+          "text": "Can",
+          "start": 5.021,
+          "end": 5.203
+        },
+        {
+          "text": "I",
+          "start": 5.264,
+          "end": 5.284
+        },
+        {
+          "text": "pet",
+          "start": 5.385,
+          "end": 5.608
+        },
+        {
+          "text": "that",
+          "start": 5.709,
+          "end": 5.891
+        },
+        {
+          "text": "dog?",
+          "start": 6.133,
+          "end": 6.396
+        }
+      ]
+    }
+  ],
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Kayla Holley and Acesyn — Can I pet that dog?",
+    "attribution": "Original family performance: Kayla Holley and her son Acesyn; creator channel Can I pet that DOG! !. Identity, indoor footage and repeated request corroborated by FOX 13’s March 2020 report. This is not the bear remix.",
+    "source": "https://www.youtube.com/watch?v=YYx51ZrSn3g&t=3s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 3.82–10.72 秒的连续节选。Original indoor family video, not the unrelated bear/wildlife remix. Repeated requests and raised voice are preserved for performance, not presented as advice to ignore an adult’s answer or approach an unfamiliar animal. Adult prototype; source reuse permission unconfirmed."
+  },
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  }
+}
