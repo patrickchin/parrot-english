@@ -345,15 +345,19 @@
     {
       "id": "candidate_3TF9sKCsfx4u",
       "key": "very-demure",
-      "title": "Very demure, very mindful",
-      "priority": "medium",
+      "title": "Very demure, very mindful.",
+      "priority": "high",
       "trendStatus": "evergreen-candidate",
-      "status": "source-review-pending",
+      "status": "authored",
       "originalLanguage": "en",
       "source": {
-        "url": "https://www.tiktok.com/@joolieannie/video/7399736793119247662",
-        "providerId": "7399736793119247662",
-        "creator": "Jools Lebron"
+        "url": "https://www.youtube.com/watch?v=E7RJ4S61zV8",
+        "providerId": "E7RJ4S61zV8",
+        "creator": "Jools Lebron",
+        "uploader": "Leshhal",
+        "kind": "original-performance-in-compilation",
+        "uploadedOn": "2024-08-22",
+        "localFile": "content/local-dubbing/review/social-memes/sources/E7RJ4S61zV8.mp4"
       },
       "evidence": [
         {
@@ -369,13 +373,38 @@
           "checkedOn": "2026-11-12",
           "evidenceType": "search-index",
           "note": "Independent discussion of the phrase; not evidence of popularity today."
+        },
+        {
+          "platform": "youtube",
+          "url": "https://www.youtube.com/watch?v=E7RJ4S61zV8",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "source-and-metadata",
+          "note": "Original spoken performance checked within full source context; archive uploader is credited separately from the performer. Counters are this upload’s dated snapshot, not a universal popularity ranking.",
+          "metrics": {
+            "views": 283574,
+            "likes": 1582
+          }
+        },
+        {
+          "platform": "source-context",
+          "url": "https://www.tiktok.com/@joolieannie/video/7399736793119247662",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "search-index",
+          "note": "Recognition/attribution lead. Direct-source performance checks determine the actual edit; historical/repost metrics are not treated as current ranks.",
+          "metrics": {
+            "views": "UNKNOWN",
+            "likes": "UNKNOWN"
+          }
         }
       ],
-      "englishPractice": "Adjectives and delivery; find a self-contained spoken passage, not a compilation.",
-      "contentNotes": "Contextual irony; review the exact passage for age fit. Solo speech may suit performance practice, but the current review tool requires a multi-speaker exchange.",
+      "englishPractice": "Ask a rhetorical question and deliver two measured descriptive phrases.",
+      "contentNotes": "Jools Lebron’s original spoken performance appears at the start of an archive compilation credited on-screen to @joolieannie. The selected interval ends before later appearance comparisons and commentary. Satirical delivery is not a universal workplace appearance rule.",
       "rightsStatus": "redistribution-not-cleared",
-      "publicationStatus": "not-published",
-      "nextAction": "Verify the original performance, speakers, continuous source range, and complete final syllables before authoring a playable scene."
+      "publicationStatus": "authored",
+      "nextAction": "Publish the verified ten-scene batch from merged main, then collect adult prototype feedback; reuse permission remains unconfirmed.",
+      "reviewRecipe": "content/social-meme-review-scenes.json",
+      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/very-demure-mindful/scene.json",
+      "sceneUrl": "https://parrotbook.com/en/scenes/very-demure-mindful"
     },
     {
       "id": "candidate_-1ykKgJ4MQWP",
@@ -829,6 +858,412 @@
       ],
       "publishedOn": "2026-11-13",
       "contentRevision": "edbaa3405315e81cfc5e7420"
+    },
+    {
+      "id": "candidate_jHiIwJMMrNT8",
+      "key": "road-work-ahead",
+      "title": "Road work ahead?",
+      "priority": "high",
+      "trendStatus": "evergreen-candidate",
+      "status": "authored",
+      "originalLanguage": "en",
+      "source": {
+        "url": "https://www.youtube.com/watch?v=6tJkvKbQ8J8",
+        "providerId": "6tJkvKbQ8J8",
+        "creator": "Drew Gooden",
+        "uploader": "Moss",
+        "kind": "social-video-archive-repost",
+        "uploadedOn": "2024-06-15",
+        "localFile": "content/local-dubbing/review/social-memes/sources/6tJkvKbQ8J8.mp4"
+      },
+      "englishPractice": "Ask a surprised question and deliver a dry, emphatic reply.",
+      "contentNotes": "Original Drew Gooden road-sign wordplay; work changes from a construction noun to a verb in the joke. Archive uploader Moss is not claimed as rights holder.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "authored",
+      "reviewRecipe": "content/social-meme-review-scenes.json",
+      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/road-work-ahead/scene.json",
+      "sceneUrl": "https://parrotbook.com/en/scenes/road-work-ahead",
+      "nextAction": "Publish the verified ten-scene batch from merged main, then collect adult prototype feedback; reuse permission remains unconfirmed.",
+      "evidence": [
+        {
+          "platform": "youtube",
+          "url": "https://www.youtube.com/watch?v=6tJkvKbQ8J8",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "source-and-metadata",
+          "note": "Original spoken performance checked within full source context; archive uploader is credited separately from the performer. Counters are this upload’s dated snapshot, not a universal popularity ranking.",
+          "metrics": {
+            "views": 27132,
+            "likes": 472
+          }
+        },
+        {
+          "platform": "source-context",
+          "url": "https://mashable.com/article/drew-gooden-vine-road-work-ahead-youtube",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "publisher-page",
+          "note": "Recognition/attribution lead. Direct-source performance checks determine the actual edit; historical/repost metrics are not treated as current ranks.",
+          "metrics": {
+            "views": "UNKNOWN",
+            "likes": "UNKNOWN"
+          }
+        }
+      ]
+    },
+    {
+      "id": "candidate_4ZWy2CC_2GLd",
+      "key": "hurricane-tortilla",
+      "title": "Hurricane Tortilla!",
+      "priority": "high",
+      "trendStatus": "evergreen-candidate",
+      "status": "authored",
+      "originalLanguage": "en",
+      "source": {
+        "url": "https://www.youtube.com/watch?v=21jLmc_Il3o",
+        "providerId": "21jLmc_Il3o",
+        "creator": "Hurricane Tortilla",
+        "uploader": "Jakrispy",
+        "kind": "social-video-archive-repost",
+        "uploadedOn": "2015-08-06",
+        "localFile": "content/local-dubbing/review/social-memes/sources/21jLmc_Il3o.mp4"
+      },
+      "englishPractice": "Perform an excited setup and a rhyming punchline.",
+      "contentNotes": "Name-based wordplay with an exaggerated tortilla pronunciation; not a weather report or a standard pronunciation model. Performer identity unverified; archive uploader Jakrispy is credited separately.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "authored",
+      "reviewRecipe": "content/social-meme-review-scenes.json",
+      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/hurricane-tortilla/scene.json",
+      "sceneUrl": "https://parrotbook.com/en/scenes/hurricane-tortilla",
+      "nextAction": "Publish the verified ten-scene batch from merged main, then collect adult prototype feedback; reuse permission remains unconfirmed.",
+      "evidence": [
+        {
+          "platform": "youtube",
+          "url": "https://www.youtube.com/watch?v=21jLmc_Il3o",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "source-and-metadata",
+          "note": "Original spoken performance checked within full source context; archive uploader is credited separately from the performer. Counters are this upload’s dated snapshot, not a universal popularity ranking.",
+          "metrics": {
+            "views": 178208069,
+            "likes": 271930
+          }
+        }
+      ]
+    },
+    {
+      "id": "candidate_-fcWUxOHJEim",
+      "key": "dropped-my-croissant",
+      "title": "I could’ve dropped my croissant!",
+      "priority": "high",
+      "trendStatus": "evergreen-candidate",
+      "status": "authored",
+      "originalLanguage": "en",
+      "source": {
+        "url": "https://www.youtube.com/watch?v=ZzWqfJFxC0w",
+        "providerId": "ZzWqfJFxC0w",
+        "creator": "Terry and Terrel",
+        "uploader": "LDTBest Vines",
+        "kind": "social-video-archive-repost",
+        "uploadedOn": "2014-03-10",
+        "localFile": "content/local-dubbing/review/social-memes/sources/ZzWqfJFxC0w.mp4"
+      },
+      "englishPractice": "React with surprise and practise could have plus a past participle.",
+      "contentNotes": "Startle reaction and laughter are retained. The Vine is attributed to Terry (@terryjr12) and Terrel; archive uploader LDTBest Vines is not claimed as creator.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "authored",
+      "reviewRecipe": "content/social-meme-review-scenes.json",
+      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/dropped-my-croissant/scene.json",
+      "sceneUrl": "https://parrotbook.com/en/scenes/dropped-my-croissant",
+      "nextAction": "Publish the verified ten-scene batch from merged main, then collect adult prototype feedback; reuse permission remains unconfirmed.",
+      "evidence": [
+        {
+          "platform": "youtube",
+          "url": "https://www.youtube.com/watch?v=ZzWqfJFxC0w",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "source-and-metadata",
+          "note": "Original spoken performance checked within full source context; archive uploader is credited separately from the performer. Counters are this upload’s dated snapshot, not a universal popularity ranking.",
+          "metrics": {
+            "views": 4951831,
+            "likes": 54600
+          }
+        },
+        {
+          "platform": "source-context",
+          "url": "https://knowyourmeme.com/memes/i-couldve-dropped-my-croissant",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "publisher-page",
+          "note": "Recognition/attribution lead. Direct-source performance checks determine the actual edit; historical/repost metrics are not treated as current ranks.",
+          "metrics": {
+            "views": "UNKNOWN",
+            "likes": "UNKNOWN"
+          }
+        }
+      ]
+    },
+    {
+      "id": "candidate_bmi2MaarNNEs",
+      "key": "look-at-those-chickens",
+      "title": "Look at all those chickens!",
+      "priority": "high",
+      "trendStatus": "evergreen-candidate",
+      "status": "authored",
+      "originalLanguage": "en",
+      "source": {
+        "url": "https://www.youtube.com/watch?v=NsLKQTh-Bqo",
+        "providerId": "NsLKQTh-Bqo",
+        "creator": "Look at all those chickens",
+        "uploader": "raw uncut vines",
+        "kind": "social-video-archive-repost",
+        "uploadedOn": "2014-12-12",
+        "localFile": "content/local-dubbing/review/social-memes/sources/NsLKQTh-Bqo.mp4"
+      },
+      "englishPractice": "Give an excited look-at exclamation with a clear plural noun.",
+      "contentNotes": "The birds shown are geese, not chickens. The source misidentification is the joke, not an animal-vocabulary model. The child’s identity and archive uploader’s rights are not assumed.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "authored",
+      "reviewRecipe": "content/social-meme-review-scenes.json",
+      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/look-at-those-chickens/scene.json",
+      "sceneUrl": "https://parrotbook.com/en/scenes/look-at-those-chickens",
+      "nextAction": "Publish the verified ten-scene batch from merged main, then collect adult prototype feedback; reuse permission remains unconfirmed.",
+      "evidence": [
+        {
+          "platform": "youtube",
+          "url": "https://www.youtube.com/watch?v=NsLKQTh-Bqo",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "source-and-metadata",
+          "note": "Original spoken performance checked within full source context; archive uploader is credited separately from the performer. Counters are this upload’s dated snapshot, not a universal popularity ranking.",
+          "metrics": {
+            "views": 3401569,
+            "likes": 36724
+          }
+        },
+        {
+          "platform": "source-context",
+          "url": "https://www.reddit.com/r/videos/comments/g93941/look_at_all_those_chickens/",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "search-index",
+          "note": "Recognition/attribution lead. Direct-source performance checks determine the actual edit; historical/repost metrics are not treated as current ranks.",
+          "metrics": {
+            "views": "UNKNOWN",
+            "likes": "UNKNOWN"
+          }
+        }
+      ]
+    },
+    {
+      "id": "candidate_zIChyewuXzGB",
+      "key": "i-smell-like-beef",
+      "title": "I smell like beef.",
+      "priority": "high",
+      "trendStatus": "evergreen-candidate",
+      "status": "authored",
+      "originalLanguage": "en",
+      "source": {
+        "url": "https://www.youtube.com/watch?v=5eZyspecXJE",
+        "providerId": "5eZyspecXJE",
+        "creator": "Katie and Ava Ryan",
+        "uploader": "Katie Ryan",
+        "kind": "creator-claimed-original",
+        "uploadedOn": "2014-11-07",
+        "localFile": "content/local-dubbing/review/social-memes/sources/5eZyspecXJE.mp4"
+      },
+      "englishPractice": "Repeat a short sensory observation with contrasting delivery.",
+      "contentNotes": "Original family performance from Katie Ryan’s creator upload, with Ava repeating an absurd observation. Child appearance is not a child-pilot approval or reuse permission.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "authored",
+      "reviewRecipe": "content/social-meme-review-scenes.json",
+      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/i-smell-like-beef/scene.json",
+      "sceneUrl": "https://parrotbook.com/en/scenes/i-smell-like-beef",
+      "nextAction": "Publish the verified ten-scene batch from merged main, then collect adult prototype feedback; reuse permission remains unconfirmed.",
+      "evidence": [
+        {
+          "platform": "youtube",
+          "url": "https://www.youtube.com/watch?v=5eZyspecXJE",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "source-and-metadata",
+          "note": "Original spoken performance checked within full source context; archive uploader is credited separately from the performer. Counters are this upload’s dated snapshot, not a universal popularity ranking.",
+          "metrics": {
+            "views": 12810004,
+            "likes": 162195
+          }
+        },
+        {
+          "platform": "source-context",
+          "url": "https://www.youtube.com/watch?v=Dmpmpfe5M4Q",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "search-index",
+          "note": "Recognition/attribution lead. Direct-source performance checks determine the actual edit; historical/repost metrics are not treated as current ranks.",
+          "metrics": {
+            "views": "UNKNOWN",
+            "likes": "UNKNOWN"
+          }
+        }
+      ]
+    },
+    {
+      "id": "candidate_Smtt5pYBQVk0",
+      "key": "avocado-thanks",
+      "title": "It’s an avocado! Thanks!",
+      "priority": "high",
+      "trendStatus": "evergreen-candidate",
+      "status": "authored",
+      "originalLanguage": "en",
+      "source": {
+        "url": "https://www.youtube.com/watch?v=k-cavEKkirc",
+        "providerId": "k-cavEKkirc",
+        "creator": "Avocado gift",
+        "uploader": "Awfully",
+        "kind": "social-video-archive-repost",
+        "uploadedOn": "2015-11-07",
+        "localFile": "content/local-dubbing/review/social-memes/sources/k-cavEKkirc.mp4"
+      },
+      "englishPractice": "Name a surprising gift and give an enthusiastic thank-you.",
+      "contentNotes": "Original gift-opening performance; a child thanks the giver for an avocado. Archive uploader Awfully is not claimed as the original family or rights holder.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "authored",
+      "reviewRecipe": "content/social-meme-review-scenes.json",
+      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/avocado-thanks/scene.json",
+      "sceneUrl": "https://parrotbook.com/en/scenes/avocado-thanks",
+      "nextAction": "Publish the verified ten-scene batch from merged main, then collect adult prototype feedback; reuse permission remains unconfirmed.",
+      "evidence": [
+        {
+          "platform": "youtube",
+          "url": "https://www.youtube.com/watch?v=k-cavEKkirc",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "source-and-metadata",
+          "note": "Original spoken performance checked within full source context; archive uploader is credited separately from the performer. Counters are this upload’s dated snapshot, not a universal popularity ranking.",
+          "metrics": {
+            "views": 63938135,
+            "likes": 137664
+          }
+        }
+      ]
+    },
+    {
+      "id": "candidate_XNm69IrCF-bB",
+      "key": "god-and-anime",
+      "title": "The power of God and anime!",
+      "priority": "high",
+      "trendStatus": "evergreen-candidate",
+      "status": "authored",
+      "originalLanguage": "en",
+      "source": {
+        "url": "https://www.youtube.com/watch?v=iOv6RVpE4RY",
+        "providerId": "iOv6RVpE4RY",
+        "creator": "Sensai Matt",
+        "uploader": "Le Carlton",
+        "kind": "social-video-archive-repost",
+        "uploadedOn": "2017-07-30",
+        "localFile": "content/local-dubbing/review/social-memes/sources/iOv6RVpE4RY.mp4"
+      },
+      "englishPractice": "Perform the complete famous boast with confident emphasis.",
+      "contentNotes": "Playful exaggerated roleplay, not a religious or safety claim. The surrounding profanity, following speaker and scream are outside this excerpt. Original credited Instagram handle: @sensaimatt; archive uploader Le Carlton. Adult prototype; reuse permission unconfirmed.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "authored",
+      "reviewRecipe": "content/social-meme-review-scenes.json",
+      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/god-and-anime/scene.json",
+      "sceneUrl": "https://parrotbook.com/en/scenes/god-and-anime",
+      "nextAction": "Publish the verified ten-scene batch from merged main, then collect adult prototype feedback; reuse permission remains unconfirmed.",
+      "evidence": [
+        {
+          "platform": "youtube",
+          "url": "https://www.youtube.com/watch?v=iOv6RVpE4RY",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "source-and-metadata",
+          "note": "Original spoken performance checked within full source context; archive uploader is credited separately from the performer. Counters are this upload’s dated snapshot, not a universal popularity ranking.",
+          "metrics": {
+            "views": 225252,
+            "likes": 3932
+          }
+        }
+      ]
+    },
+    {
+      "id": "candidate_MmFjH1GFGv19",
+      "key": "valentino-white-bag",
+      "title": "Lipstick in my Valentino white bag!",
+      "priority": "high",
+      "trendStatus": "evergreen-candidate",
+      "status": "authored",
+      "originalLanguage": "en",
+      "source": {
+        "url": "https://www.youtube.com/watch?v=M1eNd_5T1DM",
+        "providerId": "M1eNd_5T1DM",
+        "creator": "Valentino bag reaction",
+        "uploader": "Luke Martin",
+        "kind": "social-video-archive-repost",
+        "uploadedOn": "2018-03-13",
+        "localFile": "content/local-dubbing/review/social-memes/sources/M1eNd_5T1DM.mp4"
+      },
+      "englishPractice": "Admit a mistake, then perform a shocked repeated reaction.",
+      "contentNotes": "Dramatic surprise with stammering retained in the original audio. Identities and relationship of the two source speakers remain unverified; no family relationship is invented. Brand reference is part of the original performance, not an endorsement.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "authored",
+      "reviewRecipe": "content/social-meme-review-scenes.json",
+      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/valentino-white-bag/scene.json",
+      "sceneUrl": "https://parrotbook.com/en/scenes/valentino-white-bag",
+      "nextAction": "Publish the verified ten-scene batch from merged main, then collect adult prototype feedback; reuse permission remains unconfirmed.",
+      "evidence": [
+        {
+          "platform": "youtube",
+          "url": "https://www.youtube.com/watch?v=M1eNd_5T1DM",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "source-and-metadata",
+          "note": "Original spoken performance checked within full source context; archive uploader is credited separately from the performer. Counters are this upload’s dated snapshot, not a universal popularity ranking.",
+          "metrics": {
+            "views": 909,
+            "likes": 9
+          }
+        },
+        {
+          "platform": "source-context",
+          "url": "https://www.tiktok.com/@dailyvinesforfun/video/7624710579608997150",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "search-index",
+          "note": "Recognition/attribution lead. Direct-source performance checks determine the actual edit; historical/repost metrics are not treated as current ranks.",
+          "metrics": {
+            "views": "UNKNOWN",
+            "likes": "UNKNOWN"
+          }
+        }
+      ]
+    },
+    {
+      "id": "candidate_Xtb1_GFQ-eMr",
+      "key": "i-want-waffle-fries",
+      "title": "I want waffle fries!",
+      "priority": "high",
+      "trendStatus": "evergreen-candidate",
+      "status": "authored",
+      "originalLanguage": "en",
+      "source": {
+        "url": "https://www.youtube.com/watch?v=UYNa4PMitTg",
+        "providerId": "UYNa4PMitTg",
+        "creator": "Waffle fries / itsmewario48",
+        "uploader": "Beans ",
+        "kind": "social-video-archive-repost",
+        "uploadedOn": "2021-10-13",
+        "localFile": "content/local-dubbing/review/social-memes/sources/UYNa4PMitTg.mp4"
+      },
+      "englishPractice": "Contrast an alarmed question with a calm low-register request.",
+      "contentNotes": "An archived TikTok voice demonstration credited on-screen to @itsmewario48; uploader Beans is separate. One performer voices the question and low-pitched reply. A stylized character image appears near the end; no second physical speaker is invented.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "authored",
+      "reviewRecipe": "content/social-meme-review-scenes.json",
+      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/i-want-waffle-fries/scene.json",
+      "sceneUrl": "https://parrotbook.com/en/scenes/i-want-waffle-fries",
+      "nextAction": "Publish the verified ten-scene batch from merged main, then collect adult prototype feedback; reuse permission remains unconfirmed.",
+      "evidence": [
+        {
+          "platform": "youtube",
+          "url": "https://www.youtube.com/watch?v=UYNa4PMitTg",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "source-and-metadata",
+          "note": "Original spoken performance checked within full source context; archive uploader is credited separately from the performer. Counters are this upload’s dated snapshot, not a universal popularity ranking.",
+          "metrics": {
+            "views": 219189,
+            "likes": 8228
+          }
+        }
+      ]
     }
   ],
   "researchBatches": [
@@ -881,6 +1316,25 @@
           "reason": "Downloaded archive repeats/edits the original and background speaker detail remains unclear; not included in this batch."
         }
       ]
+    },
+    {
+      "date": "2026-11-13",
+      "batch": "ten-more-social-memes",
+      "authoredScenes": [
+        "road-work-ahead",
+        "hurricane-tortilla",
+        "dropped-my-croissant",
+        "look-at-those-chickens",
+        "i-smell-like-beef",
+        "avocado-thanks",
+        "god-and-anime",
+        "valentino-white-bag",
+        "i-want-waffle-fries",
+        "very-demure-mindful"
+      ],
+      "browseTag": "Memes",
+      "chinesePlatformResult": "Bilibili/Douyin queries were attempted for selected families. No reliable current Chinese-platform metrics or ranking were retained. These are enduring cross-platform memes with verified original spoken-English performances.",
+      "sourceReview": "Rejected a Pee-wee lip-sync repost for Demure and a repeated avocado archive with unreliable audio; retained Jools’s original performance in a credited compilation and a clear avocado source. No synthetic dialogue or loops."
     }
   ]
 }

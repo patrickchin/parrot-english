@@ -1,7 +1,7 @@
 # Playable internet meme scenes
 
 Published for the existing adult prototype: original spoken performances from
-Recess Therapy, WNEP, and Steven He. The library has 118 authored scenes: 74 in
+Recess Therapy, WNEP, and Steven He. The library has 128 authored scenes: 84 in
 Memes & clips, 15 First English, 15 Ages 10–12, and 14 Teenagers. Existing scene
 manifests and media references are unchanged.
 
@@ -302,3 +302,70 @@ Fourth-batch verification:
 - Player workflow 43384472869 succeeded; production health matched its actual
   build commit `833d81db17f762bc8a308bac81126812fa609c7c`. Physical-device
   microphone testing remains separate from these browser checks.
+
+
+## Fifth batch — ten more memes — 2026-11-13
+
+Ten distinct meme performances are authored, bringing the local catalog to 128
+scenes and the shared Memes tag to 20 clips. All 118 preceding scene manifests,
+pack summaries, and translations are preserved. Single-line meme quotes are now
+accepted by the social authoring check, alongside solo performances and exchanges;
+the longer-conversation guards for other cohorts remain. A CLI regression covers
+a 2.8-second single-line quote and rejection of an empty draft. The social guard
+accepts short source beats down to one second; no duration padding is used.
+
+| Scene | Source | Continuous range | Encoded duration |
+| --- | --- | --- | --- |
+| Road work ahead? | [Source](https://www.youtube.com/watch?v=6tJkvKbQ8J8) | 0.00–5.90 s | 5.907 s |
+| Hurricane Tortilla! | [Source](https://www.youtube.com/watch?v=21jLmc_Il3o) | 0.00–6.25 s | 6.257 s |
+| I could’ve dropped my croissant! | [Source](https://www.youtube.com/watch?v=ZzWqfJFxC0w) | 0.00–6.45 s | 6.451 s |
+| Look at all those chickens! | [Source](https://www.youtube.com/watch?v=NsLKQTh-Bqo) | 0.00–6.85 s | 6.856 s |
+| I smell like beef. | [Source](https://www.youtube.com/watch?v=5eZyspecXJE) | 0.90–7.08 s | 6.207 s |
+| It’s an avocado! Thanks! | [Source](https://www.youtube.com/watch?v=k-cavEKkirc) | 0.00–6.58 s | 6.587 s |
+| The power of God and anime! | [Source](https://www.youtube.com/watch?v=iOv6RVpE4RY) | 3.00–5.87 s | 2.900 s |
+| Lipstick in my Valentino white bag! | [Source](https://www.youtube.com/watch?v=M1eNd_5T1DM) | 0.00–6.65 s | 6.657 s |
+| I want waffle fries! | [Source](https://www.youtube.com/watch?v=UYNa4PMitTg) | 4.94–9.80 s | 4.867 s |
+| Very demure, very mindful. | [Source](https://www.youtube.com/watch?v=E7RJ4S61zV8) | 0.00–4.30 s | 4.307 s |
+
+Each cut retains the original spoken performance, source-specific credits,
+Chinese hints, five-language title/role/credit metadata, CTC words, a waveform,
+a poster, and portraits from actual source frames. The same `meme` + `internet`
+metadata keeps all additions under Memes without new creator tags. Original
+names are retained where sourced; unknown performers keep descriptive labels.
+Archive uploaders are not assumed to own the performance or grant reuse rights.
+
+Editorial checks:
+
+- Road Work Ahead keeps the sign and reply, ending after does and before the
+  following vocalization. The work noun/verb joke is explained.
+- Hurricane Tortilla preserves the setup and payoff; the rhyme and exaggerated
+  pronunciation are labelled as wordplay rather than a weather report.
+- The croissant cut retains Terrel’s full reaction and original laughter. Source
+  history identifies Terry and Terrel; the archive uploader is credited separately.
+- Chickens retains the full visual setup and exclamation. The hint and localized
+  credits identify the birds as geese; the misidentification is the joke.
+- Beef uses two complete repetitions from Katie Ryan’s creator upload, ending
+  before the next repetition. Ava remains the only authored speaker.
+- Avocado uses a clear original gift-opening performance, not the repeated archive
+  whose audio recognition was unreliable. Thanks and its release are retained.
+- God and Anime keeps only the complete famous boast. Surrounding profanity,
+  the following speaker and scream are outside the cut. Independent alignment on uncut context puts side at 5.572–5.814 and the next
+  Wait at 5.915–6.076. Ending at 5.87 keeps the final consonant and excludes the
+  next speaker and scream. No supporting line is invented.
+- Valentino keeps both original speakers and the bag owner’s stammering in the
+  audio. The meaningful spoken words are subtitled; no family relationship or
+  unverified personal names are assigned.
+- Waffle Fries retains one complete question/reply beat from the creator’s vocal
+  demonstration, omitting the earlier repeated question and TikTok outro. The
+  same performer uses two registers; no second physical speaker is invented.
+- Demure uses Jools Lebron’s original performance, credited in the compilation
+  itself. The Pee-wee lip-sync repost is excluded. Ending at 4.30 preserves mindful
+  before the next sentence at about 4.44; later appearance comparisons and news
+  commentary are outside the cut. The satire is not universal workplace advice.
+
+Cuts are compared with the stored full source and surrounding speech; alignment
+inside a truncated window alone is not proof of completeness. Media and structured
+content stay in OSS, code in ESA, and learner recordings on-device. Reuse permission
+remains unconfirmed under the existing adult-prototype notices. These enduring
+memes are not claimed as a current platform-wide popularity ranking. Publication
+follows PR merge and immutable-file verification, with catalog activation last.

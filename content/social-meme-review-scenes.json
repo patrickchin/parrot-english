@@ -3,7 +3,7 @@
   "audience": "Private adult editorial review; child appearance in source is not an age rating or reuse consent.",
   "purpose": "private-adult-review",
   "rightsStatus": "redistribution-not-cleared",
-  "selectionCriteria": "Complete original spoken meme beats, including multi-line solo performances and short exchanges. Preserve real speakers, setup, payoff, source-specific content notes, and complete releases; never invent dialogue or pad/loop short clips.",
+  "selectionCriteria": "Recognizable complete original spoken meme beats, including single-line quotes, multi-line solo performances, and exchanges. Preserve real speakers, source notes, setup/payoff, and complete releases. Never invent dialogue, pad, or loop short clips.",
   "sources": [
     {
       "id": "1VbZE6YhjKk",
@@ -155,6 +155,156 @@
       "duration": 150,
       "kind": "event-archive-repost",
       "sha256": "c05c04206d8706155dfc8de0b0b1b38c29de64af9a25cd4c2bad4a6b6132fe97"
+    },
+    {
+      "id": "6tJkvKbQ8J8",
+      "url": "https://www.youtube.com/watch?v=6tJkvKbQ8J8",
+      "localFile": "content/local-dubbing/review/social-memes/sources/6tJkvKbQ8J8.mp4",
+      "sourceOffset": 0,
+      "title": "Drew Gooden Road Work Ahead Vine (ORIGINAL)",
+      "series": "Drew Gooden",
+      "episode": "Road work ahead?",
+      "attribution": "Original performance credited to Drew Gooden. Archive/source uploader: Moss. Original Drew Gooden road-sign wordplay; work changes from a construction noun to a verb in the joke. Archive uploader Moss is not claimed as rights holder.",
+      "channel": "Moss",
+      "uploadDate": "20240615",
+      "duration": 7,
+      "kind": "social-video-archive-repost",
+      "sha256": "011a494477986c32fd6008083a499ccb0f6605c8a11f045aa211095a77586910"
+    },
+    {
+      "id": "21jLmc_Il3o",
+      "url": "https://www.youtube.com/watch?v=21jLmc_Il3o",
+      "localFile": "content/local-dubbing/review/social-memes/sources/21jLmc_Il3o.mp4",
+      "sourceOffset": 0,
+      "title": "More like hurricane tortilla VINE",
+      "series": "Hurricane Tortilla",
+      "episode": "Hurricane Tortilla!",
+      "attribution": "Original performance credited to Hurricane Tortilla. Archive/source uploader: Jakrispy. Name-based wordplay with an exaggerated tortilla pronunciation; not a weather report or a standard pronunciation model. Performer identity unverified; archive uploader Jakrispy is credited separately.",
+      "channel": "Jakrispy",
+      "uploadDate": "20150806",
+      "duration": 6,
+      "kind": "social-video-archive-repost",
+      "sha256": "7d07f5692c3663986eeb2a06527dfaad3c09e37481b55f1473946150c5fc0f62"
+    },
+    {
+      "id": "ZzWqfJFxC0w",
+      "url": "https://www.youtube.com/watch?v=ZzWqfJFxC0w",
+      "localFile": "content/local-dubbing/review/social-memes/sources/ZzWqfJFxC0w.mp4",
+      "sourceOffset": 0,
+      "title": "Almost Dropped His Croissant.LDTbest Vines",
+      "series": "Terry and Terrel",
+      "episode": "I could’ve dropped my croissant!",
+      "attribution": "Original performance credited to Terry and Terrel. Archive/source uploader: LDTBest Vines. Startle reaction and laughter are retained. The Vine is attributed to Terry (@terryjr12) and Terrel; archive uploader LDTBest Vines is not claimed as creator.",
+      "channel": "LDTBest Vines",
+      "uploadDate": "20140310",
+      "duration": 7,
+      "kind": "social-video-archive-repost",
+      "sha256": "fddbd88f95ad23f20ccf013e0a36f659f2acf05a686a3ec007ba9900a2fdd3d6"
+    },
+    {
+      "id": "NsLKQTh-Bqo",
+      "url": "https://www.youtube.com/watch?v=NsLKQTh-Bqo",
+      "localFile": "content/local-dubbing/review/social-memes/sources/NsLKQTh-Bqo.mp4",
+      "sourceOffset": 0,
+      "title": "Look At All Those Chickens - Original Uncut Vine",
+      "series": "Look at all those chickens",
+      "episode": "Look at all those chickens!",
+      "attribution": "Original performance credited to Look at all those chickens. Archive/source uploader: raw uncut vines. The birds shown are geese, not chickens. The source misidentification is the joke, not an animal-vocabulary model. The child’s identity and archive uploader’s rights are not assumed.",
+      "channel": "raw uncut vines",
+      "uploadDate": "20141212",
+      "duration": 7,
+      "kind": "social-video-archive-repost",
+      "sha256": "609a0174ae28e2194164aa47deb3ae1a3584407000f759f960ea01b55ec104f0"
+    },
+    {
+      "id": "5eZyspecXJE",
+      "url": "https://www.youtube.com/watch?v=5eZyspecXJE",
+      "localFile": "content/local-dubbing/review/social-memes/sources/5eZyspecXJE.mp4",
+      "sourceOffset": 0,
+      "title": "I Smell Like Beef Original Extended Version #beefbaby - Katie Ryan",
+      "series": "Katie and Ava Ryan",
+      "episode": "I smell like beef.",
+      "attribution": "Original performance credited to Katie and Ava Ryan. Archive/source uploader: Katie Ryan. Original family performance from Katie Ryan’s creator upload, with Ava repeating an absurd observation. Child appearance is not a child-pilot approval or reuse permission.",
+      "channel": "Katie Ryan",
+      "uploadDate": "20141107",
+      "duration": 33,
+      "kind": "creator-claimed-original",
+      "sha256": "f8112aba1d7318cf9247445b726539ced8c0c0b816f3a71c7220507291cdf659"
+    },
+    {
+      "id": "k-cavEKkirc",
+      "url": "https://www.youtube.com/watch?v=k-cavEKkirc",
+      "localFile": "content/local-dubbing/review/social-memes/sources/k-cavEKkirc.mp4",
+      "sourceOffset": 0,
+      "title": "it’s an avocado.. thanks.. vine",
+      "series": "Avocado gift",
+      "episode": "It’s an avocado! Thanks!",
+      "attribution": "Original performance credited to Avocado gift. Archive/source uploader: Awfully. Original gift-opening performance; a child thanks the giver for an avocado. Archive uploader Awfully is not claimed as the original family or rights holder.",
+      "channel": "Awfully",
+      "uploadDate": "20151107",
+      "duration": 7,
+      "kind": "social-video-archive-repost",
+      "sha256": "b731695c5d9cd9285d874802a7c57c34b0283f9776c0841e28c712c2a33d84a9"
+    },
+    {
+      "id": "iOv6RVpE4RY",
+      "url": "https://www.youtube.com/watch?v=iOv6RVpE4RY",
+      "localFile": "content/local-dubbing/review/social-memes/sources/iOv6RVpE4RY.mp4",
+      "sourceOffset": 0,
+      "title": "I have the Power of God and Anime on my side",
+      "series": "Sensai Matt",
+      "episode": "The power of God and anime!",
+      "attribution": "Original performance credited to @sensaimatt. Archive uploader: Le Carlton. The excerpt contains the famous roleplay boast; surrounding profanity and interruptions are excluded.",
+      "channel": "Le Carlton",
+      "uploadDate": "20170730",
+      "duration": 7,
+      "kind": "social-video-archive-repost",
+      "sha256": "f0b5c6224c08459532e271d029c0c1ace74bcddbf05eb945f9f92eb95c58bfdd"
+    },
+    {
+      "id": "M1eNd_5T1DM",
+      "url": "https://www.youtube.com/watch?v=M1eNd_5T1DM",
+      "localFile": "content/local-dubbing/review/social-memes/sources/M1eNd_5T1DM.mp4",
+      "sourceOffset": 0,
+      "title": "Lipstick in my Valentino white bag Vine",
+      "series": "Valentino bag reaction",
+      "episode": "Lipstick in my Valentino white bag!",
+      "attribution": "Original performance credited to Valentino bag reaction. Archive/source uploader: Luke Martin. Dramatic surprise with repeated stammered fragments. Identities and relationship of the two source speakers remain unverified; no family relationship is invented. Brand reference is part of the original performance, not an endorsement.",
+      "channel": "Luke Martin",
+      "uploadDate": "20180313",
+      "duration": 7,
+      "kind": "social-video-archive-repost",
+      "sha256": "913652b2f98c3e40761566ab30ee1f46c046fc6763c27da9b56d570a77c776a4"
+    },
+    {
+      "id": "UYNa4PMitTg",
+      "url": "https://www.youtube.com/watch?v=UYNa4PMitTg",
+      "localFile": "content/local-dubbing/review/social-memes/sources/UYNa4PMitTg.mp4",
+      "sourceOffset": 0,
+      "title": "I Want Waffle Fries (Original)",
+      "series": "Waffle fries / itsmewario48",
+      "episode": "I want waffle fries!",
+      "attribution": "Original performance credited to Waffle fries / itsmewario48. Archive/source uploader: Beans . An archived TikTok voice demonstration credited on-screen to @itsmewario48; uploader Beans is separate. One performer voices the question and low-pitched reply. A stylized character image appears near the end; no second physical speaker is invented.",
+      "channel": "Beans ",
+      "uploadDate": "20211013",
+      "duration": 13,
+      "kind": "social-video-archive-repost",
+      "sha256": "bf7823de66bfdf89d9fae4a7f5bd3a100664987dec91ae1985eb029276c88e98"
+    },
+    {
+      "id": "E7RJ4S61zV8",
+      "url": "https://www.youtube.com/watch?v=E7RJ4S61zV8",
+      "localFile": "content/local-dubbing/review/social-memes/sources/E7RJ4S61zV8.mp4",
+      "sourceOffset": 0,
+      "title": "VERY DEMURE VERY MINDFUL ORIGINAL TIKTOK TREND EXPLAINED",
+      "series": "Jools Lebron",
+      "episode": "Very demure, very mindful.",
+      "attribution": "Original performance credited to Jools Lebron. Archive/source uploader: Leshhal. Jools Lebron’s original spoken performance appears at the start of an archive compilation credited on-screen to @joolieannie. The selected interval ends before later appearance comparisons and commentary. Satirical delivery is not a universal workplace appearance rule.",
+      "channel": "Leshhal",
+      "uploadDate": "20240822",
+      "duration": 240,
+      "kind": "original-performance-in-compilation",
+      "sha256": "1649ea7b77574fb414626a659159f702fc4200608d10d302b3fcb7c8d2f08d0c"
     }
   ],
   "scenes": [
@@ -2412,6 +2562,1238 @@
         "method": "Full 150-second archive frames and small.en recognition; independent CTC boundary alignment on uncut 81.2–87-second context includes the following We will give everyone. The song-remix lead CRU-fwS6aAU was rejected.",
         "roles": "Lei Jun is the sole authored English speaker in this excerpt. Hugo is visible but does not speak here. Crowd cheers remain in the original mix; no audience words or roles are invented.",
         "cut": "Final you aligns at 83.367–83.468; the next We starts at 84.792. Cut at 84.20 retains the full release and excludes the following sentence. Questions retain crowd-response gaps; no audio splicing or generated speech."
+      },
+      "wordTiming": {
+        "method": "CTC forced alignment",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_yy2CQn0D_PwL",
+      "sceneId": "scene_qptUJeRGWMoo",
+      "slug": "road-work-ahead",
+      "publicSlug": "road-work-ahead",
+      "cohort": "older-audience",
+      "batch": "2026-11-13-five",
+      "sourceId": "6tJkvKbQ8J8",
+      "title": "Road work ahead?",
+      "titleZh": "前方道路施工？",
+      "start": 0,
+      "end": 5.9,
+      "roles": [
+        {
+          "id": "role_lrh2SduXQHbr",
+          "name": "Drew",
+          "portraitSource": {
+            "sourceId": "6tJkvKbQ8J8",
+            "time": 5.6,
+            "normalizedCrop": [
+              0.12,
+              0.02,
+              0.86,
+              0.9
+            ]
+          },
+          "portrait": "road-work-ahead-role_lrh2SduXQHbr-portrait-11152416d9f1.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_M_baXdG90iHr",
+          "roleId": "role_lrh2SduXQHbr",
+          "speaker": "Drew",
+          "start": 0.05,
+          "end": 2.55,
+          "text": "Road work ahead?",
+          "hint": "前方道路施工？",
+          "words": [
+            {
+              "text": "Road",
+              "start": 1.018,
+              "end": 1.36
+            },
+            {
+              "text": "work",
+              "start": 1.481,
+              "end": 1.723
+            },
+            {
+              "text": "ahead?",
+              "start": 1.885,
+              "end": 2.49
+            }
+          ]
+        },
+        {
+          "id": "line_pzYF-oSbbZ-t",
+          "roleId": "role_lrh2SduXQHbr",
+          "speaker": "Drew",
+          "start": 2.92,
+          "end": 5.72,
+          "text": "Uh, yeah, I sure hope it does.",
+          "hint": "呃，是啊，我当然希望它能正常工作。笑点把 work 从“施工”读成“工作”。",
+          "words": [
+            {
+              "text": "Uh,",
+              "start": 3.081,
+              "end": 3.142
+            },
+            {
+              "text": "yeah,",
+              "start": 3.464,
+              "end": 3.826
+            },
+            {
+              "text": "I",
+              "start": 4.088,
+              "end": 4.108
+            },
+            {
+              "text": "sure",
+              "start": 4.249,
+              "end": 4.491
+            },
+            {
+              "text": "hope",
+              "start": 4.612,
+              "end": 4.854
+            },
+            {
+              "text": "it",
+              "start": 4.975,
+              "end": 5.035
+            },
+            {
+              "text": "does.",
+              "start": 5.156,
+              "end": 5.498
+            }
+          ]
+        }
+      ],
+      "tags": [
+        "meme",
+        "internet",
+        "Drew Gooden",
+        "Road work ahead",
+        "前方施工",
+        "wordplay"
+      ],
+      "contentNotes": "Original Drew Gooden road-sign wordplay; work changes from a construction noun to a verb in the joke. Archive uploader Moss is not claimed as rights holder.",
+      "practice": "Ask a surprised question and deliver a dry, emphatic reply.",
+      "reviewStatus": "source-and-speaker-checked-private-adult-prototype",
+      "verification": {
+        "method": "Full source frames, source attribution/history, independent small.en recognition and CTC word alignment. Source context beyond each selected ending is retained locally.",
+        "roles": "Each listed role follows the actual source voice; identities not verified from source evidence remain descriptive labels. Nonverbal laughter/ambience stays in the original mix.",
+        "cut": "Does ends around 5.42; cut at 5.90 retains release before the following vocalization around 6.14."
+      },
+      "wordTiming": {
+        "method": "CTC forced alignment",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_-IP_jNi2P-H1",
+      "sceneId": "scene_s_HPfmp4LrgV",
+      "slug": "hurricane-tortilla",
+      "publicSlug": "hurricane-tortilla",
+      "cohort": "older-audience",
+      "batch": "2026-11-13-five",
+      "sourceId": "21jLmc_Il3o",
+      "title": "Hurricane Tortilla!",
+      "titleZh": "墨西哥薄饼飓风！",
+      "start": 0,
+      "end": 6.25,
+      "roles": [
+        {
+          "id": "role_w29WAhLT0w0_",
+          "name": "Boy",
+          "portraitSource": {
+            "sourceId": "21jLmc_Il3o",
+            "time": 5.8,
+            "normalizedCrop": [
+              0.06,
+              0,
+              0.88,
+              0.92
+            ]
+          },
+          "portrait": "hurricane-tortilla-role_w29WAhLT0w0_-portrait-5ed286700520.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_kPcbYJ74SGrJ",
+          "roleId": "role_w29WAhLT0w0_",
+          "speaker": "Boy",
+          "start": 0.02,
+          "end": 3.7,
+          "text": "Whoa! Hurricane Katrina!",
+          "hint": "哇！卡特里娜飓风！",
+          "words": [
+            {
+              "text": "Whoa!",
+              "start": 0.422,
+              "end": 1.327
+            },
+            {
+              "text": "Hurricane",
+              "start": 2.212,
+              "end": 2.775
+            },
+            {
+              "text": "Katrina!",
+              "start": 2.795,
+              "end": 3.599
+            }
+          ]
+        },
+        {
+          "id": "line_Jxb1doTL4Q67",
+          "roleId": "role_w29WAhLT0w0_",
+          "speaker": "Boy",
+          "start": 4.1,
+          "end": 6.23,
+          "text": "More like Hurricane Tortilla!",
+          "hint": "还不如叫“墨西哥薄饼飓风”！这是押韵的玩笑。",
+          "words": [
+            {
+              "text": "More",
+              "start": 4.321,
+              "end": 4.462
+            },
+            {
+              "text": "like",
+              "start": 4.502,
+              "end": 4.663
+            },
+            {
+              "text": "Hurricane",
+              "start": 4.743,
+              "end": 5.306
+            },
+            {
+              "text": "Tortilla!",
+              "start": 5.386,
+              "end": 6.15
+            }
+          ]
+        }
+      ],
+      "tags": [
+        "meme",
+        "internet",
+        "Hurricane Tortilla",
+        "Hurricane Katrina",
+        "飓风薄饼",
+        "wordplay"
+      ],
+      "contentNotes": "Name-based wordplay with an exaggerated tortilla pronunciation; not a weather report or a standard pronunciation model. Performer identity unverified; archive uploader Jakrispy is credited separately.",
+      "practice": "Perform an excited setup and a rhyming punchline.",
+      "reviewStatus": "source-and-speaker-checked-private-adult-prototype",
+      "verification": {
+        "method": "Full source frames, source attribution/history, independent small.en recognition and CTC word alignment. Source context beyond each selected ending is retained locally.",
+        "roles": "Each listed role follows the actual source voice; identities not verified from source evidence remain descriptive labels. Nonverbal laughter/ambience stays in the original mix.",
+        "cut": "One continuous source interval. Original wording, setup/payoff and final syllables are retained; no looping, padding or generated speech."
+      },
+      "wordTiming": {
+        "method": "CTC forced alignment",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_y45-Ju8_kFuH",
+      "sceneId": "scene_x9PNzvY9pXSb",
+      "slug": "dropped-my-croissant",
+      "publicSlug": "dropped-my-croissant",
+      "cohort": "older-audience",
+      "batch": "2026-11-13-five",
+      "sourceId": "ZzWqfJFxC0w",
+      "title": "I could’ve dropped my croissant!",
+      "titleZh": "我差点把羊角面包掉了！",
+      "start": 0,
+      "end": 6.45,
+      "roles": [
+        {
+          "id": "role_4EIlJI3iuyqG",
+          "name": "Terrel",
+          "portraitSource": {
+            "sourceId": "ZzWqfJFxC0w",
+            "time": 3,
+            "normalizedCrop": [
+              0.32,
+              0.13,
+              0.64,
+              0.76
+            ]
+          },
+          "portrait": "dropped-my-croissant-role_4EIlJI3iuyqG-portrait-c58cca330493.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_qtzdMYnnccxs",
+          "roleId": "role_4EIlJI3iuyqG",
+          "speaker": "Terrel",
+          "start": 1.26,
+          "end": 2.95,
+          "text": "Stop!",
+          "hint": "停！",
+          "words": [
+            {
+              "text": "Stop!",
+              "start": 1.743,
+              "end": 2.628
+            }
+          ]
+        },
+        {
+          "id": "line_D-F1iBhfwVgE",
+          "roleId": "role_4EIlJI3iuyqG",
+          "speaker": "Terrel",
+          "start": 3.75,
+          "end": 5.78,
+          "text": "I could've dropped my croissant!",
+          "hint": "我差点把羊角面包掉了！",
+          "words": [
+            {
+              "text": "I",
+              "start": 3.77,
+              "end": 3.79
+            },
+            {
+              "text": "could've",
+              "start": 3.891,
+              "end": 4.092
+            },
+            {
+              "text": "dropped",
+              "start": 4.273,
+              "end": 4.514
+            },
+            {
+              "text": "my",
+              "start": 4.574,
+              "end": 4.654
+            },
+            {
+              "text": "croissant!",
+              "start": 4.735,
+              "end": 5.338
+            }
+          ]
+        }
+      ],
+      "tags": [
+        "meme",
+        "internet",
+        "croissant",
+        "Terry",
+        "Terrel",
+        "羊角面包",
+        "reaction"
+      ],
+      "contentNotes": "Startle reaction and laughter are retained. The Vine is attributed to Terry (@terryjr12) and Terrel; archive uploader LDTBest Vines is not claimed as creator.",
+      "practice": "React with surprise and practise could have plus a past participle.",
+      "reviewStatus": "source-and-speaker-checked-private-adult-prototype",
+      "verification": {
+        "method": "Full source frames, source attribution/history, independent small.en recognition and CTC word alignment. Source context beyond each selected ending is retained locally.",
+        "roles": "Each listed role follows the actual source voice; identities not verified from source evidence remain descriptive labels. Nonverbal laughter/ambience stays in the original mix.",
+        "cut": "One continuous source interval. Original wording, setup/payoff and final syllables are retained; no looping, padding or generated speech."
+      },
+      "wordTiming": {
+        "method": "CTC forced alignment",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_DwL1gDZJy7T3",
+      "sceneId": "scene_gTwFs3Tea1zC",
+      "slug": "look-at-those-chickens",
+      "publicSlug": "look-at-those-chickens",
+      "cohort": "older-audience",
+      "batch": "2026-11-13-five",
+      "sourceId": "NsLKQTh-Bqo",
+      "title": "Look at all those chickens!",
+      "titleZh": "快看那些小鸡！",
+      "start": 0,
+      "end": 6.85,
+      "roles": [
+        {
+          "id": "role_jW130fBXYF3P",
+          "name": "Girl",
+          "portraitSource": {
+            "sourceId": "NsLKQTh-Bqo",
+            "time": 4.6,
+            "normalizedCrop": [
+              0,
+              0.15,
+              0.6,
+              0.6
+            ]
+          },
+          "portrait": "look-at-those-chickens-role_jW130fBXYF3P-portrait-eea76b44798f.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_TOu_8l8ap0fN",
+          "roleId": "role_jW130fBXYF3P",
+          "speaker": "Girl",
+          "start": 1.98,
+          "end": 5.28,
+          "text": "Look at all those chickens!",
+          "hint": "快看那些小鸡！画面中实际是鹅，把它们叫成鸡就是笑点。",
+          "words": [
+            {
+              "text": "Look",
+              "start": 2.906,
+              "end": 3.046
+            },
+            {
+              "text": "at",
+              "start": 3.207,
+              "end": 3.248
+            },
+            {
+              "text": "all",
+              "start": 3.55,
+              "end": 3.831
+            },
+            {
+              "text": "those",
+              "start": 3.912,
+              "end": 4.193
+            },
+            {
+              "text": "chickens!",
+              "start": 4.455,
+              "end": 5.179
+            }
+          ]
+        }
+      ],
+      "tags": [
+        "meme",
+        "internet",
+        "look at all those chickens",
+        "chickens",
+        "geese",
+        "小鸡",
+        "鹅",
+        "reaction"
+      ],
+      "contentNotes": "The birds shown are geese, not chickens. The source misidentification is the joke, not an animal-vocabulary model. The child’s identity and archive uploader’s rights are not assumed.",
+      "practice": "Give an excited look-at exclamation with a clear plural noun.",
+      "reviewStatus": "source-and-speaker-checked-private-adult-prototype",
+      "verification": {
+        "method": "Full source frames, source attribution/history, independent small.en recognition and CTC word alignment. Source context beyond each selected ending is retained locally.",
+        "roles": "Each listed role follows the actual source voice; identities not verified from source evidence remain descriptive labels. Nonverbal laughter/ambience stays in the original mix.",
+        "cut": "One continuous source interval. Original wording, setup/payoff and final syllables are retained; no looping, padding or generated speech."
+      },
+      "wordTiming": {
+        "method": "CTC forced alignment",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_KT2MaEoGVhEm",
+      "sceneId": "scene_iu-4psvRA1Iq",
+      "slug": "i-smell-like-beef",
+      "publicSlug": "i-smell-like-beef",
+      "cohort": "older-audience",
+      "batch": "2026-11-13-five",
+      "sourceId": "5eZyspecXJE",
+      "title": "I smell like beef.",
+      "titleZh": "我闻起来像牛肉。",
+      "start": 0.9,
+      "end": 7.08,
+      "roles": [
+        {
+          "id": "role_xQuDmcoCHlGQ",
+          "name": "Ava",
+          "portraitSource": {
+            "sourceId": "5eZyspecXJE",
+            "time": 2,
+            "normalizedCrop": [
+              0.23,
+              0.1,
+              0.36,
+              0.64
+            ]
+          },
+          "portrait": "i-smell-like-beef-role_xQuDmcoCHlGQ-portrait-0124e662f57d.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_j1ELttgT8MRe",
+          "roleId": "role_xQuDmcoCHlGQ",
+          "speaker": "Ava",
+          "start": 1.28,
+          "end": 4.22,
+          "text": "I smell like beef.",
+          "hint": "我闻起来像牛肉。",
+          "words": [
+            {
+              "text": "I",
+              "start": 2.428,
+              "end": 2.448
+            },
+            {
+              "text": "smell",
+              "start": 2.69,
+              "end": 3.193
+            },
+            {
+              "text": "like",
+              "start": 3.294,
+              "end": 3.555
+            },
+            {
+              "text": "beef.",
+              "start": 3.817,
+              "end": 4.16
+            }
+          ]
+        },
+        {
+          "id": "line_riOsM52T582J",
+          "roleId": "role_xQuDmcoCHlGQ",
+          "speaker": "Ava",
+          "start": 4.26,
+          "end": 7.04,
+          "text": "I smell like beef.",
+          "hint": "我闻起来像牛肉。保留原片中重复的语气变化。",
+          "words": [
+            {
+              "text": "I",
+              "start": 5.308,
+              "end": 5.328
+            },
+            {
+              "text": "smell",
+              "start": 5.408,
+              "end": 5.791
+            },
+            {
+              "text": "like",
+              "start": 5.952,
+              "end": 6.174
+            },
+            {
+              "text": "beef.",
+              "start": 6.476,
+              "end": 6.818
+            }
+          ]
+        }
+      ],
+      "tags": [
+        "meme",
+        "internet",
+        "Katie Ryan",
+        "Ava Ryan",
+        "I smell like beef",
+        "beefbaby",
+        "牛肉",
+        "repetition"
+      ],
+      "contentNotes": "Original family performance from Katie Ryan’s creator upload, with Ava repeating an absurd observation. Child appearance is not a child-pilot approval or reuse permission.",
+      "practice": "Repeat a short sensory observation with contrasting delivery.",
+      "reviewStatus": "source-and-speaker-checked-private-adult-prototype",
+      "verification": {
+        "method": "Full source frames, source attribution/history, independent small.en recognition and CTC word alignment. Source context beyond each selected ending is retained locally.",
+        "roles": "Each listed role follows the actual source voice; identities not verified from source evidence remain descriptive labels. Nonverbal laughter/ambience stays in the original mix.",
+        "cut": "Keep the first two complete repetitions. Second beef ends around 6.80; cut at 7.08 before the next repetition around 7.16."
+      },
+      "wordTiming": {
+        "method": "CTC forced alignment",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_vFJwOuBZUpyN",
+      "sceneId": "scene_HzKQCXHxvTWx",
+      "slug": "avocado-thanks",
+      "publicSlug": "avocado-thanks",
+      "cohort": "older-audience",
+      "batch": "2026-11-13-five",
+      "sourceId": "k-cavEKkirc",
+      "title": "It’s an avocado! Thanks!",
+      "titleZh": "是牛油果！谢谢！",
+      "start": 0,
+      "end": 6.58,
+      "roles": [
+        {
+          "id": "role_sGpDGpEdpXqm",
+          "name": "Boy",
+          "portraitSource": {
+            "sourceId": "k-cavEKkirc",
+            "time": 6.0,
+            "normalizedCrop": [
+              0.43,
+              0,
+              0.5,
+              0.5
+            ]
+          },
+          "portrait": "avocado-thanks-role_sGpDGpEdpXqm-portrait-e0e2bafbf397.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_sg7ROjol0G4M",
+          "roleId": "role_sGpDGpEdpXqm",
+          "speaker": "Boy",
+          "start": 1.55,
+          "end": 3.65,
+          "text": "It's an avocado!",
+          "hint": "是一个牛油果！",
+          "words": [
+            {
+              "text": "It's",
+              "start": 1.873,
+              "end": 2.095
+            },
+            {
+              "text": "an",
+              "start": 2.317,
+              "end": 2.519
+            },
+            {
+              "text": "avocado!",
+              "start": 2.681,
+              "end": 3.367
+            }
+          ]
+        },
+        {
+          "id": "line_mFiNJyJ_eQ1X",
+          "roleId": "role_sGpDGpEdpXqm",
+          "speaker": "Boy",
+          "start": 4.42,
+          "end": 6.15,
+          "text": "Thanks!",
+          "hint": "谢谢！",
+          "words": [
+            {
+              "text": "Thanks!",
+              "start": 4.903,
+              "end": 5.707
+            }
+          ]
+        }
+      ],
+      "tags": [
+        "meme",
+        "internet",
+        "avocado",
+        "thanks",
+        "gift",
+        "牛油果",
+        "礼物",
+        "gratitude"
+      ],
+      "contentNotes": "Original gift-opening performance; a child thanks the giver for an avocado. Archive uploader Awfully is not claimed as the original family or rights holder.",
+      "practice": "Name a surprising gift and give an enthusiastic thank-you.",
+      "reviewStatus": "source-and-speaker-checked-private-adult-prototype",
+      "verification": {
+        "method": "Full source frames, source attribution/history, independent small.en recognition and CTC word alignment. Source context beyond each selected ending is retained locally.",
+        "roles": "Each listed role follows the actual source voice; identities not verified from source evidence remain descriptive labels. Nonverbal laughter/ambience stays in the original mix.",
+        "cut": "One continuous source interval. Original wording, setup/payoff and final syllables are retained; no looping, padding or generated speech."
+      },
+      "wordTiming": {
+        "method": "CTC forced alignment",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_jiCJT1-X-bJa",
+      "sceneId": "scene_0WS9Utc_6kb7",
+      "slug": "god-and-anime",
+      "publicSlug": "god-and-anime",
+      "cohort": "older-audience",
+      "batch": "2026-11-13-five",
+      "sourceId": "iOv6RVpE4RY",
+      "title": "The power of God and anime!",
+      "titleZh": "上帝和动漫的力量！",
+      "start": 3.0,
+      "end": 5.87,
+      "roles": [
+        {
+          "id": "role_0m__GRbzTzYd",
+          "name": "Matt",
+          "portraitSource": {
+            "sourceId": "iOv6RVpE4RY",
+            "time": 1.0,
+            "normalizedCrop": [
+              0.44,
+              0,
+              0.24,
+              0.43
+            ]
+          },
+          "portrait": "god-and-anime-role_0m__GRbzTzYd-portrait-184b8f8ac1cb.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_UBFemNYfYxr_",
+          "roleId": "role_0m__GRbzTzYd",
+          "speaker": "Matt",
+          "start": 3.06,
+          "end": 5.86,
+          "text": "I have the power of God and anime on my side!",
+          "hint": "我有上帝和动漫的力量站在我这边！这是夸张的角色表演。",
+          "words": [
+            {
+              "text": "I",
+              "start": 3.161,
+              "end": 3.181
+            },
+            {
+              "text": "have",
+              "start": 3.261,
+              "end": 3.423
+            },
+            {
+              "text": "the",
+              "start": 3.483,
+              "end": 3.564
+            },
+            {
+              "text": "power",
+              "start": 3.604,
+              "end": 3.846
+            },
+            {
+              "text": "of",
+              "start": 3.886,
+              "end": 3.926
+            },
+            {
+              "text": "God",
+              "start": 4.067,
+              "end": 4.309
+            },
+            {
+              "text": "and",
+              "start": 4.551,
+              "end": 4.651
+            },
+            {
+              "text": "anime",
+              "start": 4.873,
+              "end": 5.115
+            },
+            {
+              "text": "on",
+              "start": 5.175,
+              "end": 5.215
+            },
+            {
+              "text": "my",
+              "start": 5.316,
+              "end": 5.477
+            },
+            {
+              "text": "side!",
+              "start": 5.558,
+              "end": 5.779
+            }
+          ]
+        }
+      ],
+      "tags": [
+        "meme",
+        "internet",
+        "Sensai Matt",
+        "God and anime",
+        "动漫之力",
+        "reaction"
+      ],
+      "contentNotes": "Playful exaggerated roleplay, not a religious or safety claim. The surrounding profanity, following speaker and scream are outside this excerpt. Original credited Instagram handle: @sensaimatt; archive uploader Le Carlton. Adult prototype; reuse permission unconfirmed.",
+      "practice": "Perform the complete famous boast with confident emphasis.",
+      "reviewStatus": "source-and-speaker-checked-private-adult-prototype",
+      "verification": {
+        "method": "Full source frames, source attribution/history, independent small.en recognition and CTC word alignment. Source context beyond each selected ending is retained locally.",
+        "roles": "Each listed role follows the actual source voice; identities not verified from source evidence remain descriptive labels. Nonverbal laughter/ambience stays in the original mix.",
+        "cut": "Begin at 3.00 after the preceding profanity, before I starts around 3.16. Independent CTC on uncut 3.9–6.6-second context puts side at 5.572–5.814 and the next Wait at 5.915–6.076. Cut at 5.87 keeps the final consonant and excludes the next speaker and scream."
+      },
+      "wordTiming": {
+        "method": "CTC forced alignment",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_C4R_QZmlK5fl",
+      "sceneId": "scene_JON3IWC7bnZz",
+      "slug": "valentino-white-bag",
+      "publicSlug": "valentino-white-bag",
+      "cohort": "older-audience",
+      "batch": "2026-11-13-five",
+      "sourceId": "M1eNd_5T1DM",
+      "title": "Lipstick in my Valentino white bag!",
+      "titleZh": "口红洒进我的白包里了！",
+      "start": 0,
+      "end": 6.65,
+      "roles": [
+        {
+          "id": "role_Ro8znii84V-S",
+          "name": "First speaker",
+          "portraitSource": {
+            "sourceId": "M1eNd_5T1DM",
+            "time": 0,
+            "normalizedCrop": [
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          "portrait": "valentino-white-bag-role_Ro8znii84V-S-portrait-22575d33c224.jpg"
+        },
+        {
+          "id": "role_V6rQaU_ALv9Q",
+          "name": "Bag owner",
+          "portraitSource": {
+            "sourceId": "M1eNd_5T1DM",
+            "time": 5.5,
+            "normalizedCrop": [
+              0.32,
+              0,
+              0.45,
+              0.5
+            ]
+          },
+          "portrait": "valentino-white-bag-role_V6rQaU_ALv9Q-portrait-65120048a4a9.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_Db1tlWjufWpW",
+          "roleId": "role_Ro8znii84V-S",
+          "speaker": "First speaker",
+          "start": 0,
+          "end": 2.18,
+          "text": "I spilled lipstick in your Valentino bag.",
+          "hint": "我把口红洒进你的华伦天奴包里了。",
+          "words": [
+            {
+              "text": "I",
+              "start": 0.121,
+              "end": 0.141
+            },
+            {
+              "text": "spilled",
+              "start": 0.242,
+              "end": 0.505
+            },
+            {
+              "text": "lipstick",
+              "start": 0.525,
+              "end": 0.908
+            },
+            {
+              "text": "in",
+              "start": 0.989,
+              "end": 1.029
+            },
+            {
+              "text": "your",
+              "start": 1.09,
+              "end": 1.211
+            },
+            {
+              "text": "Valentino",
+              "start": 1.231,
+              "end": 1.716
+            },
+            {
+              "text": "bag.",
+              "start": 1.776,
+              "end": 2.019
+            }
+          ]
+        },
+        {
+          "id": "line_egNaX7yENuc5",
+          "roleId": "role_V6rQaU_ALv9Q",
+          "speaker": "Bag owner",
+          "start": 2.24,
+          "end": 4.47,
+          "text": "Oh, you spilled—",
+          "hint": "哦，你洒了——",
+          "words": [
+            {
+              "text": "Oh,",
+              "start": 2.361,
+              "end": 2.421
+            },
+            {
+              "text": "you",
+              "start": 2.461,
+              "end": 2.521
+            },
+            {
+              "text": "spilled—",
+              "start": 2.682,
+              "end": 3.064
+            }
+          ]
+        },
+        {
+          "id": "line_WduUXsMuuvyq",
+          "roleId": "role_V6rQaU_ALv9Q",
+          "speaker": "Bag owner",
+          "start": 4.48,
+          "end": 6.64,
+          "text": "Lipstick in my Valentino white bag!",
+          "hint": "口红洒进了我的华伦天奴白包里！",
+          "words": [
+            {
+              "text": "Lipstick",
+              "start": 4.48,
+              "end": 4.985
+            },
+            {
+              "text": "in",
+              "start": 5.146,
+              "end": 5.187
+            },
+            {
+              "text": "my",
+              "start": 5.308,
+              "end": 5.388
+            },
+            {
+              "text": "Valentino",
+              "start": 5.489,
+              "end": 6.095
+            },
+            {
+              "text": "white",
+              "start": 6.216,
+              "end": 6.398
+            },
+            {
+              "text": "bag!",
+              "start": 6.438,
+              "end": 6.519
+            }
+          ]
+        }
+      ],
+      "tags": [
+        "meme",
+        "internet",
+        "Valentino",
+        "lipstick",
+        "white bag",
+        "华伦天奴",
+        "口红",
+        "reaction"
+      ],
+      "contentNotes": "Dramatic surprise with stammering retained in the original audio. Identities and relationship of the two source speakers remain unverified; no family relationship is invented. Brand reference is part of the original performance, not an endorsement.",
+      "practice": "Admit a mistake, then perform a shocked repeated reaction.",
+      "reviewStatus": "source-and-speaker-checked-private-adult-prototype",
+      "verification": {
+        "method": "Full source frames, source attribution/history, independent small.en recognition and CTC word alignment. Source context beyond each selected ending is retained locally.",
+        "roles": "Each listed role follows the actual source voice; identities not verified from source evidence remain descriptive labels. Nonverbal laughter/ambience stays in the original mix.",
+        "cut": "One continuous source interval. Original wording, setup/payoff and final syllables are retained; no looping, padding or generated speech."
+      },
+      "wordTiming": {
+        "method": "CTC forced alignment",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_rzty9U7-8J5z",
+      "sceneId": "scene_AE4M4qwZvNZp",
+      "slug": "i-want-waffle-fries",
+      "publicSlug": "i-want-waffle-fries",
+      "cohort": "older-audience",
+      "batch": "2026-11-13-five",
+      "sourceId": "UYNa4PMitTg",
+      "title": "I want waffle fries!",
+      "titleZh": "我要格子薯条！",
+      "start": 4.94,
+      "end": 9.8,
+      "roles": [
+        {
+          "id": "role_s-h9GzDEQvwN",
+          "name": "Creator",
+          "portraitSource": {
+            "sourceId": "UYNa4PMitTg",
+            "time": 5.8,
+            "normalizedCrop": [
+              0,
+              0,
+              1,
+              0.7
+            ]
+          },
+          "portrait": "i-want-waffle-fries-role_s-h9GzDEQvwN-portrait-b75ae0163839.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_hw9_qVEwy4dj",
+          "roleId": "role_s-h9GzDEQvwN",
+          "speaker": "Creator",
+          "start": 5.08,
+          "end": 7.55,
+          "text": "What are you doing in my house?",
+          "hint": "你在我家里干什么？",
+          "words": [
+            {
+              "text": "What",
+              "start": 5.301,
+              "end": 5.421
+            },
+            {
+              "text": "are",
+              "start": 5.843,
+              "end": 5.943
+            },
+            {
+              "text": "you",
+              "start": 6.004,
+              "end": 6.164
+            },
+            {
+              "text": "doing",
+              "start": 6.285,
+              "end": 6.405
+            },
+            {
+              "text": "in",
+              "start": 6.506,
+              "end": 6.546
+            },
+            {
+              "text": "my",
+              "start": 6.787,
+              "end": 6.847
+            },
+            {
+              "text": "house?",
+              "start": 7.028,
+              "end": 7.289
+            }
+          ]
+        },
+        {
+          "id": "line_shc-8fEPSagz",
+          "roleId": "role_s-h9GzDEQvwN",
+          "speaker": "Creator",
+          "start": 7.76,
+          "end": 9.6,
+          "text": "I want waffle fries.",
+          "hint": "我想要格子薯条。",
+          "words": [
+            {
+              "text": "I",
+              "start": 8.043,
+              "end": 8.063
+            },
+            {
+              "text": "want",
+              "start": 8.185,
+              "end": 8.407
+            },
+            {
+              "text": "waffle",
+              "start": 8.569,
+              "end": 8.913
+            },
+            {
+              "text": "fries.",
+              "start": 9.014,
+              "end": 9.539
+            }
+          ]
+        }
+      ],
+      "tags": [
+        "meme",
+        "internet",
+        "waffle fries",
+        "itsmewario48",
+        "Boozoo",
+        "格子薯条",
+        "character voice"
+      ],
+      "contentNotes": "An archived TikTok voice demonstration credited on-screen to @itsmewario48; uploader Beans is separate. One performer voices the question and low-pitched reply. A stylized character image appears near the end; no second physical speaker is invented.",
+      "practice": "Contrast an alarmed question with a calm low-register request.",
+      "reviewStatus": "source-and-speaker-checked-private-adult-prototype",
+      "verification": {
+        "method": "Full source frames, source attribution/history, independent small.en recognition and CTC word alignment. Source context beyond each selected ending is retained locally.",
+        "roles": "The same visible creator performs both vocal registers. The on-screen character illustration is not a second real speaker. Earlier repeated question and TikTok outro are outside this cut.",
+        "cut": "One continuous source interval. Original wording, setup/payoff and final syllables are retained; no looping, padding or generated speech."
+      },
+      "wordTiming": {
+        "method": "CTC forced alignment",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip__tzCRYbbMacA",
+      "sceneId": "scene_IZqmbc9eyfD8",
+      "slug": "very-demure-mindful",
+      "publicSlug": "very-demure-mindful",
+      "cohort": "older-audience",
+      "batch": "2026-11-13-five",
+      "sourceId": "E7RJ4S61zV8",
+      "title": "Very demure, very mindful.",
+      "titleZh": "非常端庄，非常有分寸。",
+      "start": 0,
+      "end": 4.3,
+      "roles": [
+        {
+          "id": "role_O1w5E8RjExmy",
+          "name": "Jools",
+          "portraitSource": {
+            "sourceId": "E7RJ4S61zV8",
+            "time": 2.5,
+            "normalizedCrop": [
+              0.36,
+              0.35,
+              0.28,
+              0.5
+            ]
+          },
+          "portrait": "very-demure-mindful-role_O1w5E8RjExmy-portrait-d5ca0f82d916.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_i64RPG9F9PlT",
+          "roleId": "role_O1w5E8RjExmy",
+          "speaker": "Jools",
+          "start": 0,
+          "end": 1.94,
+          "text": "You see how I do my makeup for work?",
+          "hint": "你看我上班时怎么化妆？",
+          "words": [
+            {
+              "text": "You",
+              "start": 0.02,
+              "end": 0.101
+            },
+            {
+              "text": "see",
+              "start": 0.182,
+              "end": 0.303
+            },
+            {
+              "text": "how",
+              "start": 0.384,
+              "end": 0.485
+            },
+            {
+              "text": "I",
+              "start": 0.566,
+              "end": 0.586
+            },
+            {
+              "text": "do",
+              "start": 0.687,
+              "end": 0.748
+            },
+            {
+              "text": "my",
+              "start": 0.829,
+              "end": 0.889
+            },
+            {
+              "text": "makeup",
+              "start": 0.97,
+              "end": 1.212
+            },
+            {
+              "text": "for",
+              "start": 1.293,
+              "end": 1.394
+            },
+            {
+              "text": "work?",
+              "start": 1.455,
+              "end": 1.657
+            }
+          ]
+        },
+        {
+          "id": "line_08R6AV97zPFo",
+          "roleId": "role_O1w5E8RjExmy",
+          "speaker": "Jools",
+          "start": 2.0,
+          "end": 4.26,
+          "text": "Very demure, very mindful.",
+          "hint": "非常端庄，非常有分寸。",
+          "words": [
+            {
+              "text": "Very",
+              "start": 2.242,
+              "end": 2.484
+            },
+            {
+              "text": "demure,",
+              "start": 2.585,
+              "end": 2.989
+            },
+            {
+              "text": "very",
+              "start": 3.352,
+              "end": 3.554
+            },
+            {
+              "text": "mindful.",
+              "start": 3.655,
+              "end": 4.199
+            }
+          ]
+        }
+      ],
+      "tags": [
+        "meme",
+        "internet",
+        "Jools Lebron",
+        "joolieannie",
+        "very demure",
+        "very mindful",
+        "端庄",
+        "有分寸",
+        "TikTok"
+      ],
+      "contentNotes": "Jools Lebron’s original spoken performance appears at the start of an archive compilation credited on-screen to @joolieannie. The selected interval ends before later appearance comparisons and commentary. Satirical delivery is not a universal workplace appearance rule.",
+      "practice": "Ask a rhetorical question and deliver two measured descriptive phrases.",
+      "reviewStatus": "source-and-speaker-checked-private-adult-prototype",
+      "verification": {
+        "method": "Full source frames, source attribution/history, independent small.en recognition and CTC word alignment. Source context beyond each selected ending is retained locally.",
+        "roles": "Each listed role follows the actual source voice; identities not verified from source evidence remain descriptive labels. Nonverbal laughter/ambience stays in the original mix.",
+        "cut": "Mindful ends around 4.06; cut at 4.30 retains the release before the next sentence around 4.44. The later news commentary and other creators are outside this cut. The Pee-wee lip-sync repost was rejected."
       },
       "wordTiming": {
         "method": "CTC forced alignment",

@@ -1,0 +1,107 @@
+{
+  "version": 1,
+  "id": "scene_iu-4psvRA1Iq",
+  "title": "我闻起来像牛肉。",
+  "tags": [
+    "meme",
+    "internet",
+    "Katie Ryan",
+    "Ava Ryan",
+    "I smell like beef",
+    "beefbaby",
+    "牛肉",
+    "repetition"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 6.207,
+  "video": "i-smell-like-beef-review-bf1c3fd4fac5.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/i-smell-like-beef/",
+  "poster": "i-smell-like-beef-poster-bf1c3fd4fac5.jpg",
+  "waveform": "waveform-bf1c3fd4fac5.json",
+  "roles": [
+    {
+      "id": "role_xQuDmcoCHlGQ",
+      "name": "Ava",
+      "label": "Ava",
+      "hint": "2 句台词",
+      "portrait": "i-smell-like-beef-role_xQuDmcoCHlGQ-portrait-0124e662f57d.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_j1ELttgT8MRe",
+      "roleId": "role_xQuDmcoCHlGQ",
+      "start": 0.38,
+      "end": 3.32,
+      "text": "I smell like beef.",
+      "hint": "我闻起来像牛肉。",
+      "words": [
+        {
+          "text": "I",
+          "start": 1.528,
+          "end": 1.548
+        },
+        {
+          "text": "smell",
+          "start": 1.79,
+          "end": 2.293
+        },
+        {
+          "text": "like",
+          "start": 2.394,
+          "end": 2.655
+        },
+        {
+          "text": "beef.",
+          "start": 2.917,
+          "end": 3.26
+        }
+      ]
+    },
+    {
+      "id": "line_riOsM52T582J",
+      "roleId": "role_xQuDmcoCHlGQ",
+      "start": 3.36,
+      "end": 6.14,
+      "text": "I smell like beef.",
+      "hint": "我闻起来像牛肉。保留原片中重复的语气变化。",
+      "words": [
+        {
+          "text": "I",
+          "start": 4.408,
+          "end": 4.428
+        },
+        {
+          "text": "smell",
+          "start": 4.508,
+          "end": 4.891
+        },
+        {
+          "text": "like",
+          "start": 5.052,
+          "end": 5.274
+        },
+        {
+          "text": "beef.",
+          "start": 5.576,
+          "end": 5.918
+        }
+      ]
+    }
+  ],
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Katie and Ava Ryan — I smell like beef.",
+    "attribution": "Original performance credited to Katie and Ava Ryan. Archive/source uploader: Katie Ryan. Original family performance from Katie Ryan’s creator upload, with Ava repeating an absurd observation. Child appearance is not a child-pilot approval or reuse permission.",
+    "source": "https://www.youtube.com/watch?v=5eZyspecXJE&t=0s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 0.9–7.08 秒的连续节选。Original family performance from Katie Ryan’s creator upload, with Ava repeating an absurd observation. Child appearance is not a child-pilot approval or reuse permission."
+  },
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  }
+}

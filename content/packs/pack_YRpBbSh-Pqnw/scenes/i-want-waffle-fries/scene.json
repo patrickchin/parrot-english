@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "id": "scene_AE4M4qwZvNZp",
+  "title": "我要格子薯条！",
+  "tags": [
+    "meme",
+    "internet",
+    "waffle fries",
+    "itsmewario48",
+    "Boozoo",
+    "格子薯条",
+    "character voice"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 4.867,
+  "video": "i-want-waffle-fries-review-601955261614.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/i-want-waffle-fries/",
+  "poster": "i-want-waffle-fries-poster-601955261614.jpg",
+  "waveform": "waveform-601955261614.json",
+  "roles": [
+    {
+      "id": "role_s-h9GzDEQvwN",
+      "name": "Creator",
+      "label": "Creator",
+      "hint": "2 句台词",
+      "portrait": "i-want-waffle-fries-role_s-h9GzDEQvwN-portrait-b75ae0163839.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_hw9_qVEwy4dj",
+      "roleId": "role_s-h9GzDEQvwN",
+      "start": 0.14,
+      "end": 2.61,
+      "text": "What are you doing in my house?",
+      "hint": "你在我家里干什么？",
+      "words": [
+        {
+          "text": "What",
+          "start": 0.361,
+          "end": 0.481
+        },
+        {
+          "text": "are",
+          "start": 0.903,
+          "end": 1.003
+        },
+        {
+          "text": "you",
+          "start": 1.064,
+          "end": 1.224
+        },
+        {
+          "text": "doing",
+          "start": 1.345,
+          "end": 1.465
+        },
+        {
+          "text": "in",
+          "start": 1.566,
+          "end": 1.606
+        },
+        {
+          "text": "my",
+          "start": 1.847,
+          "end": 1.907
+        },
+        {
+          "text": "house?",
+          "start": 2.088,
+          "end": 2.349
+        }
+      ]
+    },
+    {
+      "id": "line_shc-8fEPSagz",
+      "roleId": "role_s-h9GzDEQvwN",
+      "start": 2.82,
+      "end": 4.66,
+      "text": "I want waffle fries.",
+      "hint": "我想要格子薯条。",
+      "words": [
+        {
+          "text": "I",
+          "start": 3.103,
+          "end": 3.123
+        },
+        {
+          "text": "want",
+          "start": 3.245,
+          "end": 3.467
+        },
+        {
+          "text": "waffle",
+          "start": 3.629,
+          "end": 3.973
+        },
+        {
+          "text": "fries.",
+          "start": 4.074,
+          "end": 4.599
+        }
+      ]
+    }
+  ],
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Waffle fries / itsmewario48 — I want waffle fries!",
+    "attribution": "Original performance credited to Waffle fries / itsmewario48. Archive/source uploader: Beans . An archived TikTok voice demonstration credited on-screen to @itsmewario48; uploader Beans is separate. One performer voices the question and low-pitched reply. A stylized character image appears near the end; no second physical speaker is invented.",
+    "source": "https://www.youtube.com/watch?v=UYNa4PMitTg&t=4s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 4.94–9.8 秒的连续节选。An archived TikTok voice demonstration credited on-screen to @itsmewario48; uploader Beans is separate. One performer voices the question and low-pitched reply. A stylized character image appears near the end; no second physical speaker is invented."
+  },
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  }
+}
