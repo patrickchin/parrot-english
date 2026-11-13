@@ -91,6 +91,7 @@ test('the featured pick stays fixed through directory, franchise, tag and search
   const artwork = await hero.getByAltText('', { exact: true }).getAttribute('src');
   for (const name of ['Friends', 'Shrek', 'All scenes']) {
     await page.getByRole('navigation', { name: 'Browse tags', exact: true }).getByRole('link', { name, exact: true }).click();
+    await expect(page.getByRole('heading', { level: 2, name, exact: true })).toBeVisible();
     await expect(hero.getByRole('heading', { level: 2 })).toHaveText(title);
     await expect(hero.getByAltText('', { exact: true })).toHaveAttribute('src', artwork!);
     await page.getByRole('searchbox').fill('zxqvunfindable');
