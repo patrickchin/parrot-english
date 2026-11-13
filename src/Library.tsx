@@ -20,7 +20,7 @@ export function Library({ onChoose, folder, directory }: { onChoose: (slug: stri
   const { language } = useLanguage();
   const [params] = useSearchParams();
   const categoryScenes = clips.filter(clip => folder === 'all' || clip.cohort === folder);
-  const shows = [...new Set(categoryScenes.map(clip => franchiseGroup(clip.note)))];
+  const shows = [...new Set(categoryScenes.map(clip => franchiseGroup(clip)))];
   const show = shows.find(title => title === params.get('show')) ?? '';
   const scope = `${directory}:${folder}:${show}`;
   const [searchState, setSearchState] = useState({ scope, query: '' });
@@ -29,17 +29,17 @@ export function Library({ onChoose, folder, directory }: { onChoose: (slug: stri
   const setQuery = (query: string) => setSearchState({ scope, query });
   const search = useRef<HTMLInputElement>(null);
   const clearSearch = () => { setQuery(''); search.current?.focus(); };
-  const scoped = categoryScenes.filter(clip => !show || franchiseGroup(clip.note) === show);
+  const scoped = categoryScenes.filter(clip => !show || franchiseGroup(clip) === show);
   const visible = searchScenes(scoped, query, clip => t(`content:scenes.${clip.id}.title`, { defaultValue: clip.title }));
   // Search keeps relevance order; browsing gathers each show's scenes together.
   const shelves = query.trim() ? [{ title: '', scenes: visible }] : shows
-    .map(title => ({ title, scenes: visible.filter(clip => franchiseGroup(clip.note) === title) }))
+    .map(title => ({ title, scenes: visible.filter(clip => franchiseGroup(clip) === title) }))
     .filter(shelf => shelf.scenes.length);
   const allPath = libraryPath('all', language);
-  const franchises = [...new Set(clips.map(clip => franchiseGroup(clip.note)))];
+  const franchises = [...new Set(clips.map(clip => franchiseGroup(clip)))];
   const tags = [
     { id: 'all', label: t('library.allScenes'), href: allPath, scenes: clips, collage: false },
-    ...franchises.map(title => ({ id: title, label: title === 'Memes' ? t('library.memes') : title, href: allPath + '?' + new URLSearchParams({ show: title }), scenes: clips.filter(clip => franchiseGroup(clip.note) === title), collage: title === 'Memes' })),
+    ...franchises.map(title => ({ id: title, label: title === 'Memes' ? t('library.memes') : title, href: allPath + '?' + new URLSearchParams({ show: title }), scenes: clips.filter(clip => franchiseGroup(clip) === title), collage: title === 'Memes' })),
   ];
   const normalize = (text: string) => text.normalize('NFKC').toLocaleLowerCase().trim();
   const visibleTags = tags.filter(tag => [tag.label, ...(tag.id === 'Memes' ? tag.scenes.map(clip => clip.note) : [])].some(label => normalize(label).includes(normalize(query))));
@@ -94,7 +94,7 @@ export function Library({ onChoose, folder, directory }: { onChoose: (slug: stri
           <ul role="list" className="scene-shelf">{shelf.scenes.map(clip => <li key={clip.slug}>
             <button onClick={() => onChoose(clip.slug)} aria-label={t("library.chooseScene", { title: t(`content:scenes.${clip.id}.title`, { defaultValue: clip.title }) })} className="scene-select">
               <img src={clip.poster} alt="" loading="lazy" decoding="async" />
-              <span className="scene-copy"><span role="heading" aria-level={shelf.title && !show ? 4 : 3} className="scene-title font-display">{t(`content:scenes.${clip.id}.title`, { defaultValue: clip.title })}</span>{franchiseGroup(clip.note) === 'Memes' && <span className="scene-source">{clip.note}</span>}</span>
+              <span className="scene-copy"><span role="heading" aria-level={shelf.title && !show ? 4 : 3} className="scene-title font-display">{t(`content:scenes.${clip.id}.title`, { defaultValue: clip.title })}</span>{franchiseGroup(clip) === 'Memes' && <span className="scene-source">{clip.note}</span>}</span>
             </button>
           </li>)}</ul>
         </section>)}

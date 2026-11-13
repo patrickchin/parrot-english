@@ -1,5 +1,6 @@
 import { test, expect, setLanguage } from './fixtures';
 import { clips } from '../content-fixtures';
+import { readFile } from 'node:fs/promises';
 
 const filmCount = clips.filter(clip => clip.note === 'Ratatouille').length;
 
@@ -33,4 +34,27 @@ test('a younger learner can record a line in a complete conversation', async ({ 
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled({ timeout: 15000 });
+});
+
+test('internet memes share one tag and retain searchable source names', async ({ page }) => {
+  const recipe = JSON.parse(await readFile('content/social-meme-review-scenes.json', 'utf8'));
+  const sceneIds = new Set(recipe.scenes.map((scene: { sceneId: string }) => scene.sceneId));
+  const memes = clips.filter(clip => sceneIds.has(clip.id));
+  await page.goto('/en/');
+  const tags = page.getByRole('navigation', { name: 'Browse tags', exact: true });
+  const tag = tags.getByRole('link', { name: 'Memes', exact: true });
+  await expect(tag).toHaveAccessibleDescription(`${memes.length} scenes`);
+  await expect(tags.getByRole('link', { name: 'SpongeBob SquarePants', exact: true })).toBeVisible();
+  for (const source of new Set(memes.map(clip => clip.note))) {
+    await expect(tags.getByRole('link', { name: source, exact: true })).toHaveCount(0);
+  }
+  await tag.click();
+  await expect(page.getByRole('heading', { level: 2, name: 'Memes', exact: true })).toBeVisible();
+  await expect(page.getByRole('listitem')).toHaveCount(memes.length);
+  for (const clip of memes) await expect(page.getByRole('button', { name: `Choose scene: ${clip.english}`, exact: true })).toBeVisible();
+  await page.getByRole('searchbox').fill('FOX5');
+  await expect(page.getByRole('button', { name: "Choose scene: Wouldn't you like to know, weather boy?", exact: true })).toBeVisible();
+  await page.getByRole('link', { name: 'Browse tags', exact: true }).click();
+  await page.getByRole('searchbox').fill('FOX5');
+  await expect(page.getByRole('navigation', { name: 'Browse tags', exact: true }).getByRole('link', { name: 'Memes', exact: true })).toBeVisible();
 });

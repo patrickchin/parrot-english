@@ -26,10 +26,13 @@ than claiming a universal popularity ranking. Continue adding suitable local
 review scenes through the existing authoring workflow. Keep original speakers,
 complete exchanges, source credits, age guidance, and publication review. See
 [the discovery workflow](meme-discovery.md) and its first research batch.
+Internet meme clips share one **Memes** browse tag; creator names stay in source
+credits and searchable metadata. New meme sources must join this tag automatically.
+Film/TV franchises retain their own tags.
 No fixed schedule or unattended worker is configured; continue discovery during
 content authoring and publish verified batches when ready.
 
-Prototype status: the versioned content catalog offers 116 internal-test
+Prototype status: the versioned content catalog offers 118 internal-test
 scenes, including internet memes, film/animation, and beginner/TV conversations.
 The earlier Sintel sample was removed from the
 product on 2026-10-29; licensed footage remains only as an internal test fixture. Media is served from Alibaba OSS object storage, separately from the

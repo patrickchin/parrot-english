@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-test('short social exchanges produce captions while film and speaker safeguards remain enforced', async t => {
+test('short social exchanges and solo performances produce captions while film safeguards remain enforced', async t => {
   const root = await mkdtemp(join(tmpdir(), 'parrotbook-short-meme-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   await mkdir(join(root, 'content'));
@@ -14,7 +14,7 @@ test('short social exchanges produce captions while film and speaker safeguards 
   await writeFile(join(root, 'bin/ffprobe'), '#!/usr/bin/env node\nconsole.log(JSON.stringify({format:{duration:4.4},streams:[{codec_type:"audio"},{codec_type:"video"}]}));\n', { mode: 0o700 });
   const recipe = {
     rightsStatus: 'redistribution-not-cleared',
-    sources: [{ id: 'source', url: 'https://example.com/source', attribution: 'Test source' }],
+    sources: [{ id: 'source', url: 'https://www.instagram.com/reel/source/', attribution: 'Test source' }],
     scenes: [{ slug: 'short-exchange', sourceId: 'source', title: 'News and reaction', start: 0, end: 4.4,
       roles: [{ id: 'role_a', name: 'Woman' }, { id: 'role_b', name: 'Matt' }],
       lines: [
@@ -32,10 +32,18 @@ test('short social exchanges produce captions while film and speaker safeguards 
   const captions = await readFile(join(root, 'content/local-dubbing/review/social-memes/short-exchange.vtt'), 'utf8');
   assert.equal(captions.split(' --> ').length - 1, 2);
   assert.match(captions, /室友！/);
+  const notes = await readFile(join(root, 'content/local-dubbing/review/social-memes/short-exchange.txt'), 'utf8');
+  assert.ok(notes.includes('Source: https://www.instagram.com/reel/source/\n'));
   await writeFile(join(root, 'content/meme-review-scenes.json'), JSON.stringify(recipe));
   assert.match(run('older-audience').stderr, /Needs a complete character exchange/);
   recipe.scenes[0].lines[1].roleId = 'role_a';
   recipe.scenes[0].lines[1].speaker = 'Woman';
+  await writeFile(join(root, 'content/social-meme-review-scenes.json'), JSON.stringify(recipe));
+  recipe.scenes[0].roles = recipe.scenes[0].roles.slice(0, 1);
+  await writeFile(join(root, 'content/social-meme-review-scenes.json'), JSON.stringify(recipe));
+  const solo = run('social-memes');
+  assert.equal(solo.status, 0, solo.stderr);
+  recipe.scenes[0].lines = recipe.scenes[0].lines.slice(0, 1);
   await writeFile(join(root, 'content/social-meme-review-scenes.json'), JSON.stringify(recipe));
   assert.match(run('social-memes').stderr, /Needs a complete character exchange/);
 });

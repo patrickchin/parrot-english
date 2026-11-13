@@ -26,6 +26,7 @@ for (const entry of scenes) {
   try { previous = JSON.parse(await readFile(`${sceneFolder(slug, entry.cohort)}/scene.json`, 'utf8')); } catch (error) { if (error.code !== 'ENOENT') throw error; }
   if (!entry.sceneId || !entry.lines?.length || !entry.lines.every(line => line.words?.length)) throw new Error(`Align the dialogue before preparing ${slug}`);
   const source = recipe.sources.find(source => source.id === entry.sourceId);
+  const sourceLink = source.url.includes('youtube.com/') ? `${source.url}&t=${Math.floor(entry.start)}s` : source.url;
   const original = `${local}/review/${recipe.reviewFolder ?? entry.cohort}/${entry.slug}.mp4`;
   const hash = createHash('sha256').update(await readFile(original)).digest('hex').slice(0, 12);
   const video = `${slug}-review-${hash}.mp4`;
@@ -45,7 +46,7 @@ for (const entry of scenes) {
     }),
     lines: entry.lines.map(line => ({ id: line.id, roleId: line.roleId, start: +(line.start - entry.start).toFixed(3), end: +(line.end - entry.start).toFixed(3), text: line.text, hint: line.hint, words: line.words.map(word => ({ ...word, start: +(word.start - entry.start).toFixed(3), end: +(word.end - entry.start).toFixed(3) })) })),
     wordTiming: entry.wordTiming, rightsStatus: recipe.rightsStatus,
-    credit: { title: `${source.series} — ${source.episode}`, attribution: source.attribution, source: `${source.url}&t=${Math.floor(entry.start)}s`, licence: '未确认再分发许可', licenceUrl: 'https://www.youtube.com/howyoutubeworks/policies/copyright/', changes: `内部原型测试；原上传 ${entry.start}–${entry.end} 秒的连续节选。${entry.contentNotes ?? entry.practice}` },
+    credit: { title: `${source.series} — ${source.episode}`, attribution: source.attribution, source: sourceLink, licence: '未确认再分发许可', licenceUrl: source.url.includes('youtube.com/') ? 'https://www.youtube.com/howyoutubeworks/policies/copyright/' : source.url, changes: `内部原型测试；原上传 ${entry.start}–${entry.end} 秒的连续节选。${entry.contentNotes ?? entry.practice}` },
   };
   await mkdir(sceneFolder(slug, entry.cohort), { recursive: true });
   await writeFile(`${sceneFolder(slug, entry.cohort)}/scene.json`, JSON.stringify(scene, null, 2) + '\n');

@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "id": "scene_anSh31W2Rkrc",
+  "title": "我在妈妈的车里！",
+  "tags": [
+    "meme",
+    "internet",
+    "Vine",
+    "Instagram",
+    "Tristan Simmonds",
+    "in me mum's car",
+    "broom broom",
+    "妈妈的车",
+    "嘟嘟",
+    "requests",
+    "reaction"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 6.42,
+  "video": "in-me-mums-car-review-a9adfa717bf6.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/in-me-mums-car/",
+  "poster": "in-me-mums-car-poster-a9adfa717bf6.jpg",
+  "waveform": "waveform-a9adfa717bf6.json",
+  "roles": [
+    {
+      "id": "role_x1dzufHQJ3ei",
+      "name": "Tristan",
+      "label": "Tristan",
+      "hint": "3 句台词",
+      "portrait": "in-me-mums-car-role_x1dzufHQJ3ei-portrait-1ac9059dd2ff.jpg"
+    },
+    {
+      "id": "role_izpuf8ej_j0n",
+      "name": "Mum",
+      "label": "Mum",
+      "hint": "1 句台词",
+      "portrait": "in-me-mums-car-role_izpuf8ej_j0n-portrait-245de059b786.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_A4VjpLZVSiQP",
+      "roleId": "role_x1dzufHQJ3ei",
+      "start": 0.14,
+      "end": 2.4,
+      "text": "I'm in me mum's car.",
+      "hint": "我在我妈妈的车里。这里的 me 是原表演中的方言用法，标准写法是 my。",
+      "words": [
+        {
+          "text": "I'm",
+          "start": 0.584,
+          "end": 0.685
+        },
+        {
+          "text": "in",
+          "start": 0.745,
+          "end": 0.826
+        },
+        {
+          "text": "me",
+          "start": 0.907,
+          "end": 1.008
+        },
+        {
+          "text": "mum's",
+          "start": 1.109,
+          "end": 1.431
+        },
+        {
+          "text": "car.",
+          "start": 1.573,
+          "end": 2.279
+        }
+      ]
+    },
+    {
+      "id": "line_qd2ejCC_IOJi",
+      "roleId": "role_x1dzufHQJ3ei",
+      "start": 2.72,
+      "end": 3.68,
+      "text": "Broom broom!",
+      "hint": "嘟嘟！这是模仿引擎的声音。",
+      "words": [
+        {
+          "text": "Broom",
+          "start": 2.781,
+          "end": 3.067
+        },
+        {
+          "text": "broom!",
+          "start": 3.19,
+          "end": 3.598
+        }
+      ]
+    },
+    {
+      "id": "line_Im6qqk-aRV1c",
+      "roleId": "role_izpuf8ej_j0n",
+      "start": 4.2,
+      "end": 5.57,
+      "text": "Get out me car!",
+      "hint": "从我的车里出去！保留原声中的非正式用法。",
+      "words": [
+        {
+          "text": "Get",
+          "start": 4.522,
+          "end": 4.623
+        },
+        {
+          "text": "out",
+          "start": 4.724,
+          "end": 4.845
+        },
+        {
+          "text": "me",
+          "start": 4.905,
+          "end": 4.986
+        },
+        {
+          "text": "car!",
+          "start": 5.066,
+          "end": 5.51
+        }
+      ]
+    },
+    {
+      "id": "line_qCcanDNVFTH-",
+      "roleId": "role_x1dzufHQJ3ei",
+      "start": 5.64,
+      "end": 6.38,
+      "text": "Aw!",
+      "hint": "哎呀！",
+      "words": [
+        {
+          "text": "Aw!",
+          "start": 6.174,
+          "end": 6.257
+        }
+      ]
+    }
+  ],
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Tristan Simmonds — I'm in me mum's car",
+    "attribution": "Original Vine performance: Tristan Simmonds and Mum. Source: Tristan Simmonds’s own Instagram repost, captioned as the original 2014 video; not a remix.",
+    "source": "https://www.instagram.com/reel/B_Pzd8yh8ZT/",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.instagram.com/reel/B_Pzd8yh8ZT/",
+    "changes": "内部原型测试；原上传 0–6.42 秒的连续节选。Original family performance, not a song or reenactment. Regional me-for-my and the short imperative are preserved as performed, not offered as standard written English. Broom broom imitates an engine. Adult prototype; source reuse permission unconfirmed."
+  },
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  }
+}

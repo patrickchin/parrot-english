@@ -2687,6 +2687,77 @@
         "我能摸摸那只狗吗？这次声音更响、语气更急切。"
       ],
       "manifest": "scenes/can-i-pet-that-dog/scene.json"
+    },
+    {
+      "id": "scene_anSh31W2Rkrc",
+      "slug": "in-me-mums-car",
+      "routeSlug": "in-me-mums-car",
+      "title": "我在妈妈的车里！",
+      "english": "I'm in me mum's car!",
+      "note": "Tristan Simmonds",
+      "source": "https://www.instagram.com/reel/B_Pzd8yh8ZT/",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/in-me-mums-car/in-me-mums-car-poster-a9adfa717bf6.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "Vine",
+        "Instagram",
+        "Tristan Simmonds",
+        "in me mum's car",
+        "broom broom",
+        "妈妈的车",
+        "嘟嘟",
+        "requests",
+        "reaction"
+      ],
+      "quotes": [
+        "I'm in me mum's car.",
+        "我在我妈妈的车里。这里的 me 是原表演中的方言用法，标准写法是 my。",
+        "Broom broom!",
+        "嘟嘟！这是模仿引擎的声音。",
+        "Get out me car!",
+        "从我的车里出去！保留原声中的非正式用法。",
+        "Aw!",
+        "哎呀！"
+      ],
+      "manifest": "scenes/in-me-mums-car/scene.json"
+    },
+    {
+      "id": "scene_euPqQlJ4f1W0",
+      "slug": "lei-jun-are-you-ok",
+      "routeSlug": "lei-jun-are-you-ok",
+      "title": "你们还好吗？",
+      "english": "Are you OK?",
+      "note": "Lei Jun / 雷军",
+      "source": "https://www.youtube.com/watch?v=rKT-169biQw&t=75s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/lei-jun-are-you-ok/lei-jun-are-you-ok-poster-6dd510a4bd68.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "viral",
+        "Lei Jun",
+        "雷军",
+        "Xiaomi",
+        "小米",
+        "Are you OK",
+        "Are you okay",
+        "Bilibili",
+        "哔哩哔哩",
+        "stage",
+        "thanks",
+        "intonation"
+      ],
+      "quotes": [
+        "Thank you. Are you okay?",
+        "谢谢。你们还好吗？这里是原演讲中与现场观众互动的问句。",
+        "Are you okay?",
+        "你们还好吗？",
+        "Thank you! Thank you!",
+        "谢谢！谢谢！"
+      ],
+      "manifest": "scenes/lei-jun-are-you-ok/scene.json"
     }
   ],
   "locales": {
@@ -3051,6 +3122,16 @@
           "title": "Can I pet that dog?",
           "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
           "changes": "Original indoor family video of Acesyn and his mother Kayla, not a bear remix. Repeated requests and raised voice are preserved; respect an adult’s refusal."
+        },
+        "scene_anSh31W2Rkrc": {
+          "title": "I'm in me mum's car!",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "Original family Vine from Tristan Simmonds’s Instagram repost. Regional me-for-my and engine imitation are preserved; not standard written English."
+        },
+        "scene_euPqQlJ4f1W0": {
+          "title": "Are you OK?",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "Raw 2015 Lei Jun stage speech, not the song remix. Original crowd cheers remain. Practise thanks and question intonation without mocking an accent; not a current product offer."
         }
       },
       "roles": {
@@ -3749,6 +3830,18 @@
         "role_D4pxGfyfhQpD": {
           "name": "Kayla",
           "hint": "2 lines"
+        },
+        "role_x1dzufHQJ3ei": {
+          "name": "Tristan",
+          "hint": "3 lines"
+        },
+        "role_izpuf8ej_j0n": {
+          "name": "Mum",
+          "hint": "1 line"
+        },
+        "role_XZ61BUhpEP3s": {
+          "name": "Lei Jun",
+          "hint": "3 lines"
         }
       },
       "notices": {
@@ -4117,6 +4210,16 @@
           "title": "我能摸摸那只狗吗？",
           "licence": "未确认再分发许可；仅供内部成人原型测试。",
           "changes": "Acesyn与母亲Kayla的原始室内家庭视频，并非配熊画面的混剪。保留反复请求和提高音量的表现；应尊重成人的拒绝。"
+        },
+        "scene_anSh31W2Rkrc": {
+          "title": "我在妈妈的车里！",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "Tristan Simmonds本人Instagram重发的原始家庭Vine。保留me代替my的方言用法和引擎拟声，不作为标准书面语。"
+        },
+        "scene_euPqQlJ4f1W0": {
+          "title": "你们还好吗？",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "雷军2015年原始英文演讲，并非歌曲混剪。保留观众欢呼。练习感谢和问句语调，不嘲笑口音；并非当前产品赠送活动。"
         }
       },
       "roles": {
@@ -4815,6 +4918,18 @@
         "role_D4pxGfyfhQpD": {
           "name": "凯拉",
           "hint": "2 句台词"
+        },
+        "role_x1dzufHQJ3ei": {
+          "name": "Tristan",
+          "hint": "3 句台词"
+        },
+        "role_izpuf8ej_j0n": {
+          "name": "妈妈",
+          "hint": "1 句台词"
+        },
+        "role_XZ61BUhpEP3s": {
+          "name": "雷军",
+          "hint": "3 句台词"
         }
       },
       "notices": {
@@ -5183,6 +5298,16 @@
           "title": "¿Puedo acariciar a ese perro?",
           "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
           "changes": "Vídeo familiar original de Acesyn y su madre Kayla en casa, no el montaje con un oso. Peticiones repetidas y voz elevada; hay que respetar la negativa de un adulto."
+        },
+        "scene_anSh31W2Rkrc": {
+          "title": "¡Estoy en el coche de mi madre!",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Vine familiar original republicado en el Instagram de Tristan Simmonds. Conserva el dialecto me por my y la imitación del motor; no es inglés escrito estándar."
+        },
+        "scene_euPqQlJ4f1W0": {
+          "title": "¿Están bien?",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Discurso original de Lei Jun de 2015, no el remix musical. Conserva al público. Practica agradecimientos y preguntas sin burlarte del acento; no es una oferta actual."
         }
       },
       "roles": {
@@ -5881,6 +6006,18 @@
         "role_D4pxGfyfhQpD": {
           "name": "Kayla",
           "hint": "2 líneas"
+        },
+        "role_x1dzufHQJ3ei": {
+          "name": "Tristan",
+          "hint": "3 líneas"
+        },
+        "role_izpuf8ej_j0n": {
+          "name": "Mamá",
+          "hint": "1 línea"
+        },
+        "role_XZ61BUhpEP3s": {
+          "name": "Lei Jun",
+          "hint": "3 líneas"
         }
       },
       "notices": {
@@ -6249,6 +6386,16 @@
           "title": "あの犬をなでてもいい？",
           "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
           "changes": "Acesynと母親Kaylaの元の室内映像で、クマとの合成ではありません。繰り返すお願いと大声を含みます。大人の拒否を尊重してください。"
+        },
+        "scene_anSh31W2Rkrc": {
+          "title": "ママの車に乗ってる！",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "Tristan Simmonds本人のInstagram再投稿による元の家族Vine。meをmyとして使う方言とエンジンの擬音を残しています。標準的な書き言葉ではありません。"
+        },
+        "scene_euPqQlJ4f1W0": {
+          "title": "みんな大丈夫？",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "雷軍の2015年の元の英語スピーチで、楽曲リミックスではありません。観客の歓声を残しています。口音を笑わず感謝と疑問文のイントネーションを練習します。現在の製品提供ではありません。"
         }
       },
       "roles": {
@@ -6947,6 +7094,18 @@
         "role_D4pxGfyfhQpD": {
           "name": "Kayla",
           "hint": "セリフ2行"
+        },
+        "role_x1dzufHQJ3ei": {
+          "name": "Tristan",
+          "hint": "セリフ3行"
+        },
+        "role_izpuf8ej_j0n": {
+          "name": "ママ",
+          "hint": "セリフ1行"
+        },
+        "role_XZ61BUhpEP3s": {
+          "name": "雷軍",
+          "hint": "セリフ3行"
         }
       },
       "notices": {
@@ -7315,6 +7474,16 @@
           "title": "저 개를 쓰다듬어도 돼요?",
           "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
           "changes": "Acesyn과 엄마 Kayla의 원래 실내 가족 영상이며 곰 합성 영상이 아닙니다. 반복되는 부탁과 큰 목소리가 나오며 어른의 거절을 존중해야 합니다."
+        },
+        "scene_anSh31W2Rkrc": {
+          "title": "엄마 차 안이야!",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "Tristan Simmonds 본인의 Instagram 재게시 원본 가족 Vine. my 대신 me를 쓰는 방언과 엔진 흉내를 유지하며 표준 문어체가 아닙니다."
+        },
+        "scene_euPqQlJ4f1W0": {
+          "title": "다들 괜찮아요?",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "2015년 Lei Jun의 원래 영어 연설이며 노래 리믹스가 아닙니다. 관중 환호를 유지합니다. 억양을 조롱하지 않고 감사와 질문 억양을 연습하며 현재 제품 제공 행사가 아닙니다."
         }
       },
       "roles": {
@@ -8013,6 +8182,18 @@
         "role_D4pxGfyfhQpD": {
           "name": "Kayla",
           "hint": "대사 2개"
+        },
+        "role_x1dzufHQJ3ei": {
+          "name": "Tristan",
+          "hint": "대사 3개"
+        },
+        "role_izpuf8ej_j0n": {
+          "name": "엄마",
+          "hint": "대사 1개"
+        },
+        "role_XZ61BUhpEP3s": {
+          "name": "레이쥔",
+          "hint": "대사 3개"
         }
       },
       "notices": {

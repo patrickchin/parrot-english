@@ -4,7 +4,7 @@ import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-for (const slug of ['corn-corntastic-day', 'apparently-get-dizzy', 'emotional-damage', 'weather-boy', 'i-like-turtles', 'nine-plus-ten', 'they-were-roommates', 'can-i-pet-that-dog']) {
+for (const slug of ['corn-corntastic-day', 'apparently-get-dizzy', 'emotional-damage', 'weather-boy', 'i-like-turtles', 'nine-plus-ten', 'they-were-roommates', 'can-i-pet-that-dog', 'in-me-mums-car', 'lei-jun-are-you-ok']) {
   test(`social meme ${slug} supports discovery, original playback and saved recording`, async ({ page, browserName }, info) => {
     const scene = readScene(slug);
     const clip = clips.find(clip => clip.slug === slug)!;
