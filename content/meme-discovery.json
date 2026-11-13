@@ -1,10 +1,10 @@
 {
   "version": 1,
-  "updatedOn": "2026-11-12",
+  "updatedOn": "2026-11-13",
   "timezone": "Asia/Shanghai",
   "requestedCadence": "ongoing-discovery-periodic-additions",
   "schedulerStatus": "no-fixed-schedule-requested",
-  "lastResearchOn": "2026-11-12",
+  "lastResearchOn": "2026-11-13",
   "popularityPolicy": "All metrics are dated retrieval snapshots. UNKNOWN when absent. Repost counts are not original counts; no cross-platform total, rank, or growth claim without comparable observations.",
   "platformCoverage": {
     "bilibili": {
@@ -248,12 +248,20 @@
     {
       "id": "candidate_ipPFTi4JQWSf",
       "key": "weather-boy",
-      "title": "Wouldn’t you like to know, weather boy?",
-      "priority": "medium",
+      "title": "Wouldn't you like to know, weather boy?",
+      "priority": "high",
       "trendStatus": "evergreen-candidate",
-      "status": "source-review-pending",
+      "status": "authored",
       "originalLanguage": "en",
-      "source": null,
+      "source": {
+        "url": "https://www.youtube.com/watch?v=XOi2jFIhZhA",
+        "providerId": "XOi2jFIhZhA",
+        "creator": "FOX5 Las Vegas",
+        "uploader": "Big Bird Boi",
+        "kind": "broadcast-archive-repost",
+        "uploadedOn": "2018-01-18",
+        "localFile": "content/local-dubbing/review/social-memes/sources/XOi2jFIhZhA.mp4"
+      },
       "evidence": [
         {
           "platform": "knowyourmeme",
@@ -268,13 +276,38 @@
           "checkedOn": "2026-11-12",
           "evidenceType": "search-index",
           "note": "Reuse discussion is recognition evidence only; counts UNKNOWN."
+        },
+        {
+          "platform": "youtube",
+          "url": "https://www.youtube.com/watch?v=XOi2jFIhZhA",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "archive-metadata-and-source",
+          "note": "Full archive downloaded and source frames/dialogue/cuts checked. Archive counters do not measure current platform-wide popularity.",
+          "metrics": {
+            "views": 19346374,
+            "likes": 636346
+          }
+        },
+        {
+          "platform": "publisher-context",
+          "url": "https://www.esquire.com/news-politics/news/a56034/weather-boi-ted-pretty-interview/",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "publisher-page",
+          "note": "Reporter confirms the planned father-and-son joke.",
+          "metrics": {
+            "views": "UNKNOWN",
+            "likes": "UNKNOWN"
+          }
         }
       ],
-      "englishPractice": "Short question, evasive reply, and reaction; sarcasm and conversational tone.",
-      "contentNotes": "This was a staged sketch. Do not label it a genuine hostile interview or as a Weather Channel production.",
+      "englishPractice": "Ask for a recommendation, perform a sarcastic reply, and hand back to a studio.",
+      "contentNotes": "Planned joke between FOX5 reporter Ted Pretty and his son, not a spontaneous confrontation. Fireworks sales appear in the background. Sketchy is informal; the sarcastic reply is not a model for polite conversation. Adult prototype; source reuse permission unconfirmed.",
       "rightsStatus": "redistribution-not-cleared",
-      "publicationStatus": "not-published",
-      "nextAction": "Verify the original performance, speakers, continuous source range, and complete final syllables before authoring a playable scene."
+      "publicationStatus": "authored",
+      "nextAction": "Publish the verified batch from merged main, then collect adult prototype feedback. Reuse permission remains unconfirmed.",
+      "reviewRecipe": "content/social-meme-review-scenes.json",
+      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/weather-boy/scene.json",
+      "sceneUrl": "https://parrotbook.com/en/scenes/weather-boy"
     },
     {
       "id": "candidate_3TF9sKCsfx4u",
@@ -520,6 +553,78 @@
       "rightsStatus": "redistribution-not-cleared",
       "publicationStatus": "not-published",
       "nextAction": "Verify the original performance, speakers, continuous source range, and complete final syllables before authoring a playable scene."
+    },
+    {
+      "id": "candidate_gaEFE5tuvBCX",
+      "key": "i-like-turtles",
+      "title": "I like turtles!",
+      "priority": "high",
+      "trendStatus": "evergreen-candidate",
+      "status": "authored",
+      "originalLanguage": "en",
+      "source": {
+        "url": "https://www.youtube.com/watch?v=CMNry4PE93Y",
+        "providerId": "CMNry4PE93Y",
+        "creator": "KGW News",
+        "uploader": "CaptJax458",
+        "kind": "broadcast-archive-repost",
+        "uploadedOn": "2007-06-11",
+        "localFile": "content/local-dubbing/review/social-memes/sources/CMNry4PE93Y.mp4"
+      },
+      "englishPractice": "Introduce someone, ask an open question, and perform a confident unexpected answer.",
+      "contentNotes": "Original 2007 broadcast, not the 2023 promotional recreation. Zombie face paint may unsettle some viewers. Preserve the unexpected answer; it is a comic non sequitur rather than a recommended interview response. Adult prototype; source reuse permission unconfirmed.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "authored",
+      "reviewRecipe": "content/social-meme-review-scenes.json",
+      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/i-like-turtles/scene.json",
+      "sceneUrl": "https://parrotbook.com/en/scenes/i-like-turtles",
+      "nextAction": "Publish the verified batch from merged main, then collect adult prototype feedback. Reuse permission remains unconfirmed.",
+      "evidence": [
+        {
+          "platform": "youtube",
+          "url": "https://www.youtube.com/watch?v=CMNry4PE93Y",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "archive-metadata-and-source",
+          "note": "Full archive downloaded and source frames/dialogue/cuts checked. Archive counters do not measure current platform-wide popularity.",
+          "metrics": {
+            "views": 76942394,
+            "likes": 530869
+          }
+        },
+        {
+          "platform": "publisher-context",
+          "url": "https://www.kgw.com/article/entertainment/zombie-kid-i-like-turtles-returns-teenage-mutant-ninja/283-75fbb90e-8f82-4d53-b725-a3b9eee83c64",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "publisher-page",
+          "note": "KGW identifies Nancy Francis, Jonathon Ware, and the original 2007 broadcast, separately from the later recreation.",
+          "metrics": {
+            "views": "UNKNOWN",
+            "likes": "UNKNOWN"
+          }
+        }
+      ]
+    }
+  ],
+  "researchBatches": [
+    {
+      "date": "2026-11-13",
+      "authoredScenes": [
+        "weather-boy",
+        "i-like-turtles"
+      ],
+      "chinesePlatformResult": "Bilibili search found BBC Dad reuse leads; no useful Chinese post verified for the two authored clips. Douyin weather-boy query returned unrelated pages. No ranking or Chinese popularity claim.",
+      "heldCandidates": [
+        {
+          "key": "bbc-dad",
+          "url": "https://www.youtube.com/watch?v=Mh4f9AYRCZY",
+          "reuseLead": "https://www.bilibili.com/video/BV1e7411v711/",
+          "reason": "Source checked; overlapping speech and long interruptions need a separate editorial cut. Not included in this batch."
+        },
+        {
+          "key": "nine-plus-ten",
+          "reason": "Search found reposts; no verified original complete exchange retained."
+        }
+      ]
     }
   ]
 }

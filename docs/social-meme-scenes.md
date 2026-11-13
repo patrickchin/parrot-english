@@ -1,7 +1,7 @@
-# Three playable internet meme scenes — 2026-11-12
+# Playable internet meme scenes
 
 Published for the existing adult prototype: original spoken performances from
-Recess Therapy, WNEP, and Steven He. The library has 111 authored scenes: 67 in
+Recess Therapy, WNEP, and Steven He. The library has 113 authored scenes: 69 in
 Memes & clips, 15 First English, 15 Ages 10–12, and 14 Teenagers. Existing scene
 manifests and media references are unchanged.
 
@@ -108,3 +108,38 @@ update so another authoring batch is not silently overwritten.
 
 Discovery continues alongside authoring and additions are published in batches.
 The earlier hourly schedule request has been replaced; no timer is configured.
+
+
+## Second batch — 2026-11-13
+
+Two more scenes are authored for the same adult prototype, bringing the local
+catalog to 113 scenes (69 in Memes & clips). All 111 earlier scene manifests are
+preserved byte-for-byte. Publication is a separate catalog-last step after the
+PR merges; authoring alone does not make the clips live.
+
+| Scene | Source archive | Continuous range | Encoded duration | Practice roles |
+| --- | --- | --- | --- | --- |
+| Wouldn't you like to know, weather boy? | [FOX5 broadcast archive](https://www.youtube.com/watch?v=XOi2jFIhZhA) | 0–12.02 s | 12.034 s | Ted Pretty, Ted’s son |
+| I like turtles! | [KGW broadcast archive](https://www.youtube.com/watch?v=CMNry4PE93Y) | 0–13.08 s | 13.114 s | Nancy Francis, Jonathon |
+
+Weather boy was a planned joke between Ted Pretty and his son, as Pretty
+confirmed in [Esquire’s interview](https://www.esquire.com/news-politics/news/a56034/weather-boi-ted-pretty-interview/).
+The source includes the setup, sarcastic reply, and reporter’s reaction; it stops
+after “Back to you guys” with its release, before the studio anchor speaks.
+Fireworks sales appear in the background. The credits explain the staged joke.
+
+I like turtles uses the original 2007 broadcast, separately from the later movie
+promotion. [KGW’s retrospective](https://www.kgw.com/article/entertainment/zombie-kid-i-like-turtles-returns-teenage-mutant-ninja/283-75fbb90e-8f82-4d53-b725-a3b9eee83c64)
+confirms the source, reporter, and Jonathon’s name. The cut retains the reporter’s
+introduction and question, the unexpected answer, and “You’re a great zombie.”
+The next broadcast sentence is excluded. Jonathon’s punchline is selectable.
+Portraits come from the same uncut source, including the reporter’s later frame.
+
+Both use source-specific credits, five-language title/role/credit metadata,
+Chinese hints, CTC words, and 5 ms waveforms. Full-source small.en recognition and
+source-frame checks precede alignment; final syllables and the next speaker are
+checked against the original context. No generated speech or infrastructure
+change. Reuse permission remains unconfirmed under the existing adult prototype
+notices. Chinese-platform queries supplied BBC Dad research leads but no
+verified Chinese popularity evidence for these two clips; archive view counts
+are dated observations, not current rankings.

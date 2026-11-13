@@ -1,0 +1,285 @@
+{
+  "version": 1,
+  "id": "scene_REHQ__wvTaUe",
+  "title": "我喜欢乌龟！",
+  "tags": [
+    "meme",
+    "internet",
+    "viral",
+    "I like turtles",
+    "Zombie Kid",
+    "Turtle Boy",
+    "Jonathon Ware",
+    "Nancy Francis",
+    "KGW",
+    "我喜欢乌龟",
+    "僵尸男孩",
+    "采访",
+    "turtles",
+    "reaction"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 13.114,
+  "video": "i-like-turtles-review-06320883fc2a.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/i-like-turtles/",
+  "poster": "i-like-turtles-poster-06320883fc2a.jpg",
+  "waveform": "waveform-06320883fc2a.json",
+  "roles": [
+    {
+      "id": "role_iBKCjfDwYh6S",
+      "name": "Nancy Francis",
+      "label": "Nancy Francis",
+      "hint": "3 句台词",
+      "portrait": "i-like-turtles-role_iBKCjfDwYh6S-portrait-3779d32ce499.jpg"
+    },
+    {
+      "id": "role_53AOEvhSt-HG",
+      "name": "Jonathon",
+      "label": "Jonathon",
+      "hint": "1 句台词",
+      "portrait": "i-like-turtles-role_53AOEvhSt-HG-portrait-930cad0f8acb.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_92nUEL2oLH83",
+      "roleId": "role_iBKCjfDwYh6S",
+      "start": 0,
+      "end": 5.03,
+      "text": "Back here live at the Waterfront Village with my friend, the zombie, Jonathon.",
+      "hint": "这里是滨水村的直播现场，我身边是僵尸朋友乔纳森。",
+      "words": [
+        {
+          "text": "Back",
+          "start": 0.482,
+          "end": 0.683
+        },
+        {
+          "text": "here",
+          "start": 0.763,
+          "end": 0.924
+        },
+        {
+          "text": "live",
+          "start": 1.084,
+          "end": 1.466
+        },
+        {
+          "text": "at",
+          "start": 1.707,
+          "end": 1.767
+        },
+        {
+          "text": "the",
+          "start": 1.807,
+          "end": 1.888
+        },
+        {
+          "text": "Waterfront",
+          "start": 1.948,
+          "end": 2.39
+        },
+        {
+          "text": "Village",
+          "start": 2.45,
+          "end": 2.731
+        },
+        {
+          "text": "with",
+          "start": 2.771,
+          "end": 2.872
+        },
+        {
+          "text": "my",
+          "start": 2.932,
+          "end": 3.052
+        },
+        {
+          "text": "friend,",
+          "start": 3.173,
+          "end": 3.414
+        },
+        {
+          "text": "the",
+          "start": 3.494,
+          "end": 3.594
+        },
+        {
+          "text": "zombie,",
+          "start": 3.695,
+          "end": 4.237
+        },
+        {
+          "text": "Jonathon.",
+          "start": 4.458,
+          "end": 4.98
+        }
+      ]
+    },
+    {
+      "id": "line_vSwJZ5kNfOwF",
+      "roleId": "role_iBKCjfDwYh6S",
+      "start": 5.06,
+      "end": 8.78,
+      "text": "You're looking good. Jonathon just got an awesome face paint job. What do you think?",
+      "hint": "你看起来不错。乔纳森刚画了很棒的脸部彩绘，你觉得怎么样？",
+      "words": [
+        {
+          "text": "You're",
+          "start": 5.12,
+          "end": 5.301
+        },
+        {
+          "text": "looking",
+          "start": 5.362,
+          "end": 5.623
+        },
+        {
+          "text": "good.",
+          "start": 5.683,
+          "end": 5.824
+        },
+        {
+          "text": "Jonathon",
+          "start": 5.884,
+          "end": 6.266
+        },
+        {
+          "text": "just",
+          "start": 6.327,
+          "end": 6.488
+        },
+        {
+          "text": "got",
+          "start": 6.528,
+          "end": 6.669
+        },
+        {
+          "text": "an",
+          "start": 6.729,
+          "end": 6.769
+        },
+        {
+          "text": "awesome",
+          "start": 6.97,
+          "end": 7.272
+        },
+        {
+          "text": "face",
+          "start": 7.372,
+          "end": 7.594
+        },
+        {
+          "text": "paint",
+          "start": 7.674,
+          "end": 7.855
+        },
+        {
+          "text": "job.",
+          "start": 7.895,
+          "end": 8.096
+        },
+        {
+          "text": "What",
+          "start": 8.157,
+          "end": 8.237
+        },
+        {
+          "text": "do",
+          "start": 8.257,
+          "end": 8.297
+        },
+        {
+          "text": "you",
+          "start": 8.318,
+          "end": 8.378
+        },
+        {
+          "text": "think?",
+          "start": 8.418,
+          "end": 8.599
+        }
+      ]
+    },
+    {
+      "id": "line_FL4MYKVqezYr",
+      "roleId": "role_53AOEvhSt-HG",
+      "start": 9,
+      "end": 9.98,
+      "text": "I like turtles.",
+      "hint": "我喜欢乌龟。",
+      "words": [
+        {
+          "text": "I",
+          "start": 9.102,
+          "end": 9.123
+        },
+        {
+          "text": "like",
+          "start": 9.204,
+          "end": 9.367
+        },
+        {
+          "text": "turtles.",
+          "start": 9.449,
+          "end": 9.878
+        }
+      ]
+    },
+    {
+      "id": "line_MCcO_R8OYu8K",
+      "roleId": "role_iBKCjfDwYh6S",
+      "start": 10.64,
+      "end": 12.96,
+      "text": "All right. You're a great zombie.",
+      "hint": "好吧。你是个很棒的僵尸。",
+      "words": [
+        {
+          "text": "All",
+          "start": 10.822,
+          "end": 10.963
+        },
+        {
+          "text": "right.",
+          "start": 11.043,
+          "end": 11.407
+        },
+        {
+          "text": "You're",
+          "start": 11.487,
+          "end": 11.649
+        },
+        {
+          "text": "a",
+          "start": 11.669,
+          "end": 11.689
+        },
+        {
+          "text": "great",
+          "start": 11.75,
+          "end": 12.032
+        },
+        {
+          "text": "zombie.",
+          "start": 12.254,
+          "end": 12.899
+        }
+      ]
+    }
+  ],
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "KGW News — I like turtles at the Rose Festival",
+    "attribution": "Original 2007 KGW broadcast: Nancy Francis interviews Jonathon Ware. Archive upload: CaptJax458. Source attribution cross-checked against KGW’s 2023 retrospective; not the later promotional recreation.",
+    "source": "https://www.youtube.com/watch?v=CMNry4PE93Y&t=0s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 0–13.08 秒的连续节选。Original 2007 broadcast, not the 2023 promotional recreation. Zombie face paint may unsettle some viewers. Preserve the unexpected answer; it is a comic non sequitur rather than a recommended interview response. Adult prototype; source reuse permission unconfirmed."
+  },
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  }
+}

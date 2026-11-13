@@ -4,13 +4,13 @@ import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-for (const slug of ['corn-corntastic-day', 'apparently-get-dizzy', 'emotional-damage']) {
+for (const slug of ['corn-corntastic-day', 'apparently-get-dizzy', 'emotional-damage', 'weather-boy', 'i-like-turtles']) {
   test(`social meme ${slug} supports discovery, original playback and saved recording`, async ({ page, browserName }, info) => {
     const scene = readScene(slug);
     const clip = clips.find(clip => clip.slug === slug)!;
     const title = clip.english;
     await page.goto('/en/library/older-audience');
-    await expect(page.getByRole('group', { name: 'Scene categories', exact: true }).getByRole('button', { pressed: true })).toContainText('Memes & clips');
+    await expect(page.getByRole('heading', { level: 2, name: 'Memes & clips', exact: true })).toBeVisible();
     await page.getByRole('searchbox').fill(title);
     await page.getByRole('button', { name: `Choose scene: ${title}`, exact: true }).click();
     await expect(page.getByRole('heading', { level: 1, name: title, exact: true })).toBeVisible();
