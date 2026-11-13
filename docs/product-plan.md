@@ -29,7 +29,7 @@ complete exchanges, source credits, age guidance, and publication review. See
 No fixed schedule or unattended worker is configured; continue discovery during
 content authoring and publish verified batches when ready.
 
-Prototype status: the versioned content catalog offers 111 internal-test
+Prototype status: the versioned content catalog offers 113 internal-test
 scenes, including internet memes, film/animation, and beginner/TV conversations.
 The earlier Sintel sample was removed from the
 product on 2026-10-29; licensed footage remains only as an internal test fixture. Media is served from Alibaba OSS object storage, separately from the

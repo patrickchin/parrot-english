@@ -2507,6 +2507,81 @@
         "你也许只要一直按住格挡键就行了。"
       ],
       "manifest": "scenes/emotional-damage/scene.json"
+    },
+    {
+      "id": "scene_gmA1nMTBH0WD",
+      "slug": "weather-boy",
+      "routeSlug": "weather-boy",
+      "title": "你也想知道吧，天气男孩？",
+      "english": "Wouldn't you like to know, weather boy?",
+      "note": "FOX5 Las Vegas",
+      "source": "https://www.youtube.com/watch?v=XOi2jFIhZhA&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/weather-boy/weather-boy-poster-92ff1792dc00.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "viral",
+        "weather boy",
+        "Weather Boi",
+        "Ted Pretty",
+        "FOX5",
+        "天气男孩",
+        "采访",
+        "reaction",
+        "sarcasm"
+      ],
+      "quotes": [
+        "Here's an actual customer out here.",
+        "这里有一位真正的顾客。",
+        "What's the best kind of firework to buy?",
+        "买哪种烟花最好？",
+        "Wouldn't you like to know, weather boy?",
+        "你也想知道吧，天气男孩？这是一句故意调侃的回答。",
+        "Where are your parents?",
+        "你爸妈在哪儿？",
+        "Kid's sketchy. Back to you guys.",
+        "这孩子有点可疑。交回演播室。"
+      ],
+      "manifest": "scenes/weather-boy/scene.json"
+    },
+    {
+      "id": "scene_REHQ__wvTaUe",
+      "slug": "i-like-turtles",
+      "routeSlug": "i-like-turtles",
+      "title": "我喜欢乌龟！",
+      "english": "I like turtles!",
+      "note": "KGW News",
+      "source": "https://www.youtube.com/watch?v=CMNry4PE93Y&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/i-like-turtles/i-like-turtles-poster-06320883fc2a.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "viral",
+        "I like turtles",
+        "Zombie Kid",
+        "Turtle Boy",
+        "Jonathon Ware",
+        "Nancy Francis",
+        "KGW",
+        "我喜欢乌龟",
+        "僵尸男孩",
+        "采访",
+        "turtles",
+        "reaction"
+      ],
+      "quotes": [
+        "Back here live at the Waterfront Village with my friend, the zombie, Jonathon.",
+        "这里是滨水村的直播现场，我身边是僵尸朋友乔纳森。",
+        "You're looking good. Jonathon just got an awesome face paint job. What do you think?",
+        "你看起来不错。乔纳森刚画了很棒的脸部彩绘，你觉得怎么样？",
+        "I like turtles.",
+        "我喜欢乌龟。",
+        "All right. You're a great zombie.",
+        "好吧。你是个很棒的僵尸。"
+      ],
+      "manifest": "scenes/i-like-turtles/scene.json"
     }
   ],
   "locales": {
@@ -2846,6 +2921,16 @@
           "title": "Emotional damage!",
           "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
           "changes": "Continuous excerpt of the original comedy sketch. Includes an insulting body comment and nonstandard grammar; intended for adult prototype testing."
+        },
+        "scene_gmA1nMTBH0WD": {
+          "title": "Wouldn't you like to know, weather boy?",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "A planned father-and-son joke on FOX5; not a spontaneous confrontation. Fireworks sales appear in the background; sarcastic speech is preserved."
+        },
+        "scene_REHQ__wvTaUe": {
+          "title": "I like turtles!",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "Original 2007 KGW broadcast, not the later promotional recreation. Zombie face paint; an unexpected comic answer."
         }
       },
       "roles": {
@@ -3504,6 +3589,22 @@
         "role_PvfiRglGg5ME": {
           "name": "Steven",
           "hint": "1 line"
+        },
+        "role_YujmamimpATV": {
+          "name": "Ted Pretty",
+          "hint": "4 lines"
+        },
+        "role_hA3AEZ9spCsX": {
+          "name": "Ted's son",
+          "hint": "1 line"
+        },
+        "role_iBKCjfDwYh6S": {
+          "name": "Nancy Francis",
+          "hint": "3 lines"
+        },
+        "role_53AOEvhSt-HG": {
+          "name": "Jonathon",
+          "hint": "1 line"
         }
       },
       "notices": {
@@ -3847,6 +3948,16 @@
           "title": "精神伤害！",
           "licence": "未确认再分发许可；仅供内部成人原型测试。",
           "changes": "原始喜剧短片的连续节选。含身材嘲讽和非标准语法，仅供内部成人原型测试。"
+        },
+        "scene_gmA1nMTBH0WD": {
+          "title": "你也想知道吧，天气男孩？",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "FOX5记者与儿子事先安排的玩笑，并非突发冲突。背景中有烟花销售，保留讽刺语气。"
+        },
+        "scene_REHQ__wvTaUe": {
+          "title": "我喜欢乌龟！",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "2007年KGW原始采访，并非后来的宣传重演。含僵尸彩绘和出人意料的搞笑回答。"
         }
       },
       "roles": {
@@ -4505,6 +4616,22 @@
         "role_PvfiRglGg5ME": {
           "name": "Steven",
           "hint": "1 句台词"
+        },
+        "role_YujmamimpATV": {
+          "name": "Ted Pretty",
+          "hint": "4 句台词"
+        },
+        "role_hA3AEZ9spCsX": {
+          "name": "泰德的儿子",
+          "hint": "1 句台词"
+        },
+        "role_iBKCjfDwYh6S": {
+          "name": "Nancy Francis",
+          "hint": "3 句台词"
+        },
+        "role_53AOEvhSt-HG": {
+          "name": "Jonathon",
+          "hint": "1 句台词"
         }
       },
       "notices": {
@@ -4848,6 +4975,16 @@
           "title": "¡Daño emocional!",
           "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
           "changes": "Fragmento continuo de una comedia. Incluye un comentario ofensivo sobre el cuerpo y gramática no estándar; pruebas internas con adultos."
+        },
+        "scene_gmA1nMTBH0WD": {
+          "title": "¿No te gustaría saberlo, chico del tiempo?",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Broma preparada entre padre e hijo en FOX5. Venta de fuegos artificiales de fondo; respuesta sarcástica."
+        },
+        "scene_REHQ__wvTaUe": {
+          "title": "¡Me gustan las tortugas!",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Emisión original de KGW de 2007, no la recreación promocional. Maquillaje de zombi y una respuesta inesperada."
         }
       },
       "roles": {
@@ -5506,6 +5643,22 @@
         "role_PvfiRglGg5ME": {
           "name": "Steven",
           "hint": "1 línea"
+        },
+        "role_YujmamimpATV": {
+          "name": "Ted Pretty",
+          "hint": "4 líneas"
+        },
+        "role_hA3AEZ9spCsX": {
+          "name": "Hijo de Ted",
+          "hint": "1 línea"
+        },
+        "role_iBKCjfDwYh6S": {
+          "name": "Nancy Francis",
+          "hint": "3 líneas"
+        },
+        "role_53AOEvhSt-HG": {
+          "name": "Jonathon",
+          "hint": "1 línea"
         }
       },
       "notices": {
@@ -5849,6 +6002,16 @@
           "title": "精神的ダメージ！",
           "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
           "changes": "元のコメディーの連続した抜粋。体型への侮辱と非標準的な文法を含みます。成人の内部テスト用です。"
+        },
+        "scene_gmA1nMTBH0WD": {
+          "title": "知りたいんでしょ、お天気坊や？",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "FOX5の記者と息子が事前に考えた冗談。背景に花火販売が映り、皮肉な発言を含みます。"
+        },
+        "scene_REHQ__wvTaUe": {
+          "title": "カメが好き！",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "2007年のKGWの元の放送。後年の宣伝用再現ではありません。ゾンビのメイクと意外な返答を含みます。"
         }
       },
       "roles": {
@@ -6507,6 +6670,22 @@
         "role_PvfiRglGg5ME": {
           "name": "Steven",
           "hint": "セリフ 1 個"
+        },
+        "role_YujmamimpATV": {
+          "name": "Ted Pretty",
+          "hint": "セリフ4行"
+        },
+        "role_hA3AEZ9spCsX": {
+          "name": "テッドの息子",
+          "hint": "セリフ1行"
+        },
+        "role_iBKCjfDwYh6S": {
+          "name": "Nancy Francis",
+          "hint": "セリフ3行"
+        },
+        "role_53AOEvhSt-HG": {
+          "name": "Jonathon",
+          "hint": "セリフ1行"
         }
       },
       "notices": {
@@ -6850,6 +7029,16 @@
           "title": "정신적 충격!",
           "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
           "changes": "원본 코미디의 연속 발췌. 외모 비하 발언과 비표준 문법을 포함하며 성인 내부 테스트용입니다."
+        },
+        "scene_gmA1nMTBH0WD": {
+          "title": "궁금하지, 날씨 소년?",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "FOX5 기자와 아들이 미리 준비한 농담. 배경에 불꽃놀이 제품 판매가 보이며 비꼬는 말투가 나옵니다."
+        },
+        "scene_REHQ__wvTaUe": {
+          "title": "거북이가 좋아요!",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "2007년 KGW 원본 방송이며 이후의 홍보 재연이 아닙니다. 좀비 분장과 엉뚱한 답변이 나옵니다."
         }
       },
       "roles": {
@@ -7507,6 +7696,22 @@
         },
         "role_PvfiRglGg5ME": {
           "name": "Steven",
+          "hint": "대사 1개"
+        },
+        "role_YujmamimpATV": {
+          "name": "Ted Pretty",
+          "hint": "대사 4개"
+        },
+        "role_hA3AEZ9spCsX": {
+          "name": "테드의 아들",
+          "hint": "대사 1개"
+        },
+        "role_iBKCjfDwYh6S": {
+          "name": "Nancy Francis",
+          "hint": "대사 3개"
+        },
+        "role_53AOEvhSt-HG": {
+          "name": "Jonathon",
           "hint": "대사 1개"
         }
       },

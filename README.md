@@ -43,7 +43,7 @@ captions show the current turn. This is timing and emphasis feedback, not
 pronunciation scoring. See
 [the UI and waveform notes](docs/ui-design.md).
 
-The internal-test shelf has four folders: **67 meme, film and animation scenes**,
+The internal-test shelf has four folders: **69 meme, film and animation scenes**,
 **15 First English conversations**, **15 Young Sheldon/Harry Potter conversations for
 ages 10–12**, and **14 Friends/HIMYM/Big Bang Theory conversations for teens**.
 The First English folder uses language level, with five foundational English Singsing
@@ -77,7 +77,7 @@ npm run test:browser
 [testing guide](docs/testing.md) for prerequisites, seeded recording stress
 tests, failure traces, and the limits of emulated devices.
 
-Content is authored separately under `content/packs/`. The authored 111 scenes
+Content is authored separately under `content/packs/`. The authored 113 scenes
 are grouped into four packs, each containing its scene manifests, subtitles,
 word timings, search data, credits, and five-language scene/role text.
 `content/catalog.json` lists the available packs. The player fetches that catalog
