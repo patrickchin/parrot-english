@@ -31,7 +31,7 @@ test('publishing and withdrawing a pack updates discovery, search, playback and 
   await page.route(communityUrl, route => route.fulfill({ json: pack }));
   await page.route(new URL('scenes/community-hello/scene.json', communityUrl).href, route => route.fulfill({ json: scene }));
   await page.route(new URL('scenes/community-hello/' + scene.waveform, communityUrl).href, async route => route.fulfill({ body: await readFile(sceneFile('patrick', scene.waveform)), contentType: 'application/json' }));
-  await page.goto('/en/');
+  await page.goto('/en/library/all');
   const search = page.getByRole('searchbox', { name: 'Find a scene', exact: true });
   await search.fill('communitymagic');
   await expect(page.getByRole('button', { name: 'Choose scene: Community hello', exact: true })).toHaveCount(0);
@@ -87,7 +87,7 @@ test('failed or malformed packs show a retryable error and My dubs stays accessi
   await (await headerDestination(page, 'Scene library')).click();
   broken = false;
   await page.getByRole('button', { name: 'Reload', exact: true }).click();
-  await expect(page.getByRole('searchbox', { name: 'Find a scene', exact: true })).toBeVisible();
+  await expect(page.getByRole('searchbox', { name: 'Find a franchise or tag', exact: true })).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
@@ -95,9 +95,9 @@ test('an empty published catalog keeps categories and a single meaningful headin
   await page.route(catalogUrl, route => route.fulfill({ json: { version: 1, packs: [] } }));
   await page.goto('/en/');
   await expect(page.getByRole('heading', { level: 1, name: 'Scene library', exact: true })).toBeVisible();
-  await expect(page.getByRole('status')).toBeVisible();
   await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(0);
-  await page.getByRole('group', { name: 'Scene categories', exact: true }).getByRole('button', { name: /^First English/ }).click();
+  await page.getByRole('link', { name: 'All scenes', exact: true }).click();
+  await expect(page.getByRole('status')).toBeVisible();
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   await expect(page.getByRole('alert')).toHaveCount(0);
 });

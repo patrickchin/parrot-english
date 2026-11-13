@@ -107,7 +107,7 @@ test('a short Joey line has moving video context and retains early and late voic
 });
 
 test('export retains padded voice, keeps surrounding original audio, and protects neighboring speakers', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/library/older-audience');
   const levels = await page.evaluate(async () => {
     const mixerPath = '/src/export-dub.ts', wavPath = '/src/pcm-recording.ts';
     const { mixDubAudio } = await import(mixerPath);

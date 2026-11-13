@@ -42,7 +42,7 @@ test('the styled language popup supports keyboard selection, Escape and phone-si
 });
 
 test('UI language persists across navigation and reload while English dialogue and Chinese hints stay independent', async ({ page }, info) => {
-  await page.goto('/');
+  await page.goto('/library/older-audience');
   await setLanguage(page, 'en');
   await expect(page.getByRole('heading', { level: 1, name: 'The scene is set. Your voice is next.' })).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');

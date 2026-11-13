@@ -7,7 +7,7 @@ const background = (page: import('@playwright/test').Page) => page.evaluate(() =
 
 test('Pop Studio defaults to light even on a dark device and remembers an explicit theme across routes and reload', async ({ page }, info) => {
   await page.emulateMedia({ colorScheme: 'dark' });
-  await page.goto('/');
+  await page.goto('/library/older-audience');
   await expect.poll(() => background(page)).toBe('rgb(241, 247, 237)');
   const featured = page.getByRole('region', { name: '不，这是派大星！', exact: true });
   await expect(featured.getByRole('heading', { level: 2 })).toBeVisible();
@@ -53,7 +53,7 @@ test('appearance switching still works across scene navigation without browser s
   await page.addInitScript(() => {
     Object.defineProperty(window, 'localStorage', { get() { throw new DOMException('Unavailable', 'SecurityError'); } });
   });
-  await page.goto('/');
+  await page.goto('/library/older-audience');
   await page.getByRole('button', { name: '切换到深色模式', exact: true }).click();
   await page.getByRole('button', { name: '选择片段：飞向宇宙！', exact: true }).click();
   await expect(page.getByRole('region', { name: '选择角色', exact: true })).toBeVisible();

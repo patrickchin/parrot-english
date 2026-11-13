@@ -1,7 +1,7 @@
 import { test, expect, setLanguage, headerDestination } from './fixtures';
 
 test('the readable Toy Story URL keeps its name through saving, reload and resume', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/library/older-audience');
   await page.getByRole('button', { name: '选择片段：飞向宇宙！', exact: true }).click();
   await expect(page).toHaveURL(/\/scenes\/toy-story-infinity$/);
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
@@ -11,7 +11,7 @@ test('the readable Toy Story URL keeps its name through saving, reload and resum
   await page.reload();
   await expect(page.getByRole('button', { name: '开始录音', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: '返回片段', exact: true }).click();
-  await expect(page).toHaveURL(/\/library\/older-audience$/);
+  await expect(page).toHaveURL(/\/library\/all$/);
   await (await headerDestination(page, '我的配音')).click();
   await page.getByRole('button', { name: /^继续配音：飞向宇宙！/ }).click();
   await expect(page).toHaveURL(savedUrl);
@@ -21,25 +21,21 @@ test('the readable Toy Story URL keeps its name through saving, reload and resum
   await expect(page.getByRole('button', { name: 'Record', exact: true })).toBeEnabled();
 });
 
-test('folder paths follow selection, reload, Back and Forward', async ({ page }) => {
-  await page.goto('/library/older-children');
-  const categories = page.getByRole('group', { name: '片段分类', exact: true });
-  const folder = categories.getByRole('button', { pressed: true });
-  await expect(folder).toContainText('10–12岁');
-  await categories.getByRole('button', { name: /^青少年/ }).click();
-  await expect(page).toHaveURL(/\/library\/teens$/);
-  await expect(folder).toContainText('青少年');
+test('tag paths follow directory selection, reload, Back and Forward', async ({ page }) => {
+  await page.goto('/en/');
+  await page.getByRole('link', { name: 'Shrek', exact: true }).click();
+  await expect(page).toHaveURL(/\/library\/all\?show=Shrek$/);
+  await page.getByRole('link', { name: 'Browse tags', exact: true }).click();
+  await page.getByRole('link', { name: 'Friends', exact: true }).click();
+  await expect(page).toHaveURL(/\/library\/all\?show=Friends$/);
   await page.getByRole('searchbox').fill('not-a-scene');
   await page.goBack();
-  await expect(folder).toContainText('10–12岁');
-  await expect(page.getByRole('searchbox')).toHaveValue('');
+  await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(0);
   await page.goForward();
-  await expect(folder).toContainText('青少年');
+  await expect(page.getByRole('searchbox')).toHaveValue('');
   await page.reload();
-  await expect(folder).toContainText('青少年');
-  await setLanguage(page, 'en');
-  await expect(page).toHaveURL(/\/en\/library\/teens$/);
-  await expect(page.getByRole('group', { name: 'Scene categories', exact: true }).getByRole('button', { pressed: true })).toContainText('Teenagers');
+  await setLanguage(page, 'zh-CN');
+  await expect(page.getByRole('heading', { level: 2, name: 'Friends', exact: true })).toBeVisible();
 });
 
 test('scene paths open directly, reload and return to their audience folder', async ({ page }) => {
@@ -50,8 +46,8 @@ test('scene paths open directly, reload and return to their audience folder', as
   await expect(start).toBeEnabled();
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   await page.getByRole('button', { name: '返回片段', exact: true }).click();
-  await expect(page).toHaveURL(/\/library\/younger-age-5$/);
-  await expect(page.getByRole('group', { name: '片段分类', exact: true }).getByRole('button', { pressed: true })).toContainText('英语启蒙');
+  await expect(page).toHaveURL(/\/library\/all$/);
+  await expect(page.getByRole('heading', { level: 2, name: '全部片段', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '选择片段：早上好！你好吗？', exact: true }).click();
   await expect(page).toHaveURL(/\/scenes\/first-english-good-morning$/);
   await expect(start).toBeEnabled();
@@ -72,13 +68,13 @@ test('unsaved progress remains protected when leaving a scene path', async ({ pa
   await page.getByRole('button', { name: '返回片段', exact: true }).click();
   await expect(dialog).toBeVisible();
   await dialog.getByRole('button', { name: '丢弃未保存的改动', exact: true }).click();
-  await expect(page).toHaveURL(/\/library\/older-audience$/);
+  await expect(page).toHaveURL(/\/library\/all$/);
   await expect(page.getByRole('searchbox')).toBeVisible();
 });
 
 
 test('My dubs is a separate page with direct links, history, language and an empty state', async ({ page }) => {
-  await page.goto('/library/older-children');
+  await page.goto('/library/all?show=Shrek');
   await expect(page.getByRole('region', { name: '我的配音', exact: true })).toHaveCount(0);
   const dubsLink = await headerDestination(page, '我的配音');
   await expect(dubsLink).toHaveAttribute('href', '/zh/dubs');
@@ -90,7 +86,7 @@ test('My dubs is a separate page with direct links, history, language and an emp
   await expect(page.getByRole('searchbox')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: '还没有配音', exact: true })).toBeVisible();
   await page.goBack();
-  await expect(page).toHaveURL(/\/library\/older-children$/);
+  await expect(page).toHaveURL(/\/library\/all\?show=Shrek$/);
   await expect(page.getByRole('searchbox')).toBeVisible();
   await page.goForward();
   await expect(page.getByRole('heading', { name: '还没有配音', exact: true })).toBeVisible();

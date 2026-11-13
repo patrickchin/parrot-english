@@ -34,7 +34,7 @@ test('hovering the scene title highlights the whole scene and keyboard focus doe
 });
 
 test('the simplified shelf keeps scenes, privacy and source details accessible without a Help button', async ({ page }, info) => {
-  await page.goto('/');
+  await page.goto('/library/older-audience');
   await expect(page.getByRole('heading', { level: 1, name: '片段已就位。 轮到你发声。' })).toBeVisible();
   await expect(page.getByRole('button', { name: /Sintel/ })).toHaveCount(0);
   for (const clip of clips.filter(clip => clip.cohort === 'older-audience')) {
@@ -76,7 +76,7 @@ for (const clip of [...clips.slice(0, 4), ...clips.filter(c => ['infinity', 'may
 
 
 test('the expanded shelf finds scenes by Chinese, English, and film, and opens a new scene', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/library/older-audience');
   const search = page.getByRole('searchbox');
   await search.fill('Toy Story');
   await expect(page.getByRole('button', { name: /^选择片段：/ })).toHaveCount(5);
@@ -106,7 +106,7 @@ test('the expanded shelf finds scenes by Chinese, English, and film, and opens a
 
 
 test('the scene shelf stays a keyboard-accessible grid', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/library/older-audience');
   await expect(page.getByRole('button', { name: '列表视图', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: '网格视图', exact: true })).toHaveCount(0);
   const first = page.getByRole('button', { name: '选择片段：不，这是派大星！', exact: true });
@@ -145,7 +145,7 @@ test('help restores focus without requesting the microphone', async ({ page }) =
       getUserMedia: async () => { (window as unknown as { micRequests: number }).micRequests++; throw new DOMException('Denied', 'NotAllowedError'); },
     } });
   });
-  await page.goto('/');
+  await page.goto('/library/older-audience');
   await page.getByRole('button', { name: '选择片段：不，这是派大星！', exact: true }).click();
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   const help = page.getByRole('button', { name: '怎么配音？', exact: true });
@@ -171,7 +171,7 @@ test('record requests the microphone directly across scenes, retries and session
     } });
   });
   const requests = () => page.evaluate(() => (window as unknown as { micRequests: number }).micRequests);
-  await page.goto('/');
+  await page.goto('/library/older-audience');
   let count = 0;
   for (const clip of [clips[0], clips[1], clips[0]]) {
     await page.getByRole('button', { name: `选择片段：${clip.title}`, exact: true }).click();

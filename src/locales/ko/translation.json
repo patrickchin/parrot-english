@@ -168,7 +168,13 @@
     "unavailable": "이 장면은 더 이상 이용할 수 없어요. 저장한 더빙은 이 기기에 남아 있어요.",
     "headlineLead": "장면은 준비 끝.",
     "headlineEnd": "이제 당신의 목소리.",
-    "introduction": "좋아하는 장면으로 영어를 연습하세요."
+    "introduction": "좋아하는 장면으로 영어를 연습하세요.",
+    "browseTags": "태그 둘러보기",
+    "allScenes": "모든 장면",
+    "findATag": "시리즈 또는 태그 찾기",
+    "searchTags": "시리즈 또는 태그 검색",
+    "noTagsFound": "일치하는 태그가 없습니다.",
+    "memes": "밈"
   },
   "waveform": {
     "voiceWaveformComparison": "음성 파형 비교",

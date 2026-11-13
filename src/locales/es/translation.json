@@ -168,7 +168,13 @@
     "unavailable": "Esta escena ya no está disponible. Tus doblajes guardados siguen en este dispositivo.",
     "headlineLead": "La escena está lista.",
     "headlineEnd": "Ahora, tu voz.",
-    "introduction": "Practica inglés con tus escenas favoritas."
+    "introduction": "Practica inglés con tus escenas favoritas.",
+    "browseTags": "Explorar etiquetas",
+    "allScenes": "Todas las escenas",
+    "findATag": "Buscar una franquicia o etiqueta",
+    "searchTags": "Buscar franquicias o etiquetas",
+    "noTagsFound": "No se encontraron etiquetas.",
+    "memes": "Memes"
   },
   "waveform": {
     "voiceWaveformComparison": "Comparación de las ondas de voz",

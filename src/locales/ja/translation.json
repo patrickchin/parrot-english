@@ -168,7 +168,13 @@
     "unavailable": "このシーンは現在利用できません。保存した吹き替えはこの端末に残っています。",
     "headlineLead": "シーンはそろった。",
     "headlineEnd": "次は、あなたの声。",
-    "introduction": "好きなシーンで英語を練習しよう。"
+    "introduction": "好きなシーンで英語を練習しよう。",
+    "browseTags": "タグで探す",
+    "allScenes": "すべてのシーン",
+    "findATag": "シリーズやタグを探す",
+    "searchTags": "シリーズやタグを検索",
+    "noTagsFound": "一致するタグがありません。",
+    "memes": "ミーム"
   },
   "waveform": {
     "voiceWaveformComparison": "声の波形を比べる",

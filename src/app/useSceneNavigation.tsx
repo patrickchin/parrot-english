@@ -82,9 +82,8 @@ function useNavigationState() {
     navigate(slug: string, draftId?: string) {
       const { page, href } = current.current;
       const search = new URL(href, window.location.origin).search;
-      void go((slug ? scenePath(slug, draftId, page.language, clips) : libraryPath(page.folder, page.language)) + search);
+      void go((slug ? scenePath(slug, draftId, page.language, clips) : libraryPath('all', page.language)) + search);
     },
-    chooseFolder(folder: string) { void go(libraryPath(folder, current.current.page.language)); },
     confirm() { if (blocker.state === 'blocked') blocker.proceed(); },
     cancel() { if (blocker.state === 'blocked') blocker.reset(); },
   };

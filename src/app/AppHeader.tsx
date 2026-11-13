@@ -6,7 +6,7 @@ import { LanguageSelect } from './LanguageSelect';
 import { useLayoutEffect, useState, type MouseEvent } from 'react';
 import { Menu } from '@base-ui/react/menu';
 import { Bird, Menu as MenuIcon } from 'lucide-react';
-import { dubsPath, libraryPath } from './routes';
+import { dubsPath } from './routes';
 import { useSceneNavigation } from './useSceneNavigation';
 import { languagePath } from '../locale';
 
@@ -15,7 +15,7 @@ export function AppHeader({ onHelp, onBack }: { onHelp?: () => void; onBack?: ()
   const { t } = useTranslation();
   const navigation = useSceneNavigation();
   const destinations = [
-    { page: 'library', label: "navigation.library", href: libraryPath(navigation.folder, language) },
+    { page: 'library', label: "navigation.library", href: languagePath('/', language) },
     { page: 'dubs', label: "navigation.dubs", href: dubsPath(language) },
   ];
   function follow(event: MouseEvent<HTMLAnchorElement>, href: string) {

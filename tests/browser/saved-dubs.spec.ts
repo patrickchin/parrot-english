@@ -100,7 +100,7 @@ test('partial dubs survive reload and a new tab with exact audio, waveform, role
   await expect.poll(() => waveformImage(second.getByRole('img', { name: '你的声音波形', exact: true }))).toBe(originalPath);
   await second.close();
   // Reopening in the main page keeps the routed fixture's exact manifest as well.
-  await page.goto('/'); await page.goto(url);
+  await page.goto('/library/older-audience'); await page.goto(url);
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
   await expect.poll(() => waveformImage(wave)).toBe(originalPath);
   await page.getByRole('button', { name: '第 1 句：Thank you.', exact: true }).click();
@@ -182,7 +182,7 @@ test('changed content cannot overwrite a saved dub and My dubs translates', asyn
 });
 
 test('unavailable storage keeps recording usable and retry can save the current take', async ({ page }) => {
-  await page.goto('/');
+  await page.goto('/library/older-audience');
   await page.evaluate(() => {
     const open = indexedDB.open.bind(indexedDB);
     (window as unknown as { restoreStorage: () => void }).restoreStorage = () => { indexedDB.open = open; };

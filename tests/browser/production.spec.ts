@@ -44,7 +44,7 @@ for (const path of ['/en/', '/zh/', '/en/library/teens', '/zh/library/younger-ag
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   if (path.includes('/scenes/')) await expect(page.getByRole('button', { name: english ? 'Start dubbing' : '开始配音', exact: true })).toBeEnabled();
   else if (path.includes('/dubs')) await expect(page.getByRole('heading', { level: 1 })).toHaveText(english ? 'My dubs' : '我的配音');
-  else await expect(page.getByRole('searchbox', { name: english ? 'Find a scene' : '查找片段', exact: true })).toBeVisible();
+  else await expect(page.getByRole('searchbox', { name: path.includes('/library/') ? english ? 'Find a scene' : '查找片段' : english ? 'Find a franchise or tag' : '查找系列或标签', exact: true })).toBeVisible();
 });
 
 for (const [language, heading, search, start] of [
@@ -58,5 +58,6 @@ for (const [language, heading, search, start] of [
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   if (route.includes('/scenes/')) await expect(page.getByRole('button', { name: start, exact: true })).toBeEnabled();
   else if (route === '/dubs') await expect(page.getByRole('heading', { level: 1 })).toHaveText(heading);
+  else if (route === '/') await expect(page.getByRole('searchbox')).toBeVisible();
   else await expect(page.getByRole('searchbox', { name: search, exact: true })).toBeVisible();
 });

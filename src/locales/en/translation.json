@@ -168,7 +168,13 @@
     "unavailable": "This scene is no longer available. Your saved dubs are still on this device.",
     "headlineLead": "The scene is set.",
     "headlineEnd": "Your voice is next.",
-    "introduction": "Practice English with scenes you love."
+    "introduction": "Practice English with scenes you love.",
+    "browseTags": "Browse tags",
+    "allScenes": "All scenes",
+    "findATag": "Find a franchise or tag",
+    "searchTags": "Search franchises or tags",
+    "noTagsFound": "No matching tags.",
+    "memes": "Memes"
   },
   "waveform": {
     "voiceWaveformComparison": "Voice waveform comparison",

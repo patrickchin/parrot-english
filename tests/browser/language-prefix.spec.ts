@@ -108,8 +108,8 @@ test('the default is Chinese and explicit URLs keep working when storage is unav
   await setLanguage(page, 'en');
   await expect(page).toHaveURL(/\/en\/$/);
   await page.reload();
-  await expect(page.getByRole('searchbox', { name: 'Find a scene', exact: true })).toBeVisible();
+  await expect(page.getByRole('searchbox', { name: 'Find a franchise or tag', exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Parrotbook home', exact: true }).click();
   await expect(page).toHaveURL(/\/en\/$/);
-  await expect(page.getByRole('searchbox', { name: 'Find a scene', exact: true })).toBeVisible();
+  await expect(page.getByRole('searchbox', { name: 'Find a franchise or tag', exact: true })).toBeVisible();
 });

@@ -1,46 +1,20 @@
 import { scenePath } from './scene-path';
 import { test, expect, setLanguage } from './fixtures';
 import { clips } from '../content-fixtures';
-import { mkdir } from 'node:fs/promises';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
 
-const olderChildCount = clips.filter(clip => clip.cohort === 'older-children').length;
-const teenCount = clips.filter(clip => clip.cohort === 'teens').length;
-
-test('TV folders open directly, keep complete scenes separate, and survive language changes and reload', async ({ page }, info) => {
-  await page.goto('/library/older-children');
-  const categories = page.getByRole('group', { name: '片段分类', exact: true });
-  const teens = categories.getByRole('button', { name: /^青少年/ });
-  await expect(categories.getByRole('button', { pressed: true })).toContainText('10–12岁');
-  await expect(page.getByRole('listitem')).toHaveCount(olderChildCount);
-  await page.getByRole('searchbox').fill('not-a-scene');
-  await teens.click();
-  await expect(page.getByRole('searchbox')).toHaveValue('');
-  await expect(page.getByRole('listitem')).toHaveCount(teenCount);
-  for (const clip of clips.filter(clip => clip.cohort === 'teens')) await expect(page.getByRole('button', { name: `选择片段：${clip.title}`, exact: true })).toBeVisible();
-  for (const width of [320, 768, 1280]) {
-    await page.setViewportSize({ width, height: 812 });
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await expect(categories.getByRole('button')).toHaveCount(4);
-    await expect(categories.getByText(`${olderChildCount} 个片段`, { exact: true })).toBeVisible();
-    await expect(teens.getByText(`${teenCount} 个片段`, { exact: true })).toBeVisible();
-    await expect(teens).toHaveAttribute('aria-pressed', 'true');
-    if (info.project.name === 'chromium') {
-      const shots = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english');
-      await mkdir(shots, { recursive: true });
-      await page.screenshot({ path: join(shots, `tv-category-tabs-${width}.png`), animations: 'disabled', fullPage: true });
-    }
-  }
-  await page.getByRole('button', { name: '选择片段：转不过弯的沙发', exact: true }).click();
-  await expect(page.getByRole('button', { name: '开始配音', exact: true })).toBeEnabled();
-  await expect(page.getByRole('button', { name: /瑞秋和钱德勒/ })).toHaveCount(0);
-  await page.getByRole('button', { name: '返回片段', exact: true }).click();
-  await expect(teens).toHaveAttribute('aria-pressed', 'true');
-  await setLanguage(page, 'en');
+test('TV franchise collections open from the directory with complete scenes', async ({ page }) => {
+  await page.goto('/en/');
+  await page.getByRole('link', { name: 'Young Sheldon', exact: true }).click();
+  await expect(page.getByRole('listitem')).toHaveCount(clips.filter(clip => clip.note === 'Young Sheldon').length);
+  await page.getByRole('link', { name: 'Browse tags', exact: true }).click();
+  await page.getByRole('link', { name: 'Friends', exact: true }).click();
+  await page.getByRole('button', { name: 'Choose scene: A sofa that will not turn', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Start dubbing', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Back to scenes', exact: true }).click();
+  await setLanguage(page, 'zh-CN');
   await page.reload();
-  await expect(page.getByRole('group', { name: 'Scene categories', exact: true }).getByRole('button', { pressed: true })).toContainText('Teenagers');
-  await expect(page.getByRole('listitem')).toHaveCount(teenCount);
+  await expect(page.getByRole('heading', { level: 2, name: 'Friends', exact: true })).toBeVisible();
+  await expect(page.getByRole('listitem')).toHaveCount(clips.filter(clip => clip.note === 'Friends').length);
 });
 
 for (const slug of ['young-sheldon-library', 'himym-driving-lesson', 'harry-potter-new-friend', 'big-bang-notebook', 'bluey-real-coins', 'young-sheldon-good-guest', 'big-bang-long-lesson']) test(`${slug} plays and records a TV conversation line`, async ({ page, browserName }) => {
