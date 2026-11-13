@@ -1,6 +1,6 @@
-// Creator clips share one browse collection; their source names remain on scenes.
-export const memeFranchises = ['Apparently Kid', 'Steven He', 'Recess Therapy'];
-export const franchiseGroup = (name: string) => memeFranchises.includes(name) ? 'Memes' : name;
+// Internet memes share one browse tag; original source names remain on scene cards.
+export const franchiseGroup = (scene: { note: string; tags: readonly string[] }) =>
+  scene.tags.includes('meme') && scene.tags.includes('internet') ? 'Memes' : scene.note;
 
 const artworkBase = 'https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/artwork/franchises/';
 export const franchiseArtwork: Record<string, { url: string; fit?: 'contain' | 'cover' }> = {

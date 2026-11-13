@@ -3,7 +3,7 @@
   "audience": "Private adult editorial review; child appearance in source is not an age rating or reuse consent.",
   "purpose": "private-adult-review",
   "rightsStatus": "redistribution-not-cleared",
-  "selectionCriteria": "Complete original spoken meme exchanges, including short Vines with two useful speakers and two turns. Preserve setup, payoff, incidental speech, source-specific content notes, and complete releases; do not pad or loop short clips.",
+  "selectionCriteria": "Complete original spoken meme beats, including multi-line solo performances and short exchanges. Preserve real speakers, setup, payoff, source-specific content notes, and complete releases; never invent dialogue or pad/loop short clips.",
   "sources": [
     {
       "id": "1VbZE6YhjKk",
@@ -124,6 +124,37 @@
       "duration": 22,
       "kind": "creator-claimed-original",
       "sha256": "367631cf01a04aba76e77c9a7cc201069b4edeb1d7384c29822fa20b0a5c8468"
+    },
+    {
+      "id": "B_Pzd8yh8ZT",
+      "url": "https://www.instagram.com/reel/B_Pzd8yh8ZT/",
+      "localFile": "content/local-dubbing/review/social-memes/sources/B_Pzd8yh8ZT.mp4",
+      "sourceOffset": 0,
+      "title": "Video by tsimmonds_official",
+      "series": "Tristan Simmonds",
+      "episode": "I'm in me mum's car",
+      "attribution": "Original Vine performance: Tristan Simmonds and Mum. Source: Tristan Simmonds’s own Instagram repost, captioned as the original 2014 video; not a remix.",
+      "channel": "tsimmonds_official",
+      "uploadDate": "20200421",
+      "duration": 6.432,
+      "kind": "creator-claimed-original",
+      "sha256": "9591b355f6d2f5794787a34abc603ee28c825b3e85b3117eaed546edc98cf4da",
+      "platform": "instagram"
+    },
+    {
+      "id": "rKT-169biQw",
+      "url": "https://www.youtube.com/watch?v=rKT-169biQw",
+      "localFile": "content/local-dubbing/review/social-memes/sources/rKT-169biQw.mp4",
+      "sourceOffset": 0,
+      "title": "Xiaomi CEO Lei Jun's Rare English Speech on Mi4i Launching at New Delhi (雷军在印度)",
+      "series": "Lei Jun / 雷军",
+      "episode": "Are you OK? — Mi 4i launch, 2015",
+      "attribution": "Original stage performance: Lei Jun at Xiaomi’s Mi 4i launch in New Delhi, 23 April 2015. Archive uploader: Tech In China. Raw speech, separate from the Mr.Lemon song remix; no endorsement or reuse permission claimed.",
+      "channel": "Tech In China",
+      "uploadDate": "20150426",
+      "duration": 150,
+      "kind": "event-archive-repost",
+      "sha256": "c05c04206d8706155dfc8de0b0b1b38c29de64af9a25cd4c2bad4a6b6132fe97"
     }
   ],
   "scenes": [
@@ -2048,6 +2079,339 @@
         "method": "Original 22-second source frames, FOX 13’s identification and quoted dialogue, full-source base.en/small.en recognition, and CTC word alignment. Automatic recognition mistranscribes the child’s accent; authored wording follows the source phrase corroborated by the publisher, not those substitutions.",
         "roles": "Acesyn repeatedly requests permission; his mother Kayla gives the off-screen refusals. Her face is not shown, so the shared initials fallback is used; no portrait is invented.",
         "cut": "Start before the second complete request, excluding the unclear opening. Keep three requests, both refusals, and the final raised-voice release to 10.72. The next exchange begins after 11 seconds. Per-line windows exclude the following speaker."
+      },
+      "wordTiming": {
+        "method": "CTC forced alignment",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_XricKsiBjmr2",
+      "sceneId": "scene_anSh31W2Rkrc",
+      "slug": "in-me-mums-car",
+      "publicSlug": "in-me-mums-car",
+      "cohort": "older-audience",
+      "batch": "2026-11-13",
+      "sourceId": "B_Pzd8yh8ZT",
+      "title": "I'm in me mum's car!",
+      "titleZh": "我在妈妈的车里！",
+      "start": 0,
+      "end": 6.42,
+      "roles": [
+        {
+          "id": "role_x1dzufHQJ3ei",
+          "name": "Tristan",
+          "portraitSource": {
+            "sourceId": "B_Pzd8yh8ZT",
+            "time": 1,
+            "normalizedCrop": [
+              0.18,
+              0,
+              0.75,
+              0.85
+            ]
+          },
+          "portrait": "in-me-mums-car-role_x1dzufHQJ3ei-portrait-1ac9059dd2ff.jpg"
+        },
+        {
+          "id": "role_izpuf8ej_j0n",
+          "name": "Mum",
+          "portraitSource": {
+            "sourceId": "B_Pzd8yh8ZT",
+            "time": 4.8,
+            "normalizedCrop": [
+              0,
+              0,
+              1,
+              1
+            ]
+          },
+          "portrait": "in-me-mums-car-role_izpuf8ej_j0n-portrait-245de059b786.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_A4VjpLZVSiQP",
+          "roleId": "role_x1dzufHQJ3ei",
+          "speaker": "Tristan",
+          "start": 0.14,
+          "end": 2.4,
+          "text": "I'm in me mum's car.",
+          "hint": "我在我妈妈的车里。这里的 me 是原表演中的方言用法，标准写法是 my。",
+          "words": [
+            {
+              "text": "I'm",
+              "start": 0.584,
+              "end": 0.685
+            },
+            {
+              "text": "in",
+              "start": 0.745,
+              "end": 0.826
+            },
+            {
+              "text": "me",
+              "start": 0.907,
+              "end": 1.008
+            },
+            {
+              "text": "mum's",
+              "start": 1.109,
+              "end": 1.431
+            },
+            {
+              "text": "car.",
+              "start": 1.573,
+              "end": 2.279
+            }
+          ]
+        },
+        {
+          "id": "line_qd2ejCC_IOJi",
+          "roleId": "role_x1dzufHQJ3ei",
+          "speaker": "Tristan",
+          "start": 2.72,
+          "end": 3.68,
+          "text": "Broom broom!",
+          "hint": "嘟嘟！这是模仿引擎的声音。",
+          "words": [
+            {
+              "text": "Broom",
+              "start": 2.781,
+              "end": 3.067
+            },
+            {
+              "text": "broom!",
+              "start": 3.19,
+              "end": 3.598
+            }
+          ]
+        },
+        {
+          "id": "line_Im6qqk-aRV1c",
+          "roleId": "role_izpuf8ej_j0n",
+          "speaker": "Mum",
+          "start": 4.2,
+          "end": 5.57,
+          "text": "Get out me car!",
+          "hint": "从我的车里出去！保留原声中的非正式用法。",
+          "words": [
+            {
+              "text": "Get",
+              "start": 4.522,
+              "end": 4.623
+            },
+            {
+              "text": "out",
+              "start": 4.724,
+              "end": 4.845
+            },
+            {
+              "text": "me",
+              "start": 4.905,
+              "end": 4.986
+            },
+            {
+              "text": "car!",
+              "start": 5.066,
+              "end": 5.51
+            }
+          ]
+        },
+        {
+          "id": "line_qCcanDNVFTH-",
+          "roleId": "role_x1dzufHQJ3ei",
+          "speaker": "Tristan",
+          "start": 5.64,
+          "end": 6.38,
+          "text": "Aw!",
+          "hint": "哎呀！",
+          "words": [
+            {
+              "text": "Aw!",
+              "start": 6.174,
+              "end": 6.257
+            }
+          ]
+        }
+      ],
+      "tags": [
+        "meme",
+        "internet",
+        "Vine",
+        "Instagram",
+        "Tristan Simmonds",
+        "in me mum's car",
+        "broom broom",
+        "妈妈的车",
+        "嘟嘟",
+        "requests",
+        "reaction"
+      ],
+      "contentNotes": "Original family performance, not a song or reenactment. Regional me-for-my and the short imperative are preserved as performed, not offered as standard written English. Broom broom imitates an engine. Adult prototype; source reuse permission unconfirmed.",
+      "practice": "Perform a playful announcement, an engine sound, a firm instruction, and a disappointed reaction.",
+      "reviewStatus": "source-and-speaker-checked-private-adult-prototype",
+      "verification": {
+        "method": "Creator’s own Instagram source and caption, source frames, full-source small.en recognition, and CTC timing. Automatic recognition normalizes the regional me to my; the authored wording preserves the established original phrase.",
+        "roles": "Tristan gives the announcement and engine imitation, Mum gives the instruction, then Tristan reacts. Mum is visible in the original source and keeps a selectable one-line role. Both portraits use those source frames.",
+        "cut": "Use the complete 6.432-second creator source, stopping at 6.42 with the final reaction retained. All line prompts stop before the next speaker; no looping or padding."
+      },
+      "wordTiming": {
+        "method": "CTC forced alignment",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_OJSauxuQhPep",
+      "sceneId": "scene_euPqQlJ4f1W0",
+      "slug": "lei-jun-are-you-ok",
+      "publicSlug": "lei-jun-are-you-ok",
+      "cohort": "older-audience",
+      "batch": "2026-11-13",
+      "sourceId": "rKT-169biQw",
+      "title": "Are you OK?",
+      "titleZh": "你们还好吗？",
+      "start": 75.3,
+      "end": 84.2,
+      "roles": [
+        {
+          "id": "role_XZ61BUhpEP3s",
+          "name": "Lei Jun",
+          "portraitSource": {
+            "sourceId": "rKT-169biQw",
+            "time": 82.5,
+            "normalizedCrop": [
+              0.39,
+              0.12,
+              0.22,
+              0.43
+            ]
+          },
+          "portrait": "lei-jun-are-you-ok-role_XZ61BUhpEP3s-portrait-6a33a69ebeb1.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_zTHazMx89x_k",
+          "roleId": "role_XZ61BUhpEP3s",
+          "speaker": "Lei Jun",
+          "start": 75.48,
+          "end": 77.5,
+          "text": "Thank you. Are you okay?",
+          "hint": "谢谢。你们还好吗？这里是原演讲中与现场观众互动的问句。",
+          "words": [
+            {
+              "text": "Thank",
+              "start": 76.308,
+              "end": 76.45
+            },
+            {
+              "text": "you.",
+              "start": 76.49,
+              "end": 76.571
+            },
+            {
+              "text": "Are",
+              "start": 76.631,
+              "end": 76.732
+            },
+            {
+              "text": "you",
+              "start": 76.773,
+              "end": 76.833
+            },
+            {
+              "text": "okay?",
+              "start": 76.934,
+              "end": 77.177
+            }
+          ]
+        },
+        {
+          "id": "line_RpT7nfUjRxBQ",
+          "roleId": "role_XZ61BUhpEP3s",
+          "speaker": "Lei Jun",
+          "start": 78.5,
+          "end": 79.95,
+          "text": "Are you okay?",
+          "hint": "你们还好吗？",
+          "words": [
+            {
+              "text": "Are",
+              "start": 78.842,
+              "end": 78.923
+            },
+            {
+              "text": "you",
+              "start": 78.963,
+              "end": 79.044
+            },
+            {
+              "text": "okay?",
+              "start": 79.144,
+              "end": 79.648
+            }
+          ]
+        },
+        {
+          "id": "line_vsrf7rWYG_lL",
+          "roleId": "role_XZ61BUhpEP3s",
+          "speaker": "Lei Jun",
+          "start": 81.55,
+          "end": 83.9,
+          "text": "Thank you! Thank you!",
+          "hint": "谢谢！谢谢！",
+          "words": [
+            {
+              "text": "Thank",
+              "start": 81.891,
+              "end": 82.153
+            },
+            {
+              "text": "you!",
+              "start": 82.233,
+              "end": 82.454
+            },
+            {
+              "text": "Thank",
+              "start": 83.056,
+              "end": 83.277
+            },
+            {
+              "text": "you!",
+              "start": 83.358,
+              "end": 83.559
+            }
+          ]
+        }
+      ],
+      "tags": [
+        "meme",
+        "internet",
+        "viral",
+        "Lei Jun",
+        "雷军",
+        "Xiaomi",
+        "小米",
+        "Are you OK",
+        "Are you okay",
+        "Bilibili",
+        "哔哩哔哩",
+        "stage",
+        "thanks",
+        "intonation"
+      ],
+      "contentNotes": "Raw original English stage speech, not the music remix. Practise thanks and rising-question intonation without mocking an accent. Are you okay asks about someone’s condition; its use here is a crowd interaction, not a model for a formal opening greeting. Historical 2015 launch footage includes Mi Band branding, not a current product offer or endorsement. Adult prototype; reuse permission unconfirmed.",
+      "practice": "Practise gratitude, rising questions, and engaging a crowd while preserving the original performance.",
+      "reviewStatus": "source-and-speaker-checked-private-adult-prototype",
+      "verification": {
+        "method": "Full 150-second archive frames and small.en recognition; independent CTC boundary alignment on uncut 81.2–87-second context includes the following We will give everyone. The song-remix lead CRU-fwS6aAU was rejected.",
+        "roles": "Lei Jun is the sole authored English speaker in this excerpt. Hugo is visible but does not speak here. Crowd cheers remain in the original mix; no audience words or roles are invented.",
+        "cut": "Final you aligns at 83.367–83.468; the next We starts at 84.792. Cut at 84.20 retains the full release and excludes the following sentence. Questions retain crowd-response gaps; no audio splicing or generated speech."
       },
       "wordTiming": {
         "method": "CTC forced alignment",

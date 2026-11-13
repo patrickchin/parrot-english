@@ -411,12 +411,20 @@
     {
       "id": "candidate_7tFi_vjk5RSP",
       "key": "lei-jun-are-you-ok",
-      "title": "雷军 / Are you OK?",
-      "priority": "hold",
+      "title": "Are you OK?",
+      "priority": "high",
       "trendStatus": "evergreen-candidate",
-      "status": "source-and-language-review-hold",
+      "status": "authored",
       "originalLanguage": "en",
-      "source": null,
+      "source": {
+        "url": "https://www.youtube.com/watch?v=rKT-169biQw",
+        "providerId": "rKT-169biQw",
+        "creator": "Lei Jun / 雷军",
+        "uploader": "Tech In China",
+        "kind": "event-archive-repost",
+        "uploadedOn": "2015-04-26",
+        "localFile": "content/local-dubbing/review/social-memes/sources/rKT-169biQw.mp4"
+      },
       "evidence": [
         {
           "platform": "bilibili",
@@ -431,13 +439,49 @@
           "checkedOn": "2026-11-12",
           "evidenceType": "search-index",
           "note": "Source-speech repost lead; not verified as a Xiaomi rights-holder upload."
+        },
+        {
+          "platform": "youtube",
+          "url": "https://www.youtube.com/watch?v=rKT-169biQw",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "source-and-metadata",
+          "note": "Full unremixed English speech archive checked, separate from the Mr.Lemon song remix; uploader is not claimed as rights holder.",
+          "metrics": {
+            "views": 152684,
+            "likes": 947
+          }
+        },
+        {
+          "platform": "publisher-context",
+          "url": "https://www.geekwire.com/2015/are-you-ok-xiaomi-ceos-speech-becomes-a-hit-viral-music-video/",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "publisher-page",
+          "note": "Historical speech/remix distinction and 2015 India launch context. No accent-mocking framing adopted.",
+          "metrics": {
+            "views": "UNKNOWN",
+            "likes": "UNKNOWN"
+          }
+        },
+        {
+          "platform": "bilibili",
+          "url": "https://www.bilibili.com/video/BV1vs411K7tr/",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "search-index",
+          "note": "Source-event/reuse lead, not a sitewide ranking. Recommended-video counters are not retained.",
+          "metrics": {
+            "views": "UNKNOWN",
+            "likes": "UNKNOWN"
+          }
         }
       ],
-      "englishPractice": "Possible reference for a commissioned comic exchange; original speech and remix must be distinguished.",
-      "contentNotes": "A remix is not a natural continuous conversation. Do not mock accents or teach edited/nonstandard lines as standard English.",
+      "englishPractice": "Practise gratitude, rising questions, and engaging a crowd while preserving the original performance.",
+      "contentNotes": "Raw original English stage speech, not the music remix. Practise thanks and rising-question intonation without mocking an accent. Are you okay asks about someone’s condition; its use here is a crowd interaction, not a model for a formal opening greeting. Historical 2015 launch footage includes Mi Band branding, not a current product offer or endorsement. Adult prototype; reuse permission unconfirmed.",
       "rightsStatus": "redistribution-not-cleared",
-      "publicationStatus": "not-published",
-      "nextAction": "Verify the original performance, speakers, continuous source range, and complete final syllables before authoring a playable scene."
+      "publicationStatus": "authored",
+      "nextAction": "Publish the verified batch from merged main, then collect adult prototype feedback. Reuse permission remains unconfirmed.",
+      "reviewRecipe": "content/social-meme-review-scenes.json",
+      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/lei-jun-are-you-ok/scene.json",
+      "sceneUrl": "https://parrotbook.com/en/scenes/lei-jun-are-you-ok"
     },
     {
       "id": "candidate_YcEKMquQG5ja",
@@ -742,6 +786,45 @@
       ],
       "publishedOn": "2026-11-13",
       "contentRevision": "1af4c5dd95fc7e7d17649104"
+    },
+    {
+      "id": "candidate_hbwp31M8GiLg",
+      "key": "in-me-mums-car",
+      "title": "I'm in me mum's car!",
+      "priority": "high",
+      "trendStatus": "evergreen-candidate",
+      "status": "authored",
+      "originalLanguage": "en",
+      "source": {
+        "url": "https://www.instagram.com/reel/B_Pzd8yh8ZT/",
+        "providerId": "B_Pzd8yh8ZT",
+        "creator": "Tristan Simmonds",
+        "uploader": "tsimmonds_official",
+        "kind": "creator-claimed-original",
+        "uploadedOn": "2020-04-21",
+        "localFile": "content/local-dubbing/review/social-memes/sources/B_Pzd8yh8ZT.mp4"
+      },
+      "englishPractice": "Perform a playful announcement, an engine sound, a firm instruction, and a disappointed reaction.",
+      "contentNotes": "Original family performance, not a song or reenactment. Regional me-for-my and the short imperative are preserved as performed, not offered as standard written English. Broom broom imitates an engine. Adult prototype; source reuse permission unconfirmed.",
+      "rightsStatus": "redistribution-not-cleared",
+      "publicationStatus": "authored",
+      "reviewRecipe": "content/social-meme-review-scenes.json",
+      "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/in-me-mums-car/scene.json",
+      "sceneUrl": "https://parrotbook.com/en/scenes/in-me-mums-car",
+      "nextAction": "Publish the verified batch from merged main, then collect adult prototype feedback. Reuse permission remains unconfirmed.",
+      "evidence": [
+        {
+          "platform": "instagram",
+          "url": "https://www.instagram.com/reel/B_Pzd8yh8ZT/",
+          "checkedOn": "2026-11-13",
+          "evidenceType": "source-and-metadata",
+          "note": "Creator’s own caption identifies the original 2014 video.",
+          "metrics": {
+            "views": "UNKNOWN",
+            "likes": 498
+          }
+        }
+      ]
     }
   ],
   "researchBatches": [
@@ -774,6 +857,26 @@
         "can-i-pet-that-dog"
       ],
       "chinesePlatformResult": "Bilibili and Douyin queries returned unrelated or weak index results for these clips. No verified Chinese popularity metric or ranking retained. Lei Jun raw speech remains on source/language hold; remix evidence is not an original English exchange."
+    },
+    {
+      "date": "2026-11-13",
+      "batch": "fourth-social-batch",
+      "authoredScenes": [
+        "in-me-mums-car",
+        "lei-jun-are-you-ok"
+      ],
+      "browseTag": "Memes",
+      "chinesePlatformResult": "Lei Jun source/reuse lead found on Bilibili; original English archive reviewed separately from the song remix. No sitewide rank or current Chinese popularity metric claimed. Car and shoe searches did not yield reliable Chinese popularity evidence.",
+      "heldCandidates": [
+        {
+          "key": "bbc-dad",
+          "reason": "Overlapping/noisy speech needs a more certain editorial transcript before authoring."
+        },
+        {
+          "key": "what-are-those",
+          "reason": "Downloaded archive repeats/edits the original and background speaker detail remains unclear; not included in this batch."
+        }
+      ]
     }
   ]
 }

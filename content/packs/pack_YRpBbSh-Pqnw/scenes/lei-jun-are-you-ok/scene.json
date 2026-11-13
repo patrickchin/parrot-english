@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "id": "scene_euPqQlJ4f1W0",
+  "title": "你们还好吗？",
+  "tags": [
+    "meme",
+    "internet",
+    "viral",
+    "Lei Jun",
+    "雷军",
+    "Xiaomi",
+    "小米",
+    "Are you OK",
+    "Are you okay",
+    "Bilibili",
+    "哔哩哔哩",
+    "stage",
+    "thanks",
+    "intonation"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 8.92,
+  "video": "lei-jun-are-you-ok-review-6dd510a4bd68.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/lei-jun-are-you-ok/",
+  "poster": "lei-jun-are-you-ok-poster-6dd510a4bd68.jpg",
+  "waveform": "waveform-6dd510a4bd68.json",
+  "roles": [
+    {
+      "id": "role_XZ61BUhpEP3s",
+      "name": "Lei Jun",
+      "label": "Lei Jun",
+      "hint": "3 句台词",
+      "portrait": "lei-jun-are-you-ok-role_XZ61BUhpEP3s-portrait-6a33a69ebeb1.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_zTHazMx89x_k",
+      "roleId": "role_XZ61BUhpEP3s",
+      "start": 0.18,
+      "end": 2.2,
+      "text": "Thank you. Are you okay?",
+      "hint": "谢谢。你们还好吗？这里是原演讲中与现场观众互动的问句。",
+      "words": [
+        {
+          "text": "Thank",
+          "start": 1.008,
+          "end": 1.15
+        },
+        {
+          "text": "you.",
+          "start": 1.19,
+          "end": 1.271
+        },
+        {
+          "text": "Are",
+          "start": 1.331,
+          "end": 1.432
+        },
+        {
+          "text": "you",
+          "start": 1.473,
+          "end": 1.533
+        },
+        {
+          "text": "okay?",
+          "start": 1.634,
+          "end": 1.877
+        }
+      ]
+    },
+    {
+      "id": "line_RpT7nfUjRxBQ",
+      "roleId": "role_XZ61BUhpEP3s",
+      "start": 3.2,
+      "end": 4.65,
+      "text": "Are you okay?",
+      "hint": "你们还好吗？",
+      "words": [
+        {
+          "text": "Are",
+          "start": 3.542,
+          "end": 3.623
+        },
+        {
+          "text": "you",
+          "start": 3.663,
+          "end": 3.744
+        },
+        {
+          "text": "okay?",
+          "start": 3.844,
+          "end": 4.348
+        }
+      ]
+    },
+    {
+      "id": "line_vsrf7rWYG_lL",
+      "roleId": "role_XZ61BUhpEP3s",
+      "start": 6.25,
+      "end": 8.6,
+      "text": "Thank you! Thank you!",
+      "hint": "谢谢！谢谢！",
+      "words": [
+        {
+          "text": "Thank",
+          "start": 6.591,
+          "end": 6.853
+        },
+        {
+          "text": "you!",
+          "start": 6.933,
+          "end": 7.154
+        },
+        {
+          "text": "Thank",
+          "start": 7.756,
+          "end": 7.977
+        },
+        {
+          "text": "you!",
+          "start": 8.058,
+          "end": 8.259
+        }
+      ]
+    }
+  ],
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Lei Jun / 雷军 — Are you OK? — Mi 4i launch, 2015",
+    "attribution": "Original stage performance: Lei Jun at Xiaomi’s Mi 4i launch in New Delhi, 23 April 2015. Archive uploader: Tech In China. Raw speech, separate from the Mr.Lemon song remix; no endorsement or reuse permission claimed.",
+    "source": "https://www.youtube.com/watch?v=rKT-169biQw&t=75s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 75.3–84.2 秒的连续节选。Raw original English stage speech, not the music remix. Practise thanks and rising-question intonation without mocking an accent. Are you okay asks about someone’s condition; its use here is a crowd interaction, not a model for a formal opening greeting. Historical 2015 launch footage includes Mi Band branding, not a current product offer or endorsement. Adult prototype; reuse permission unconfirmed."
+  },
+  "wordTiming": {
+    "method": "CTC forced alignment",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  }
+}

@@ -11,7 +11,7 @@ const recipeFiles = {
   'social-memes': 'content/social-meme-review-scenes.json',
 };
 if (!Object.hasOwn(recipeFiles, cohort)) throw new Error('Usage: node scripts/prepare-review-clips.mjs <younger-age-5|older-audience|social-memes> [slug ...|--check]');
-// Short Vines can contain a complete two-speaker exchange in four seconds.
+// Short memes can be complete exchanges or solo performances; keep the original speakers.
 const social = cohort === 'social-memes';
 const recipe = JSON.parse(await readFile(recipeFiles[cohort], 'utf8'));
 const root = `content/local-dubbing/review/${cohort}`;
@@ -28,10 +28,11 @@ for (const scene of recipe.scenes.filter(s => !selected.length || checkOnly || s
   const source = recipe.sources.find(s => s.id === scene.sourceId);
   if (!source || !/^[\w-]+$/.test(scene.slug) || !/^[\w-]+$/.test(source.id)) throw new Error(`Invalid source or slug: ${scene.slug}`);
   if (!(scene.end > scene.start) || !scene.lines.length || scene.lines.some(l => l.start < scene.start || l.end > scene.end || l.end <= l.start)) throw new Error(`Invalid timings: ${scene.slug}`);
+  const sourceLink = source.url.includes('youtube.com/') ? `${source.url}&t=${Math.floor(scene.start + (source.sourceOffset ?? 0))}s` : source.url;
   const roles = new Map(scene.roles?.map(r => [r.id, r.name]));
   if (scene.lines.some(line => roles.get(line.roleId) !== line.speaker)) throw new Error(`Speaker name and role disagree: ${scene.slug}`);
   const turns = scene.lines.map(l => l.roleId).filter((id, i, all) => !i || id !== all[i - 1]);
-  if (scene.end - scene.start < (social ? 4 : 10) || scene.end - scene.start > 40 || new Set(turns).size < 2 || turns.length < (social || cohort === 'older-audience' ? 2 : 3) || scene.lines.length < (social ? 2 : 3) || scene.lines.some(l => !roles.has(l.roleId) || /narrator|reference voice|children/i.test(roles.get(l.roleId)))) throw new Error(`Needs a complete character exchange: ${scene.slug}`);
+  if (scene.end - scene.start < (social ? 4 : 10) || scene.end - scene.start > 40 || new Set(turns).size < (social ? 1 : 2) || turns.length < (social ? 1 : cohort === 'older-audience' ? 2 : 3) || scene.lines.length < (social ? 2 : 3) || scene.lines.some(l => !roles.has(l.roleId) || /narrator|reference voice|children/i.test(roles.get(l.roleId)))) throw new Error(`Needs a complete character exchange: ${scene.slug}`);
   const file = scene.file ?? `${scene.slug}.mp4`;
   if (!checkOnly && !captionsOnly && !scene.preserveMedia) run('ffmpeg', ['-v', 'error', '-ss', String(scene.start), '-i', source.localFile ?? `${root}/sources/${source.id}.mp4`, '-t', String(scene.end - scene.start), '-map', '0:v:0', '-map', '0:a:0', '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2', '-c:v', 'libx264', '-preset', 'fast', '-crf', '20', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', '-y', `${root}/${file}`]);
   const probe = JSON.parse(run('ffprobe', ['-v', 'error', '-show_streams', '-show_format', '-of', 'json', `${root}/${file}`]));
@@ -46,7 +47,7 @@ for (const scene of recipe.scenes.filter(s => !selected.length || checkOnly || s
   }
   const lines = scene.lines.map(l => ({ ...l, start: +(l.start - scene.start).toFixed(3), end: +(l.end - scene.start).toFixed(3) }));
   await writeFile(`${root}/${scene.slug}.vtt`, 'WEBVTT\n\n' + lines.map((l, i) => `${i + 1}\n${timestamp(l.start)} --> ${timestamp(l.end)}\n${l.text}\n${l.hint}\n`).join('\n'));
-  await writeFile(`${root}/${scene.slug}.txt`, `${scene.title}\n${scene.titleZh}\nPractice: ${scene.practice ?? scene.editNote}\nReview: ${scene.reviewStatus ?? 'adult-review-pending'}\nSource: ${source.url}&t=${Math.floor(scene.start + (source.sourceOffset ?? 0))}s\nSource cut: ${scene.start + (source.sourceOffset ?? 0)}–${scene.end + (source.sourceOffset ?? 0)}s${source.kind === 'prepared-benchmark' ? `; preserved prepared benchmark. Original edits: ${source.changes}` : ''}\n${source.attribution}\nRights: redistribution-not-cleared; private review only.\n\n` + lines.map(l => `${l.speaker}: ${l.text}\n${l.hint}\n`).join('\n'));
+  await writeFile(`${root}/${scene.slug}.txt`, `${scene.title}\n${scene.titleZh}\nPractice: ${scene.practice ?? scene.editNote}\nReview: ${scene.reviewStatus ?? 'adult-review-pending'}\nSource: ${sourceLink}\nSource cut: ${scene.start + (source.sourceOffset ?? 0)}–${scene.end + (source.sourceOffset ?? 0)}s${source.kind === 'prepared-benchmark' ? `; preserved prepared benchmark. Original edits: ${source.changes}` : ''}\n${source.attribution}\nRights: redistribution-not-cleared; private review only.\n\n` + lines.map(l => `${l.speaker}: ${l.text}\n${l.hint}\n`).join('\n'));
   console.log(`${file}: ${duration.toFixed(3)}s, ${roles.size} characters, ${turns.length} dialogue turns`);
 }
 

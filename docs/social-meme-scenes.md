@@ -1,7 +1,7 @@
 # Playable internet meme scenes
 
 Published for the existing adult prototype: original spoken performances from
-Recess Therapy, WNEP, and Steven He. The library has 116 authored scenes: 72 in
+Recess Therapy, WNEP, and Steven He. The library has 118 authored scenes: 74 in
 Memes & clips, 15 First English, 15 Ages 10–12, and 14 Teenagers. Existing scene
 manifests and media references are unchanged.
 
@@ -235,3 +235,48 @@ Third-batch verification:
 - Player workflow 43381128519 succeeded; production health matched its actual
   build commit `b79bc33dd03e2f80485c6c525ecc52dd49a3ec2d`. Physical-device
   microphone testing remains separate from the browser checks.
+
+
+## Fourth batch and shared Memes tag — 2026-11-13
+
+Two more performances are authored, bringing the local catalog to 118 scenes,
+including ten internet memes. All ten use a single **Memes** browse tag; they do
+not create separate creator/source tags. The directory now derives this grouping
+from the existing `meme` and `internet` metadata rather than three hard-coded
+creator names. Creator/source names remain on scene cards, in credits, and in
+search. Film and TV franchise tags remain distinct. Browser checks verify the
+Memes count, absence of separate source tags, full member list, and creator search.
+All 116 preceding scene manifests, summaries, and translations are preserved.
+
+| Scene | Source | Continuous range | Duration | Practice roles |
+| --- | --- | --- | --- | --- |
+| I'm in me mum's car! | [Creator Instagram repost](https://www.instagram.com/reel/B_Pzd8yh8ZT/) | 0–6.42 s | 6.420 s | Tristan, Mum |
+| Are you OK? | [Unremixed stage archive](https://www.youtube.com/watch?v=rKT-169biQw) | 75.30–84.20 s | 8.920 s | Lei Jun |
+
+The car clip comes from Tristan Simmonds’s own repost, captioned as the original
+2014 Vine. Both original speakers and the final reaction remain. Regional
+me-for-my and the engine imitation are explained; no rewritten speech is used.
+Mum’s one-line role remains selectable, with her actual source portrait. The
+credit links directly to Instagram, without appending a YouTube seek suffix.
+
+Lei Jun uses the English speech, separately from the song remix, at Xiaomi’s
+23 April 2015 New Delhi launch. [Historical reporting](https://www.geekwire.com/2015/are-you-ok-xiaomi-ceos-speech-becomes-a-hit-viral-music-video/)
+distinguishes the speech from the remix. A Bilibili index lead supports recognition
+without supplying a current rank. The selected original audio retains the crowd
+cheers and one actual English speaker. Hugo is visible but does not speak in this
+cut; no audience dialogue or role is invented. The review tool now accepts
+multi-line solo memes as well as exchanges, with longer-conversation safeguards
+retained for other cohorts. A CLI test covers both formats and rejects a
+single-line draft.
+
+An independent CTC alignment of uncut 81.2–87-second context puts the final you
+at 83.367–83.468 and the next We at 84.792. Ending at 84.20 retains the release
+and excludes the next sentence. Practice focuses on gratitude and question
+intonation; it does not mock an accent or present this crowd interaction as a
+formal opening greeting. Historical product branding is not a current offer.
+
+Both scenes include original source audio, Chinese hints, five-language
+scene/role/credit text, CTC words, waveforms, and actual speaker portraits.
+Reuse permission remains unconfirmed under the existing adult-prototype notices.
+Code remains in ESA, media/structured content in OSS, and learner takes on-device.
+Publication follows merge and immutable-file verification, with the catalog last.
