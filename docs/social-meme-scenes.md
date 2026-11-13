@@ -169,10 +169,10 @@ Second-batch verification:
 
 ## Third batch — 2026-11-13
 
-Three more scenes are authored for the adult prototype. The local catalog has
-116 scenes, including 72 in Memes & clips; all 113 preceding scene manifests and
-all their translations remain unchanged. Publication follows PR merge and
-verification of immutable objects, with the catalog activated last.
+Three more scenes were published and live-verified on 2026-11-13 for the adult
+prototype. The live catalog has 116 scenes, including 72 in Memes & clips. All
+113 preceding scene manifests and their translations remain unchanged. Publication
+followed PR #268 merging, with immutable files verified and the catalog activated last.
 
 | Scene | Source archive | Continuous range | Duration | Practice roles |
 | --- | --- | --- | --- | --- |
@@ -215,3 +215,23 @@ of a complete ending. Media and structured content remain in OSS, application
 code in ESA, and learner recordings on-device. Reuse permission remains
 unconfirmed under the existing adult-prototype notices. Chinese-platform queries
 did not supply verified popularity metrics for this batch.
+
+
+Third-batch verification:
+
+- 37 application tests, 15 content tests, and one boundary test passed. The
+  production build passed. All eight meme cuts passed full decoding and captions.
+- Browser suite: 29 passed, one expected WebKit microphone skip. The three new
+  clips passed discovery, roles/portraits/initials fallback, subtitles/credits,
+  and playback in desktop Chromium, phone Chromium, and WebKit. Both Chromium
+  layouts also passed recording, save, reload, and replay.
+- Content revision: `1af4c5dd95fc7e7d17649104`. All 236 JSON objects and ten media
+  objects passed SHA-256 verification. All 475 referenced media objects were
+  available before catalog activation. The catalog uses `no-store`.
+- Nine live checks passed against production and actual OSS media. All six
+  Chromium checks recorded, saved, reloaded, and replayed a take; the phone checks
+  selected the other speaker, including Kayla’s off-screen role. No upload
+  requests or page errors occurred. Video byte ranges and CORS passed.
+- Player workflow 43381128519 succeeded; production health matched its actual
+  build commit `b79bc33dd03e2f80485c6c525ecc52dd49a3ec2d`. Physical-device
+  microphone testing remains separate from the browser checks.

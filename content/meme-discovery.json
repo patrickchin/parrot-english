@@ -216,7 +216,7 @@
       "title": "Can I pet that dog?",
       "priority": "high",
       "trendStatus": "evergreen-candidate",
-      "status": "authored",
+      "status": "published",
       "originalLanguage": "en",
       "source": {
         "url": "https://www.youtube.com/watch?v=YYx51ZrSn3g",
@@ -268,11 +268,13 @@
       "englishPractice": "Ask permission, say no, and perform increasingly insistent repetition.",
       "contentNotes": "Original indoor family video, not the unrelated bear/wildlife remix. Repeated requests and raised voice are preserved for performance, not presented as advice to ignore an adult’s answer or approach an unfamiliar animal. Adult prototype; source reuse permission unconfirmed.",
       "rightsStatus": "redistribution-not-cleared",
-      "publicationStatus": "authored",
-      "nextAction": "Publish the verified batch from merged main, then collect adult prototype feedback. Reuse permission remains unconfirmed.",
+      "publicationStatus": "published",
+      "nextAction": "Collect adult prototype feedback and continue discovery for the next batch; source reuse permissions remain unconfirmed.",
       "reviewRecipe": "content/social-meme-review-scenes.json",
       "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/can-i-pet-that-dog/scene.json",
-      "sceneUrl": "https://parrotbook.com/en/scenes/can-i-pet-that-dog"
+      "sceneUrl": "https://parrotbook.com/en/scenes/can-i-pet-that-dog",
+      "publishedOn": "2026-11-13",
+      "contentRevision": "1af4c5dd95fc7e7d17649104"
     },
     {
       "id": "candidate_ipPFTi4JQWSf",
@@ -643,7 +645,7 @@
       "title": "What's nine plus ten?",
       "priority": "high",
       "trendStatus": "evergreen-candidate",
-      "status": "authored",
+      "status": "published",
       "originalLanguage": "en",
       "source": {
         "url": "https://www.youtube.com/watch?v=wSRHxVDMzvc",
@@ -657,11 +659,11 @@
       "englishPractice": "Ask a simple question, deny a claim, and perform the famous deadpan answer.",
       "contentNotes": "Contains a repeated insult and informal/nonstandard speech, retained as a performance rather than a model for polite conversation. The answer 21 is deliberately wrong; 9 + 10 = 19. Source identities and reuse permission unconfirmed. Adult prototype only.",
       "rightsStatus": "redistribution-not-cleared",
-      "publicationStatus": "authored",
+      "publicationStatus": "published",
       "reviewRecipe": "content/social-meme-review-scenes.json",
       "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/nine-plus-ten/scene.json",
       "sceneUrl": "https://parrotbook.com/en/scenes/nine-plus-ten",
-      "nextAction": "Publish the verified batch from merged main, then collect adult prototype feedback. Reuse permission remains unconfirmed.",
+      "nextAction": "Collect adult prototype feedback and continue discovery for the next batch; source reuse permissions remain unconfirmed.",
       "evidence": [
         {
           "platform": "youtube",
@@ -685,7 +687,9 @@
             "likes": "UNKNOWN"
           }
         }
-      ]
+      ],
+      "publishedOn": "2026-11-13",
+      "contentRevision": "1af4c5dd95fc7e7d17649104"
     },
     {
       "id": "candidate__7x2O5__RifU",
@@ -693,7 +697,7 @@
       "title": "And they were roommates!",
       "priority": "high",
       "trendStatus": "evergreen-candidate",
-      "status": "authored",
+      "status": "published",
       "originalLanguage": "en",
       "source": {
         "url": "https://www.youtube.com/watch?v=y-P0m0M_8pc",
@@ -707,11 +711,11 @@
       "englishPractice": "Echo unexpected news with contrasting emotion and deadpan delivery.",
       "contentNotes": "An overheard fragment and a deadpan echo; no claim about the people’s relationships beyond the spoken word roommates. The woman is unidentified; archive uploader is not the original creator. Includes Oh my God. Adult prototype; source reuse permission unconfirmed.",
       "rightsStatus": "redistribution-not-cleared",
-      "publicationStatus": "authored",
+      "publicationStatus": "published",
       "reviewRecipe": "content/social-meme-review-scenes.json",
       "sceneManifest": "content/packs/pack_YRpBbSh-Pqnw/scenes/they-were-roommates/scene.json",
       "sceneUrl": "https://parrotbook.com/en/scenes/they-were-roommates",
-      "nextAction": "Publish the verified batch from merged main, then collect adult prototype feedback. Reuse permission remains unconfirmed.",
+      "nextAction": "Collect adult prototype feedback and continue discovery for the next batch; source reuse permissions remain unconfirmed.",
       "evidence": [
         {
           "platform": "youtube",
@@ -735,7 +739,9 @@
             "likes": "UNKNOWN"
           }
         }
-      ]
+      ],
+      "publishedOn": "2026-11-13",
+      "contentRevision": "1af4c5dd95fc7e7d17649104"
     }
   ],
   "researchBatches": [
