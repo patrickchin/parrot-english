@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type RefObject } from 'react';
 import { asset, type Scene, type Line } from './scene';
-import { waveformStep } from './waveform';
+import { waveformStep, type WaveformTimeline } from './waveform';
 import { encodePcmWav } from './pcm-recording';
 import { audibleContextTime, decodeTake, waitForAudioClock } from './audio-timing';
 import { idleMedia, transitionMedia, type Activity, type MediaEvent } from './media-state';
@@ -22,8 +22,20 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
   const phase = state.phase;
   const error = state.phase === 'idle' ? state.error : '';
   const [time, setTime] = useState(0);
-  const [livePeaks, setLivePeaks] = useState<number[]>([]);
-  const [liveStart, setLiveStart] = useState(0);
+  const timeline = useRef<WaveformTimeline>({ time: 0, capture: null });
+  const playbackProgress = useRef<HTMLProgressElement>(null);
+  const displayedTime = useRef(0);
+  function updateTime(value: number, immediate = false) {
+    timeline.current.time = value;
+    if (playbackProgress.current) playbackProgress.current.value = value;
+    // Captions change at their exact boundaries; elapsed text needs only 4 Hz.
+    // The waveform reads the frame clock directly, without rendering the player.
+    const previous = displayedTime.current;
+    if (immediate || Math.floor(previous * 4) !== Math.floor(value * 4) ||
+      scene.lines.some(line => (previous < line.start) !== (value < line.start) || (previous < line.end) !== (value < line.end))) {
+      displayedTime.current = value; setTime(value);
+    }
+  }
   const operation = useRef(0);
   const cancellation = useRef(new AbortController());
   const frame = useRef(0);
@@ -41,6 +53,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
     operation.current++;
     cancellation.current.abort(); cancellation.current = new AbortController();
     replayClock.current = null;
+    timeline.current.capture = null;
     cancelAnimationFrame(frame.current);
     stream.current?.getTracks().forEach(track => track.stop());
     stream.current = null;
@@ -48,7 +61,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
     finishRecording.current = null;
     for (const source of sources.current) { try { source.stop(); } catch { /* Already ended. */ } }
     sources.current = [];
-    if (video.current) { video.current.pause(); video.current.muted = false; setTime(video.current.currentTime); }
+    if (video.current) { video.current.pause(); video.current.muted = false; updateTime(video.current.currentTime, true); }
   }
 
   function stop(error?: string) {
@@ -122,9 +135,8 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
         }
       }
       if (takes) el.muted = scene.lines.some(line => takes[line.id] && el.currentTime >= line.start && el.currentTime < line.end);
-      // Follow the media clock on every paint; throttling this made the playhead step.
-      setTime(el.currentTime);
-      if (el.ended || el.currentTime >= end) { setTime(Math.min(el.currentTime, scene.duration)); stop(); return; }
+      updateTime(el.currentTime);
+      if (el.ended || el.currentTime >= end) { stop(); return; }
       frame.current = requestAnimationFrame(tick);
     };
     frame.current = requestAnimationFrame(tick);
@@ -132,7 +144,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
 
   async function preview(line?: Line) {
     const id = begin('preview');
-    setTime(line?.start ?? 0);
+    updateTime(line?.start ?? 0, true);
     try {
       const el = await readyVideo(line?.start ?? 0, false);
       await playVideo(el, id);
@@ -151,7 +163,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
     if (!navigator.mediaDevices?.getUserMedia || typeof AudioWorkletNode === 'undefined') {
       setError("errors.recordingUnsupported"); return;
     }
-    setLivePeaks([]); setLiveStart(window.start); setTime(window.start);
+    updateTime(window.start, true);
     try {
       context.current ??= new AudioContext();
       const ctx = context.current;
@@ -179,6 +191,8 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
       if (id !== operation.current) return;
       advance('AUDIO_READY', id);
       const chunks: Float32Array[] = [], peaks: number[] = [];
+      const live = { start: window.start, peaks };
+      timeline.current.capture = live;
       let captureContextStart = 0, captureStart = window.start;
       detail.port.onmessage = event => {
         if (id !== operation.current) return;
@@ -228,28 +242,25 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
       await playVideo(el, id, { onReady: () => {
         // Both the WAV and live peaks start at this exact audio-context frame.
         captureStart = el.currentTime - (ctx.currentTime - captureContextStart);
-        setLiveStart(captureStart);
+        live.start = captureStart;
       } });
       if (id !== operation.current) return;
       advance('PLAYING', id);
       finishRecording.current = () => {
         if (machine.current.phase !== 'recording') return;
-        cancelAnimationFrame(frame.current); el.pause(); setTime(el.currentTime); advance('FINISH', id);
+        cancelAnimationFrame(frame.current); el.pause(); updateTime(el.currentTime, true); advance('FINISH', id);
         saveTimeout = setTimeout(() => { if (id === operation.current) stop("errors.recordingInterrupted"); }, 8000);
         detail.port.postMessage('stop');
       };
-      let shownPeaks = 0;
       const meter = () => {
         if (id !== operation.current || machine.current.phase !== 'recording') return;
-        setTime(el.currentTime);
+        updateTime(el.currentTime);
         if (el.ended || el.currentTime >= window.end) { finishRecording.current?.(); return; }
-        if (ctx.state !== 'running' || el.paused || el.seeking || el.readyState < HTMLMediaElement.HAVE_FUTURE_DATA || el.playbackRate !== 1) {
+        const captureTime = captureStart + ctx.currentTime - captureContextStart;
+        if (ctx.state !== 'running' || Math.abs(captureTime - el.currentTime) > 0.12 || el.paused || el.seeking || el.readyState < HTMLMediaElement.HAVE_FUTURE_DATA || el.playbackRate !== 1) {
           stop("errors.mediaInterrupted"); return;
         }
         el.muted = el.currentTime >= line.start && el.currentTime < line.end;
-        if (peaks.length !== shownPeaks) {
-          shownPeaks = peaks.length; setLivePeaks([...peaks]);
-        }
         frame.current = requestAnimationFrame(meter);
       };
       frame.current = requestAnimationFrame(meter);
@@ -261,7 +272,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
     const window = line && lineWindow(scene, line);
     const start = window?.start ?? 0;
     const end = window?.end ?? scene.duration;
-    setTime(start);
+    updateTime(start, true);
     try {
       if (!scene.lines.some(line => takes[line.id])) {
         advance('USE_ORIGINAL', id);
@@ -338,7 +349,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
     } catch (e) { fail(id, e); }
   }
 
-  return { phase, time, livePeaks, liveStart, error, setError, stop: () => stop(), preview, record, replay, listen, finish: () => finishRecording.current?.() };
+  return { phase, time, timeline, playbackProgress, error, setError, stop: () => stop(), preview, record, replay, listen, finish: () => finishRecording.current?.() };
 }
 
 function message(error: unknown): string {

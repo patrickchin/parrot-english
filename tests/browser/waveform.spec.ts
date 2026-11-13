@@ -29,7 +29,7 @@ test('reference, live take, and saved take share a moving timeline; cancelling k
   await expect(graph.getByRole('img', { name: '你的声音波形', exact: true })).toBeVisible();
   await expect.poll(async () => Number(await cursor.getAttribute('aria-valuenow'))).toBeGreaterThan(0.2);
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled({ timeout: 12000 });
-  await expect.poll(() => graph.getByRole('img', { name: '你的声音波形', exact: true }).locator('path').evaluate((path: SVGPathElement) => path.getBBox().height)).toBeGreaterThan(1);
+  await expect.poll(() => graph.getByRole('img', { name: '你的声音波形', exact: true }).evaluate((canvas: HTMLCanvasElement) => canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data.some(value => value > 0))).toBe(true);
   if (info.project.name === 'chromium') {
     const folder = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english');
     await mkdir(folder, { recursive: true });
@@ -107,7 +107,7 @@ test('scene, caption, waveforms and every main action remain reachable across th
         await action.scrollIntoViewIfNeeded();
         await expect(action).toBeInViewport();
       }
-      const waveform = await page.getByRole('img', { name: '原声波形', exact: true }).boundingBox();
+      const waveform = await page.getByRole('region', { name: '声音波形对比' }).boundingBox();
       const words = await page.getByRole('group', { name: '台词', exact: true }).boundingBox();
       expect(words!.y).toBeGreaterThanOrEqual(waveform!.y + waveform!.height);
       expect(words!.y - waveform!.y - waveform!.height).toBeLessThanOrEqual(10);

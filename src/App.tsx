@@ -131,8 +131,8 @@ function Player({ scene, slug, notice, initial, rememberDraft, onBack, leaving, 
 
   const graphRecordings = useMemo(() => step === 'result'
     ? scene.lines.flatMap(l => takes[l.id] ? [{ start: takes[l.id].start, peaks: takes[l.id].peaks }] : [])
-    : [{ start: capturing ? media.liveStart : currentTake?.start ?? line.start, peaks: capturing ? media.livePeaks : currentTake?.peaks ?? [] }],
-  [step, scene.lines, takes, line.start, capturing, media.liveStart, media.livePeaks, currentTake]);
+    : currentTake ? [{ start: currentTake.start, peaks: currentTake.peaks }] : [],
+  [step, scene.lines, takes, currentTake]);
 
   return <div className="player-shell bg-paper text-ink">
     <AppHeader onHelp={() => { media.stop(); setModal('help'); }} onBack={() => { media.stop(); onBack(); }} />
@@ -154,7 +154,7 @@ function Player({ scene, slug, notice, initial, rememberDraft, onBack, leaving, 
           </div>
           <div className="player-transport flex items-center gap-2 bg-neutral-900 px-2 text-white sm:px-4">
             <button onClick={() => busy ? media.stop() : step === 'result' ? void media.replay(takes) : void media.preview(step === 'practice' ? line : undefined)} disabled={!videoReady || exporting} aria-label={busy ? t("player.stopPlaybackOrRecording") : step === 'result' ? t("player.playDub") : t("player.playReferenceScene")} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-white disabled:opacity-40"><Icon name={busy ? 'stop' : 'play'} /></button>
-            <progress aria-label={t("player.scenePlaybackProgress")} max={scene.duration} value={media.time} className="h-1.5 flex-1 appearance-none overflow-hidden rounded-full [&::-webkit-progress-bar]:bg-white/30 [&::-webkit-progress-value]:bg-coral [&::-moz-progress-bar]:bg-coral" /><span className="shrink-0 font-mono text-xs">{clock(media.time)} / {clock(scene.duration)}</span>
+            <progress ref={media.playbackProgress} aria-label={t("player.scenePlaybackProgress")} max={scene.duration} value={0} className="h-1.5 flex-1 appearance-none overflow-hidden rounded-full [&::-webkit-progress-bar]:bg-white/30 [&::-webkit-progress-value]:bg-coral [&::-moz-progress-bar]:bg-coral" /><span className="shrink-0 font-mono text-xs">{clock(media.time)} / {clock(scene.duration)}</span>
           </div>
         </div>
         {step === 'choose' && <PreviewSubtitles scene={scene} time={media.time} />}
@@ -175,7 +175,7 @@ function Player({ scene, slug, notice, initial, rememberDraft, onBack, leaving, 
                 {rolesLines.map((l, i) => <button key={l.id} disabled={busy} onClick={() => chooseLine(i)} aria-label={t("recording.lineLabel", { number: i + 1, text: l.text })} aria-current={i === lineIndex ? 'step' : undefined} className="relative flex h-11 min-w-11 items-center justify-center rounded-full bg-secondary text-sm text-ink aria-[current=step]:bg-brand/10 aria-[current=step]:font-extrabold aria-[current=step]:ring-2 aria-[current=step]:ring-brand focus-visible:outline-3 focus-visible:outline-brand disabled:opacity-50">{i + 1}{takes[l.id] && <Icon name="check" className="absolute right-0 bottom-0 size-3 rounded-full bg-card" />}{skipped.has(l.id) && <span className="sr-only">{t("player.original")}</span>}</button>)}
               </nav>
             </div>
-            <VoiceWaveform scene={scene} start={step === 'result' ? 0 : window.start} end={step === 'result' ? scene.duration : window.end} target={step === 'result' ? undefined : line} time={media.time} recordings={graphRecordings} recording={media.phase === 'recording'} />
+            <VoiceWaveform scene={scene} start={step === 'result' ? 0 : window.start} end={step === 'result' ? scene.duration : window.end} target={step === 'result' ? undefined : line} timeline={media.timeline} recordings={graphRecordings} recording={capturing} active={busy} />
             <p className="sr-only">{t("recording.lineNumber", { number: lineIndex + 1, total: rolesLines.length })}</p>
             <div className="practice-caption text-center" role="group" aria-label={t("player.dialogue")}>
               {scene.lines.map(l => <div key={l.id} aria-hidden={l.id !== captionId} className={l.id === captionId ? undefined : 'invisible'}><p className="text-balance font-medium" lang="en">{l.text}</p><p lang="zh-CN" className="mt-1 text-base text-muted-foreground">{l.hint}</p></div>)}

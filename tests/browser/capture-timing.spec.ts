@@ -1,3 +1,4 @@
+import { waveformImage, waveformOnset } from './waveform-pixels';
 import { readScene } from '../content-fixtures';
 import { test, expect } from './fixtures';
 
@@ -75,19 +76,26 @@ test('capture is ready before the picture and preserves the opening sound throug
   }, scene);
   expect(signal.peak).toBeGreaterThan(0.03);
   expect(signal.duration).toBeGreaterThan(0.65);
-  const onset = await page.getByRole('img', { name: '你的声音波形', exact: true }).locator('path').evaluate((path, line) => {
-    const first = [...path.getAttribute('d')!.matchAll(/L([\d.]+) ([\d.]+)/g)].find(point => Number(point[2]) < 39)!;
-    return line.start + Number(first[1]) / 1000 * (line.end - line.start);
-  }, scene.lines[0]);
+  const onset = await waveformOnset(page.getByRole('img', { name: '你的声音波形', exact: true }), scene.lines[0].start, scene.lines[0].end);
   // Compare real encoded PCM to its plotted envelope, not to an assumed mic latency.
   expect(Math.abs(onset - signal.onset)).toBeLessThan(0.02);
-  const savedWave = await page.getByRole('img', { name: '你的声音波形', exact: true }).locator('path').getAttribute('d');
+  const savedWave = await waveformImage(page.getByRole('img', { name: '你的声音波形', exact: true }));
   await page.getByRole('button', { name: '重新录这一句', exact: true }).click();
   await expect(stop).toBeVisible();
   await page.evaluate(() => (window as unknown as { context: AudioContext }).context.suspend());
   await expect(page.getByRole('alert')).toContainText('播放或录音暂时中断');
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
-  await expect(page.getByRole('img', { name: '你的声音波形', exact: true }).locator('path')).toHaveAttribute('d', savedWave!);
+  await expect.poll(() => waveformImage(page.getByRole('img', { name: '你的声音波形', exact: true }))).toBe(savedWave);
+  await page.getByRole('button', { name: '重新录这一句', exact: true }).click();
+  await expect(stop).toBeVisible();
+  await page.evaluate(() => {
+    const context = (window as unknown as { context: AudioContext }).context;
+    const clock = Object.getOwnPropertyDescriptor(BaseAudioContext.prototype, 'currentTime')!.get!;
+    Object.defineProperty(context, 'currentTime', { get: () => clock.call(context) + 0.25 });
+  });
+  await expect(page.getByRole('alert')).toContainText('播放或录音暂时中断');
+  await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
+  await expect.poll(() => waveformImage(page.getByRole('img', { name: '你的声音波形', exact: true }))).toBe(savedWave);
 });
 
 test('cancelling while recorder startup is pending keeps the picture paused and releases the microphone', async ({ page }) => {

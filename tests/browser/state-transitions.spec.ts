@@ -1,3 +1,4 @@
+import { waveformImage } from './waveform-pixels';
 import { test, expect, headerDestination } from './fixtures';
 
 test.use({ sampleScene: true });
@@ -35,13 +36,13 @@ test('browser Back keeps saved takes and Forward restores the same session', asy
   await expect(listen).toBeEnabled({ timeout: 12000 });
   await expect(page.getByText('已保存到本机', { exact: true })).toBeVisible();
   const waveform = page.getByRole('img', { name: '你的声音波形', exact: true });
-  const saved = await waveform.locator('path').getAttribute('d');
+  const saved = await waveformImage(waveform);
   await page.goBack();
   await expect(page.getByRole('searchbox', { name: '查找片段', exact: true })).toBeVisible();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.goForward();
   await expect(listen).toBeEnabled();
-  await expect(waveform.locator('path')).toHaveAttribute('d', saved!);
+  await expect.poll(() => waveformImage(waveform)).toBe(saved);
 });
 
 test('changing the scene path leaves the saved attempt available in My dubs', async ({ page, browserName }) => {
