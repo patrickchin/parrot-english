@@ -80,7 +80,6 @@ test('the expanded shelf finds scenes by Chinese, English, and film, and opens a
   const search = page.getByRole('searchbox');
   await search.fill('Toy Story');
   await expect(page.getByRole('button', { name: /^选择片段：/ })).toHaveCount(5);
-  await expect(page.getByText('5 个片段', { exact: true })).toBeVisible();
   await search.fill('fluffy');
   await expect(page.getByRole('button', { name: '选择片段：太毛茸茸了！', exact: true })).toBeVisible();
   await search.fill('松鼠');

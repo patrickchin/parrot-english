@@ -19,7 +19,10 @@ export function waitForVideo(video: HTMLVideoElement, event: 'seeked' | 'canplay
     const finish = (error?: unknown) => {
       if (settled) return;
       settled = true; cleanup();
-      if (error) reject(error); else { onReady?.(); resolve(); }
+      if (error) reject(error);
+      else {
+        try { onReady?.(); resolve(); } catch (error) { reject(error); }
+      }
     };
     const ready = () => finish();
     const failed = () => finish(new Error("errors.videoPlayback"));

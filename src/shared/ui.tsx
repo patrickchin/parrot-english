@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from 'react';
+import type { ComponentProps } from 'react';
 import { ArrowLeft, ArrowRight, Check, CircleHelp, Download, Mic, Moon, Phone, Play, RotateCcw, Search, Shapes, Square, Sun, Trash2, UserRound, Volume2, X } from 'lucide-react';
 import { Button as ShadcnButton } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -9,6 +9,6 @@ export function Icon({ name, className }: { name: keyof typeof icons; className?
   return <Component className={cn('size-5 shrink-0', className)} strokeWidth={1.8} aria-hidden="true" />;
 }
 
-export function Button({ tone = 'primary', className, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { tone?: 'primary' | 'quiet' | 'record' | 'danger' }) {
+export function Button({ tone = 'primary', className, ...props }: ComponentProps<'button'> & { tone?: 'primary' | 'quiet' | 'record' | 'danger' }) {
   return <ShadcnButton variant={tone === 'primary' ? 'highlight' : tone === 'quiet' ? 'outline' : tone === 'record' ? 'record' : 'danger'} size="lg" className={cn('h-auto min-h-13 gap-3 px-5 py-3 text-lg font-semibold', className)} {...props} />;
 }

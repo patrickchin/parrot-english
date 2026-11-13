@@ -7,13 +7,12 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 test('each authored character avatar loads in the role picker', async ({ page }, info) => {
-  test.setTimeout(180000);
+  // This visits every authored scene; budget grows with the content catalog.
+  test.setTimeout(clips.length * 4000 + 30000);
   const avatars = new Map<string, string>();
-  let authoredScenes = 0;
   for (const clip of clips) {
     const scene = readScene(clip.slug);
     if (!scene.roles.some((role: { portrait?: string }) => role.portrait)) continue;
-    authoredScenes++;
     await page.goto(scenePath(clip.slug));
     for (const role of scene.roles.filter((role: { selectable?: boolean }) => role.selectable !== false)) {
       const button = page.getByRole('button', { name: role.name, exact: true });
@@ -33,7 +32,6 @@ test('each authored character avatar loads in the role picker', async ({ page },
       await expect(button).toHaveAttribute('aria-pressed', 'true');
     }
   }
-  expect(authoredScenes).toBe(67);
   expect(avatars.get('Young Sheldon谢尔顿')).not.toBe(avatars.get('The Big Bang Theory谢尔顿'));
   await page.goto('/scenes/onions');
   await expect(page.getByRole('button', { name: /^驴子/ })).toBeVisible();

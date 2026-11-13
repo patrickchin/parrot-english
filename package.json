@@ -12,6 +12,8 @@
     "build": "tsc -p tsconfig.app.json --noEmit && vite build && node scripts/build-edge.mjs",
     "test": "npm run test:typecheck && npm run test:app && npm run test:content && npm run test:boundary",
     "test:browser": "playwright test",
+    "test:stress": "playwright test --grep @stress",
+    "test:all": "npm test && npm run test:browser",
     "content:validate": "node scripts/content.mjs validate",
     "content:stage": "node scripts/content.mjs stage",
     "content:publish": "node scripts/content.mjs publish",

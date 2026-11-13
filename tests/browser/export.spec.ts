@@ -9,8 +9,6 @@ import { routeShortScene } from './short-scene';
 test.use({ sampleScene: true });
 
 test.beforeEach(async ({ page }) => {
-  // A development hot reload must not reset the session during a real-time export.
-  await page.routeWebSocket('ws://127.0.0.1:4317/**', socket => socket.close());
   const scene: Scene = JSON.parse(await readFile('tests/fixtures/sintel/scene.json', 'utf8'));
   // Match the shipped catalog, whose clips keep the original video audio and
   // have no separate backing asset. The offline mix check covers a backing bed.
