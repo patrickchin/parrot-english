@@ -81,11 +81,37 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
   function advance(type: Exclude<MediaEvent['type'], 'START' | 'STOP' | 'CLEAR_ERROR'>, id: number) {
     dispatch({ type, operation: id });
   }
-  function fail(id: number, error: unknown) { if (id === operation.current) stop(message(error)); }
+  function fail(id: number, error: unknown) {
+    if (id === operation.current) stop(error instanceof Error ? error.message : "errors.mediaInterrupted");
+  }
+  function readyAudio(ctx: AudioContext) {
+    const signal = cancellation.current.signal;
+    signal.throwIfAborted();
+    return new Promise<void>((resolve, reject) => {
+      let settled = false;
+      const deadline = setTimeout(() => finish(new Error("errors.mediaInterrupted")), 8000);
+      const finish = (error?: unknown) => {
+        if (settled) return;
+        settled = true; clearTimeout(deadline); signal.removeEventListener('abort', cancelled);
+        if (error) {
+          // A stuck mobile audio session must not be reused by the next attempt.
+          if (context.current === ctx) { context.current = null; waveformModule.current = null; }
+          void ctx.close().catch(() => {});
+          reject(error);
+        } else resolve();
+      };
+      const cancelled = () => finish(new DOMException('Cancelled', 'AbortError'));
+      signal.addEventListener('abort', cancelled, { once: true });
+      ctx.resume().then(() => finish(ctx.state === 'running' ? undefined : new Error("errors.mediaInterrupted")), finish);
+    });
+  }
   function playVideo(el: HTMLVideoElement, id: number, options: Parameters<typeof waitForVideo>[3] = {}) {
     if (id !== operation.current) throw new DOMException('Cancelled', 'AbortError');
     return waitForVideo(el, 'playing', cancellation.current.signal, {
-      start: () => el.play(), onLateError: error => fail(id, error), ...options,
+      start: () => el.play().catch(error => {
+        if (error instanceof DOMException && error.name === 'NotAllowedError') throw new Error("errors.videoPlayback");
+        throw error;
+      }), onLateError: error => fail(id, error), ...options,
     });
   }
 
@@ -169,7 +195,8 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
       const ctx = context.current;
       // Safari can keep a context suspended until microphone permission resolves.
       void ctx.resume().catch(() => {});
-      const captured = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true }, video: false });
+      const captured = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true }, video: false })
+        .catch(error => { throw new Error(microphoneMessage(error)); });
       if (id !== operation.current) { captured.getTracks().forEach(track => track.stop()); return; }
       stream.current = captured; advance('MICROPHONE_GRANTED', id);
       const input = ctx.createMediaStreamSource(captured);
@@ -187,7 +214,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
         input.disconnect(); detail.disconnect(); detail.port.close();
       };
       captureCleanup.current = disconnectInput;
-      await ctx.resume();
+      await readyAudio(ctx);
       if (id !== operation.current) return;
       advance('AUDIO_READY', id);
       const chunks: Float32Array[] = [], peaks: number[] = [];
@@ -283,7 +310,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
       }
       context.current ??= new AudioContext();
       const ctx = context.current;
-      await ctx.resume();
+      await readyAudio(ctx);
       if (id !== operation.current) return;
       // Keep the output clock running through the lead-in, even when the first
       // voice starts later. A fresh WebKit context can otherwise park at sample 128.
@@ -351,7 +378,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
   return { phase, time, timeline, playbackProgress, error, setError, stop: () => stop(), preview, record, replay, listen, finish: () => finishRecording.current?.() };
 }
 
-function message(error: unknown): string {
+function microphoneMessage(error: unknown): string {
   if (error instanceof DOMException) {
     if (error.name === 'NotAllowedError') return "errors.microphoneDenied";
     if (error.name === 'NotFoundError') return "errors.microphoneMissing";
