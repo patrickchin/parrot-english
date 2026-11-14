@@ -1,0 +1,592 @@
+{
+  "version": 1,
+  "id": "pack_HOXEQRnI4MBZ",
+  "title": "Harry Potter",
+  "franchise": "Harry Potter",
+  "description": "English dubbing scenes from Harry Potter.",
+  "author": "Parrotbook",
+  "scenes": [
+    {
+      "id": "scene_cgQRAEx-Czo",
+      "slug": "harry-potter-moving-card",
+      "title": "照片里的人去哪儿了？",
+      "english": "Where did the picture go?",
+      "note": "Harry Potter",
+      "source": "https://www.youtube.com/watch?v=phdwdrPs3Bo&t=14s",
+      "cohort": "older-children",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/harry-potter-moving-card/harry-potter-moving-card-poster-e2a719acfbb1.jpg",
+      "tags": [
+        "Harry Potter and the Philosopher’s Stone",
+        "Harry Potter",
+        "Harry Potter and the Sorcerer's Stone",
+        "哈利波特",
+        "哈利·波特",
+        "魔法石",
+        "Harry",
+        "Ron",
+        "哈利",
+        "罗恩",
+        "magic",
+        "魔法",
+        "Dumbledore",
+        "邓布利多",
+        "chocolate frog",
+        "巧克力蛙"
+      ],
+      "quotes": [
+        "I've got Dumbledore!",
+        "我抽到邓布利多了！",
+        "I've got about six of him.",
+        "我大概已经有六张他了。",
+        "Hey, he's gone!",
+        "嘿，他不见了！",
+        "Well, you can't expect him to hang around all day, can you?",
+        "你总不能指望他整天都待在那儿吧？"
+      ],
+      "manifest": "scenes/harry-potter-moving-card/scene.json"
+    },
+    {
+      "id": "scene_3YCRbWX5VTE",
+      "slug": "harry-potter-new-friend",
+      "title": "在火车上认识新朋友",
+      "english": "Meeting a new friend on the train",
+      "note": "Harry Potter",
+      "source": "https://www.youtube.com/watch?v=Pr0U9CgneZ8&t=1s",
+      "cohort": "older-children",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/harry-potter-new-friend/harry-potter-new-friend-poster-9e4fb2b0d217.jpg",
+      "tags": [
+        "Harry Potter and the Philosopher’s Stone",
+        "Harry Potter",
+        "Harry Potter and the Sorcerer's Stone",
+        "哈利波特",
+        "哈利·波特",
+        "魔法石",
+        "Ron",
+        "Harry",
+        "罗恩",
+        "哈利",
+        "friendship",
+        "交朋友",
+        "train",
+        "火车",
+        "greetings",
+        "打招呼"
+      ],
+      "quotes": [
+        "Excuse me. Do you mind? Everywhere else is full.",
+        "不好意思，我能坐这儿吗？别的地方都坐满了。",
+        "Not at all.",
+        "当然可以。",
+        "I'm Ron, by the way. Ron Weasley.",
+        "对了，我叫罗恩，罗恩·韦斯莱。",
+        "I'm Harry. Harry Potter.",
+        "我叫哈利，哈利·波特。",
+        "So, so it's true? I mean, do you really have the... the...",
+        "所以，那些都是真的？我是说，你真的有那个……那个……",
+        "The what?",
+        "什么？",
+        "The scar.",
+        "那道伤疤。",
+        "Oh, yeah.",
+        "哦，有啊。",
+        "Wicked!",
+        "太酷了！"
+      ],
+      "manifest": "scenes/harry-potter-new-friend/scene.json"
+    },
+    {
+      "id": "scene_CQH3SvpFNEE",
+      "slug": "harry-potter-you-are-a-wizard",
+      "routeSlug": "harry-potter-you-are-a-wizard",
+      "title": "哈利，你是巫师",
+      "english": "You are a wizard, Harry",
+      "note": "Harry Potter",
+      "source": "https://www.youtube.com/watch?v=z9GwIeh5FIY&t=113s",
+      "cohort": "older-children",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/harry-potter-you-are-a-wizard/harry-potter-you-are-a-wizard-poster-014654de4d54.jpg",
+      "tags": [
+        "Harry Potter",
+        "Harry Potter and the Philosopher's Stone",
+        "哈利，你是巫师",
+        "Harry",
+        "Hagrid",
+        "哈利",
+        "海格"
+      ],
+      "quotes": [
+        "Learned what?",
+        "学什么？",
+        "You're a wizard, Harry.",
+        "哈利，你是个巫师。",
+        "I'm a what?",
+        "我是个什么？",
+        "A wizard. And a thumping good one, I'd wager, once you train up a little.",
+        "巫师。稍加训练，你就会成为很棒的巫师。",
+        "No. You've made a mistake. I mean, I can't be a wizard. I mean, I'm just Harry. Just Harry.",
+        "不，你弄错了。我不可能是巫师。我只是哈利，普通的哈利。"
+      ],
+      "manifest": "scenes/harry-potter-you-are-a-wizard/scene.json"
+    },
+    {
+      "id": "scene_SGeZrNxyAME",
+      "slug": "harry-potter-leviosa",
+      "routeSlug": "harry-potter-leviosa",
+      "title": "你念错咒语了",
+      "english": "You are saying it wrong",
+      "note": "Harry Potter",
+      "source": "https://www.youtube.com/watch?v=Qgr4dcsY-60&t=0s",
+      "cohort": "older-children",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/harry-potter-leviosa/harry-potter-leviosa-poster-a4a0eba4870e.jpg",
+      "tags": [
+        "Harry Potter",
+        "Harry Potter and the Philosopher's Stone",
+        "你念错咒语了",
+        "Ron",
+        "Hermione",
+        "Flitwick",
+        "罗恩",
+        "赫敏",
+        "弗立维教授"
+      ],
+      "quotes": [
+        "Wingardium Leviosa.",
+        "羽加迪姆，勒维奥萨。",
+        "Stop, stop, stop. You're going to take someone's eye out. Besides, you're saying it wrong. It's Leviosa, not Leviosa.",
+        "停，你会戳到别人眼睛的。而且你念错了，要这样念。",
+        "You do it then if you're so clever. Go on, go on.",
+        "你这么聪明，你来试试。",
+        "Wingardium Leviosa.",
+        "羽加迪姆，勒维奥萨。",
+        "Oh, well done! See here, everyone. Miss Granger's done it! Oh, splendid!",
+        "做得好！大家看，格兰杰小姐成功了！太棒了！"
+      ],
+      "manifest": "scenes/harry-potter-leviosa/scene.json"
+    },
+    {
+      "id": "scene_-bEhHhm-l1U",
+      "slug": "harry-potter-repaired-glasses",
+      "routeSlug": "harry-potter-repaired-glasses",
+      "title": "这样好多了吧？",
+      "english": "That is better, is it not?",
+      "note": "Harry Potter",
+      "source": "https://www.youtube.com/watch?v=Gs7SIiRHQfs&t=37s",
+      "cohort": "older-children",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/harry-potter-repaired-glasses/harry-potter-repaired-glasses-poster-9944d3f045fa.jpg",
+      "tags": [
+        "Harry Potter",
+        "Harry Potter and the Philosopher's Stone",
+        "这样好多了吧？",
+        "Hermione",
+        "Ron",
+        "赫敏",
+        "罗恩"
+      ],
+      "quotes": [
+        "For example. Oculus Reparo. That's better, isn't it? Holy cricket, you're Harry Potter. I'm Hermione Granger. And you are?",
+        "比如这样。恢复如初。这样好多了吧？天哪，你是哈利·波特。我是赫敏·格兰杰。你呢？",
+        "Um, Ron Weasley.",
+        "我叫罗恩·韦斯莱。",
+        "Pleasure. You two better change into robes. I expect we'll be arriving soon.",
+        "很高兴认识你。你们最好换上校袍，我们应该快到了。"
+      ],
+      "manifest": "scenes/harry-potter-repaired-glasses/scene.json"
+    }
+  ],
+  "locales": {
+    "en": {
+      "scenes": {
+        "scene_cgQRAEx-Czo": {
+          "title": "Where did the picture go?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 14.65–26.35 seconds of the original upload. Fantasy: a moving picture on a collectible card. Source is the first film, not a claim that pictures behave this way."
+        },
+        "scene_3YCRbWX5VTE": {
+          "title": "Meeting a new friend on the train",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 1.1–30.45 seconds of the original upload. Fantasy setting and a brief look at Harry’s healed scar. Stops before the sweets trolley conversation."
+        },
+        "scene_CQH3SvpFNEE": {
+          "title": "You are a wizard, Harry",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_SGeZrNxyAME": {
+          "title": "You are saying it wrong",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_-bEhHhm-l1U": {
+          "title": "That is better, is it not?",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        }
+      },
+      "roles": {
+        "role_fbJuCJMGfVg": {
+          "name": "Harry",
+          "hint": "2 lines"
+        },
+        "role_F4XSF4Edmng": {
+          "name": "Ron",
+          "hint": "2 lines"
+        },
+        "role_OK4t0IU4neI": {
+          "name": "Ron",
+          "hint": "5 lines"
+        },
+        "role_yc3TOAmqHEU": {
+          "name": "Harry",
+          "hint": "4 lines"
+        },
+        "role_dD-Rbw8Zc-U": {
+          "name": "Harry",
+          "hint": "3 lines"
+        },
+        "role_qEetDP7cbGc": {
+          "name": "Hagrid",
+          "hint": "2 lines"
+        },
+        "role_56GRJHvZvEo": {
+          "name": "Ron",
+          "hint": "2 lines"
+        },
+        "role_NOg6FhjQg_g": {
+          "name": "Hermione",
+          "hint": "2 lines"
+        },
+        "role_uDfKgI_A0Ro": {
+          "name": "Flitwick",
+          "hint": "1 line"
+        },
+        "role_Wh-V6sGRYLw": {
+          "name": "Hermione",
+          "hint": "2 lines"
+        },
+        "role_UtsDkbZP_SA": {
+          "name": "Ron",
+          "hint": "1 line"
+        }
+      },
+      "notices": {
+        "library": "Adult prototype testing · Dubs save in this browser. Videos upload only when you confirm creating a playback link. Redistribution permission for the meme clips is unconfirmed.",
+        "scene": "This scene is for adult prototype testing. The full film is not beginner learning material for children.The creators do not endorse this product."
+      }
+    },
+    "zh-CN": {
+      "scenes": {
+        "scene_cgQRAEx-Czo": {
+          "title": "照片里的人去哪儿了？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 14.65–26.35 秒的连续节选。Fantasy: a moving picture on a collectible card. Source is the first film, not a claim that pictures behave this way."
+        },
+        "scene_3YCRbWX5VTE": {
+          "title": "在火车上认识新朋友",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 1.1–30.45 秒的连续节选。Fantasy setting and a brief look at Harry’s healed scar. Stops before the sweets trolley conversation."
+        },
+        "scene_CQH3SvpFNEE": {
+          "title": "哈利，你是巫师",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_SGeZrNxyAME": {
+          "title": "你念错咒语了",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_-bEhHhm-l1U": {
+          "title": "这样好多了吧？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        }
+      },
+      "roles": {
+        "role_fbJuCJMGfVg": {
+          "name": "哈利",
+          "hint": "2 句台词"
+        },
+        "role_F4XSF4Edmng": {
+          "name": "罗恩",
+          "hint": "2 句台词"
+        },
+        "role_OK4t0IU4neI": {
+          "name": "罗恩",
+          "hint": "5 句台词"
+        },
+        "role_yc3TOAmqHEU": {
+          "name": "哈利",
+          "hint": "4 句台词"
+        },
+        "role_dD-Rbw8Zc-U": {
+          "name": "哈利",
+          "hint": "3 句台词"
+        },
+        "role_qEetDP7cbGc": {
+          "name": "海格",
+          "hint": "2 句台词"
+        },
+        "role_56GRJHvZvEo": {
+          "name": "罗恩",
+          "hint": "2 句台词"
+        },
+        "role_NOg6FhjQg_g": {
+          "name": "赫敏",
+          "hint": "2 句台词"
+        },
+        "role_uDfKgI_A0Ro": {
+          "name": "弗立维教授",
+          "hint": "1 句台词"
+        },
+        "role_Wh-V6sGRYLw": {
+          "name": "赫敏",
+          "hint": "2 句台词"
+        },
+        "role_UtsDkbZP_SA": {
+          "name": "罗恩",
+          "hint": "1 句台词"
+        }
+      },
+      "notices": {
+        "library": "成人原型测试 · 配音保存在此浏览器。只有确认创建播放链接时，才会上传视频。影视梗片段尚未确认再分发许可。",
+        "scene": "本片段用于成人原型测试；完整电影并非儿童入门教材。创作者未对本产品作出背书。"
+      }
+    },
+    "es": {
+      "scenes": {
+        "scene_cgQRAEx-Czo": {
+          "title": "¿Adónde se ha ido el de la foto?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 14.65–26.35 del vídeo original. Fantasía: una imagen en movimiento en una tarjeta coleccionable. Procede de la primera película; no afirma que las imágenes se comporten así."
+        },
+        "scene_3YCRbWX5VTE": {
+          "title": "Un nuevo amigo en el tren",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 1.1–30.45 del vídeo original. Entorno fantástico y un breve vistazo a la cicatriz curada de Harry. Termina antes de la conversación sobre el carrito de dulces."
+        },
+        "scene_CQH3SvpFNEE": {
+          "title": "Eres un mago, Harry",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_SGeZrNxyAME": {
+          "title": "Lo estás pronunciando mal",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_-bEhHhm-l1U": {
+          "title": "Así está mejor, ¿verdad?",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        }
+      },
+      "roles": {
+        "role_fbJuCJMGfVg": {
+          "name": "Harry",
+          "hint": "2 frases"
+        },
+        "role_F4XSF4Edmng": {
+          "name": "Ron",
+          "hint": "2 frases"
+        },
+        "role_OK4t0IU4neI": {
+          "name": "Ron",
+          "hint": "5 frases"
+        },
+        "role_yc3TOAmqHEU": {
+          "name": "Harry",
+          "hint": "4 frases"
+        },
+        "role_dD-Rbw8Zc-U": {
+          "name": "Harry",
+          "hint": "3 frases"
+        },
+        "role_qEetDP7cbGc": {
+          "name": "Hagrid",
+          "hint": "2 frases"
+        },
+        "role_56GRJHvZvEo": {
+          "name": "Ron",
+          "hint": "2 frases"
+        },
+        "role_NOg6FhjQg_g": {
+          "name": "Hermione",
+          "hint": "2 frases"
+        },
+        "role_uDfKgI_A0Ro": {
+          "name": "Flitwick",
+          "hint": "1 frase"
+        },
+        "role_Wh-V6sGRYLw": {
+          "name": "Hermione",
+          "hint": "2 frases"
+        },
+        "role_UtsDkbZP_SA": {
+          "name": "Ron",
+          "hint": "1 frase"
+        }
+      },
+      "notices": {
+        "library": "Pruebas del prototipo con adultos · Los doblajes se guardan en este navegador. Los vídeos solo se suben cuando confirmas la creación de un enlace de reproducción. No se ha confirmado el permiso de redistribución de estos fragmentos.",
+        "scene": "Esta escena es para pruebas del prototipo con adultos. La película completa no es material de iniciación para niños.Los creadores no respaldan este producto."
+      }
+    },
+    "ja": {
+      "scenes": {
+        "scene_cgQRAEx-Czo": {
+          "title": "写真の人はどこに行ったの？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の14.65–26.35秒の抜粋です。 コレクションカードの絵が動くファンタジーです。第1作の映画の場面であり、実際の絵が動くという説明ではありません。"
+        },
+        "scene_3YCRbWX5VTE": {
+          "title": "電車で新しい友だちに出会う",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の1.1–30.45秒の抜粋です。 ファンタジーの場面で、ハリーの治った傷跡を少し見せます。お菓子のワゴンについての会話の前で終わります。"
+        },
+        "scene_CQH3SvpFNEE": {
+          "title": "ハリー、お前は魔法使いだ",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_SGeZrNxyAME": {
+          "title": "発音が違うわ",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_-bEhHhm-l1U": {
+          "title": "これでよくなったでしょ？",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        }
+      },
+      "roles": {
+        "role_fbJuCJMGfVg": {
+          "name": "ハリー",
+          "hint": "セリフ2行"
+        },
+        "role_F4XSF4Edmng": {
+          "name": "ロン",
+          "hint": "セリフ2行"
+        },
+        "role_OK4t0IU4neI": {
+          "name": "ロン",
+          "hint": "セリフ5行"
+        },
+        "role_yc3TOAmqHEU": {
+          "name": "ハリー",
+          "hint": "セリフ4行"
+        },
+        "role_dD-Rbw8Zc-U": {
+          "name": "Harry",
+          "hint": "セリフ 3 行"
+        },
+        "role_qEetDP7cbGc": {
+          "name": "Hagrid",
+          "hint": "セリフ 2 行"
+        },
+        "role_56GRJHvZvEo": {
+          "name": "Ron",
+          "hint": "セリフ 2 行"
+        },
+        "role_NOg6FhjQg_g": {
+          "name": "Hermione",
+          "hint": "セリフ 2 行"
+        },
+        "role_uDfKgI_A0Ro": {
+          "name": "Flitwick",
+          "hint": "セリフ 1 行"
+        },
+        "role_Wh-V6sGRYLw": {
+          "name": "Hermione",
+          "hint": "セリフ 2 行"
+        },
+        "role_UtsDkbZP_SA": {
+          "name": "Ron",
+          "hint": "セリフ 1 行"
+        }
+      },
+      "notices": {
+        "library": "大人向け試作版テスト・吹き替えはこのブラウザに保存され。再生リンクの作成を確認した場合に限り、動画がアップロードされます。使用している映像の再配布許諾は未確認です。",
+        "scene": "このシーンは大人による試作版のテスト用です。映画全編は、子ども向けの入門教材ではありません。作品の制作者がこの製品を推奨しているわけではありません。"
+      }
+    },
+    "ko": {
+      "scenes": {
+        "scene_cgQRAEx-Czo": {
+          "title": "사진 속 사람은 어디로 갔지?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 14.65–26.35초 구간을 발췌했어요. 수집용 카드의 그림이 움직이는 판타지 장면이에요. 첫 번째 영화의 내용이며 실제 그림이 이렇게 움직인다는 뜻이 아니에요."
+        },
+        "scene_3YCRbWX5VTE": {
+          "title": "기차에서 새 친구 만나기",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 1.1–30.45초 구간을 발췌했어요. 판타지 배경이며 해리의 아문 흉터를 잠깐 보여 줘요. 간식 카트에 관한 대화 전에 끝나요."
+        },
+        "scene_CQH3SvpFNEE": {
+          "title": "해리, 넌 마법사야",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_SGeZrNxyAME": {
+          "title": "발음이 틀렸어",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_-bEhHhm-l1U": {
+          "title": "이제 훨씬 낫지?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        }
+      },
+      "roles": {
+        "role_fbJuCJMGfVg": {
+          "name": "해리",
+          "hint": "대사 2개"
+        },
+        "role_F4XSF4Edmng": {
+          "name": "론",
+          "hint": "대사 2개"
+        },
+        "role_OK4t0IU4neI": {
+          "name": "론",
+          "hint": "대사 5개"
+        },
+        "role_yc3TOAmqHEU": {
+          "name": "해리",
+          "hint": "대사 4개"
+        },
+        "role_dD-Rbw8Zc-U": {
+          "name": "Harry",
+          "hint": "대사 3줄"
+        },
+        "role_qEetDP7cbGc": {
+          "name": "Hagrid",
+          "hint": "대사 2줄"
+        },
+        "role_56GRJHvZvEo": {
+          "name": "Ron",
+          "hint": "대사 2줄"
+        },
+        "role_NOg6FhjQg_g": {
+          "name": "Hermione",
+          "hint": "대사 2줄"
+        },
+        "role_uDfKgI_A0Ro": {
+          "name": "Flitwick",
+          "hint": "대사 1줄"
+        },
+        "role_Wh-V6sGRYLw": {
+          "name": "Hermione",
+          "hint": "대사 2줄"
+        },
+        "role_UtsDkbZP_SA": {
+          "name": "Ron",
+          "hint": "대사 1줄"
+        }
+      },
+      "notices": {
+        "library": "성인 대상 시제품 테스트 · 더빙은 이 브라우저에 저장돼요. 재생 링크 만들기를 확인할 때만 동영상이 업로드돼요. 영상 클립의 재배포 허가는 확인되지 않았어요.",
+        "scene": "이 장면은 성인을 대상으로 한 시제품 테스트용이에요. 영화 전체가 어린이 입문 학습 자료인 것은 아니에요.원작 제작자가 이 제품을 보증하는 것은 아니에요."
+      }
+    }
+  }
+}

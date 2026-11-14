@@ -1,0 +1,639 @@
+{
+  "version": 1,
+  "id": "pack_wdqTqAiO6JLn",
+  "title": "Madagascar",
+  "franchise": "Madagascar",
+  "description": "English dubbing scenes from Madagascar.",
+  "author": "Parrotbook",
+  "scenes": [
+    {
+      "id": "scene_uDawiVCK",
+      "slug": "smile-and-wave",
+      "title": "微笑，挥挥手！",
+      "english": "Just smile and wave, boys. Smile and wave.",
+      "note": "Madagascar",
+      "source": "https://www.youtube.com/watch?v=F64CJmF2dHM&t=2s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/smile-and-wave/smile-and-wave-poster-6f22ee3b0bb0.jpg",
+      "tags": [
+        "Madagascar",
+        "马达加斯加",
+        "Penguins",
+        "企鹅",
+        "Skipper",
+        "Kowalski",
+        "Private",
+        "队长",
+        "科瓦斯基",
+        "菜鸟",
+        "escape",
+        "逃脱",
+        "teamwork",
+        "合作"
+      ],
+      "quotes": [
+        "Just smile and wave, boys. Smile and wave.",
+        "小伙子们，微笑，挥挥手。微笑，挥挥手。",
+        "Kowalski, progress report.",
+        "科瓦斯基，报告进展。",
+        "We're only five hundred feet from the main sewer line.",
+        "距离主下水道只剩五百英尺了。",
+        "And the bad news?",
+        "那坏消息呢？",
+        "We've broken our last shovel.",
+        "我们的最后一把铲子也断了。",
+        "Right. Rico, you're on litter patrol. We need shovels, and find more Popsicle sticks. You don't want to risk another cave-in.",
+        "好。瑞哥，你去找废弃物。我们需要铲子，再找些冰棒棍。你可不想再冒塌方的风险。",
+        "And me, Skipper?",
+        "那我呢，队长？",
+        "I want you to look cute and cuddly, Private.",
+        "你的任务是保持可爱，菜鸟。"
+      ],
+      "manifest": "scenes/smile-and-wave/scene.json"
+    },
+    {
+      "id": "scene_iEHU4pcNbz8",
+      "slug": "madagascar-birthday-wish",
+      "routeSlug": "madagascar-birthday-wish",
+      "title": "你许了什么愿？",
+      "english": "What did you wish for?",
+      "note": "Madagascar",
+      "source": "https://www.youtube.com/watch?v=Zql3EuAYeF0&t=53s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/madagascar-birthday-wish/madagascar-birthday-wish-poster-fe8174a43ce6.jpg",
+      "tags": [
+        "Madagascar",
+        "你许了什么愿？",
+        "Alex",
+        "Marty",
+        "Gloria",
+        "艾力狮",
+        "马蒂",
+        "格洛丽亚"
+      ],
+      "quotes": [
+        "Come on, what'd you wish for?",
+        "快说，你许了什么愿？",
+        "No, can't tell you that.",
+        "不能告诉你。",
+        "Come on, tell.",
+        "说嘛。",
+        "No siree, I'm telling you, it's bad luck. You want some bad luck? I'll blab it out. But if you want to be safe, I'll keep...",
+        "不行，说出来会倒霉的。你想倒霉的话，我就说。要想平安的话……",
+        "Would you just tell us? I mean, really, what could happen?",
+        "告诉我们吧，到底能发生什么？",
+        "Okay. I wished I could go to the wild.",
+        "好吧，我希望能去野外。",
+        "The wild?",
+        "野外？",
+        "Whoa. I told you it was bad luck.",
+        "看吧，我就说会倒霉。"
+      ],
+      "manifest": "scenes/madagascar-birthday-wish/scene.json"
+    },
+    {
+      "id": "scene_6oNrdV4y6EM",
+      "slug": "madagascar-new-york-giants",
+      "routeSlug": "madagascar-new-york-giants",
+      "title": "纽约巨人",
+      "english": "The New York Giants",
+      "note": "Madagascar",
+      "source": "https://www.youtube.com/watch?v=CWZIOJGl72k&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/madagascar-new-york-giants/madagascar-new-york-giants-poster-ee7ecc918af4.jpg",
+      "tags": [
+        "Madagascar",
+        "纽约巨人",
+        "King Julien",
+        "Alex",
+        "朱利安国王",
+        "艾力狮"
+      ],
+      "quotes": [
+        "You must tell me, who the heck are you?",
+        "快告诉我，你们究竟是谁？",
+        "I'm Alex. The Alex. And this is Gloria, Marty, Melman.",
+        "我是艾力狮。这是格洛丽亚、马蒂和梅尔曼。",
+        "Just where are you giants from?",
+        "你们这些巨人从哪里来？",
+        "We're from New York.",
+        "我们来自纽约。",
+        "All hail the New York Giants!",
+        "向纽约巨人致敬！"
+      ],
+      "manifest": "scenes/madagascar-new-york-giants/scene.json"
+    },
+    {
+      "id": "scene_R0UWEZ7AuGI",
+      "slug": "madagascar-warning-light",
+      "routeSlug": "madagascar-warning-light",
+      "title": "这盏灯是什么意思？",
+      "english": "What does the light mean?",
+      "note": "Madagascar",
+      "source": "https://www.youtube.com/watch?v=9F3iBMYvQOs&t=49s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/madagascar-warning-light/madagascar-warning-light-poster-516fd16fc8ce.jpg",
+      "tags": [
+        "Madagascar",
+        "Madagascar: Escape 2 Africa",
+        "这盏灯是什么意思？",
+        "Kowalski",
+        "Skipper",
+        "科瓦斯基",
+        "老大"
+      ],
+      "quotes": [
+        "Skipper, look.",
+        "老大，快看。",
+        "Analysis.",
+        "分析一下。",
+        "It looks like a small incandescent bulb designed to indicate something out of the ordinary, like a malfunction.",
+        "看起来是个小灯泡，用来指示异常情况，比如故障。",
+        "I find it pretty and somewhat hypnotic.",
+        "我觉得它挺漂亮，还有点催眠。",
+        "That too, sir.",
+        "也有这个作用，长官。",
+        "Right. Rico. Manual. Problem solved.",
+        "好，瑞哥，手册。问题解决了。",
+        "Sir, we may be out of fuel.",
+        "长官，我们可能没油了。",
+        "What makes you think that?",
+        "你怎么知道？",
+        "We've lost engine one. And engine two is no longer on fire.",
+        "一号发动机停了，二号发动机也不冒火了。"
+      ],
+      "manifest": "scenes/madagascar-warning-light/scene.json"
+    },
+    {
+      "id": "scene_Y1VpaH0XS9c",
+      "slug": "madagascar-little-situation",
+      "routeSlug": "madagascar-little-situation",
+      "title": "出了点小状况",
+      "english": "A little situation",
+      "note": "Madagascar",
+      "source": "https://www.youtube.com/watch?v=kPE7ZCGjw4o&t=132s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/madagascar-little-situation/madagascar-little-situation-poster-0e6444727fc9.jpg",
+      "tags": [
+        "Madagascar",
+        "出了点小状况",
+        "Melman",
+        "Alex",
+        "Marty",
+        "梅尔曼",
+        "艾力狮",
+        "马蒂"
+      ],
+      "quotes": [
+        "Good evening, officers.",
+        "警官们，晚上好。",
+        "No, no, no. You don't talk now, okay? You're not so good with the putting the words together and they're coming out good thing. You keep it shh.",
+        "别说了。你不太擅长组织语言，你先安静一下。",
+        "Hey, how you doing? Yeah, you know what? Everything's cool. We just had a little situation here. Little internal situation. Actually, my friend just went a little crazy. Happens to everybody. The city gets to us all. Just went a little cuckoo in the head.",
+        "你们好，一切正常。我们只是出了点小状况，内部小状况。我朋友有点失控，这种事谁都会遇到。这座城市让大家都有压力，他只是脑子有点糊涂。",
+        "Hey, don't be calling me cuckoo in the head!",
+        "别说我脑子糊涂！",
+        "Just shh.",
+        "嘘。"
+      ],
+      "manifest": "scenes/madagascar-little-situation/scene.json"
+    }
+  ],
+  "locales": {
+    "en": {
+      "scenes": {
+        "scene_uDawiVCK": {
+          "title": "Smile and wave!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 2.7–29.4 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_iEHU4pcNbz8": {
+          "title": "What did you wish for?",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_6oNrdV4y6EM": {
+          "title": "The New York Giants",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_R0UWEZ7AuGI": {
+          "title": "What does the light mean?",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_Y1VpaH0XS9c": {
+          "title": "A little situation",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        }
+      },
+      "roles": {
+        "role_y89zbrnV": {
+          "name": "Skipper",
+          "hint": "5 lines"
+        },
+        "role_csUjXkRdbuM": {
+          "name": "Kowalski",
+          "hint": "2 lines"
+        },
+        "role_48Y-QZ9fhhE": {
+          "name": "Private",
+          "hint": "1 line"
+        },
+        "role_dhHEnAF3xc8": {
+          "name": "Alex",
+          "hint": "3 lines"
+        },
+        "role_zMIbPZPaoZE": {
+          "name": "Marty",
+          "hint": "4 lines"
+        },
+        "role_5hTvr_4qtsY": {
+          "name": "Gloria",
+          "hint": "1 line"
+        },
+        "role_6Hy35lv2HP4": {
+          "name": "King Julien",
+          "hint": "3 lines"
+        },
+        "role_Oo7l0olB3Us": {
+          "name": "Alex",
+          "hint": "2 lines"
+        },
+        "role_yJFA4SClcgo": {
+          "name": "Kowalski",
+          "hint": "5 lines"
+        },
+        "role_h5Q-n0Lb1CM": {
+          "name": "Skipper",
+          "hint": "4 lines"
+        },
+        "role_sq5rREP5D1E": {
+          "name": "Melman",
+          "hint": "1 line"
+        },
+        "role_dkpFjwnCRZU": {
+          "name": "Alex",
+          "hint": "3 lines"
+        },
+        "role_-Zl-OSzuP6Q": {
+          "name": "Marty",
+          "hint": "1 line"
+        }
+      },
+      "notices": {
+        "library": "Adult prototype testing · Dubs save in this browser. Videos upload only when you confirm creating a playback link. Redistribution permission for the meme clips is unconfirmed.",
+        "scene": "This scene is for adult prototype testing. The full film is not beginner learning material for children.The creators do not endorse this product."
+      }
+    },
+    "zh-CN": {
+      "scenes": {
+        "scene_uDawiVCK": {
+          "title": "微笑，挥挥手！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 2.7–29.4 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_iEHU4pcNbz8": {
+          "title": "你许了什么愿？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_6oNrdV4y6EM": {
+          "title": "纽约巨人",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_R0UWEZ7AuGI": {
+          "title": "这盏灯是什么意思？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_Y1VpaH0XS9c": {
+          "title": "出了点小状况",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        }
+      },
+      "roles": {
+        "role_y89zbrnV": {
+          "name": "队长",
+          "hint": "5 句台词"
+        },
+        "role_csUjXkRdbuM": {
+          "name": "科瓦斯基",
+          "hint": "2 句台词"
+        },
+        "role_48Y-QZ9fhhE": {
+          "name": "菜鸟",
+          "hint": "1 句台词"
+        },
+        "role_dhHEnAF3xc8": {
+          "name": "艾力狮",
+          "hint": "3 句台词"
+        },
+        "role_zMIbPZPaoZE": {
+          "name": "马蒂",
+          "hint": "4 句台词"
+        },
+        "role_5hTvr_4qtsY": {
+          "name": "格洛丽亚",
+          "hint": "1 句台词"
+        },
+        "role_6Hy35lv2HP4": {
+          "name": "朱利安国王",
+          "hint": "3 句台词"
+        },
+        "role_Oo7l0olB3Us": {
+          "name": "艾力狮",
+          "hint": "2 句台词"
+        },
+        "role_yJFA4SClcgo": {
+          "name": "科瓦斯基",
+          "hint": "5 句台词"
+        },
+        "role_h5Q-n0Lb1CM": {
+          "name": "队长",
+          "hint": "4 句台词"
+        },
+        "role_sq5rREP5D1E": {
+          "name": "梅尔曼",
+          "hint": "1 句台词"
+        },
+        "role_dkpFjwnCRZU": {
+          "name": "艾力狮",
+          "hint": "3 句台词"
+        },
+        "role_-Zl-OSzuP6Q": {
+          "name": "马蒂",
+          "hint": "1 句台词"
+        }
+      },
+      "notices": {
+        "library": "成人原型测试 · 配音保存在此浏览器。只有确认创建播放链接时，才会上传视频。影视梗片段尚未确认再分发许可。",
+        "scene": "本片段用于成人原型测试；完整电影并非儿童入门教材。创作者未对本产品作出背书。"
+      }
+    },
+    "es": {
+      "scenes": {
+        "scene_uDawiVCK": {
+          "title": "¡Sonreíd y saludad!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 2.7–29.4 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_iEHU4pcNbz8": {
+          "title": "¿Qué deseo pediste?",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_6oNrdV4y6EM": {
+          "title": "Los gigantes de Nueva York",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_R0UWEZ7AuGI": {
+          "title": "¿Qué significa esa luz?",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_Y1VpaH0XS9c": {
+          "title": "Un pequeño problema",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        }
+      },
+      "roles": {
+        "role_y89zbrnV": {
+          "name": "Skipper",
+          "hint": "5 frases"
+        },
+        "role_csUjXkRdbuM": {
+          "name": "Kowalski",
+          "hint": "2 frases"
+        },
+        "role_48Y-QZ9fhhE": {
+          "name": "Cabo",
+          "hint": "1 frase"
+        },
+        "role_dhHEnAF3xc8": {
+          "name": "Alex",
+          "hint": "3 frases"
+        },
+        "role_zMIbPZPaoZE": {
+          "name": "Marty",
+          "hint": "4 frases"
+        },
+        "role_5hTvr_4qtsY": {
+          "name": "Gloria",
+          "hint": "1 frase"
+        },
+        "role_6Hy35lv2HP4": {
+          "name": "King Julien",
+          "hint": "3 frases"
+        },
+        "role_Oo7l0olB3Us": {
+          "name": "Alex",
+          "hint": "2 frases"
+        },
+        "role_yJFA4SClcgo": {
+          "name": "Kowalski",
+          "hint": "5 frases"
+        },
+        "role_h5Q-n0Lb1CM": {
+          "name": "Skipper",
+          "hint": "4 frases"
+        },
+        "role_sq5rREP5D1E": {
+          "name": "Melman",
+          "hint": "1 frase"
+        },
+        "role_dkpFjwnCRZU": {
+          "name": "Alex",
+          "hint": "3 frases"
+        },
+        "role_-Zl-OSzuP6Q": {
+          "name": "Marty",
+          "hint": "1 frase"
+        }
+      },
+      "notices": {
+        "library": "Pruebas del prototipo con adultos · Los doblajes se guardan en este navegador. Los vídeos solo se suben cuando confirmas la creación de un enlace de reproducción. No se ha confirmado el permiso de redistribución de estos fragmentos.",
+        "scene": "Esta escena es para pruebas del prototipo con adultos. La película completa no es material de iniciación para niños.Los creadores no respaldan este producto."
+      }
+    },
+    "ja": {
+      "scenes": {
+        "scene_uDawiVCK": {
+          "title": "笑って手を振ろう！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の2.7–29.4秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_iEHU4pcNbz8": {
+          "title": "どんな願い事をしたの？",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_6oNrdV4y6EM": {
+          "title": "ニューヨークの巨人",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_R0UWEZ7AuGI": {
+          "title": "このランプの意味は？",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_Y1VpaH0XS9c": {
+          "title": "ちょっとした問題",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        }
+      },
+      "roles": {
+        "role_y89zbrnV": {
+          "name": "スキッパー",
+          "hint": "セリフ5行"
+        },
+        "role_csUjXkRdbuM": {
+          "name": "コワルスキー",
+          "hint": "セリフ2行"
+        },
+        "role_48Y-QZ9fhhE": {
+          "name": "プライベート",
+          "hint": "セリフ1行"
+        },
+        "role_dhHEnAF3xc8": {
+          "name": "Alex",
+          "hint": "セリフ 3 行"
+        },
+        "role_zMIbPZPaoZE": {
+          "name": "Marty",
+          "hint": "セリフ 4 行"
+        },
+        "role_5hTvr_4qtsY": {
+          "name": "Gloria",
+          "hint": "セリフ 1 行"
+        },
+        "role_6Hy35lv2HP4": {
+          "name": "King Julien",
+          "hint": "セリフ 3 行"
+        },
+        "role_Oo7l0olB3Us": {
+          "name": "Alex",
+          "hint": "セリフ 2 行"
+        },
+        "role_yJFA4SClcgo": {
+          "name": "Kowalski",
+          "hint": "セリフ 5 行"
+        },
+        "role_h5Q-n0Lb1CM": {
+          "name": "Skipper",
+          "hint": "セリフ 4 行"
+        },
+        "role_sq5rREP5D1E": {
+          "name": "Melman",
+          "hint": "セリフ 1 行"
+        },
+        "role_dkpFjwnCRZU": {
+          "name": "Alex",
+          "hint": "セリフ 3 行"
+        },
+        "role_-Zl-OSzuP6Q": {
+          "name": "Marty",
+          "hint": "セリフ 1 行"
+        }
+      },
+      "notices": {
+        "library": "大人向け試作版テスト・吹き替えはこのブラウザに保存され。再生リンクの作成を確認した場合に限り、動画がアップロードされます。使用している映像の再配布許諾は未確認です。",
+        "scene": "このシーンは大人による試作版のテスト用です。映画全編は、子ども向けの入門教材ではありません。作品の制作者がこの製品を推奨しているわけではありません。"
+      }
+    },
+    "ko": {
+      "scenes": {
+        "scene_uDawiVCK": {
+          "title": "웃으며 손을 흔들어!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 2.7–29.4초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_iEHU4pcNbz8": {
+          "title": "무슨 소원을 빌었어?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_6oNrdV4y6EM": {
+          "title": "뉴욕의 거인들",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_R0UWEZ7AuGI": {
+          "title": "이 불빛은 무슨 뜻이지?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_Y1VpaH0XS9c": {
+          "title": "작은 문제",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        }
+      },
+      "roles": {
+        "role_y89zbrnV": {
+          "name": "스키퍼",
+          "hint": "대사 5개"
+        },
+        "role_csUjXkRdbuM": {
+          "name": "코왈스키",
+          "hint": "대사 2개"
+        },
+        "role_48Y-QZ9fhhE": {
+          "name": "프라이빗",
+          "hint": "대사 1개"
+        },
+        "role_dhHEnAF3xc8": {
+          "name": "Alex",
+          "hint": "대사 3줄"
+        },
+        "role_zMIbPZPaoZE": {
+          "name": "Marty",
+          "hint": "대사 4줄"
+        },
+        "role_5hTvr_4qtsY": {
+          "name": "Gloria",
+          "hint": "대사 1줄"
+        },
+        "role_6Hy35lv2HP4": {
+          "name": "King Julien",
+          "hint": "대사 3줄"
+        },
+        "role_Oo7l0olB3Us": {
+          "name": "Alex",
+          "hint": "대사 2줄"
+        },
+        "role_yJFA4SClcgo": {
+          "name": "Kowalski",
+          "hint": "대사 5줄"
+        },
+        "role_h5Q-n0Lb1CM": {
+          "name": "Skipper",
+          "hint": "대사 4줄"
+        },
+        "role_sq5rREP5D1E": {
+          "name": "Melman",
+          "hint": "대사 1줄"
+        },
+        "role_dkpFjwnCRZU": {
+          "name": "Alex",
+          "hint": "대사 3줄"
+        },
+        "role_-Zl-OSzuP6Q": {
+          "name": "Marty",
+          "hint": "대사 1줄"
+        }
+      },
+      "notices": {
+        "library": "성인 대상 시제품 테스트 · 더빙은 이 브라우저에 저장돼요. 재생 링크 만들기를 확인할 때만 동영상이 업로드돼요. 영상 클립의 재배포 허가는 확인되지 않았어요.",
+        "scene": "이 장면은 성인을 대상으로 한 시제품 테스트용이에요. 영화 전체가 어린이 입문 학습 자료인 것은 아니에요.원작 제작자가 이 제품을 보증하는 것은 아니에요."
+      }
+    }
+  }
+}

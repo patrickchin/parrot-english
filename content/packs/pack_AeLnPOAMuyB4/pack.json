@@ -1,0 +1,567 @@
+{
+  "version": 1,
+  "id": "pack_AeLnPOAMuyB4",
+  "title": "How I Met Your Mother",
+  "franchise": "How I Met Your Mother",
+  "description": "English dubbing scenes from How I Met Your Mother.",
+  "author": "Parrotbook",
+  "scenes": [
+    {
+      "id": "scene_kNsWCUYPVwU",
+      "slug": "himym-driving-lesson",
+      "title": "紧张的驾驶课",
+      "english": "A very nervous driving lesson",
+      "note": "How I Met Your Mother",
+      "source": "https://www.youtube.com/watch?v=aYa-yIHXDAg&t=92s",
+      "cohort": "teens",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/himym-driving-lesson/himym-driving-lesson-poster-7c8c8285db76.jpg",
+      "tags": [
+        "How I Met Your Mother",
+        "HIMYM",
+        "老爸老妈的浪漫史",
+        "老爸老妈浪漫史",
+        "Barney",
+        "Ted",
+        "巴尼",
+        "泰德",
+        "driving",
+        "驾驶",
+        "fear",
+        "害怕"
+      ],
+      "quotes": [
+        "This isn't right. God never meant for us to travel at such breakneck speeds.",
+        "这不对。上帝可没打算让我们以这么快的速度行驶。",
+        "Relax, you're doing great. Ignore the old lady on the Rascal. This isn't a race.",
+        "放松，你开得很好。别管那个开代步车的老太太，这又不是比赛。",
+        "Dude! A dog!",
+        "老兄！有只狗！",
+        "Zitch-dog! Yes! One-nothing!",
+        "找狗游戏！耶！一比零！",
+        "Crap! What do I do? Tell me what to do, Ted!",
+        "糟了！我该怎么办？告诉我该怎么办，泰德！",
+        "Step on the brake. Sometime in the next twenty minutes.",
+        "踩刹车吧。争取在接下来二十分钟内踩下去。"
+      ],
+      "manifest": "scenes/himym-driving-lesson/scene.json"
+    },
+    {
+      "id": "scene_ON8p1LWII74",
+      "slug": "himym-rabbit-or-duck",
+      "title": "兔子还是鸭子更合适？",
+      "english": "Which animal is the better comparison?",
+      "note": "How I Met Your Mother",
+      "source": "https://www.youtube.com/watch?v=thn1SOwjXT0&t=0s",
+      "cohort": "teens",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/himym-rabbit-or-duck/himym-rabbit-or-duck-poster-6f4ca9b32956.jpg",
+      "tags": [
+        "How I Met Your Mother",
+        "HIMYM",
+        "老爸老妈的浪漫史",
+        "老爸老妈浪漫史",
+        "Marshall",
+        "Ted",
+        "Robin",
+        "Lily",
+        "马修",
+        "泰德",
+        "罗宾",
+        "莉莉",
+        "rabbit",
+        "兔子",
+        "duck",
+        "鸭子",
+        "argument",
+        "争论"
+      ],
+      "quotes": [
+        "Relationships are like that. I mean, look, when you first met Don, you hated him. You thought, this guy's a duck. But one of these days, you're gonna realize this is actually someone that I love. He's a rabbit.",
+        "关系就是这样。你刚认识唐时很讨厌他，觉得他像只鸭子。但总有一天，你会发现自己喜欢他。他其实是只兔子。",
+        "Whoa, I think you got it backwards there, buddy. The duck is the thing you love. The rabbit is the thing you hate.",
+        "等等，老兄，你说反了吧。鸭子是你喜欢的，兔子才是你讨厌的。",
+        "What?",
+        "什么？",
+        "Yeah, I gotta agree. Ducks up, rabbits down.",
+        "对，我同意。鸭子好，兔子差。",
+        "Definitely. Ducks are better than rabbits.",
+        "绝对的，鸭子比兔子好。",
+        "Hey, I got... ducks are, ducks are... Rabbits are adorable! Ducks are... Have you ever been in a fight with a duck? I mean, ducks are jerks!",
+        "鸭子……兔子多可爱啊！鸭子嘛……你们跟鸭子打过架吗？我是说，鸭子可讨厌了！"
+      ],
+      "manifest": "scenes/himym-rabbit-or-duck/scene.json"
+    },
+    {
+      "id": "scene_d6ZZqjpfSfA",
+      "slug": "himym-literally",
+      "title": "字面意思，还是打个比方？",
+      "english": "Literally or figuratively?",
+      "note": "How I Met Your Mother",
+      "source": "https://www.youtube.com/watch?v=C-0azcoEvks&t=17s",
+      "cohort": "teens",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/himym-literally/himym-literally-poster-9fa0918f2ad5.jpg",
+      "tags": [
+        "How I Met Your Mother",
+        "HIMYM",
+        "老爸老妈的浪漫史",
+        "老爸老妈浪漫史",
+        "Ted",
+        "Robin",
+        "Barney and Marshall",
+        "泰德",
+        "罗宾",
+        "巴尼和马修",
+        "wordplay",
+        "文字游戏",
+        "grammar",
+        "语法",
+        "argument",
+        "争论"
+      ],
+      "quotes": [
+        "What's with you?",
+        "你怎么了？",
+        "You're always correcting people.",
+        "你总是纠正别人。",
+        "You totally do that! That's absolutely right.",
+        "你确实总这样！一点没错。",
+        "Right? I never noticed it before, and now it's literally driving me crazy.",
+        "对吧？我以前没注意，现在简直要被他逼疯了。",
+        "Figuratively.",
+        "是“比喻意义上”。",
+        "Okay, maybe so, but it's no worse than you using the word literally in every other sentence.",
+        "好吧，也许是。但总比你说两句话就用一次“字面意义上”好不到哪儿去。"
+      ],
+      "manifest": "scenes/himym-literally/scene.json"
+    },
+    {
+      "id": "scene_Jjy8Z_ovOQI",
+      "slug": "himym-water-is-a-drink",
+      "routeSlug": "is-that-how-water-works",
+      "title": "水原来是这么用的吗？",
+      "english": "Is that how water works?",
+      "note": "How I Met Your Mother",
+      "source": "https://www.youtube.com/watch?v=C-0azcoEvks&t=1s",
+      "cohort": "teens",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/himym-water-is-a-drink/himym-water-is-a-drink-poster-cd8da710eff5.jpg",
+      "tags": [
+        "How I Met Your Mother",
+        "Ted",
+        "Robin",
+        "Marshall",
+        "water",
+        "sarcasm",
+        "泰德",
+        "罗宾",
+        "喝水",
+        "反讽"
+      ],
+      "quotes": [
+        "You guys, uh, want a drink?",
+        "你们，呃，要喝点什么吗？",
+        "Uh, I'll just have a water.",
+        "呃，我喝水就好。",
+        "Mm, technically water is a drink.",
+        "嗯，严格来说，水也是饮品。",
+        "Really, Professor? You drink it? Is that how water works?",
+        "真的吗，教授？水是拿来喝的？原来水是这么用的？",
+        "Because I was just gonna smear it on my skin and hope I absorbed it.",
+        "我本来还打算把水抹在皮肤上，指望能吸收呢。",
+        "Or you could, you know, pour it over your shirt.",
+        "或者，你知道，也可以倒在衬衫上。"
+      ],
+      "manifest": "scenes/himym-water-is-a-drink/scene.json"
+    }
+  ],
+  "locales": {
+    "en": {
+      "scenes": {
+        "scene_kNsWCUYPVwU": {
+          "title": "A very nervous driving lesson",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 92.5–115.38 seconds of the original upload. Comic unsafe driving and panic; not driving instruction. Earlier sexist remarks and the later accident joke are excluded. Mild expletive. Zitch-dog is the show’s invented car game, not a standard English word."
+        },
+        "scene_ON8p1LWII74": {
+          "title": "Which animal is the better comparison?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 0–32.7 seconds of the original upload. A bar setting with drinks, a dating metaphor and a mild insult directed at ducks. Stops before the narrator and later animal-fighting suggestion."
+        },
+        "scene_d6ZZqjpfSfA": {
+          "title": "Literally or figuratively?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 17.4–34.45 seconds of the original upload. Friends bicker. Stops before the Canadian stereotype, threats, singing and later alcohol celebration."
+        },
+        "scene_Jjy8Z_ovOQI": {
+          "title": "Is that how water works?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 1.45–16.95 seconds of the original upload. Adult sitcom context, but only water is discussed. Brief Marshall joke remains as non-selectable support. Ends before the already published literally/figuratively exchange."
+        }
+      },
+      "roles": {
+        "role_fZjB1iall7g": {
+          "name": "Barney",
+          "hint": "3 lines"
+        },
+        "role_a0XqqgzuhVA": {
+          "name": "Ted",
+          "hint": "3 lines"
+        },
+        "role_crBU1TtFewA": {
+          "name": "Marshall",
+          "hint": "3 lines"
+        },
+        "role_8H5N8-HWEJc": {
+          "name": "Ted",
+          "hint": "1 line"
+        },
+        "role_SDdf7QMVejg": {
+          "name": "Robin",
+          "hint": "1 line"
+        },
+        "role_L7o4_XurX_4": {
+          "name": "Lily",
+          "hint": "1 line"
+        },
+        "role_eZTUQldp_mA": {
+          "name": "Ted",
+          "hint": "3 lines"
+        },
+        "role_GfE4n2EIVkQ": {
+          "name": "Robin",
+          "hint": "2 lines"
+        },
+        "role_UJ50J1mgRbA": {
+          "name": "Barney and Marshall",
+          "hint": "1 line"
+        },
+        "role_wdNMXASdk5c": {
+          "name": "Ted",
+          "hint": "2 lines"
+        },
+        "role_KfPCH2pob7g": {
+          "name": "Robin",
+          "hint": "3 lines"
+        },
+        "role_XyMomtlHVYE": {
+          "name": "Marshall",
+          "hint": "1 line"
+        }
+      },
+      "notices": {
+        "library": "Adult prototype testing · Dubs save in this browser. Videos upload only when you confirm creating a playback link. Redistribution permission for the meme clips is unconfirmed.",
+        "scene": "This scene is for adult prototype testing. The full film is not beginner learning material for children.The creators do not endorse this product."
+      }
+    },
+    "zh-CN": {
+      "scenes": {
+        "scene_kNsWCUYPVwU": {
+          "title": "紧张的驾驶课",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 92.5–115.38 秒的连续节选。Comic unsafe driving and panic; not driving instruction. Earlier sexist remarks and the later accident joke are excluded. Mild expletive. Zitch-dog is the show’s invented car game, not a standard English word."
+        },
+        "scene_ON8p1LWII74": {
+          "title": "兔子还是鸭子更合适？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 0–32.7 秒的连续节选。A bar setting with drinks, a dating metaphor and a mild insult directed at ducks. Stops before the narrator and later animal-fighting suggestion."
+        },
+        "scene_d6ZZqjpfSfA": {
+          "title": "字面意思，还是打个比方？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 17.4–34.45 秒的连续节选。Friends bicker. Stops before the Canadian stereotype, threats, singing and later alcohol celebration."
+        },
+        "scene_Jjy8Z_ovOQI": {
+          "title": "水原来是这么用的吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 1.45–16.95 秒的连续节选。Adult sitcom context, but only water is discussed. Brief Marshall joke remains as non-selectable support. Ends before the already published literally/figuratively exchange."
+        }
+      },
+      "roles": {
+        "role_fZjB1iall7g": {
+          "name": "巴尼",
+          "hint": "3 句台词"
+        },
+        "role_a0XqqgzuhVA": {
+          "name": "泰德",
+          "hint": "3 句台词"
+        },
+        "role_crBU1TtFewA": {
+          "name": "马修",
+          "hint": "3 句台词"
+        },
+        "role_8H5N8-HWEJc": {
+          "name": "泰德",
+          "hint": "1 句台词"
+        },
+        "role_SDdf7QMVejg": {
+          "name": "罗宾",
+          "hint": "1 句台词"
+        },
+        "role_L7o4_XurX_4": {
+          "name": "莉莉",
+          "hint": "1 句台词"
+        },
+        "role_eZTUQldp_mA": {
+          "name": "泰德",
+          "hint": "3 句台词"
+        },
+        "role_GfE4n2EIVkQ": {
+          "name": "罗宾",
+          "hint": "2 句台词"
+        },
+        "role_UJ50J1mgRbA": {
+          "name": "巴尼和马修",
+          "hint": "1 句台词"
+        },
+        "role_wdNMXASdk5c": {
+          "name": "泰德",
+          "hint": "2 句台词"
+        },
+        "role_KfPCH2pob7g": {
+          "name": "罗宾",
+          "hint": "3 句台词"
+        },
+        "role_XyMomtlHVYE": {
+          "name": "马修",
+          "hint": "1 句台词"
+        }
+      },
+      "notices": {
+        "library": "成人原型测试 · 配音保存在此浏览器。只有确认创建播放链接时，才会上传视频。影视梗片段尚未确认再分发许可。",
+        "scene": "本片段用于成人原型测试；完整电影并非儿童入门教材。创作者未对本产品作出背书。"
+      }
+    },
+    "es": {
+      "scenes": {
+        "scene_kNsWCUYPVwU": {
+          "title": "Una clase de conducir muy nerviosa",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 92.5–115.38 del vídeo original. Conducción peligrosa y pánico con fines cómicos, no una clase de conducir. Se excluyen los comentarios sexistas anteriores y la broma posterior sobre un accidente. Incluye una palabrota leve. Zitch-dog es un juego de coche inventado en la serie, no una palabra normal del inglés."
+        },
+        "scene_ON8p1LWII74": {
+          "title": "¿Qué animal es la mejor comparación?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 0–32.7 del vídeo original. Escena en un bar con bebidas, una metáfora sobre citas y un insulto leve a los patos. Termina antes del narrador y de la posterior sugerencia de peleas de animales."
+        },
+        "scene_d6ZZqjpfSfA": {
+          "title": "¿En sentido literal o figurado?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 17.4–34.45 del vídeo original. Los amigos discuten. Termina antes del estereotipo canadiense, las amenazas, la canción y la celebración posterior con alcohol."
+        },
+        "scene_Jjy8Z_ovOQI": {
+          "title": "¿Así funciona el agua?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 1.45–16.95 del vídeo original. Procede de una comedia para adultos, pero solo se habla de agua. La breve broma de Marshall se conserva como intervención no seleccionable. Termina antes del diálogo ya publicado sobre el sentido literal y figurado."
+        }
+      },
+      "roles": {
+        "role_fZjB1iall7g": {
+          "name": "Barney",
+          "hint": "3 frases"
+        },
+        "role_a0XqqgzuhVA": {
+          "name": "Ted",
+          "hint": "3 frases"
+        },
+        "role_crBU1TtFewA": {
+          "name": "Marshall",
+          "hint": "3 frases"
+        },
+        "role_8H5N8-HWEJc": {
+          "name": "Ted",
+          "hint": "1 frase"
+        },
+        "role_SDdf7QMVejg": {
+          "name": "Robin",
+          "hint": "1 frase"
+        },
+        "role_L7o4_XurX_4": {
+          "name": "Lily",
+          "hint": "1 frase"
+        },
+        "role_eZTUQldp_mA": {
+          "name": "Ted",
+          "hint": "3 frases"
+        },
+        "role_GfE4n2EIVkQ": {
+          "name": "Robin",
+          "hint": "2 frases"
+        },
+        "role_UJ50J1mgRbA": {
+          "name": "Barney y Marshall",
+          "hint": "1 frase"
+        },
+        "role_wdNMXASdk5c": {
+          "name": "Ted",
+          "hint": "2 frases"
+        },
+        "role_KfPCH2pob7g": {
+          "name": "Robin",
+          "hint": "3 frases"
+        },
+        "role_XyMomtlHVYE": {
+          "name": "Marshall",
+          "hint": "1 frase"
+        }
+      },
+      "notices": {
+        "library": "Pruebas del prototipo con adultos · Los doblajes se guardan en este navegador. Los vídeos solo se suben cuando confirmas la creación de un enlace de reproducción. No se ha confirmado el permiso de redistribución de estos fragmentos.",
+        "scene": "Esta escena es para pruebas del prototipo con adultos. La película completa no es material de iniciación para niños.Los creadores no respaldan este producto."
+      }
+    },
+    "ja": {
+      "scenes": {
+        "scene_kNsWCUYPVwU": {
+          "title": "ハラハラする運転レッスン",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の92.5–115.38秒の抜粋です。 危ない運転や慌てる様子を描くコメディで、運転の教習ではありません。それ以前の性差別的な発言や、その後の事故の冗談は含みません。軽い悪態があります。Zitch-dogは番組内で作られた車の遊びの名前で、一般的な英単語ではありません。"
+        },
+        "scene_ON8p1LWII74": {
+          "title": "例えるならどっちの動物？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の0–32.7秒の抜粋です。 飲み物のあるバーが舞台です。恋愛の例えと、アヒルへの軽い悪口があります。ナレーションや、その後の動物を戦わせる提案の前で終わります。"
+        },
+        "scene_d6ZZqjpfSfA": {
+          "title": "文字どおり？それとも例え？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の17.4–34.45秒の抜粋です。 友だち同士が言い争います。カナダ人への決めつけ、脅し、歌、その後の飲酒を伴うお祝いの前で終わります。"
+        },
+        "scene_Jjy8Z_ovOQI": {
+          "title": "水ってそういうもの？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の1.45–16.95秒の抜粋です。 大人向けコメディですが、話題は水だけです。マーシャルの短い冗談は選択できない脇役の発言として残しています。公開済みの「文字どおり・例え」の会話の前で終わります。"
+        }
+      },
+      "roles": {
+        "role_fZjB1iall7g": {
+          "name": "バーニー",
+          "hint": "セリフ3行"
+        },
+        "role_a0XqqgzuhVA": {
+          "name": "テッド",
+          "hint": "セリフ3行"
+        },
+        "role_crBU1TtFewA": {
+          "name": "マーシャル",
+          "hint": "セリフ3行"
+        },
+        "role_8H5N8-HWEJc": {
+          "name": "テッド",
+          "hint": "セリフ1行"
+        },
+        "role_SDdf7QMVejg": {
+          "name": "ロビン",
+          "hint": "セリフ1行"
+        },
+        "role_L7o4_XurX_4": {
+          "name": "リリー",
+          "hint": "セリフ1行"
+        },
+        "role_eZTUQldp_mA": {
+          "name": "テッド",
+          "hint": "セリフ3行"
+        },
+        "role_GfE4n2EIVkQ": {
+          "name": "ロビン",
+          "hint": "セリフ2行"
+        },
+        "role_UJ50J1mgRbA": {
+          "name": "バーニーとマーシャル",
+          "hint": "セリフ1行"
+        },
+        "role_wdNMXASdk5c": {
+          "name": "テッド",
+          "hint": "セリフ2行"
+        },
+        "role_KfPCH2pob7g": {
+          "name": "ロビン",
+          "hint": "セリフ3行"
+        },
+        "role_XyMomtlHVYE": {
+          "name": "マーシャル",
+          "hint": "セリフ1行"
+        }
+      },
+      "notices": {
+        "library": "大人向け試作版テスト・吹き替えはこのブラウザに保存され。再生リンクの作成を確認した場合に限り、動画がアップロードされます。使用している映像の再配布許諾は未確認です。",
+        "scene": "このシーンは大人による試作版のテスト用です。映画全編は、子ども向けの入門教材ではありません。作品の制作者がこの製品を推奨しているわけではありません。"
+      }
+    },
+    "ko": {
+      "scenes": {
+        "scene_kNsWCUYPVwU": {
+          "title": "아슬아슬한 운전 수업",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 92.5–115.38초 구간을 발췌했어요. 위험한 운전과 공포를 웃음으로 그린 장면이며 운전 교육이 아니에요. 앞선 성차별 발언과 이후의 사고 농담은 제외했어요. 가벼운 비속어가 있어요. Zitch-dog는 프로그램에서 만든 자동차 놀이이며 일반적인 영어 단어가 아니에요."
+        },
+        "scene_ON8p1LWII74": {
+          "title": "어느 동물에 비유하는 게 더 좋을까?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 0–32.7초 구간을 발췌했어요. 술집과 음료가 배경이며 연애 비유와 오리를 향한 가벼운 모욕이 있어요. 내레이션과 이후의 동물 싸움 제안 전에 끝나요."
+        },
+        "scene_d6ZZqjpfSfA": {
+          "title": "말 그대로일까, 비유일까?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 17.4–34.45초 구간을 발췌했어요. 친구들이 말다툼해요. 캐나다인에 대한 고정관념, 위협, 노래와 이후의 음주 축하 장면 전에 끝나요."
+        },
+        "scene_Jjy8Z_ovOQI": {
+          "title": "물이 원래 그런 거야?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 1.45–16.95초 구간을 발췌했어요. 성인 시트콤 배경이지만 물에 대해서만 이야기해요. 마셜의 짧은 농담은 선택할 수 없는 보조 대사로 남겨 두었어요. 이미 공개된 문자 그대로와 비유의 대화 전에 끝나요."
+        }
+      },
+      "roles": {
+        "role_fZjB1iall7g": {
+          "name": "바니",
+          "hint": "대사 3개"
+        },
+        "role_a0XqqgzuhVA": {
+          "name": "테드",
+          "hint": "대사 3개"
+        },
+        "role_crBU1TtFewA": {
+          "name": "마셜",
+          "hint": "대사 3개"
+        },
+        "role_8H5N8-HWEJc": {
+          "name": "테드",
+          "hint": "대사 1개"
+        },
+        "role_SDdf7QMVejg": {
+          "name": "로빈",
+          "hint": "대사 1개"
+        },
+        "role_L7o4_XurX_4": {
+          "name": "릴리",
+          "hint": "대사 1개"
+        },
+        "role_eZTUQldp_mA": {
+          "name": "테드",
+          "hint": "대사 3개"
+        },
+        "role_GfE4n2EIVkQ": {
+          "name": "로빈",
+          "hint": "대사 2개"
+        },
+        "role_UJ50J1mgRbA": {
+          "name": "바니와 마셜",
+          "hint": "대사 1개"
+        },
+        "role_wdNMXASdk5c": {
+          "name": "테드",
+          "hint": "대사 2개"
+        },
+        "role_KfPCH2pob7g": {
+          "name": "로빈",
+          "hint": "대사 3개"
+        },
+        "role_XyMomtlHVYE": {
+          "name": "마셜",
+          "hint": "대사 1개"
+        }
+      },
+      "notices": {
+        "library": "성인 대상 시제품 테스트 · 더빙은 이 브라우저에 저장돼요. 재생 링크 만들기를 확인할 때만 동영상이 업로드돼요. 영상 클립의 재배포 허가는 확인되지 않았어요.",
+        "scene": "이 장면은 성인을 대상으로 한 시제품 테스트용이에요. 영화 전체가 어린이 입문 학습 자료인 것은 아니에요.원작 제작자가 이 제품을 보증하는 것은 아니에요."
+      }
+    }
+  }
+}

@@ -1,0 +1,700 @@
+{
+  "version": 1,
+  "id": "pack_ghKWRikMVPlk",
+  "title": "Despicable Me",
+  "franchise": "Despicable Me",
+  "description": "English dubbing scenes from Despicable Me.",
+  "author": "Parrotbook",
+  "scenes": [
+    {
+      "id": "scene_RPXXEtjf",
+      "slug": "so-fluffy",
+      "title": "太毛茸茸了！",
+      "english": "It's so fluffy!",
+      "note": "Despicable Me",
+      "source": "https://www.youtube.com/watch?v=82utG7Q3G_k&t=23s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/so-fluffy/so-fluffy-poster-c54addceb505.jpg",
+      "tags": [
+        "Despicable Me",
+        "神偷奶爸",
+        "卑鄙的我",
+        "Margo",
+        "Agnes",
+        "Carnival attendant",
+        "Gru",
+        "玛戈",
+        "艾格尼丝",
+        "游乐场摊主",
+        "格鲁",
+        "carnival",
+        "游乐场",
+        "unicorn",
+        "独角兽",
+        "toys",
+        "玩具"
+      ],
+      "quotes": [
+        "She hit that!",
+        "她打中了！",
+        "I saw that with my own eyes!",
+        "我亲眼看到的！",
+        "Let me explain something to you. You see how it's not knocked over?",
+        "让我给你解释一下。看见了吗？它没有倒下。",
+        "Okay. My turn.",
+        "好吧。轮到我了。",
+        "Knocked over!",
+        "打倒了！",
+        "It's so fluffy!",
+        "太毛茸茸了！"
+      ],
+      "manifest": "scenes/so-fluffy/scene.json"
+    },
+    {
+      "id": "scene_CZ0bp6VC",
+      "slug": "banana",
+      "title": "那地板呢？",
+      "english": "What about the floor?",
+      "note": "Despicable Me",
+      "source": "https://www.youtube.com/watch?v=CeOsRggJO4s&t=10s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/banana/banana-poster-d90b2ac2df8d.jpg",
+      "tags": [
+        "Despicable Me",
+        "神偷奶爸",
+        "卑鄙的我",
+        "Gru",
+        "Margo",
+        "Edith",
+        "格鲁",
+        "玛戈",
+        "伊迪丝",
+        "rules",
+        "规则",
+        "family",
+        "家庭"
+      ],
+      "quotes": [
+        "Rule number one: you will not touch anything.",
+        "第一条：什么都不许碰。",
+        "Uh-huh. What about the floor?",
+        "嗯，那地板呢？",
+        "Yes, you may touch the floor.",
+        "好，地板可以碰。",
+        "What about the air?",
+        "那空气呢？",
+        "Yes, you may touch the air.",
+        "好，空气也可以碰。",
+        "What about this?",
+        "那这个呢？",
+        "Where did you get that?",
+        "你从哪里拿到的？",
+        "Found it.",
+        "捡到的。"
+      ],
+      "manifest": "scenes/banana/scene.json"
+    },
+    {
+      "id": "scene_FL_WvS6Yrg4",
+      "slug": "gru-bedtime-story",
+      "routeSlug": "gru-bedtime-story",
+      "title": "求求你啦",
+      "english": "Pretty please?",
+      "note": "Despicable Me",
+      "source": "https://www.youtube.com/watch?v=-smMKRBdxD0&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gru-bedtime-story/gru-bedtime-story-poster-bd5b6f18f0a4.jpg",
+      "tags": [
+        "Despicable Me",
+        "求求你啦",
+        "Agnes",
+        "Gru",
+        "Margo",
+        "Edith",
+        "艾格尼丝",
+        "格鲁",
+        "玛戈",
+        "伊迪丝"
+      ],
+      "quotes": [
+        "Will you read us a bedtime story?",
+        "你能给我们讲睡前故事吗？",
+        "No.",
+        "不行。",
+        "Pretty please?",
+        "求求你啦。",
+        "The physical appearance of the please makes no difference. It is still no, so go to sleep.",
+        "求我的样子再好看也没有用。还是不行，睡觉去。",
+        "But we can't. We're all hyper. And without a bedtime story, we'll just keep getting up and bugging you.",
+        "我们睡不着，都太兴奋了。不讲故事，我们就会不停起床烦你。",
+        "All night long.",
+        "一整晚。",
+        "Oh, fine.",
+        "好吧。"
+      ],
+      "manifest": "scenes/gru-bedtime-story/scene.json"
+    },
+    {
+      "id": "scene_ggDkGOmQZTA",
+      "slug": "gru-meets-the-girls",
+      "routeSlug": "gru-meets-the-girls",
+      "title": "抱住你的腿啦",
+      "english": "I got your leg",
+      "note": "Despicable Me",
+      "source": "https://www.youtube.com/watch?v=7Drao-T8omA&t=175s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gru-meets-the-girls/gru-meets-the-girls-poster-202d446670f4.jpg",
+      "tags": [
+        "Despicable Me",
+        "抱住你的腿啦",
+        "Margo",
+        "Agnes",
+        "Gru",
+        "玛戈",
+        "艾格尼丝",
+        "格鲁"
+      ],
+      "quotes": [
+        "Hi, I'm Margo. This is Edith. That's Agnes.",
+        "你好，我叫玛戈。这是伊迪丝，那是艾格尼丝。",
+        "I got your leg! I got your leg!",
+        "抱住你的腿啦！",
+        "Okay, that's enough, little girl. Let go of my leg. Come on, little girl. Just release your grip. Wow. How do you remove them? Is there a command? Some nonstick spray? Crowbar?",
+        "好了，小姑娘，够了。松开我的腿。松手吧。要怎么把她弄下来？有口令吗？防粘喷雾？撬棍？"
+      ],
+      "manifest": "scenes/gru-meets-the-girls/scene.json"
+    },
+    {
+      "id": "scene_QRuUGGTNTDQ",
+      "slug": "gru-meets-lucy",
+      "routeSlug": "gru-meets-lucy",
+      "title": "特工露西",
+      "english": "Agent Lucy Wilde",
+      "note": "Despicable Me",
+      "source": "https://www.youtube.com/watch?v=ANEvrmvjuqg&t=23s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/gru-meets-lucy/gru-meets-lucy-poster-ac6a10c64fa3.jpg",
+      "tags": [
+        "Despicable Me",
+        "Despicable Me 2",
+        "特工露西",
+        "Lucy Wilde",
+        "Gru",
+        "露西",
+        "格鲁"
+      ],
+      "quotes": [
+        "Mr. Gru?",
+        "格鲁先生？",
+        "Wh-what? Yes?",
+        "什么？",
+        "Hi. Agent Lucy Wilde of the AVL. Oh, whoops. Sorry. You're gonna have to come with me.",
+        "你好，我是反恶人联盟的露西特工。哎呀，抱歉，你得跟我走一趟。",
+        "Freeze ray!",
+        "冰冻射线！",
+        "Oh, you know, you really should announce your weapons after you fire them, Mr. Gru. For example.",
+        "格鲁先生，你应该先发射武器，再报武器名字。比如这样。",
+        "Lipstick taser! Oh, it works so good.",
+        "口红电击器！真好用。"
+      ],
+      "manifest": "scenes/gru-meets-lucy/scene.json"
+    }
+  ],
+  "locales": {
+    "en": {
+      "scenes": {
+        "scene_RPXXEtjf": {
+          "title": "It’s so fluffy!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 23.3–54 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_CZ0bp6VC": {
+          "title": "What about the floor?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 10.9–29.8 seconds of the original upload. The original Minionese catchphrase is replaced by an English Gru/children exchange from the same franchise."
+        },
+        "scene_FL_WvS6Yrg4": {
+          "title": "Pretty please?",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_ggDkGOmQZTA": {
+          "title": "I got your leg",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_QRuUGGTNTDQ": {
+          "title": "Agent Lucy Wilde",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        }
+      },
+      "roles": {
+        "role_ac_suThrxnA": {
+          "name": "Margo",
+          "hint": "1 line"
+        },
+        "role_mZOwX2ys": {
+          "name": "Agnes",
+          "hint": "1 line"
+        },
+        "role_2YM2UXibtNQ": {
+          "name": "Carnival attendant",
+          "hint": "1 line"
+        },
+        "role_AmEQPuK-wqk": {
+          "name": "Gru",
+          "hint": "3 lines"
+        },
+        "role_6qGKlj0DGGU": {
+          "name": "Gru",
+          "hint": "4 lines"
+        },
+        "role_ttD2BhSD_aQ": {
+          "name": "Margo",
+          "hint": "2 lines"
+        },
+        "role_Y1QH7lsWlSU": {
+          "name": "Edith",
+          "hint": "2 lines"
+        },
+        "role_T84qUgqhJWs": {
+          "name": "Agnes",
+          "hint": "2 lines"
+        },
+        "role_1riy0R0QHso": {
+          "name": "Gru",
+          "hint": "3 lines"
+        },
+        "role_i5Z0lX1OKRk": {
+          "name": "Margo",
+          "hint": "1 line"
+        },
+        "role_8j5eoCcBDKg": {
+          "name": "Edith",
+          "hint": "1 line"
+        },
+        "role_gt8sRYHc9GA": {
+          "name": "Margo",
+          "hint": "1 line"
+        },
+        "role_3AI1krmr0WM": {
+          "name": "Agnes",
+          "hint": "1 line"
+        },
+        "role_sPY3P9aVvf8": {
+          "name": "Gru",
+          "hint": "1 line"
+        },
+        "role_wIpaFcBailA": {
+          "name": "Lucy Wilde",
+          "hint": "4 lines"
+        },
+        "role_EUZhxArGg-0": {
+          "name": "Gru",
+          "hint": "2 lines"
+        }
+      },
+      "notices": {
+        "library": "Adult prototype testing · Dubs save in this browser. Videos upload only when you confirm creating a playback link. Redistribution permission for the meme clips is unconfirmed.",
+        "scene": "This scene is for adult prototype testing. The full film is not beginner learning material for children.The creators do not endorse this product."
+      }
+    },
+    "zh-CN": {
+      "scenes": {
+        "scene_RPXXEtjf": {
+          "title": "太毛茸茸了！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 23.3–54 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_CZ0bp6VC": {
+          "title": "那地板呢？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 10.9–29.8 秒的节选。The original Minionese catchphrase is replaced by an English Gru/children exchange from the same franchise."
+        },
+        "scene_FL_WvS6Yrg4": {
+          "title": "求求你啦",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_ggDkGOmQZTA": {
+          "title": "抱住你的腿啦",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_QRuUGGTNTDQ": {
+          "title": "特工露西",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        }
+      },
+      "roles": {
+        "role_ac_suThrxnA": {
+          "name": "玛戈",
+          "hint": "1 句台词"
+        },
+        "role_mZOwX2ys": {
+          "name": "艾格尼丝",
+          "hint": "1 句台词"
+        },
+        "role_2YM2UXibtNQ": {
+          "name": "游乐场摊主",
+          "hint": "1 句台词"
+        },
+        "role_AmEQPuK-wqk": {
+          "name": "格鲁",
+          "hint": "3 句台词"
+        },
+        "role_6qGKlj0DGGU": {
+          "name": "格鲁",
+          "hint": "4 句台词"
+        },
+        "role_ttD2BhSD_aQ": {
+          "name": "玛戈",
+          "hint": "2 句台词"
+        },
+        "role_Y1QH7lsWlSU": {
+          "name": "伊迪丝",
+          "hint": "2 句台词"
+        },
+        "role_T84qUgqhJWs": {
+          "name": "艾格尼丝",
+          "hint": "2 句台词"
+        },
+        "role_1riy0R0QHso": {
+          "name": "格鲁",
+          "hint": "3 句台词"
+        },
+        "role_i5Z0lX1OKRk": {
+          "name": "玛戈",
+          "hint": "1 句台词"
+        },
+        "role_8j5eoCcBDKg": {
+          "name": "伊迪丝",
+          "hint": "1 句台词"
+        },
+        "role_gt8sRYHc9GA": {
+          "name": "玛戈",
+          "hint": "1 句台词"
+        },
+        "role_3AI1krmr0WM": {
+          "name": "艾格尼丝",
+          "hint": "1 句台词"
+        },
+        "role_sPY3P9aVvf8": {
+          "name": "格鲁",
+          "hint": "1 句台词"
+        },
+        "role_wIpaFcBailA": {
+          "name": "露西",
+          "hint": "4 句台词"
+        },
+        "role_EUZhxArGg-0": {
+          "name": "格鲁",
+          "hint": "2 句台词"
+        }
+      },
+      "notices": {
+        "library": "成人原型测试 · 配音保存在此浏览器。只有确认创建播放链接时，才会上传视频。影视梗片段尚未确认再分发许可。",
+        "scene": "本片段用于成人原型测试；完整电影并非儿童入门教材。创作者未对本产品作出背书。"
+      }
+    },
+    "es": {
+      "scenes": {
+        "scene_RPXXEtjf": {
+          "title": "¡Es tan blandito!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 23.3–54 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_CZ0bp6VC": {
+          "title": "¿Y el suelo?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 10.9–29.8 del vídeo original. La frase original en el idioma de los Minions se sustituye por un diálogo en inglés entre Gru y los niños de la misma saga."
+        },
+        "scene_FL_WvS6Yrg4": {
+          "title": "¿Por favor?",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_ggDkGOmQZTA": {
+          "title": "¡Tengo tu pierna!",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_QRuUGGTNTDQ": {
+          "title": "La agente Lucy Wilde",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        }
+      },
+      "roles": {
+        "role_ac_suThrxnA": {
+          "name": "Margo",
+          "hint": "1 frase"
+        },
+        "role_mZOwX2ys": {
+          "name": "Agnes",
+          "hint": "1 frase"
+        },
+        "role_2YM2UXibtNQ": {
+          "name": "Encargado de la feria",
+          "hint": "1 frase"
+        },
+        "role_AmEQPuK-wqk": {
+          "name": "Gru",
+          "hint": "3 frases"
+        },
+        "role_6qGKlj0DGGU": {
+          "name": "Gru",
+          "hint": "4 frases"
+        },
+        "role_ttD2BhSD_aQ": {
+          "name": "Margo",
+          "hint": "2 frases"
+        },
+        "role_Y1QH7lsWlSU": {
+          "name": "Edith",
+          "hint": "2 frases"
+        },
+        "role_T84qUgqhJWs": {
+          "name": "Agnes",
+          "hint": "2 frases"
+        },
+        "role_1riy0R0QHso": {
+          "name": "Gru",
+          "hint": "3 frases"
+        },
+        "role_i5Z0lX1OKRk": {
+          "name": "Margo",
+          "hint": "1 frase"
+        },
+        "role_8j5eoCcBDKg": {
+          "name": "Edith",
+          "hint": "1 frase"
+        },
+        "role_gt8sRYHc9GA": {
+          "name": "Margo",
+          "hint": "1 frase"
+        },
+        "role_3AI1krmr0WM": {
+          "name": "Agnes",
+          "hint": "1 frase"
+        },
+        "role_sPY3P9aVvf8": {
+          "name": "Gru",
+          "hint": "1 frase"
+        },
+        "role_wIpaFcBailA": {
+          "name": "Lucy Wilde",
+          "hint": "4 frases"
+        },
+        "role_EUZhxArGg-0": {
+          "name": "Gru",
+          "hint": "2 frases"
+        }
+      },
+      "notices": {
+        "library": "Pruebas del prototipo con adultos · Los doblajes se guardan en este navegador. Los vídeos solo se suben cuando confirmas la creación de un enlace de reproducción. No se ha confirmado el permiso de redistribución de estos fragmentos.",
+        "scene": "Esta escena es para pruebas del prototipo con adultos. La película completa no es material de iniciación para niños.Los creadores no respaldan este producto."
+      }
+    },
+    "ja": {
+      "scenes": {
+        "scene_RPXXEtjf": {
+          "title": "すごくふわふわ！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の23.3–54秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_CZ0bp6VC": {
+          "title": "床はどうするの？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の10.9–29.8秒の抜粋です。 元のミニオン語の決めゼリフを、同じシリーズのグルーと子どもたちの英語の会話に置き換えています。"
+        },
+        "scene_FL_WvS6Yrg4": {
+          "title": "お願いだから",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_ggDkGOmQZTA": {
+          "title": "脚をつかまえた！",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_QRuUGGTNTDQ": {
+          "title": "エージェント・ルーシー",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        }
+      },
+      "roles": {
+        "role_ac_suThrxnA": {
+          "name": "マーゴ",
+          "hint": "セリフ1行"
+        },
+        "role_mZOwX2ys": {
+          "name": "アグネス",
+          "hint": "セリフ1行"
+        },
+        "role_2YM2UXibtNQ": {
+          "name": "遊園地の係員",
+          "hint": "セリフ1行"
+        },
+        "role_AmEQPuK-wqk": {
+          "name": "グルー",
+          "hint": "セリフ3行"
+        },
+        "role_6qGKlj0DGGU": {
+          "name": "グルー",
+          "hint": "セリフ4行"
+        },
+        "role_ttD2BhSD_aQ": {
+          "name": "マーゴ",
+          "hint": "セリフ2行"
+        },
+        "role_Y1QH7lsWlSU": {
+          "name": "イディス",
+          "hint": "セリフ2行"
+        },
+        "role_T84qUgqhJWs": {
+          "name": "Agnes",
+          "hint": "セリフ 2 行"
+        },
+        "role_1riy0R0QHso": {
+          "name": "Gru",
+          "hint": "セリフ 3 行"
+        },
+        "role_i5Z0lX1OKRk": {
+          "name": "Margo",
+          "hint": "セリフ 1 行"
+        },
+        "role_8j5eoCcBDKg": {
+          "name": "Edith",
+          "hint": "セリフ 1 行"
+        },
+        "role_gt8sRYHc9GA": {
+          "name": "Margo",
+          "hint": "セリフ 1 行"
+        },
+        "role_3AI1krmr0WM": {
+          "name": "Agnes",
+          "hint": "セリフ 1 行"
+        },
+        "role_sPY3P9aVvf8": {
+          "name": "Gru",
+          "hint": "セリフ 1 行"
+        },
+        "role_wIpaFcBailA": {
+          "name": "Lucy Wilde",
+          "hint": "セリフ 4 行"
+        },
+        "role_EUZhxArGg-0": {
+          "name": "Gru",
+          "hint": "セリフ 2 行"
+        }
+      },
+      "notices": {
+        "library": "大人向け試作版テスト・吹き替えはこのブラウザに保存され。再生リンクの作成を確認した場合に限り、動画がアップロードされます。使用している映像の再配布許諾は未確認です。",
+        "scene": "このシーンは大人による試作版のテスト用です。映画全編は、子ども向けの入門教材ではありません。作品の制作者がこの製品を推奨しているわけではありません。"
+      }
+    },
+    "ko": {
+      "scenes": {
+        "scene_RPXXEtjf": {
+          "title": "정말 폭신해!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 23.3–54초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_CZ0bp6VC": {
+          "title": "바닥은 어쩌고?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 10.9–29.8초 구간을 발췌했어요. 원래의 미니언어 유행어 대신 같은 시리즈에서 그루와 아이들이 나누는 영어 대화를 사용해요."
+        },
+        "scene_FL_WvS6Yrg4": {
+          "title": "제발 부탁해요",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_ggDkGOmQZTA": {
+          "title": "다리를 잡았어요!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_QRuUGGTNTDQ": {
+          "title": "루시 와일드 요원",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        }
+      },
+      "roles": {
+        "role_ac_suThrxnA": {
+          "name": "마고",
+          "hint": "대사 1개"
+        },
+        "role_mZOwX2ys": {
+          "name": "아그네스",
+          "hint": "대사 1개"
+        },
+        "role_2YM2UXibtNQ": {
+          "name": "놀이공원 직원",
+          "hint": "대사 1개"
+        },
+        "role_AmEQPuK-wqk": {
+          "name": "그루",
+          "hint": "대사 3개"
+        },
+        "role_6qGKlj0DGGU": {
+          "name": "그루",
+          "hint": "대사 4개"
+        },
+        "role_ttD2BhSD_aQ": {
+          "name": "마고",
+          "hint": "대사 2개"
+        },
+        "role_Y1QH7lsWlSU": {
+          "name": "에디스",
+          "hint": "대사 2개"
+        },
+        "role_T84qUgqhJWs": {
+          "name": "Agnes",
+          "hint": "대사 2줄"
+        },
+        "role_1riy0R0QHso": {
+          "name": "Gru",
+          "hint": "대사 3줄"
+        },
+        "role_i5Z0lX1OKRk": {
+          "name": "Margo",
+          "hint": "대사 1줄"
+        },
+        "role_8j5eoCcBDKg": {
+          "name": "Edith",
+          "hint": "대사 1줄"
+        },
+        "role_gt8sRYHc9GA": {
+          "name": "Margo",
+          "hint": "대사 1줄"
+        },
+        "role_3AI1krmr0WM": {
+          "name": "Agnes",
+          "hint": "대사 1줄"
+        },
+        "role_sPY3P9aVvf8": {
+          "name": "Gru",
+          "hint": "대사 1줄"
+        },
+        "role_wIpaFcBailA": {
+          "name": "Lucy Wilde",
+          "hint": "대사 4줄"
+        },
+        "role_EUZhxArGg-0": {
+          "name": "Gru",
+          "hint": "대사 2줄"
+        }
+      },
+      "notices": {
+        "library": "성인 대상 시제품 테스트 · 더빙은 이 브라우저에 저장돼요. 재생 링크 만들기를 확인할 때만 동영상이 업로드돼요. 영상 클립의 재배포 허가는 확인되지 않았어요.",
+        "scene": "이 장면은 성인을 대상으로 한 시제품 테스트용이에요. 영화 전체가 어린이 입문 학습 자료인 것은 아니에요.원작 제작자가 이 제품을 보증하는 것은 아니에요."
+      }
+    }
+  }
+}

@@ -1,0 +1,932 @@
+{
+  "version": 1,
+  "id": "pack_1MsoQGTdt_fq",
+  "title": "Peppa Pig",
+  "franchise": "Peppa Pig",
+  "description": "English dubbing scenes from Peppa Pig.",
+  "author": "Parrotbook",
+  "scenes": [
+    {
+      "id": "scene_9aW-AUNHyhc",
+      "slug": "peppa-found-glasses",
+      "title": "你一直坐在眼镜上！",
+      "english": "You were sitting on them!",
+      "note": "Peppa Pig",
+      "source": "https://www.youtube.com/watch?v=Izul_xs5dWo&t=243s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/peppa-found-glasses/peppa-found-glasses-poster-b4297f3f9d8a.jpg",
+      "tags": [
+        "Peppa Pig",
+        "小猪佩奇",
+        "Mummy Pig",
+        "Daddy Pig",
+        "Peppa",
+        "猪妈妈",
+        "猪爸爸",
+        "佩奇",
+        "glasses",
+        "眼镜",
+        "family",
+        "家庭"
+      ],
+      "quotes": [
+        "Daddy Pig, you were sitting on them all the time!",
+        "猪爸爸，你一直坐在眼镜上！",
+        "Oh!",
+        "哦！",
+        "Silly Daddy!",
+        "糊涂爸爸！",
+        "I don't know how they got there.",
+        "我不知道眼镜怎么跑到那里了。"
+      ],
+      "manifest": "scenes/peppa-found-glasses/scene.json"
+    },
+    {
+      "id": "scene_y5A8q-8McdQ",
+      "slug": "peppa-guess-what",
+      "title": "猜猜我们干什么了！",
+      "english": "Guess what we have been doing!",
+      "note": "Peppa Pig",
+      "source": "https://www.youtube.com/watch?v=QFdLgfy63cc&t=189s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/peppa-guess-what/peppa-guess-what-poster-cd5c1dd92b95.jpg",
+      "tags": [
+        "Peppa Pig",
+        "小猪佩奇",
+        "Peppa",
+        "Daddy Pig",
+        "佩奇",
+        "猪爸爸",
+        "muddy puddles",
+        "泥坑",
+        "guessing",
+        "猜谜"
+      ],
+      "quotes": [
+        "Daddy, Daddy! Guess what we've been doing!",
+        "爸爸，爸爸！猜猜我们干什么了！",
+        "Let me think. Have you been watching television?",
+        "让我想想。你们在看电视吗？",
+        "No, no, Daddy.",
+        "不，不是，爸爸。",
+        "Have you just had a bath?",
+        "你们刚洗完澡吗？",
+        "No, no.",
+        "不，不是。",
+        "I know! You've been jumping in muddy puddles!",
+        "我知道了！你们在泥坑里跳来跳去！",
+        "Yes, yes, Daddy! We've been jumping in muddy puddles!",
+        "对，对，爸爸！我们在泥坑里跳来跳去！"
+      ],
+      "manifest": "scenes/peppa-guess-what/scene.json"
+    },
+    {
+      "id": "scene_dJ3aIJ7VuJ0",
+      "slug": "peppa-lost-glasses",
+      "title": "我们帮你找眼镜好吗？",
+      "english": "Can we help find your glasses?",
+      "note": "Peppa Pig",
+      "source": "https://www.youtube.com/watch?v=Izul_xs5dWo&t=108s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/peppa-lost-glasses/peppa-lost-glasses-poster-49b4ac98efcb.jpg",
+      "tags": [
+        "Peppa Pig",
+        "小猪佩奇",
+        "Daddy Pig",
+        "Mummy Pig",
+        "Peppa",
+        "猪爸爸",
+        "猪妈妈",
+        "佩奇",
+        "glasses",
+        "眼镜",
+        "helping",
+        "帮忙"
+      ],
+      "quotes": [
+        "Somebody must have put my glasses somewhere.",
+        "一定有人把我的眼镜放到什么地方了。",
+        "Do you remember where you last put them, Daddy Pig?",
+        "猪爸爸，你记得上次把眼镜放在哪里了吗？",
+        "When I don't wear them, I always put them in my pocket. But they aren't there now.",
+        "不戴的时候，我总把眼镜放在口袋里。可是现在不在里面。",
+        "Daddy, can we help find your glasses?",
+        "爸爸，我们帮你找眼镜好吗？",
+        "Good idea, Peppa. If you find them, Daddy will stop being so grumpy.",
+        "好主意，佩奇。找到眼镜，爸爸就不会这么暴躁了。",
+        "I'm not grumpy!",
+        "我才没有暴躁呢！"
+      ],
+      "manifest": "scenes/peppa-lost-glasses/scene.json"
+    },
+    {
+      "id": "scene_I2NmYZZ4ICk",
+      "slug": "peppa-pretend-doctors",
+      "title": "病人可以有访客吗？",
+      "english": "Can the patient have a visitor?",
+      "note": "Peppa Pig",
+      "source": "https://www.youtube.com/watch?v=pDUASheI0aI&t=216s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/peppa-pretend-doctors/peppa-pretend-doctors-poster-642294351759.jpg",
+      "tags": [
+        "Peppa Pig",
+        "小猪佩奇",
+        "Daddy Pig",
+        "Peppa",
+        "Suzy Sheep",
+        "Mummy Pig",
+        "猪爸爸",
+        "佩奇",
+        "小羊苏西",
+        "猪妈妈",
+        "doctor",
+        "医生",
+        "pretend play",
+        "角色扮演"
+      ],
+      "quotes": [
+        "Oh no! What's wrong with George?",
+        "哦，不！乔治怎么了？",
+        "Don't worry, Daddy. It's only a game.",
+        "别担心，爸爸。我们只是在玩游戏。",
+        "George is our patient.",
+        "乔治是我们的病人。",
+        "Oh, I see. Can the patient have a visitor?",
+        "哦，我明白了。病人可以有访客吗？",
+        "Just for a little while. He might get tired.",
+        "只能一小会儿。他可能会累的。",
+        "Cookies!",
+        "饼干！",
+        "Yes, they're for George. They're his medicine to make him feel better.",
+        "对，给乔治的。这是让他好起来的药。"
+      ],
+      "manifest": "scenes/peppa-pretend-doctors/scene.json"
+    },
+    {
+      "id": "scene_bxQM0S-Xsn4",
+      "slug": "peppa-toy-dinosaur",
+      "title": "那是恐龙吗？",
+      "english": "Is that a dinosaur?",
+      "note": "Peppa Pig",
+      "source": "https://www.youtube.com/watch?v=SHi4XJxgfVs&t=371s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/peppa-toy-dinosaur/peppa-toy-dinosaur-poster-8226511ce837.jpg",
+      "tags": [
+        "Peppa Pig",
+        "小猪佩奇",
+        "Danny Dog",
+        "Peppa",
+        "George",
+        "Madame Gazelle",
+        "小狗丹尼",
+        "佩奇",
+        "乔治",
+        "羚羊夫人",
+        "dinosaur",
+        "恐龙",
+        "toys",
+        "玩具"
+      ],
+      "quotes": [
+        "Is that a dinosaur?",
+        "那是恐龙吗？",
+        "It's just a toy dinosaur.",
+        "那只是一只玩具恐龙。",
+        "Grr! Dinosaur!",
+        "吼！恐龙！",
+        "Brilliant!",
+        "太棒了！",
+        "What?",
+        "什么？",
+        "Dinosaur! Grr!",
+        "恐龙！吼！",
+        "Dinosaur! Grr!",
+        "恐龙！吼！",
+        "Really scary!",
+        "真吓人！",
+        "That's brilliant!",
+        "太棒了！"
+      ],
+      "manifest": "scenes/peppa-toy-dinosaur/scene.json"
+    },
+    {
+      "id": "scene_pZDW-Ao5SAw",
+      "slug": "peppa-pancake",
+      "routeSlug": "that-pancake-went-too-high",
+      "title": "煎饼飞得太高啦！",
+      "english": "That pancake went too high!",
+      "note": "Peppa Pig",
+      "source": "https://www.youtube.com/watch?v=mzGkxm7lLrg&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/peppa-pancake/peppa-pancake-poster-9b63f7cba22c.jpg",
+      "tags": [
+        "Peppa Pig",
+        "Peppa",
+        "Daddy Pig",
+        "Mummy Pig",
+        "pancakes",
+        "cooking",
+        "佩奇",
+        "煎饼",
+        "做饭"
+      ],
+      "quotes": [
+        "Is everyone watching?",
+        "大家都在看吗？",
+        "The secret of making a good pancake is to flip it high into the air.",
+        "做出好煎饼的秘诀，就是把它高高地翻到空中。",
+        "A-one, two, three, hoopla!",
+        "一、二、三，嘿！",
+        "Silly Daddy!",
+        "傻爸爸！",
+        "Oh, maybe that was just a bit too high.",
+        "哦，可能刚才翻得有点太高了。",
+        "Oh, what a shame. That was the last pancake.",
+        "哦，真可惜，那是最后一张煎饼了。",
+        "It should be a simple matter to get it down.",
+        "把它弄下来应该很简单。"
+      ],
+      "manifest": "scenes/peppa-pancake/scene.json"
+    },
+    {
+      "id": "scene_kSciHakPXA0",
+      "slug": "peppa-another-turn",
+      "routeSlug": "let-george-have-another-turn",
+      "title": "再给乔治一次机会",
+      "english": "Let George have another turn",
+      "note": "Peppa Pig",
+      "source": "https://www.youtube.com/watch?v=SHi4XJxgfVs&t=145s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/peppa-another-turn/peppa-another-turn-poster-4d682a01a0f8.jpg",
+      "tags": [
+        "Peppa Pig",
+        "Peppa",
+        "Daddy Pig",
+        "George",
+        "hide and seek",
+        "taking turns",
+        "佩奇",
+        "捉迷藏",
+        "轮流"
+      ],
+      "quotes": [
+        "George found me! Now it's Daddy's turn to hide.",
+        "乔治找到我啦！现在轮到爸爸藏起来了。",
+        "Oh, I think George should have another turn.",
+        "哦，我觉得应该让乔治再来一次。",
+        "But George isn't very good at hiding.",
+        "可是乔治不太会藏。",
+        "I'm sure he'll be better this time. Close your eyes and start counting.",
+        "我相信这次他会藏得更好。闭上眼睛，开始数数吧。"
+      ],
+      "manifest": "scenes/peppa-another-turn/scene.json"
+    }
+  ],
+  "locales": {
+    "en": {
+      "scenes": {
+        "scene_9aW-AUNHyhc": {
+          "title": "You were sitting on them!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 243.15–258.15 seconds of the original upload."
+        },
+        "scene_y5A8q-8McdQ": {
+          "title": "Guess what we have been doing!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 189.2–214.05 seconds of the original upload."
+        },
+        "scene_dJ3aIJ7VuJ0": {
+          "title": "Can we help find your glasses?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 108.15–130.5 seconds of the original upload."
+        },
+        "scene_I2NmYZZ4ICk": {
+          "title": "Can the patient have a visitor?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 216.3–239.7 seconds of the original upload."
+        },
+        "scene_bxQM0S-Xsn4": {
+          "title": "Is that a dinosaur?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 371.8–395.55 seconds of the original upload."
+        },
+        "scene_pZDW-Ao5SAw": {
+          "title": "That pancake went too high!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 0–29.75 seconds of the original upload. Cartoon cooking mishap with a hot pan; adult cooking activity, not a child demonstration to copy. Mild family teasing."
+        },
+        "scene_kSciHakPXA0": {
+          "title": "Let George have another turn",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 145.4–166.12 seconds of the original upload. Gentle sibling comparison. Stops before Peppa begins the next counting turn; no narrator practice role."
+        }
+      },
+      "roles": {
+        "role_JbjeUfpdQeo": {
+          "name": "Mummy Pig",
+          "hint": "1 line"
+        },
+        "role_kG1Vhx3plc4": {
+          "name": "Daddy Pig",
+          "hint": "2 lines"
+        },
+        "role_Uivz-A7quiE": {
+          "name": "Peppa",
+          "hint": "1 line"
+        },
+        "role_nsjPD0zHc9g": {
+          "name": "Peppa",
+          "hint": "4 lines"
+        },
+        "role_vzHo-mLf8QQ": {
+          "name": "Daddy Pig",
+          "hint": "3 lines"
+        },
+        "role_GZ118819nuE": {
+          "name": "Daddy Pig",
+          "hint": "3 lines"
+        },
+        "role_zYkp26hxuB0": {
+          "name": "Mummy Pig",
+          "hint": "2 lines"
+        },
+        "role_SAm7j7Q6lfE": {
+          "name": "Peppa",
+          "hint": "1 line"
+        },
+        "role_TqcAfKZEoEo": {
+          "name": "Daddy Pig",
+          "hint": "2 lines"
+        },
+        "role_ORPImTlyeZM": {
+          "name": "Peppa",
+          "hint": "3 lines"
+        },
+        "role_5uI-c2fNuK0": {
+          "name": "Suzy Sheep",
+          "hint": "1 line"
+        },
+        "role_iEFhkfUkYtY": {
+          "name": "Mummy Pig",
+          "hint": "1 line"
+        },
+        "role__8jMontcRkc": {
+          "name": "Danny Dog",
+          "hint": "5 lines"
+        },
+        "role_MGcwyTjk6fU": {
+          "name": "Peppa",
+          "hint": "1 line"
+        },
+        "role_J5K-PqReqUY": {
+          "name": "George",
+          "hint": "2 lines"
+        },
+        "role_sC6qozH6L3I": {
+          "name": "Madame Gazelle",
+          "hint": "1 line"
+        },
+        "role_hUKB1yRtZXw": {
+          "name": "Daddy Pig",
+          "hint": "5 lines"
+        },
+        "role_ivc93Nvkxm8": {
+          "name": "Peppa",
+          "hint": "1 line"
+        },
+        "role_k125HlEUqb8": {
+          "name": "Mummy Pig",
+          "hint": "1 line"
+        },
+        "role_shoymM1aoQM": {
+          "name": "Peppa",
+          "hint": "2 lines"
+        },
+        "role_mUwDImJFuLo": {
+          "name": "Daddy Pig",
+          "hint": "2 lines"
+        }
+      },
+      "notices": {
+        "library": "Adult prototype testing · Dubs save in this browser. Videos upload only when you confirm creating a playback link. Redistribution permission for the meme clips is unconfirmed.",
+        "scene": "This scene is for adult prototype testing. The full film is not beginner learning material for children.The creators do not endorse this product."
+      }
+    },
+    "zh-CN": {
+      "scenes": {
+        "scene_9aW-AUNHyhc": {
+          "title": "你一直坐在眼镜上！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 243.15–258.15 秒的节选。"
+        },
+        "scene_y5A8q-8McdQ": {
+          "title": "猜猜我们干什么了！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 189.2–214.05 秒的节选。"
+        },
+        "scene_dJ3aIJ7VuJ0": {
+          "title": "我们帮你找眼镜好吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 108.15–130.5 秒的节选。"
+        },
+        "scene_I2NmYZZ4ICk": {
+          "title": "病人可以有访客吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 216.3–239.7 秒的节选。"
+        },
+        "scene_bxQM0S-Xsn4": {
+          "title": "那是恐龙吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 371.8–395.55 秒的节选。"
+        },
+        "scene_pZDW-Ao5SAw": {
+          "title": "煎饼飞得太高啦！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 0–29.75 秒的连续节选。Cartoon cooking mishap with a hot pan; adult cooking activity, not a child demonstration to copy. Mild family teasing."
+        },
+        "scene_kSciHakPXA0": {
+          "title": "再给乔治一次机会",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 145.4–166.12 秒的连续节选。Gentle sibling comparison. Stops before Peppa begins the next counting turn; no narrator practice role."
+        }
+      },
+      "roles": {
+        "role_JbjeUfpdQeo": {
+          "name": "猪妈妈",
+          "hint": "1 句台词"
+        },
+        "role_kG1Vhx3plc4": {
+          "name": "猪爸爸",
+          "hint": "2 句台词"
+        },
+        "role_Uivz-A7quiE": {
+          "name": "佩奇",
+          "hint": "1 句台词"
+        },
+        "role_nsjPD0zHc9g": {
+          "name": "佩奇",
+          "hint": "4 句台词"
+        },
+        "role_vzHo-mLf8QQ": {
+          "name": "猪爸爸",
+          "hint": "3 句台词"
+        },
+        "role_GZ118819nuE": {
+          "name": "猪爸爸",
+          "hint": "3 句台词"
+        },
+        "role_zYkp26hxuB0": {
+          "name": "猪妈妈",
+          "hint": "2 句台词"
+        },
+        "role_SAm7j7Q6lfE": {
+          "name": "佩奇",
+          "hint": "1 句台词"
+        },
+        "role_TqcAfKZEoEo": {
+          "name": "猪爸爸",
+          "hint": "2 句台词"
+        },
+        "role_ORPImTlyeZM": {
+          "name": "佩奇",
+          "hint": "3 句台词"
+        },
+        "role_5uI-c2fNuK0": {
+          "name": "小羊苏西",
+          "hint": "1 句台词"
+        },
+        "role_iEFhkfUkYtY": {
+          "name": "猪妈妈",
+          "hint": "1 句台词"
+        },
+        "role__8jMontcRkc": {
+          "name": "小狗丹尼",
+          "hint": "5 句台词"
+        },
+        "role_MGcwyTjk6fU": {
+          "name": "佩奇",
+          "hint": "1 句台词"
+        },
+        "role_J5K-PqReqUY": {
+          "name": "乔治",
+          "hint": "2 句台词"
+        },
+        "role_sC6qozH6L3I": {
+          "name": "羚羊夫人",
+          "hint": "1 句台词"
+        },
+        "role_hUKB1yRtZXw": {
+          "name": "猪爸爸",
+          "hint": "5 句台词"
+        },
+        "role_ivc93Nvkxm8": {
+          "name": "佩奇",
+          "hint": "1 句台词"
+        },
+        "role_k125HlEUqb8": {
+          "name": "猪妈妈",
+          "hint": "1 句台词"
+        },
+        "role_shoymM1aoQM": {
+          "name": "佩奇",
+          "hint": "2 句台词"
+        },
+        "role_mUwDImJFuLo": {
+          "name": "猪爸爸",
+          "hint": "2 句台词"
+        }
+      },
+      "notices": {
+        "library": "成人原型测试 · 配音保存在此浏览器。只有确认创建播放链接时，才会上传视频。影视梗片段尚未确认再分发许可。",
+        "scene": "本片段用于成人原型测试；完整电影并非儿童入门教材。创作者未对本产品作出背书。"
+      }
+    },
+    "es": {
+      "scenes": {
+        "scene_9aW-AUNHyhc": {
+          "title": "¡Estabas sentado encima!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 243.15–258.15 del vídeo original."
+        },
+        "scene_y5A8q-8McdQ": {
+          "title": "¡Adivina qué hemos hecho!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 189.2–214.05 del vídeo original."
+        },
+        "scene_dJ3aIJ7VuJ0": {
+          "title": "¿Te ayudamos a buscar las gafas?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 108.15–130.5 del vídeo original."
+        },
+        "scene_I2NmYZZ4ICk": {
+          "title": "¿Puede recibir visitas el paciente?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 216.3–239.7 del vídeo original."
+        },
+        "scene_bxQM0S-Xsn4": {
+          "title": "¿Eso es un dinosaurio?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 371.8–395.55 del vídeo original."
+        },
+        "scene_pZDW-Ao5SAw": {
+          "title": "¡La tortita ha volado demasiado alto!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 0–29.75 del vídeo original. Accidente de cocina animado con una sartén caliente. Es una actividad de adultos, no una demostración para que los niños la imiten. Hay bromas familiares leves."
+        },
+        "scene_kSciHakPXA0": {
+          "title": "Deja que George vuelva a intentarlo",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 145.4–166.12 del vídeo original. Comparación suave entre hermanos. Termina antes de que Peppa empiece a contar otra vez. El narrador no es un personaje practicable."
+        }
+      },
+      "roles": {
+        "role_JbjeUfpdQeo": {
+          "name": "Mamá Pig",
+          "hint": "1 frase"
+        },
+        "role_kG1Vhx3plc4": {
+          "name": "Papá Pig",
+          "hint": "2 frases"
+        },
+        "role_Uivz-A7quiE": {
+          "name": "Peppa",
+          "hint": "1 frase"
+        },
+        "role_nsjPD0zHc9g": {
+          "name": "Peppa",
+          "hint": "4 frases"
+        },
+        "role_vzHo-mLf8QQ": {
+          "name": "Papá Pig",
+          "hint": "3 frases"
+        },
+        "role_GZ118819nuE": {
+          "name": "Papá Pig",
+          "hint": "3 frases"
+        },
+        "role_zYkp26hxuB0": {
+          "name": "Mamá Pig",
+          "hint": "2 frases"
+        },
+        "role_SAm7j7Q6lfE": {
+          "name": "Peppa",
+          "hint": "1 frase"
+        },
+        "role_TqcAfKZEoEo": {
+          "name": "Papá Pig",
+          "hint": "2 frases"
+        },
+        "role_ORPImTlyeZM": {
+          "name": "Peppa",
+          "hint": "3 frases"
+        },
+        "role_5uI-c2fNuK0": {
+          "name": "Suzy Sheep",
+          "hint": "1 frase"
+        },
+        "role_iEFhkfUkYtY": {
+          "name": "Mamá Pig",
+          "hint": "1 frase"
+        },
+        "role__8jMontcRkc": {
+          "name": "Danny Dog",
+          "hint": "5 frases"
+        },
+        "role_MGcwyTjk6fU": {
+          "name": "Peppa",
+          "hint": "1 frase"
+        },
+        "role_J5K-PqReqUY": {
+          "name": "George",
+          "hint": "2 frases"
+        },
+        "role_sC6qozH6L3I": {
+          "name": "Señora Gazelle",
+          "hint": "1 frase"
+        },
+        "role_hUKB1yRtZXw": {
+          "name": "Papá Pig",
+          "hint": "5 frases"
+        },
+        "role_ivc93Nvkxm8": {
+          "name": "Peppa",
+          "hint": "1 frase"
+        },
+        "role_k125HlEUqb8": {
+          "name": "Mamá Pig",
+          "hint": "1 frase"
+        },
+        "role_shoymM1aoQM": {
+          "name": "Peppa",
+          "hint": "2 frases"
+        },
+        "role_mUwDImJFuLo": {
+          "name": "Papá Pig",
+          "hint": "2 frases"
+        }
+      },
+      "notices": {
+        "library": "Pruebas del prototipo con adultos · Los doblajes se guardan en este navegador. Los vídeos solo se suben cuando confirmas la creación de un enlace de reproducción. No se ha confirmado el permiso de redistribución de estos fragmentos.",
+        "scene": "Esta escena es para pruebas del prototipo con adultos. La película completa no es material de iniciación para niños.Los creadores no respaldan este producto."
+      }
+    },
+    "ja": {
+      "scenes": {
+        "scene_9aW-AUNHyhc": {
+          "title": "その上に座ってたんだよ！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の243.15–258.15秒の抜粋です。"
+        },
+        "scene_y5A8q-8McdQ": {
+          "title": "何をしてたと思う？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の189.2–214.05秒の抜粋です。"
+        },
+        "scene_dJ3aIJ7VuJ0": {
+          "title": "メガネを一緒に探そうか？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の108.15–130.5秒の抜粋です。"
+        },
+        "scene_I2NmYZZ4ICk": {
+          "title": "お見舞いに入ってもいい？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の216.3–239.7秒の抜粋です。"
+        },
+        "scene_bxQM0S-Xsn4": {
+          "title": "あれは恐竜？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の371.8–395.55秒の抜粋です。"
+        },
+        "scene_pZDW-Ao5SAw": {
+          "title": "パンケーキが高く飛びすぎた！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の0–29.75秒の抜粋です。 熱いフライパンを使うアニメの料理の失敗です。大人の調理場面で、子どもがまねするための実演ではありません。家族間の軽いからかいがあります。"
+        },
+        "scene_kSciHakPXA0": {
+          "title": "ジョージにもう一度やらせてあげよう",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の145.4–166.12秒の抜粋です。 きょうだいを穏やかに比べる場面です。ペッパが次に数え始める前で終わります。ナレーターは練習用の役にしていません。"
+        }
+      },
+      "roles": {
+        "role_JbjeUfpdQeo": {
+          "name": "ママピッグ",
+          "hint": "セリフ1行"
+        },
+        "role_kG1Vhx3plc4": {
+          "name": "パパピッグ",
+          "hint": "セリフ2行"
+        },
+        "role_Uivz-A7quiE": {
+          "name": "ペッパ",
+          "hint": "セリフ1行"
+        },
+        "role_nsjPD0zHc9g": {
+          "name": "ペッパ",
+          "hint": "セリフ4行"
+        },
+        "role_vzHo-mLf8QQ": {
+          "name": "パパピッグ",
+          "hint": "セリフ3行"
+        },
+        "role_GZ118819nuE": {
+          "name": "パパピッグ",
+          "hint": "セリフ3行"
+        },
+        "role_zYkp26hxuB0": {
+          "name": "ママピッグ",
+          "hint": "セリフ2行"
+        },
+        "role_SAm7j7Q6lfE": {
+          "name": "ペッパ",
+          "hint": "セリフ1行"
+        },
+        "role_TqcAfKZEoEo": {
+          "name": "パパピッグ",
+          "hint": "セリフ2行"
+        },
+        "role_ORPImTlyeZM": {
+          "name": "ペッパ",
+          "hint": "セリフ3行"
+        },
+        "role_5uI-c2fNuK0": {
+          "name": "スージー・シープ",
+          "hint": "セリフ1行"
+        },
+        "role_iEFhkfUkYtY": {
+          "name": "ママピッグ",
+          "hint": "セリフ1行"
+        },
+        "role__8jMontcRkc": {
+          "name": "ダニー・ドッグ",
+          "hint": "セリフ5行"
+        },
+        "role_MGcwyTjk6fU": {
+          "name": "ペッパ",
+          "hint": "セリフ1行"
+        },
+        "role_J5K-PqReqUY": {
+          "name": "ジョージ",
+          "hint": "セリフ2行"
+        },
+        "role_sC6qozH6L3I": {
+          "name": "マダム・ガゼル",
+          "hint": "セリフ1行"
+        },
+        "role_hUKB1yRtZXw": {
+          "name": "パパピッグ",
+          "hint": "セリフ5行"
+        },
+        "role_ivc93Nvkxm8": {
+          "name": "ペッパ",
+          "hint": "セリフ1行"
+        },
+        "role_k125HlEUqb8": {
+          "name": "ママピッグ",
+          "hint": "セリフ1行"
+        },
+        "role_shoymM1aoQM": {
+          "name": "ペッパ",
+          "hint": "セリフ2行"
+        },
+        "role_mUwDImJFuLo": {
+          "name": "パパピッグ",
+          "hint": "セリフ2行"
+        }
+      },
+      "notices": {
+        "library": "大人向け試作版テスト・吹き替えはこのブラウザに保存され。再生リンクの作成を確認した場合に限り、動画がアップロードされます。使用している映像の再配布許諾は未確認です。",
+        "scene": "このシーンは大人による試作版のテスト用です。映画全編は、子ども向けの入門教材ではありません。作品の制作者がこの製品を推奨しているわけではありません。"
+      }
+    },
+    "ko": {
+      "scenes": {
+        "scene_9aW-AUNHyhc": {
+          "title": "그 위에 앉아 있었잖아요!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 243.15–258.15초 구간을 발췌했어요."
+        },
+        "scene_y5A8q-8McdQ": {
+          "title": "우리가 뭘 했는지 맞혀 봐!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 189.2–214.05초 구간을 발췌했어요."
+        },
+        "scene_dJ3aIJ7VuJ0": {
+          "title": "안경 찾는 거 도와드릴까요?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 108.15–130.5초 구간을 발췌했어요."
+        },
+        "scene_I2NmYZZ4ICk": {
+          "title": "환자에게 면회해도 되나요?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 216.3–239.7초 구간을 발췌했어요."
+        },
+        "scene_bxQM0S-Xsn4": {
+          "title": "저건 공룡이야?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 371.8–395.55초 구간을 발췌했어요."
+        },
+        "scene_pZDW-Ao5SAw": {
+          "title": "팬케이크가 너무 높이 날아갔어!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 0–29.75초 구간을 발췌했어요. 뜨거운 프라이팬을 사용하는 만화 속 요리 소동이에요. 어른의 요리 활동이며 어린이가 따라 할 시범이 아니에요. 가벼운 가족 간 장난이 있어요."
+        },
+        "scene_kSciHakPXA0": {
+          "title": "조지에게 한 번 더 기회를 줘요",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 145.4–166.12초 구간을 발췌했어요. 부드러운 남매 비교 장면이에요. 페파가 다음 숫자를 세기 전에 끝나요. 내레이터는 연습할 수 있는 역할이 아니에요."
+        }
+      },
+      "roles": {
+        "role_JbjeUfpdQeo": {
+          "name": "엄마 돼지",
+          "hint": "대사 1개"
+        },
+        "role_kG1Vhx3plc4": {
+          "name": "아빠 돼지",
+          "hint": "대사 2개"
+        },
+        "role_Uivz-A7quiE": {
+          "name": "페파",
+          "hint": "대사 1개"
+        },
+        "role_nsjPD0zHc9g": {
+          "name": "페파",
+          "hint": "대사 4개"
+        },
+        "role_vzHo-mLf8QQ": {
+          "name": "아빠 돼지",
+          "hint": "대사 3개"
+        },
+        "role_GZ118819nuE": {
+          "name": "아빠 돼지",
+          "hint": "대사 3개"
+        },
+        "role_zYkp26hxuB0": {
+          "name": "엄마 돼지",
+          "hint": "대사 2개"
+        },
+        "role_SAm7j7Q6lfE": {
+          "name": "페파",
+          "hint": "대사 1개"
+        },
+        "role_TqcAfKZEoEo": {
+          "name": "아빠 돼지",
+          "hint": "대사 2개"
+        },
+        "role_ORPImTlyeZM": {
+          "name": "페파",
+          "hint": "대사 3개"
+        },
+        "role_5uI-c2fNuK0": {
+          "name": "수지 양",
+          "hint": "대사 1개"
+        },
+        "role_iEFhkfUkYtY": {
+          "name": "엄마 돼지",
+          "hint": "대사 1개"
+        },
+        "role__8jMontcRkc": {
+          "name": "대니 도그",
+          "hint": "대사 5개"
+        },
+        "role_MGcwyTjk6fU": {
+          "name": "페파",
+          "hint": "대사 1개"
+        },
+        "role_J5K-PqReqUY": {
+          "name": "조지",
+          "hint": "대사 2개"
+        },
+        "role_sC6qozH6L3I": {
+          "name": "가젤 선생님",
+          "hint": "대사 1개"
+        },
+        "role_hUKB1yRtZXw": {
+          "name": "아빠 돼지",
+          "hint": "대사 5개"
+        },
+        "role_ivc93Nvkxm8": {
+          "name": "페파",
+          "hint": "대사 1개"
+        },
+        "role_k125HlEUqb8": {
+          "name": "엄마 돼지",
+          "hint": "대사 1개"
+        },
+        "role_shoymM1aoQM": {
+          "name": "페파",
+          "hint": "대사 2개"
+        },
+        "role_mUwDImJFuLo": {
+          "name": "아빠 돼지",
+          "hint": "대사 2개"
+        }
+      },
+      "notices": {
+        "library": "성인 대상 시제품 테스트 · 더빙은 이 브라우저에 저장돼요. 재생 링크 만들기를 확인할 때만 동영상이 업로드돼요. 영상 클립의 재배포 허가는 확인되지 않았어요.",
+        "scene": "이 장면은 성인을 대상으로 한 시제품 테스트용이에요. 영화 전체가 어린이 입문 학습 자료인 것은 아니에요.원작 제작자가 이 제품을 보증하는 것은 아니에요."
+      }
+    }
+  }
+}

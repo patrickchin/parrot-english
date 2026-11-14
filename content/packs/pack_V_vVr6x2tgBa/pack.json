@@ -1,0 +1,612 @@
+{
+  "version": 1,
+  "id": "pack_V_vVr6x2tgBa",
+  "title": "Finding Nemo",
+  "franchise": "Finding Nemo",
+  "description": "English dubbing scenes from Finding Nemo.",
+  "author": "Parrotbook",
+  "scenes": [
+    {
+      "id": "scene_oq1hQgYa",
+      "slug": "keep-swimming",
+      "title": "一直游下去！",
+      "english": "Just keep swimming. Just keep swimming. Just keep swimming.",
+      "note": "Finding Nemo",
+      "source": "https://www.youtube.com/watch?v=AsemWIZUk4k&t=4s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/keep-swimming/keep-swimming-poster-d2e6c6472194.jpg",
+      "tags": [
+        "Finding Nemo",
+        "海底总动员",
+        "Nemo",
+        "Dory",
+        "Marlin",
+        "多莉",
+        "马林",
+        "swimming",
+        "游泳",
+        "encouragement",
+        "鼓励"
+      ],
+      "quotes": [
+        "When life gets you down, you know what you gotta do?",
+        "当生活让你沮丧时，你知道该怎么办吗？",
+        "I don't wanna know what you gotta do.",
+        "我不想知道你要怎么办。",
+        "Just keep swimming. Just keep swimming. Just keep swimming, swimming, swimming, swimming.",
+        "一直游下去。一直游下去。游啊，游啊，游啊。",
+        "What do we do? We swim, swim.",
+        "我们要做什么？我们游啊，游啊。",
+        "Dory, no singing!",
+        "多莉，别唱了！"
+      ],
+      "manifest": "scenes/keep-swimming/scene.json"
+    },
+    {
+      "id": "scene_EI_7V5r9",
+      "slug": "fish-friends",
+      "title": "鱼儿是朋友！",
+      "english": "Fish are friends, not food.",
+      "note": "Finding Nemo",
+      "source": "https://www.youtube.com/watch?v=c6mVl6fAxLw&t=15s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/fish-friends/fish-friends-poster-09f37d88c736.jpg",
+      "tags": [
+        "Finding Nemo",
+        "海底总动员",
+        "Nemo",
+        "Sharks",
+        "Chum",
+        "Anchor",
+        "鲨鱼合声",
+        "查姆",
+        "安可",
+        "friendship",
+        "友谊",
+        "sharks",
+        "鲨鱼"
+      ],
+      "quotes": [
+        "I must first change myself. Fish are friends, not food.",
+        "我必须先改变自己。鱼儿是朋友，不是食物。",
+        "Except stinking dolphins.",
+        "那些讨厌的海豚除外。",
+        "Dolphins! Yeah, they think they're so cute.",
+        "海豚！对，它们觉得自己可爱极了。"
+      ],
+      "manifest": "scenes/fish-friends/scene.json"
+    },
+    {
+      "id": "scene_XZWUH0xrnko",
+      "slug": "dory-forgot-the-tag",
+      "routeSlug": "dory-forgot-the-tag",
+      "title": "我的鳍上有标签？",
+      "english": "There is a tag on my fin?",
+      "note": "Finding Nemo",
+      "source": "https://www.youtube.com/watch?v=1LhFiJd8GnE&t=31s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/dory-forgot-the-tag/dory-forgot-the-tag-poster-2dcb0843690f.jpg",
+      "tags": [
+        "Finding Nemo",
+        "Finding Dory",
+        "我的鳍上有标签？",
+        "Hank",
+        "Dory",
+        "汉克",
+        "多莉"
+      ],
+      "quotes": [
+        "All you have to do is give me the tag.",
+        "你只要把标签给我就行。",
+        "What tag? There's a tag on my fin?",
+        "什么标签？我的鳍上有标签？",
+        "How could you forget? You have a tag on your fin.",
+        "你怎么会忘了？你的鳍上有标签。",
+        "Oh, no, I'm sorry. I suffer from short-term memory loss.",
+        "抱歉，我有短期失忆症。",
+        "You don't remember what we were talking about?",
+        "你不记得我们在聊什么了？",
+        "Mm-mm.",
+        "不记得了。"
+      ],
+      "manifest": "scenes/dory-forgot-the-tag/scene.json"
+    },
+    {
+      "id": "scene_1M4ndSuAIeM",
+      "slug": "nemo-exit-buddy",
+      "routeSlug": "nemo-exit-buddy",
+      "title": "找到你的出口伙伴",
+      "english": "Find your exit buddy",
+      "note": "Finding Nemo",
+      "source": "https://www.youtube.com/watch?v=rVpVHI3aloI&t=5s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/nemo-exit-buddy/nemo-exit-buddy-poster-8d456584eff6.jpg",
+      "tags": [
+        "Finding Nemo",
+        "找到你的出口伙伴",
+        "Crush",
+        "Marlin",
+        "Dory",
+        "龟龟",
+        "马林",
+        "多莉"
+      ],
+      "quotes": [
+        "All right, we're here, dudes. Get ready. Your exit's coming up, man.",
+        "伙计们，我们到了。准备好，你们的出口快到了。",
+        "Where? I don't see it.",
+        "哪里？我没看见。",
+        "Right there.",
+        "就在那儿。",
+        "I see it! I see it!",
+        "我看见了！",
+        "You mean the swirling vortex of terror?",
+        "你说的是那个可怕的漩涡？",
+        "That's it, dude.",
+        "就是那里，伙计。",
+        "Of course it is.",
+        "果然如此。",
+        "Okay, first find your exit buddy. Do you have your exit buddy?",
+        "先找到你的出口伙伴。找到了吗？",
+        "Yes!",
+        "找到了！",
+        "Okay.",
+        "好。"
+      ],
+      "manifest": "scenes/nemo-exit-buddy/scene.json"
+    },
+    {
+      "id": "scene_3ETMSXAqzEs",
+      "slug": "nemo-speaking-whale",
+      "routeSlug": "nemo-speaking-whale",
+      "title": "换一种方言试试",
+      "english": "Maybe a different dialect",
+      "note": "Finding Nemo",
+      "source": "https://www.youtube.com/watch?v=jJGeeryk0Eo&t=71s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/nemo-speaking-whale/nemo-speaking-whale-poster-43ce05b10840.jpg",
+      "tags": [
+        "Finding Nemo",
+        "换一种方言试试",
+        "Marlin",
+        "Dory",
+        "马林",
+        "多莉"
+      ],
+      "quotes": [
+        "Dory, Dory, this is not whale. You're speaking like upset stomach.",
+        "多莉，这不是鲸鱼语。听起来像肚子疼。",
+        "Maybe I should try humpback.",
+        "也许我该试试座头鲸语。",
+        "No, don't try humpback. All right, you actually sound sick.",
+        "别试座头鲸语。你听起来真的像生病了。",
+        "Maybe louder, huh?",
+        "也许应该大声点？",
+        "Don't do that.",
+        "别那样。",
+        "Too much orca, didn't it? It sounded a little orca-ish.",
+        "太像虎鲸了，是吧？有点虎鲸的感觉。",
+        "It doesn't sound orca. It sounds like nothing I've ever heard.",
+        "一点也不像虎鲸。我从没听过这种声音。"
+      ],
+      "manifest": "scenes/nemo-speaking-whale/scene.json"
+    }
+  ],
+  "locales": {
+    "en": {
+      "scenes": {
+        "scene_oq1hQgYa": {
+          "title": "Just keep swimming!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 4.5–15.6 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_EI_7V5r9": {
+          "title": "Fish are friends!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 15.4–25.65 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_XZWUH0xrnko": {
+          "title": "There is a tag on my fin?",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_1M4ndSuAIeM": {
+          "title": "Find your exit buddy",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_3ETMSXAqzEs": {
+          "title": "Maybe a different dialect",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        }
+      },
+      "roles": {
+        "role_k7e1KRth": {
+          "name": "Dory",
+          "hint": "3 lines"
+        },
+        "role_y7mBEj-GiRI": {
+          "name": "Marlin",
+          "hint": "2 lines"
+        },
+        "role_gkU-I3wxM6c": {
+          "name": "Sharks",
+          "hint": "1 line"
+        },
+        "role_gp1z-ZLSL6Y": {
+          "name": "Chum",
+          "hint": "1 line"
+        },
+        "role_74zNIJOZO7U": {
+          "name": "Anchor",
+          "hint": "1 line"
+        },
+        "role_1G4bNl5b0j4": {
+          "name": "Hank",
+          "hint": "3 lines"
+        },
+        "role_Zi1HqrucPIM": {
+          "name": "Dory",
+          "hint": "3 lines"
+        },
+        "role_iSu9D4PqC1A": {
+          "name": "Crush",
+          "hint": "5 lines"
+        },
+        "role_hGL5XBuFwGc": {
+          "name": "Marlin",
+          "hint": "3 lines"
+        },
+        "role_afmsmZ2bsI8": {
+          "name": "Dory",
+          "hint": "2 lines"
+        },
+        "role_R9JrW6iAf6s": {
+          "name": "Marlin",
+          "hint": "4 lines"
+        },
+        "role_oxxbg7pReN0": {
+          "name": "Dory",
+          "hint": "3 lines"
+        }
+      },
+      "notices": {
+        "library": "Adult prototype testing · Dubs save in this browser. Videos upload only when you confirm creating a playback link. Redistribution permission for the meme clips is unconfirmed.",
+        "scene": "This scene is for adult prototype testing. The full film is not beginner learning material for children.The creators do not endorse this product."
+      }
+    },
+    "zh-CN": {
+      "scenes": {
+        "scene_oq1hQgYa": {
+          "title": "一直游下去！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 4.5–15.6 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_EI_7V5r9": {
+          "title": "鱼儿是朋友！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 15.4–25.65 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_XZWUH0xrnko": {
+          "title": "我的鳍上有标签？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_1M4ndSuAIeM": {
+          "title": "找到你的出口伙伴",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_3ETMSXAqzEs": {
+          "title": "换一种方言试试",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        }
+      },
+      "roles": {
+        "role_k7e1KRth": {
+          "name": "多莉",
+          "hint": "3 句台词"
+        },
+        "role_y7mBEj-GiRI": {
+          "name": "马林",
+          "hint": "2 句台词"
+        },
+        "role_gkU-I3wxM6c": {
+          "name": "鲨鱼合声",
+          "hint": "1 句台词"
+        },
+        "role_gp1z-ZLSL6Y": {
+          "name": "查姆",
+          "hint": "1 句台词"
+        },
+        "role_74zNIJOZO7U": {
+          "name": "安可",
+          "hint": "1 句台词"
+        },
+        "role_1G4bNl5b0j4": {
+          "name": "汉克",
+          "hint": "3 句台词"
+        },
+        "role_Zi1HqrucPIM": {
+          "name": "多莉",
+          "hint": "3 句台词"
+        },
+        "role_iSu9D4PqC1A": {
+          "name": "龟龟",
+          "hint": "5 句台词"
+        },
+        "role_hGL5XBuFwGc": {
+          "name": "马林",
+          "hint": "3 句台词"
+        },
+        "role_afmsmZ2bsI8": {
+          "name": "多莉",
+          "hint": "2 句台词"
+        },
+        "role_R9JrW6iAf6s": {
+          "name": "马林",
+          "hint": "4 句台词"
+        },
+        "role_oxxbg7pReN0": {
+          "name": "多莉",
+          "hint": "3 句台词"
+        }
+      },
+      "notices": {
+        "library": "成人原型测试 · 配音保存在此浏览器。只有确认创建播放链接时，才会上传视频。影视梗片段尚未确认再分发许可。",
+        "scene": "本片段用于成人原型测试；完整电影并非儿童入门教材。创作者未对本产品作出背书。"
+      }
+    },
+    "es": {
+      "scenes": {
+        "scene_oq1hQgYa": {
+          "title": "¡Sigue nadando!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 4.5–15.6 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_EI_7V5r9": {
+          "title": "¡Los peces son amigos!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 15.4–25.65 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_XZWUH0xrnko": {
+          "title": "¿Tengo una etiqueta en la aleta?",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_1M4ndSuAIeM": {
+          "title": "Busca a tu compañero de salida",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_3ETMSXAqzEs": {
+          "title": "Quizá otro dialecto",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        }
+      },
+      "roles": {
+        "role_k7e1KRth": {
+          "name": "Dory",
+          "hint": "3 frases"
+        },
+        "role_y7mBEj-GiRI": {
+          "name": "Marlin",
+          "hint": "2 frases"
+        },
+        "role_gkU-I3wxM6c": {
+          "name": "Tiburones",
+          "hint": "1 frase"
+        },
+        "role_gp1z-ZLSL6Y": {
+          "name": "Chum",
+          "hint": "1 frase"
+        },
+        "role_74zNIJOZO7U": {
+          "name": "Ancla",
+          "hint": "1 frase"
+        },
+        "role_1G4bNl5b0j4": {
+          "name": "Hank",
+          "hint": "3 frases"
+        },
+        "role_Zi1HqrucPIM": {
+          "name": "Dory",
+          "hint": "3 frases"
+        },
+        "role_iSu9D4PqC1A": {
+          "name": "Crush",
+          "hint": "5 frases"
+        },
+        "role_hGL5XBuFwGc": {
+          "name": "Marlin",
+          "hint": "3 frases"
+        },
+        "role_afmsmZ2bsI8": {
+          "name": "Dory",
+          "hint": "2 frases"
+        },
+        "role_R9JrW6iAf6s": {
+          "name": "Marlin",
+          "hint": "4 frases"
+        },
+        "role_oxxbg7pReN0": {
+          "name": "Dory",
+          "hint": "3 frases"
+        }
+      },
+      "notices": {
+        "library": "Pruebas del prototipo con adultos · Los doblajes se guardan en este navegador. Los vídeos solo se suben cuando confirmas la creación de un enlace de reproducción. No se ha confirmado el permiso de redistribución de estos fragmentos.",
+        "scene": "Esta escena es para pruebas del prototipo con adultos. La película completa no es material de iniciación para niños.Los creadores no respaldan este producto."
+      }
+    },
+    "ja": {
+      "scenes": {
+        "scene_oq1hQgYa": {
+          "title": "泳ぎ続けよう！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の4.5–15.6秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_EI_7V5r9": {
+          "title": "魚は友だち！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の15.4–25.65秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_XZWUH0xrnko": {
+          "title": "ひれにタグがあるの？",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_1M4ndSuAIeM": {
+          "title": "出口の相棒を探そう",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_3ETMSXAqzEs": {
+          "title": "別の方言ならどう？",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        }
+      },
+      "roles": {
+        "role_k7e1KRth": {
+          "name": "ドリー",
+          "hint": "セリフ3行"
+        },
+        "role_y7mBEj-GiRI": {
+          "name": "マーリン",
+          "hint": "セリフ2行"
+        },
+        "role_gkU-I3wxM6c": {
+          "name": "サメたち",
+          "hint": "セリフ1行"
+        },
+        "role_gp1z-ZLSL6Y": {
+          "name": "チャム",
+          "hint": "セリフ1行"
+        },
+        "role_74zNIJOZO7U": {
+          "name": "アンカー",
+          "hint": "セリフ1行"
+        },
+        "role_1G4bNl5b0j4": {
+          "name": "Hank",
+          "hint": "セリフ 3 行"
+        },
+        "role_Zi1HqrucPIM": {
+          "name": "Dory",
+          "hint": "セリフ 3 行"
+        },
+        "role_iSu9D4PqC1A": {
+          "name": "Crush",
+          "hint": "セリフ 5 行"
+        },
+        "role_hGL5XBuFwGc": {
+          "name": "Marlin",
+          "hint": "セリフ 3 行"
+        },
+        "role_afmsmZ2bsI8": {
+          "name": "Dory",
+          "hint": "セリフ 2 行"
+        },
+        "role_R9JrW6iAf6s": {
+          "name": "Marlin",
+          "hint": "セリフ 4 行"
+        },
+        "role_oxxbg7pReN0": {
+          "name": "Dory",
+          "hint": "セリフ 3 行"
+        }
+      },
+      "notices": {
+        "library": "大人向け試作版テスト・吹き替えはこのブラウザに保存され。再生リンクの作成を確認した場合に限り、動画がアップロードされます。使用している映像の再配布許諾は未確認です。",
+        "scene": "このシーンは大人による試作版のテスト用です。映画全編は、子ども向けの入門教材ではありません。作品の制作者がこの製品を推奨しているわけではありません。"
+      }
+    },
+    "ko": {
+      "scenes": {
+        "scene_oq1hQgYa": {
+          "title": "계속 헤엄쳐!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 4.5–15.6초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_EI_7V5r9": {
+          "title": "물고기는 친구야!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 15.4–25.65초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_XZWUH0xrnko": {
+          "title": "지느러미에 표가 있어?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_1M4ndSuAIeM": {
+          "title": "출구 짝꿍을 찾아",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_3ETMSXAqzEs": {
+          "title": "다른 사투리로 해 볼까?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        }
+      },
+      "roles": {
+        "role_k7e1KRth": {
+          "name": "도리",
+          "hint": "대사 3개"
+        },
+        "role_y7mBEj-GiRI": {
+          "name": "말린",
+          "hint": "대사 2개"
+        },
+        "role_gkU-I3wxM6c": {
+          "name": "상어들",
+          "hint": "대사 1개"
+        },
+        "role_gp1z-ZLSL6Y": {
+          "name": "첨",
+          "hint": "대사 1개"
+        },
+        "role_74zNIJOZO7U": {
+          "name": "앵커",
+          "hint": "대사 1개"
+        },
+        "role_1G4bNl5b0j4": {
+          "name": "Hank",
+          "hint": "대사 3줄"
+        },
+        "role_Zi1HqrucPIM": {
+          "name": "Dory",
+          "hint": "대사 3줄"
+        },
+        "role_iSu9D4PqC1A": {
+          "name": "Crush",
+          "hint": "대사 5줄"
+        },
+        "role_hGL5XBuFwGc": {
+          "name": "Marlin",
+          "hint": "대사 3줄"
+        },
+        "role_afmsmZ2bsI8": {
+          "name": "Dory",
+          "hint": "대사 2줄"
+        },
+        "role_R9JrW6iAf6s": {
+          "name": "Marlin",
+          "hint": "대사 4줄"
+        },
+        "role_oxxbg7pReN0": {
+          "name": "Dory",
+          "hint": "대사 3줄"
+        }
+      },
+      "notices": {
+        "library": "성인 대상 시제품 테스트 · 더빙은 이 브라우저에 저장돼요. 재생 링크 만들기를 확인할 때만 동영상이 업로드돼요. 영상 클립의 재배포 허가는 확인되지 않았어요.",
+        "scene": "이 장면은 성인을 대상으로 한 시제품 테스트용이에요. 영화 전체가 어린이 입문 학습 자료인 것은 아니에요.원작 제작자가 이 제품을 보증하는 것은 아니에요."
+      }
+    }
+  }
+}

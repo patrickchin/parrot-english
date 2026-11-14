@@ -1,0 +1,281 @@
+{
+  "version": 1,
+  "id": "pack_IT9dLeVjZN9_",
+  "title": "Bluey",
+  "franchise": "Bluey",
+  "description": "English dubbing scenes from Bluey.",
+  "author": "Parrotbook",
+  "scenes": [
+    {
+      "id": "scene_ow8KQy0Ni_U",
+      "slug": "bluey-real-coins",
+      "routeSlug": "can-we-have-some-real-coins",
+      "title": "能给我们几个真硬币吗？",
+      "english": "Can we have some real coins?",
+      "note": "Bluey",
+      "source": "https://www.youtube.com/watch?v=zqExJdPYu00&t=9s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/bluey-real-coins/bluey-real-coins-poster-48976104fa5c.jpg",
+      "tags": [
+        "Bluey",
+        "Bluey",
+        "Bandit",
+        "Chilli",
+        "coins",
+        "chores",
+        "布鲁伊",
+        "硬币",
+        "家务"
+      ],
+      "quotes": [
+        "This machine doesn't take imaginary coins. Go and get a job and earn real ones.",
+        "这台机器不收想象出来的硬币。去干点活，挣几个真的吧。",
+        "Mum, can we have some real coins?",
+        "妈妈，能给我们几个真硬币吗？",
+        "I said go and get a job.",
+        "我说了，去干点活。",
+        "Well, if you kids make Mum and Dad's bed, I'll give you twenty cents.",
+        "好吧，你们把爸爸妈妈的床铺好，我就给你们二十分钱。",
+        "Oh, come on, Bingo!",
+        "哦，来吧，宾果！",
+        "I'm watching you, Magic Claw.",
+        "我盯着你呢，魔法抓娃娃机。"
+      ],
+      "manifest": "scenes/bluey-real-coins/scene.json"
+    },
+    {
+      "id": "scene_rWVQAIy-SYw",
+      "slug": "bluey-magic-claw",
+      "routeSlug": "dad-this-is-not-fair",
+      "title": "爸爸，这不公平！",
+      "english": "Dad, this is not fair!",
+      "note": "Bluey",
+      "source": "https://www.youtube.com/watch?v=zqExJdPYu00&t=84s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/bluey-magic-claw/bluey-magic-claw-poster-bbd3ecc853a0.jpg",
+      "tags": [
+        "Bluey",
+        "Bluey",
+        "Bandit",
+        "pretend play",
+        "fairness",
+        "布鲁伊",
+        "游戏",
+        "公平"
+      ],
+      "quotes": [
+        "Okay, let's do this.",
+        "好，开始吧。",
+        "You lose!",
+        "你输了！",
+        "Dad! This isn't fair!",
+        "爸爸！这不公平！",
+        "I am not Dad. I am Magic Claw. Magic Claw has no children. His days are free and easy.",
+        "我不是爸爸，我是魔法抓娃娃机。魔法抓娃娃机没有孩子，每天都自由自在。"
+      ],
+      "manifest": "scenes/bluey-magic-claw/scene.json"
+    }
+  ],
+  "locales": {
+    "en": {
+      "scenes": {
+        "scene_ow8KQy0Ni_U": {
+          "title": "Can we have some real coins?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 9.65–32.35 seconds of the original upload. Pretend machine and household pocket-money bargain; not an invitation for young children to take outside work. Original Australian English."
+        },
+        "scene_rWVQAIy-SYw": {
+          "title": "Dad, this is not fair!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 84.8–106.44 seconds of the original upload. The intentionally unfair pretend game is a family comedy. Mechanical sounds and the full attempt remain in the original audio; sound effects are not vocabulary prompts."
+        }
+      },
+      "roles": {
+        "role_7weef38VGuI": {
+          "name": "Bandit",
+          "hint": "2 lines"
+        },
+        "role_L2VcbrWL4bA": {
+          "name": "Bluey",
+          "hint": "2 lines"
+        },
+        "role_YETwbI6_lYI": {
+          "name": "Chilli",
+          "hint": "2 lines"
+        },
+        "role_qv1zScGHWaw": {
+          "name": "Bluey",
+          "hint": "2 lines"
+        },
+        "role_3OkXi5CB_xA": {
+          "name": "Bandit",
+          "hint": "2 lines"
+        }
+      },
+      "notices": {
+        "library": "Adult prototype testing · Dubs save in this browser. Videos upload only when you confirm creating a playback link. Redistribution permission for the meme clips is unconfirmed.",
+        "scene": "This scene is for adult prototype testing. The full film is not beginner learning material for children.The creators do not endorse this product."
+      }
+    },
+    "zh-CN": {
+      "scenes": {
+        "scene_ow8KQy0Ni_U": {
+          "title": "能给我们几个真硬币吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 9.65–32.35 秒的连续节选。Pretend machine and household pocket-money bargain; not an invitation for young children to take outside work. Original Australian English."
+        },
+        "scene_rWVQAIy-SYw": {
+          "title": "爸爸，这不公平！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 84.8–106.44 秒的连续节选。The intentionally unfair pretend game is a family comedy. Mechanical sounds and the full attempt remain in the original audio; sound effects are not vocabulary prompts."
+        }
+      },
+      "roles": {
+        "role_7weef38VGuI": {
+          "name": "班迪特爸爸",
+          "hint": "2 句台词"
+        },
+        "role_L2VcbrWL4bA": {
+          "name": "布鲁伊",
+          "hint": "2 句台词"
+        },
+        "role_YETwbI6_lYI": {
+          "name": "奇莉妈妈",
+          "hint": "2 句台词"
+        },
+        "role_qv1zScGHWaw": {
+          "name": "布鲁伊",
+          "hint": "2 句台词"
+        },
+        "role_3OkXi5CB_xA": {
+          "name": "班迪特爸爸",
+          "hint": "2 句台词"
+        }
+      },
+      "notices": {
+        "library": "成人原型测试 · 配音保存在此浏览器。只有确认创建播放链接时，才会上传视频。影视梗片段尚未确认再分发许可。",
+        "scene": "本片段用于成人原型测试；完整电影并非儿童入门教材。创作者未对本产品作出背书。"
+      }
+    },
+    "es": {
+      "scenes": {
+        "scene_ow8KQy0Ni_U": {
+          "title": "¿Nos das unas monedas de verdad?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 9.65–32.35 del vídeo original. Máquina de mentira y negociación de la paga en casa. No invita a los niños pequeños a trabajar fuera del hogar. Inglés australiano original."
+        },
+        "scene_rWVQAIy-SYw": {
+          "title": "¡Papá, no es justo!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 84.8–106.44 del vídeo original. El juego de ficción, deliberadamente injusto, es una comedia familiar. Los sonidos mecánicos y el intento completo se mantienen en el audio original; los efectos no son ejercicios de vocabulario."
+        }
+      },
+      "roles": {
+        "role_7weef38VGuI": {
+          "name": "Bandit",
+          "hint": "2 frases"
+        },
+        "role_L2VcbrWL4bA": {
+          "name": "Bluey",
+          "hint": "2 frases"
+        },
+        "role_YETwbI6_lYI": {
+          "name": "Chilli",
+          "hint": "2 frases"
+        },
+        "role_qv1zScGHWaw": {
+          "name": "Bluey",
+          "hint": "2 frases"
+        },
+        "role_3OkXi5CB_xA": {
+          "name": "Bandit",
+          "hint": "2 frases"
+        }
+      },
+      "notices": {
+        "library": "Pruebas del prototipo con adultos · Los doblajes se guardan en este navegador. Los vídeos solo se suben cuando confirmas la creación de un enlace de reproducción. No se ha confirmado el permiso de redistribución de estos fragmentos.",
+        "scene": "Esta escena es para pruebas del prototipo con adultos. La película completa no es material de iniciación para niños.Los creadores no respaldan este producto."
+      }
+    },
+    "ja": {
+      "scenes": {
+        "scene_ow8KQy0Ni_U": {
+          "title": "本物のコインをくれる？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の9.65–32.35秒の抜粋です。 ごっこの機械と家庭内のお小遣いの交渉です。幼い子に外で働くよう勧めるものではありません。元の音声はオーストラリア英語です。"
+        },
+        "scene_rWVQAIy-SYw": {
+          "title": "パパ、ずるいよ！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の84.8–106.44秒の抜粋です。 わざと不公平にしたごっこ遊びを描く家族コメディです。機械の音や一連の挑戦は元の音声に残しています。効果音は単語の練習用ではありません。"
+        }
+      },
+      "roles": {
+        "role_7weef38VGuI": {
+          "name": "バンディット",
+          "hint": "セリフ2行"
+        },
+        "role_L2VcbrWL4bA": {
+          "name": "ブルーイ",
+          "hint": "セリフ2行"
+        },
+        "role_YETwbI6_lYI": {
+          "name": "チリ",
+          "hint": "セリフ2行"
+        },
+        "role_qv1zScGHWaw": {
+          "name": "ブルーイ",
+          "hint": "セリフ2行"
+        },
+        "role_3OkXi5CB_xA": {
+          "name": "バンディット",
+          "hint": "セリフ2行"
+        }
+      },
+      "notices": {
+        "library": "大人向け試作版テスト・吹き替えはこのブラウザに保存され。再生リンクの作成を確認した場合に限り、動画がアップロードされます。使用している映像の再配布許諾は未確認です。",
+        "scene": "このシーンは大人による試作版のテスト用です。映画全編は、子ども向けの入門教材ではありません。作品の制作者がこの製品を推奨しているわけではありません。"
+      }
+    },
+    "ko": {
+      "scenes": {
+        "scene_ow8KQy0Ni_U": {
+          "title": "진짜 동전 좀 줄래요?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 9.65–32.35초 구간을 발췌했어요. 가상의 기계와 집안 용돈 흥정 장면이에요. 어린아이에게 외부 일을 권하는 내용이 아니에요. 원본은 호주 영어예요."
+        },
+        "scene_rWVQAIy-SYw": {
+          "title": "아빠, 불공평해요!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 84.8–106.44초 구간을 발췌했어요. 일부러 불공평하게 만든 흉내 놀이는 가족 코미디예요. 기계 소리와 시도 전체는 원본 오디오에 남겨 두었으며 효과음은 단어 연습 대상이 아니에요."
+        }
+      },
+      "roles": {
+        "role_7weef38VGuI": {
+          "name": "밴딧",
+          "hint": "대사 2개"
+        },
+        "role_L2VcbrWL4bA": {
+          "name": "블루이",
+          "hint": "대사 2개"
+        },
+        "role_YETwbI6_lYI": {
+          "name": "칠리",
+          "hint": "대사 2개"
+        },
+        "role_qv1zScGHWaw": {
+          "name": "블루이",
+          "hint": "대사 2개"
+        },
+        "role_3OkXi5CB_xA": {
+          "name": "밴딧",
+          "hint": "대사 2개"
+        }
+      },
+      "notices": {
+        "library": "성인 대상 시제품 테스트 · 더빙은 이 브라우저에 저장돼요. 재생 링크 만들기를 확인할 때만 동영상이 업로드돼요. 영상 클립의 재배포 허가는 확인되지 않았어요.",
+        "scene": "이 장면은 성인을 대상으로 한 시제품 테스트용이에요. 영화 전체가 어린이 입문 학습 자료인 것은 아니에요.원작 제작자가 이 제품을 보증하는 것은 아니에요."
+      }
+    }
+  }
+}

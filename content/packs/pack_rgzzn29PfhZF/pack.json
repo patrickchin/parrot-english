@@ -1,0 +1,553 @@
+{
+  "version": 1,
+  "id": "pack_rgzzn29PfhZF",
+  "title": "Ratatouille",
+  "franchise": "Ratatouille",
+  "description": "English dubbing scenes from Ratatouille.",
+  "author": "Parrotbook",
+  "scenes": [
+    {
+      "id": "scene_y50gF2Cn",
+      "slug": "anyone-can-cook",
+      "title": "谁都能做饭！",
+      "english": "Anyone can cook!",
+      "note": "Ratatouille",
+      "source": "https://www.youtube.com/watch?v=thkDWSUzQDo&t=11s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/anyone-can-cook/anyone-can-cook-poster-d688ba8a437a.jpg",
+      "tags": [
+        "Ratatouille",
+        "料理鼠王",
+        "美食总动员",
+        "Gusteau",
+        "Remy",
+        "古斯托",
+        "小米",
+        "cooking",
+        "做饭",
+        "food",
+        "食物"
+      ],
+      "quotes": [
+        "But he could.",
+        "但是他可以学会。",
+        "Uh, no.",
+        "呃，不行。",
+        "How do you know? What do I always say? Anyone can cook.",
+        "你怎么知道？我常说什么？谁都能做饭。",
+        "Well, yeah, anyone can. That doesn't mean that anyone should.",
+        "嗯，对，谁都能做。可这不代表谁都应该做。",
+        "Well, that is not stopping him. See?",
+        "可这并没有让他停下来。看。"
+      ],
+      "manifest": "scenes/anyone-can-cook/scene.json"
+    },
+    {
+      "id": "scene_qwQnpt21fAY",
+      "slug": "ratatouille-what-are-you-eating",
+      "routeSlug": "ratatouille-what-are-you-eating",
+      "title": "你在吃那个？",
+      "english": "You are eating that?",
+      "note": "Ratatouille",
+      "source": "https://www.youtube.com/watch?v=1S5s7oozviU&t=14s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/ratatouille-what-are-you-eating/ratatouille-what-are-you-eating-poster-31cab998c746.jpg",
+      "tags": [
+        "Ratatouille",
+        "你在吃那个？",
+        "Remy",
+        "Emile",
+        "小米",
+        "大米"
+      ],
+      "quotes": [
+        "What is that?",
+        "那是什么？",
+        "I don't really know.",
+        "我也不太清楚。",
+        "You don't know, and you're eating it?",
+        "你都不知道，还吃？",
+        "You know, if you can sort of muscle your way past the gag reflex, all kinds of food possibilities open up.",
+        "只要设法忍过想吐的感觉，各种食物都能接受了。"
+      ],
+      "manifest": "scenes/ratatouille-what-are-you-eating/scene.json"
+    },
+    {
+      "id": "scene_lUZv5MAYQqA",
+      "slug": "ratatouille-popular-again",
+      "routeSlug": "ratatouille-popular-again",
+      "title": "餐厅又火了",
+      "english": "It is popular again",
+      "note": "Ratatouille",
+      "source": "https://www.youtube.com/watch?v=ef91za0liTM&t=8s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/ratatouille-popular-again/ratatouille-popular-again-poster-5d3cc489b9d2.jpg",
+      "tags": [
+        "Ratatouille",
+        "餐厅又火了",
+        "Anton Ego",
+        "Ambrister",
+        "安东·伊戈",
+        "管家"
+      ],
+      "quotes": [
+        "What is it, Ambrister? Gusteau's finally closing, is it?",
+        "怎么了？古斯托餐厅终于要关门了吗？",
+        "No.",
+        "不是。",
+        "More financial trouble?",
+        "又有财务问题了？",
+        "No.",
+        "不是。",
+        "It's announced a new line of microwave egg rolls?",
+        "要推出新的微波春卷？",
+        "What?",
+        "什么？",
+        "What? Spit it out!",
+        "怎么了？快说！",
+        "It's come back. It's popular.",
+        "它又重新火起来了。"
+      ],
+      "manifest": "scenes/ratatouille-popular-again/scene.json"
+    },
+    {
+      "id": "scene_T-bJo8Z4eF0",
+      "slug": "ratatouille-taste-the-food",
+      "routeSlug": "ratatouille-taste-the-food",
+      "title": "慢慢尝尝味道",
+      "english": "Do not just eat it",
+      "note": "Ratatouille",
+      "source": "https://www.youtube.com/watch?v=rLXYILcRoPQ&t=36s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/ratatouille-taste-the-food/ratatouille-taste-the-food-poster-714ff9370698.jpg",
+      "tags": [
+        "Ratatouille",
+        "慢慢尝尝味道",
+        "Remy",
+        "Emile",
+        "小米",
+        "大米"
+      ],
+      "quotes": [
+        "Close your eyes. Now take a bite of this. No, no. Don't just hork it down!",
+        "闭上眼睛，咬一口。别一口吞下去！",
+        "Here. Chew it slowly. Only think about the taste. See? Creamy, salty, sweet, an oaky nuttiness. You detect that?",
+        "给你，慢慢嚼。只想着它的味道。尝到了吗？奶油味、咸味、甜味和橡木果仁香。感觉到了吗？",
+        "Oh, I'm detecting nuttiness.",
+        "嗯，我确实感觉到果仁味了。",
+        "Close your eyes. Now taste this. A whole different thing, right? Sweet, crisp, slight tang on the finish.",
+        "闭上眼睛，尝尝这个。完全不一样吧？香甜清脆，回味有一丝酸味。"
+      ],
+      "manifest": "scenes/ratatouille-taste-the-food/scene.json"
+    },
+    {
+      "id": "scene_n_VK-I9IFbU",
+      "slug": "ratatouille-a-little-perspective",
+      "routeSlug": "ratatouille-a-little-perspective",
+      "title": "来一点见解",
+      "english": "A little perspective",
+      "note": "Ratatouille",
+      "source": "https://www.youtube.com/watch?v=4BSfWh9uHoY&t=5s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/ratatouille-a-little-perspective/ratatouille-a-little-perspective-poster-05e42d12554e.jpg",
+      "tags": [
+        "Ratatouille",
+        "来一点见解",
+        "Waiter",
+        "Anton Ego",
+        "服务员",
+        "安东·伊戈"
+      ],
+      "quotes": [
+        "Do you know what you would like this evening, sir?",
+        "先生，今晚您想点些什么？",
+        "Yes, I think I do. After reading a lot of overheated puffery about your new cook, you know what I'm craving? A little perspective. That's it.",
+        "我想好了。读了那么多对你们新厨师夸大的吹捧后，你知道我渴望什么吗？一点见解。",
+        "I'd like some fresh, clear, well-seasoned perspective. Can you suggest a good wine to go with that?",
+        "没错。我想要新鲜、清楚、调味得当的见解。能推荐一款搭配的葡萄酒吗？",
+        "With what, sir?",
+        "搭配什么，先生？",
+        "Perspective. Fresh out, I take it?",
+        "见解。看来已经没有了？"
+      ],
+      "manifest": "scenes/ratatouille-a-little-perspective/scene.json"
+    }
+  ],
+  "locales": {
+    "en": {
+      "scenes": {
+        "scene_y50gF2Cn": {
+          "title": "Anyone can cook!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 11.8–26.5 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_qwQnpt21fAY": {
+          "title": "You are eating that?",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_lUZv5MAYQqA": {
+          "title": "It is popular again",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_T-bJo8Z4eF0": {
+          "title": "Do not just eat it",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_n_VK-I9IFbU": {
+          "title": "A little perspective",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        }
+      },
+      "roles": {
+        "role_CwTyhoLe": {
+          "name": "Gusteau",
+          "hint": "3 lines"
+        },
+        "role_43NdYGbMURo": {
+          "name": "Remy",
+          "hint": "2 lines"
+        },
+        "role_Y_wPsynZvd8": {
+          "name": "Remy",
+          "hint": "2 lines"
+        },
+        "role_CIjvzYuv4W4": {
+          "name": "Emile",
+          "hint": "2 lines"
+        },
+        "role_1Nu3qyPbhsA": {
+          "name": "Anton Ego",
+          "hint": "4 lines"
+        },
+        "role_vQzCZAEgqrg": {
+          "name": "Ambrister",
+          "hint": "4 lines"
+        },
+        "role_B8bCFyAVSNc": {
+          "name": "Remy",
+          "hint": "3 lines"
+        },
+        "role_uoywbUkAf0U": {
+          "name": "Emile",
+          "hint": "1 line"
+        },
+        "role_tK6NBFXudoI": {
+          "name": "Waiter",
+          "hint": "2 lines"
+        },
+        "role_Lbe3H2XSU5Y": {
+          "name": "Anton Ego",
+          "hint": "3 lines"
+        }
+      },
+      "notices": {
+        "library": "Adult prototype testing · Dubs save in this browser. Videos upload only when you confirm creating a playback link. Redistribution permission for the meme clips is unconfirmed.",
+        "scene": "This scene is for adult prototype testing. The full film is not beginner learning material for children.The creators do not endorse this product."
+      }
+    },
+    "zh-CN": {
+      "scenes": {
+        "scene_y50gF2Cn": {
+          "title": "谁都能做饭！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 11.8–26.5 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_qwQnpt21fAY": {
+          "title": "你在吃那个？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_lUZv5MAYQqA": {
+          "title": "餐厅又火了",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_T-bJo8Z4eF0": {
+          "title": "慢慢尝尝味道",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_n_VK-I9IFbU": {
+          "title": "来一点见解",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        }
+      },
+      "roles": {
+        "role_CwTyhoLe": {
+          "name": "古斯托",
+          "hint": "3 句台词"
+        },
+        "role_43NdYGbMURo": {
+          "name": "小米",
+          "hint": "2 句台词"
+        },
+        "role_Y_wPsynZvd8": {
+          "name": "小米",
+          "hint": "2 句台词"
+        },
+        "role_CIjvzYuv4W4": {
+          "name": "大米",
+          "hint": "2 句台词"
+        },
+        "role_1Nu3qyPbhsA": {
+          "name": "安东·伊戈",
+          "hint": "4 句台词"
+        },
+        "role_vQzCZAEgqrg": {
+          "name": "管家",
+          "hint": "4 句台词"
+        },
+        "role_B8bCFyAVSNc": {
+          "name": "小米",
+          "hint": "3 句台词"
+        },
+        "role_uoywbUkAf0U": {
+          "name": "大米",
+          "hint": "1 句台词"
+        },
+        "role_tK6NBFXudoI": {
+          "name": "服务员",
+          "hint": "2 句台词"
+        },
+        "role_Lbe3H2XSU5Y": {
+          "name": "安东·伊戈",
+          "hint": "3 句台词"
+        }
+      },
+      "notices": {
+        "library": "成人原型测试 · 配音保存在此浏览器。只有确认创建播放链接时，才会上传视频。影视梗片段尚未确认再分发许可。",
+        "scene": "本片段用于成人原型测试；完整电影并非儿童入门教材。创作者未对本产品作出背书。"
+      }
+    },
+    "es": {
+      "scenes": {
+        "scene_y50gF2Cn": {
+          "title": "¡Cualquiera puede cocinar!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 11.8–26.5 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_qwQnpt21fAY": {
+          "title": "¿Te estás comiendo eso?",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_lUZv5MAYQqA": {
+          "title": "Vuelve a ser popular",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_T-bJo8Z4eF0": {
+          "title": "No te lo tragues sin saborear",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_n_VK-I9IFbU": {
+          "title": "Un poco de perspectiva",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        }
+      },
+      "roles": {
+        "role_CwTyhoLe": {
+          "name": "Gusteau",
+          "hint": "3 frases"
+        },
+        "role_43NdYGbMURo": {
+          "name": "Remy",
+          "hint": "2 frases"
+        },
+        "role_Y_wPsynZvd8": {
+          "name": "Remy",
+          "hint": "2 frases"
+        },
+        "role_CIjvzYuv4W4": {
+          "name": "Emile",
+          "hint": "2 frases"
+        },
+        "role_1Nu3qyPbhsA": {
+          "name": "Anton Ego",
+          "hint": "4 frases"
+        },
+        "role_vQzCZAEgqrg": {
+          "name": "Ambrister",
+          "hint": "4 frases"
+        },
+        "role_B8bCFyAVSNc": {
+          "name": "Remy",
+          "hint": "3 frases"
+        },
+        "role_uoywbUkAf0U": {
+          "name": "Emile",
+          "hint": "1 frase"
+        },
+        "role_tK6NBFXudoI": {
+          "name": "Camarero",
+          "hint": "2 frases"
+        },
+        "role_Lbe3H2XSU5Y": {
+          "name": "Anton Ego",
+          "hint": "3 frases"
+        }
+      },
+      "notices": {
+        "library": "Pruebas del prototipo con adultos · Los doblajes se guardan en este navegador. Los vídeos solo se suben cuando confirmas la creación de un enlace de reproducción. No se ha confirmado el permiso de redistribución de estos fragmentos.",
+        "scene": "Esta escena es para pruebas del prototipo con adultos. La película completa no es material de iniciación para niños.Los creadores no respaldan este producto."
+      }
+    },
+    "ja": {
+      "scenes": {
+        "scene_y50gF2Cn": {
+          "title": "誰でも料理はできる！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の11.8–26.5秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_qwQnpt21fAY": {
+          "title": "それを食べてるの？",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_lUZv5MAYQqA": {
+          "title": "また人気店に",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_T-bJo8Z4eF0": {
+          "title": "ゆっくり味わって",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_n_VK-I9IFbU": {
+          "title": "少しの見識",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        }
+      },
+      "roles": {
+        "role_CwTyhoLe": {
+          "name": "グストー",
+          "hint": "セリフ3行"
+        },
+        "role_43NdYGbMURo": {
+          "name": "レミー",
+          "hint": "セリフ2行"
+        },
+        "role_Y_wPsynZvd8": {
+          "name": "Remy",
+          "hint": "セリフ 2 行"
+        },
+        "role_CIjvzYuv4W4": {
+          "name": "Emile",
+          "hint": "セリフ 2 行"
+        },
+        "role_1Nu3qyPbhsA": {
+          "name": "Anton Ego",
+          "hint": "セリフ 4 行"
+        },
+        "role_vQzCZAEgqrg": {
+          "name": "Ambrister",
+          "hint": "セリフ 4 行"
+        },
+        "role_B8bCFyAVSNc": {
+          "name": "Remy",
+          "hint": "セリフ 3 行"
+        },
+        "role_uoywbUkAf0U": {
+          "name": "Emile",
+          "hint": "セリフ 1 行"
+        },
+        "role_tK6NBFXudoI": {
+          "name": "ウェイター",
+          "hint": "セリフ 2 行"
+        },
+        "role_Lbe3H2XSU5Y": {
+          "name": "Anton Ego",
+          "hint": "セリフ 3 行"
+        }
+      },
+      "notices": {
+        "library": "大人向け試作版テスト・吹き替えはこのブラウザに保存され。再生リンクの作成を確認した場合に限り、動画がアップロードされます。使用している映像の再配布許諾は未確認です。",
+        "scene": "このシーンは大人による試作版のテスト用です。映画全編は、子ども向けの入門教材ではありません。作品の制作者がこの製品を推奨しているわけではありません。"
+      }
+    },
+    "ko": {
+      "scenes": {
+        "scene_y50gF2Cn": {
+          "title": "누구나 요리할 수 있어!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 11.8–26.5초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_qwQnpt21fAY": {
+          "title": "그걸 먹고 있어?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_lUZv5MAYQqA": {
+          "title": "다시 인기를 얻다",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_T-bJo8Z4eF0": {
+          "title": "천천히 맛을 느껴 봐",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_n_VK-I9IFbU": {
+          "title": "약간의 안목",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        }
+      },
+      "roles": {
+        "role_CwTyhoLe": {
+          "name": "구스토",
+          "hint": "대사 3개"
+        },
+        "role_43NdYGbMURo": {
+          "name": "레미",
+          "hint": "대사 2개"
+        },
+        "role_Y_wPsynZvd8": {
+          "name": "Remy",
+          "hint": "대사 2줄"
+        },
+        "role_CIjvzYuv4W4": {
+          "name": "Emile",
+          "hint": "대사 2줄"
+        },
+        "role_1Nu3qyPbhsA": {
+          "name": "Anton Ego",
+          "hint": "대사 4줄"
+        },
+        "role_vQzCZAEgqrg": {
+          "name": "Ambrister",
+          "hint": "대사 4줄"
+        },
+        "role_B8bCFyAVSNc": {
+          "name": "Remy",
+          "hint": "대사 3줄"
+        },
+        "role_uoywbUkAf0U": {
+          "name": "Emile",
+          "hint": "대사 1줄"
+        },
+        "role_tK6NBFXudoI": {
+          "name": "웨이터",
+          "hint": "대사 2줄"
+        },
+        "role_Lbe3H2XSU5Y": {
+          "name": "Anton Ego",
+          "hint": "대사 3줄"
+        }
+      },
+      "notices": {
+        "library": "성인 대상 시제품 테스트 · 더빙은 이 브라우저에 저장돼요. 재생 링크 만들기를 확인할 때만 동영상이 업로드돼요. 영상 클립의 재배포 허가는 확인되지 않았어요.",
+        "scene": "이 장면은 성인을 대상으로 한 시제품 테스트용이에요. 영화 전체가 어린이 입문 학습 자료인 것은 아니에요.원작 제작자가 이 제품을 보증하는 것은 아니에요."
+      }
+    }
+  }
+}

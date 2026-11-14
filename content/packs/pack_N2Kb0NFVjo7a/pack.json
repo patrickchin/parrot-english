@@ -1,0 +1,603 @@
+{
+  "version": 1,
+  "id": "pack_N2Kb0NFVjo7a",
+  "title": "Ben and Holly’s Little Kingdom",
+  "franchise": "Ben and Holly’s Little Kingdom",
+  "description": "English dubbing scenes from Ben and Holly’s Little Kingdom.",
+  "author": "Parrotbook",
+  "scenes": [
+    {
+      "id": "scene_gCp7ClczBfE",
+      "slug": "ben-blue-hat",
+      "title": "我看起来怎么样？",
+      "english": "How do I look?",
+      "note": "Ben and Holly’s Little Kingdom",
+      "source": "https://www.youtube.com/watch?v=Kmw12eUP4MM&t=564s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/ben-blue-hat/ben-blue-hat-poster-32416e93bf9f.jpg",
+      "tags": [
+        "Ben and Holly’s Little Kingdom",
+        "Ben and Holly's Little Kingdom",
+        "Ben and Holly",
+        "本和霍莉的小王国",
+        "Nanny Plum",
+        "Ben",
+        "Holly",
+        "梅姨",
+        "本",
+        "霍莉",
+        "magic",
+        "魔法",
+        "hat",
+        "帽子"
+      ],
+      "quotes": [
+        "Oh no! The magic hat has turned Ben blue!",
+        "哦，不！魔法帽把本变蓝了！",
+        "How do I look?",
+        "我看起来怎么样？",
+        "Um, I think your old hat suits you better.",
+        "嗯，我觉得你原来的帽子更适合你。",
+        "Me too.",
+        "我也这么觉得。",
+        "Abracazobody!",
+        "阿布拉卡佐波迪！（剧中的魔法咒语）",
+        "Ah, it's good to have my old hat back again.",
+        "啊，能重新戴上我的旧帽子真好。",
+        "And it's nice to have you back, wand. I will never lose you again.",
+        "魔法棒，你也回来了，真好。我再也不会把你弄丢了。"
+      ],
+      "manifest": "scenes/ben-blue-hat/scene.json"
+    },
+    {
+      "id": "scene_oHKH4UW2j7Q",
+      "slug": "ben-never-scared",
+      "title": "精灵从来不害怕！",
+      "english": "Elves are never scared!",
+      "note": "Ben and Holly’s Little Kingdom",
+      "source": "https://www.youtube.com/watch?v=Kmw12eUP4MM&t=194s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/ben-never-scared/ben-never-scared-poster-3a86987f29ed.jpg",
+      "tags": [
+        "Ben and Holly’s Little Kingdom",
+        "Ben and Holly's Little Kingdom",
+        "Ben and Holly",
+        "本和霍莉的小王国",
+        "Holly",
+        "Ben",
+        "霍莉",
+        "本",
+        "feelings",
+        "情绪",
+        "fear",
+        "害怕",
+        "elves",
+        "精灵"
+      ],
+      "quotes": [
+        "Sorry, Ben. Were you scared?",
+        "对不起，本。你害怕了吗？",
+        "I'm an elf. Elves are never scared.",
+        "我是精灵。精灵从来不害怕。",
+        "Er, good. In that case, can I try again?",
+        "呃，那就好。那我可以再试一次吗？",
+        "Um, maybe later. See you!",
+        "嗯，待会儿再说吧。再见！",
+        "Bye, Ben.",
+        "再见，本。"
+      ],
+      "manifest": "scenes/ben-never-scared/scene.json"
+    },
+    {
+      "id": "scene_ue_rpVpccbk",
+      "slug": "holly-can-i-play",
+      "title": "我可以和本一起玩吗？",
+      "english": "Can I play with Ben?",
+      "note": "Ben and Holly’s Little Kingdom",
+      "source": "https://www.youtube.com/watch?v=Kmw12eUP4MM&t=12s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/holly-can-i-play/holly-can-i-play-poster-4f9f32a909c0.jpg",
+      "tags": [
+        "Ben and Holly’s Little Kingdom",
+        "Ben and Holly's Little Kingdom",
+        "Ben and Holly",
+        "本和霍莉的小王国",
+        "Holly",
+        "Nanny Plum",
+        "霍莉",
+        "梅姨",
+        "playing",
+        "玩耍",
+        "asking permission",
+        "请求许可",
+        "magic",
+        "魔法"
+      ],
+      "quotes": [
+        "But Nanny Plum, I was going to play with Ben.",
+        "可是梅姨，我本来打算和本一起玩。",
+        "Princess Holly, there's a time for playing with elves and a time for wand practice.",
+        "霍莉公主，和精灵玩有玩的时间，练习魔法棒有练习的时间。",
+        "Please, Nanny. I promise to practise later.",
+        "求你了，梅姨。我保证待会儿练习。",
+        "Hmm, very well, but come in when I—",
+        "嗯，好吧，不过等我叫你时就——",
+        "Thanks, Nanny. Bye!",
+        "谢谢梅姨。再见！"
+      ],
+      "manifest": "scenes/holly-can-i-play/scene.json"
+    },
+    {
+      "id": "scene_dc581WltScU",
+      "slug": "holly-magic-mistake",
+      "routeSlug": "my-magic-went-a-bit-wrong",
+      "title": "我的魔法出了一点错",
+      "english": "My magic went a bit wrong",
+      "note": "Ben and Holly’s Little Kingdom",
+      "source": "https://www.youtube.com/watch?v=Kmw12eUP4MM&t=119s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/holly-magic-mistake/holly-magic-mistake-poster-2ea121b97714.jpg",
+      "tags": [
+        "Ben and Holly’s Little Kingdom",
+        "Holly",
+        "Nanny Plum",
+        "practice",
+        "mistakes",
+        "magic",
+        "霍莉",
+        "练习",
+        "出错"
+      ],
+      "quotes": [
+        "Gosh! What a big hat!",
+        "哎呀！好大的一顶帽子！",
+        "Er, it's Ben. I accidentally turned him into a hat.",
+        "呃，那是本。我不小心把他变成帽子了。",
+        "Princess Holly, that's exactly why you need to practise your magic more.",
+        "霍莉公主，这正是你需要多练习魔法的原因。",
+        "I was practising, but it all went a bit wrong.",
+        "我刚才就在练习，可是出了一点错。"
+      ],
+      "manifest": "scenes/holly-magic-mistake/scene.json"
+    },
+    {
+      "id": "scene_ljYOYpWoouw",
+      "slug": "ben-simple-plan",
+      "routeSlug": "i-have-got-a-simple-plan",
+      "title": "我有一个简单的计划",
+      "english": "I have got a simple plan",
+      "note": "Ben and Holly’s Little Kingdom",
+      "source": "https://www.youtube.com/watch?v=Kmw12eUP4MM&t=310s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/ben-simple-plan/ben-simple-plan-poster-c4dc1fb282e3.jpg",
+      "tags": [
+        "Ben and Holly’s Little Kingdom",
+        "Ben",
+        "Holly",
+        "lost things",
+        "plans",
+        "questions",
+        "本",
+        "霍莉",
+        "计划",
+        "寻找"
+      ],
+      "quotes": [
+        "But Ben, how are you going to find my wand?",
+        "可是，本，你要怎么找到我的魔法棒呢？",
+        "I've got a simple plan.",
+        "我有一个简单的计划。",
+        "Oh, goody!",
+        "哦，太好啦！",
+        "First, try to remember where you left your wand. In your bedroom, perhaps.",
+        "首先，想想你把魔法棒放在哪里了。也许在你的卧室里？",
+        "Or in the meadow. That's where I left it.",
+        "或者在草地上。我就是把它落在那里了。",
+        "Ah.",
+        "啊。",
+        "What's the next bit of your plan?",
+        "你的计划下一步是什么呢？",
+        "Um, that was the plan.",
+        "呃，这就是整个计划了。"
+      ],
+      "manifest": "scenes/ben-simple-plan/scene.json"
+    }
+  ],
+  "locales": {
+    "en": {
+      "scenes": {
+        "scene_gCp7ClczBfE": {
+          "title": "How do I look?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 564.65–589.7 seconds of the original upload."
+        },
+        "scene_oHKH4UW2j7Q": {
+          "title": "Elves are never scared!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 194–211.35 seconds of the original upload."
+        },
+        "scene_ue_rpVpccbk": {
+          "title": "Can I play with Ben?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 12.2–33.85 seconds of the original upload."
+        },
+        "scene_dc581WltScU": {
+          "title": "My magic went a bit wrong",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 119.15–138.85 seconds of the original upload. Fantasy: Ben has become a hat. No spell or invented magic words are used as English prompts."
+        },
+        "scene_ljYOYpWoouw": {
+          "title": "I have got a simple plan",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 310.55–336.3 seconds of the original upload. Fantasy prop only; ordinary problem-solving dialogue. The later put-down and bird/climbing sequence are excluded."
+        }
+      },
+      "roles": {
+        "role_YMmMf1wkkD0": {
+          "name": "Nanny Plum",
+          "hint": "2 lines"
+        },
+        "role_DJntnoCh-CI": {
+          "name": "Ben",
+          "hint": "2 lines"
+        },
+        "role_VcebY2wPqqI": {
+          "name": "Holly",
+          "hint": "3 lines"
+        },
+        "role_1eyadGyaZ-U": {
+          "name": "Holly",
+          "hint": "3 lines"
+        },
+        "role_gYy8dSWMk40": {
+          "name": "Ben",
+          "hint": "2 lines"
+        },
+        "role_iNuzpzccAUs": {
+          "name": "Holly",
+          "hint": "3 lines"
+        },
+        "role_BIwW3pMFQ_o": {
+          "name": "Nanny Plum",
+          "hint": "2 lines"
+        },
+        "role_60DwRWhXHns": {
+          "name": "Nanny Plum",
+          "hint": "2 lines"
+        },
+        "role_vRt7TOzwQLI": {
+          "name": "Holly",
+          "hint": "2 lines"
+        },
+        "role_Wyexw2YGEUw": {
+          "name": "Holly",
+          "hint": "4 lines"
+        },
+        "role_6um5do5ReBs": {
+          "name": "Ben",
+          "hint": "4 lines"
+        }
+      },
+      "notices": {
+        "library": "Adult prototype testing · Dubs save in this browser. Videos upload only when you confirm creating a playback link. Redistribution permission for the meme clips is unconfirmed.",
+        "scene": "This scene is for adult prototype testing. The full film is not beginner learning material for children.The creators do not endorse this product."
+      }
+    },
+    "zh-CN": {
+      "scenes": {
+        "scene_gCp7ClczBfE": {
+          "title": "我看起来怎么样？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 564.65–589.7 秒的节选。"
+        },
+        "scene_oHKH4UW2j7Q": {
+          "title": "精灵从来不害怕！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 194–211.35 秒的节选。"
+        },
+        "scene_ue_rpVpccbk": {
+          "title": "我可以和本一起玩吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 12.2–33.85 秒的节选。"
+        },
+        "scene_dc581WltScU": {
+          "title": "我的魔法出了一点错",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 119.15–138.85 秒的连续节选。Fantasy: Ben has become a hat. No spell or invented magic words are used as English prompts."
+        },
+        "scene_ljYOYpWoouw": {
+          "title": "我有一个简单的计划",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 310.55–336.3 秒的连续节选。Fantasy prop only; ordinary problem-solving dialogue. The later put-down and bird/climbing sequence are excluded."
+        }
+      },
+      "roles": {
+        "role_YMmMf1wkkD0": {
+          "name": "梅姨",
+          "hint": "2 句台词"
+        },
+        "role_DJntnoCh-CI": {
+          "name": "本",
+          "hint": "2 句台词"
+        },
+        "role_VcebY2wPqqI": {
+          "name": "霍莉",
+          "hint": "3 句台词"
+        },
+        "role_1eyadGyaZ-U": {
+          "name": "霍莉",
+          "hint": "3 句台词"
+        },
+        "role_gYy8dSWMk40": {
+          "name": "本",
+          "hint": "2 句台词"
+        },
+        "role_iNuzpzccAUs": {
+          "name": "霍莉",
+          "hint": "3 句台词"
+        },
+        "role_BIwW3pMFQ_o": {
+          "name": "梅姨",
+          "hint": "2 句台词"
+        },
+        "role_60DwRWhXHns": {
+          "name": "梅姨",
+          "hint": "2 句台词"
+        },
+        "role_vRt7TOzwQLI": {
+          "name": "霍莉",
+          "hint": "2 句台词"
+        },
+        "role_Wyexw2YGEUw": {
+          "name": "霍莉",
+          "hint": "4 句台词"
+        },
+        "role_6um5do5ReBs": {
+          "name": "本",
+          "hint": "4 句台词"
+        }
+      },
+      "notices": {
+        "library": "成人原型测试 · 配音保存在此浏览器。只有确认创建播放链接时，才会上传视频。影视梗片段尚未确认再分发许可。",
+        "scene": "本片段用于成人原型测试；完整电影并非儿童入门教材。创作者未对本产品作出背书。"
+      }
+    },
+    "es": {
+      "scenes": {
+        "scene_gCp7ClczBfE": {
+          "title": "¿Qué tal me queda?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 564.65–589.7 del vídeo original."
+        },
+        "scene_oHKH4UW2j7Q": {
+          "title": "¡Los elfos nunca tienen miedo!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 194–211.35 del vídeo original."
+        },
+        "scene_ue_rpVpccbk": {
+          "title": "¿Puedo jugar con Ben?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 12.2–33.85 del vídeo original."
+        },
+        "scene_dc581WltScU": {
+          "title": "Mi magia ha salido un poco mal",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 119.15–138.85 del vídeo original. Fantasía: Ben se ha convertido en un sombrero. No se usan hechizos ni palabras mágicas inventadas como ejercicios de inglés."
+        },
+        "scene_ljYOYpWoouw": {
+          "title": "Tengo un plan muy sencillo",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 310.55–336.3 del vídeo original. Solo hay un objeto fantástico; el diálogo trata de resolver un problema cotidiano. Se excluyen el comentario despectivo posterior y la secuencia del pájaro y la escalada."
+        }
+      },
+      "roles": {
+        "role_YMmMf1wkkD0": {
+          "name": "Nana Ciruela",
+          "hint": "2 frases"
+        },
+        "role_DJntnoCh-CI": {
+          "name": "Ben",
+          "hint": "2 frases"
+        },
+        "role_VcebY2wPqqI": {
+          "name": "Holly",
+          "hint": "3 frases"
+        },
+        "role_1eyadGyaZ-U": {
+          "name": "Holly",
+          "hint": "3 frases"
+        },
+        "role_gYy8dSWMk40": {
+          "name": "Ben",
+          "hint": "2 frases"
+        },
+        "role_iNuzpzccAUs": {
+          "name": "Holly",
+          "hint": "3 frases"
+        },
+        "role_BIwW3pMFQ_o": {
+          "name": "Nana Ciruela",
+          "hint": "2 frases"
+        },
+        "role_60DwRWhXHns": {
+          "name": "Nana Ciruela",
+          "hint": "2 frases"
+        },
+        "role_vRt7TOzwQLI": {
+          "name": "Holly",
+          "hint": "2 frases"
+        },
+        "role_Wyexw2YGEUw": {
+          "name": "Holly",
+          "hint": "4 frases"
+        },
+        "role_6um5do5ReBs": {
+          "name": "Ben",
+          "hint": "4 frases"
+        }
+      },
+      "notices": {
+        "library": "Pruebas del prototipo con adultos · Los doblajes se guardan en este navegador. Los vídeos solo se suben cuando confirmas la creación de un enlace de reproducción. No se ha confirmado el permiso de redistribución de estos fragmentos.",
+        "scene": "Esta escena es para pruebas del prototipo con adultos. La película completa no es material de iniciación para niños.Los creadores no respaldan este producto."
+      }
+    },
+    "ja": {
+      "scenes": {
+        "scene_gCp7ClczBfE": {
+          "title": "似合ってる？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の564.65–589.7秒の抜粋です。"
+        },
+        "scene_oHKH4UW2j7Q": {
+          "title": "エルフは絶対に怖がらない！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の194–211.35秒の抜粋です。"
+        },
+        "scene_ue_rpVpccbk": {
+          "title": "ベンと遊んでもいい？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の12.2–33.85秒の抜粋です。"
+        },
+        "scene_dc581WltScU": {
+          "title": "魔法がちょっと失敗しちゃった",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の119.15–138.85秒の抜粋です。 ベンが帽子になるファンタジーです。呪文や架空の魔法の言葉は、英語練習のセリフに使っていません。"
+        },
+        "scene_ljYOYpWoouw": {
+          "title": "簡単な計画があるんだ",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の310.55–336.3秒の抜粋です。 道具だけがファンタジーで、会話は普通の問題解決です。その後のけなす言葉や、鳥と登る場面は含みません。"
+        }
+      },
+      "roles": {
+        "role_YMmMf1wkkD0": {
+          "name": "ナニー・プラム",
+          "hint": "セリフ2行"
+        },
+        "role_DJntnoCh-CI": {
+          "name": "ベン",
+          "hint": "セリフ2行"
+        },
+        "role_VcebY2wPqqI": {
+          "name": "ホリー",
+          "hint": "セリフ3行"
+        },
+        "role_1eyadGyaZ-U": {
+          "name": "ホリー",
+          "hint": "セリフ3行"
+        },
+        "role_gYy8dSWMk40": {
+          "name": "ベン",
+          "hint": "セリフ2行"
+        },
+        "role_iNuzpzccAUs": {
+          "name": "ホリー",
+          "hint": "セリフ3行"
+        },
+        "role_BIwW3pMFQ_o": {
+          "name": "ナニー・プラム",
+          "hint": "セリフ2行"
+        },
+        "role_60DwRWhXHns": {
+          "name": "ナニー・プラム",
+          "hint": "セリフ2行"
+        },
+        "role_vRt7TOzwQLI": {
+          "name": "ホリー",
+          "hint": "セリフ2行"
+        },
+        "role_Wyexw2YGEUw": {
+          "name": "ホリー",
+          "hint": "セリフ4行"
+        },
+        "role_6um5do5ReBs": {
+          "name": "ベン",
+          "hint": "セリフ4行"
+        }
+      },
+      "notices": {
+        "library": "大人向け試作版テスト・吹き替えはこのブラウザに保存され。再生リンクの作成を確認した場合に限り、動画がアップロードされます。使用している映像の再配布許諾は未確認です。",
+        "scene": "このシーンは大人による試作版のテスト用です。映画全編は、子ども向けの入門教材ではありません。作品の制作者がこの製品を推奨しているわけではありません。"
+      }
+    },
+    "ko": {
+      "scenes": {
+        "scene_gCp7ClczBfE": {
+          "title": "나 어때 보여?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 564.65–589.7초 구간을 발췌했어요."
+        },
+        "scene_oHKH4UW2j7Q": {
+          "title": "엘프는 절대 무서워하지 않아!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 194–211.35초 구간을 발췌했어요."
+        },
+        "scene_ue_rpVpccbk": {
+          "title": "벤이랑 놀아도 돼?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 12.2–33.85초 구간을 발췌했어요."
+        },
+        "scene_dc581WltScU": {
+          "title": "내 마법이 조금 잘못됐어",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 119.15–138.85초 구간을 발췌했어요. 벤이 모자가 된 판타지 장면이에요. 주문이나 가상의 마법 단어를 영어 연습 대사로 사용하지 않아요."
+        },
+        "scene_ljYOYpWoouw": {
+          "title": "내겐 간단한 계획이 있어",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 310.55–336.3초 구간을 발췌했어요. 소품만 판타지이며 대화는 일상적인 문제 해결에 관한 내용이에요. 이후의 깎아내리는 말과 새 또는 오르기 장면은 제외했어요."
+        }
+      },
+      "roles": {
+        "role_YMmMf1wkkD0": {
+          "name": "내니 플럼",
+          "hint": "대사 2개"
+        },
+        "role_DJntnoCh-CI": {
+          "name": "벤",
+          "hint": "대사 2개"
+        },
+        "role_VcebY2wPqqI": {
+          "name": "홀리",
+          "hint": "대사 3개"
+        },
+        "role_1eyadGyaZ-U": {
+          "name": "홀리",
+          "hint": "대사 3개"
+        },
+        "role_gYy8dSWMk40": {
+          "name": "벤",
+          "hint": "대사 2개"
+        },
+        "role_iNuzpzccAUs": {
+          "name": "홀리",
+          "hint": "대사 3개"
+        },
+        "role_BIwW3pMFQ_o": {
+          "name": "내니 플럼",
+          "hint": "대사 2개"
+        },
+        "role_60DwRWhXHns": {
+          "name": "내니 플럼",
+          "hint": "대사 2개"
+        },
+        "role_vRt7TOzwQLI": {
+          "name": "홀리",
+          "hint": "대사 2개"
+        },
+        "role_Wyexw2YGEUw": {
+          "name": "홀리",
+          "hint": "대사 4개"
+        },
+        "role_6um5do5ReBs": {
+          "name": "벤",
+          "hint": "대사 4개"
+        }
+      },
+      "notices": {
+        "library": "성인 대상 시제품 테스트 · 더빙은 이 브라우저에 저장돼요. 재생 링크 만들기를 확인할 때만 동영상이 업로드돼요. 영상 클립의 재배포 허가는 확인되지 않았어요.",
+        "scene": "이 장면은 성인을 대상으로 한 시제품 테스트용이에요. 영화 전체가 어린이 입문 학습 자료인 것은 아니에요.원작 제작자가 이 제품을 보증하는 것은 아니에요."
+      }
+    }
+  }
+}
