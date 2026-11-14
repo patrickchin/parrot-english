@@ -13,17 +13,18 @@ const authoredPatrick = clips.find(clip => clip.slug === 'patrick')!;
 
 test('the pack gallery shows authored metadata and supports responsive keyboard selection without user uploads', async ({ page }, info) => {
   await page.goto('/en/');
-  const entry = await headerDestination(page, 'Content packs');
+  const entry = await headerDestination(page, 'Packs');
   await expect(entry).toHaveAttribute('href', packsPath('en'));
   await entry.click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Content packs', exact: true })).toBeVisible();
-  const gallery = page.getByRole('navigation', { name: 'Content packs', exact: true });
+  await expect(page.getByRole('heading', { level: 1, name: 'Packs', exact: true })).toBeVisible();
+  const gallery = page.getByRole('navigation', { name: 'Packs', exact: true });
   await expect(gallery.getByRole('link')).toHaveCount(packs.length);
+  for (const notice of new Set(packs.map(pack => pack.data.locales.en.notices?.library).filter(Boolean))) await expect(page.getByText(notice as string, { exact: true })).toBeVisible();
   for (const pack of packs) {
     const card = gallery.getByRole('link', { name: pack.data.title, exact: true });
     await expect(card).toHaveAttribute('href', packPath(pack.entry.id, 'en'));
     await expect(card).toContainText(pack.data.description);
-    await expect(card).toContainText(`By ${pack.data.author}`);
+    await expect(card).toContainText(`Uploaded by ${pack.entry.uploader}`);
     await expect(card).toContainText(`${pack.data.scenes.length} scenes`);
   }
   await expect(page.getByRole('button', { name: /upload|publish|import|create pack/i })).toHaveCount(0);
@@ -33,6 +34,7 @@ test('the pack gallery shows authored metadata and supports responsive keyboard 
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await target.scrollIntoViewIfNeeded();
     await target.focus();
     await expect(target).toBeFocused();
     await expect(target).toBeInViewport();
@@ -55,6 +57,7 @@ test('the pack gallery shows authored metadata and supports responsive keyboard 
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await scene.scrollIntoViewIfNeeded();
     await scene.focus();
     await expect(scene).toBeFocused();
     await expect(scene).toBeInViewport();
@@ -87,14 +90,17 @@ test('a newly published pack and its actual authored scene appear from the runti
   await page.route(new URL(memePack.entry.manifest, catalogUrl).href, route => route.fulfill({ json: current.packs.some(pack => pack.id === id) ? source : memePack.data }));
   await page.route(new URL(manifest, catalogUrl).href, route => route.fulfill({ json: extra }));
   await page.goto(packsPath('en'));
-  const gallery = page.getByRole('navigation', { name: 'Content packs', exact: true });
+  const gallery = page.getByRole('navigation', { name: 'Packs', exact: true });
   await expect(gallery.getByRole('link', { name: extra.title, exact: true })).toHaveCount(0);
-  current.packs.push({ id, manifest });
+  current.packs.push({ id, manifest, uploader: 'Patrick' });
   await page.reload();
   await expect(gallery.getByRole('link')).toHaveCount(packs.length + 1);
   const added = gallery.getByRole('link', { name: extra.title, exact: true });
   await expect(added).toContainText(extra.description);
   await expect(added).toContainText('1 scene');
+  await page.getByRole('searchbox', { name: 'Find a pack', exact: true }).fill(source.franchise!);
+  await expect(gallery.getByRole('link')).toHaveCount(2);
+  await expect(gallery.getByRole('link', { name: memePack.data.title, exact: true })).toBeVisible();
   await added.click();
   await expect(page.getByRole('heading', { level: 1, name: extra.title, exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(1);
@@ -106,13 +112,13 @@ test('a newly published pack and its actual authored scene appear from the runti
   current.packs.pop();
   await page.reload();
   await expect(page.getByRole('heading', { level: 1, name: 'Page not found', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Content packs', exact: true }).click();
+  await page.getByRole('button', { name: 'Packs', exact: true }).click();
   await expect(gallery.getByRole('link', { name: extra.title, exact: true })).toHaveCount(0);
 });
 
 test('pack selection scopes search and survives reload, history and language changes', async ({ page }) => {
   await page.goto(packsPath('en'));
-  await page.getByRole('navigation', { name: 'Content packs', exact: true }).getByRole('link', { name: starter.data.title, exact: true }).click();
+  await page.getByRole('navigation', { name: 'Packs', exact: true }).getByRole('link', { name: starter.data.title, exact: true }).click();
   await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(starter.data.scenes.length);
   const notice = page.getByText(starter.data.locales.en.notices.library, { exact: true });
   await expect(notice).toBeVisible();
@@ -138,12 +144,12 @@ test('pack selection scopes search and survives reload, history and language cha
   await page.goForward();
   await expect(page).toHaveURL(new URL(packPath(starter.entry.id, 'zh-CN'), page.url()).href);
   await setLanguage(page, 'en');
-  await page.getByRole('link', { name: 'All content packs', exact: true }).click();
+  await page.getByRole('link', { name: 'All packs', exact: true }).click();
   await expect(page).toHaveURL(new URL(packsPath('en'), page.url()).href);
   await page.goBack();
   await expect(page.getByRole('heading', { level: 1, name: starter.data.title, exact: true })).toBeVisible();
   await page.goForward();
-  await expect(page.getByRole('navigation', { name: 'Content packs', exact: true })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Packs', exact: true })).toBeVisible();
 });
 
 test('recorded dubs retain their selected pack through saving, reload, language and player Back', async ({ page, browserName }) => {
@@ -183,7 +189,7 @@ test('recorded dubs retain their selected pack through saving, reload, language 
 test('an empty catalog keeps a useful pack gallery without an upload flow', async ({ page }) => {
   await page.route(catalogUrl, route => route.fulfill({ json: { version: 1, packs: [] } }));
   await page.goto(packsPath('en'));
-  await expect(page.getByRole('heading', { level: 1, name: 'Content packs', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Packs', exact: true })).toBeVisible();
   await expect(page.getByRole('status')).toHaveText('No content packs yet');
   await expect(page.getByRole('button', { name: /upload|publish|import|create pack/i })).toHaveCount(0);
   await expect(page.locator('input[type="file"]')).toHaveCount(0);
@@ -195,11 +201,11 @@ test('an empty authored pack stays distinct from an unknown pack', async ({ page
   await expect(page.getByRole('heading', { level: 1, name: starter.data.title, exact: true })).toBeVisible();
   await expect(page.getByRole('status')).toHaveText('No scenes in this pack');
   await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(0);
-  await page.getByRole('link', { name: 'All content packs', exact: true }).click();
+  await page.getByRole('link', { name: 'All packs', exact: true }).click();
   await page.goto(packPath('pack_missingTest', 'en'));
   await expect(page.getByRole('heading', { level: 1, name: 'Page not found', exact: true })).toBeVisible();
   await expect(page.getByRole('searchbox')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Content packs', exact: true }).click();
+  await page.getByRole('button', { name: 'Packs', exact: true }).click();
   await expect(page).toHaveURL(new URL(packsPath('en'), page.url()).href);
-  await expect(page.getByRole('navigation', { name: 'Content packs', exact: true })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Packs', exact: true })).toBeVisible();
 });

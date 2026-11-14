@@ -136,11 +136,11 @@
     "recordDescription": "Listen to the original, press record, and speak. Press stop when you finish.",
     "watchTitle": "3. Watch your version.",
     "watchDescription": "Your recording replaces your character’s lines. Other characters keep their original voices.",
-    "recordingAdvice": "Headphones work best. Green shows the original audio, orange shows your voice, and the cursor shows the current time. Waveforms show loudness, not pronunciation scores; the original includes music and effects. Dubs save in this browser. Continue or delete them in My dubs. No uploads. On phones, use Safari or Chrome; recording inside WeChat has not been verified.",
+    "recordingAdvice": "Headphones work best. Green shows the original audio, orange shows your voice, and the cursor shows the current time. Waveforms show loudness, not pronunciation scores; the original includes music and effects. Dub drafts stay in this browser. Continue or delete them in My dubs. A finished video uploads only if you choose Create playback link and confirm the upload. On phones, use Safari or Chrome; recording inside WeChat has not been verified.",
     "guardianConsent": "Currently for you and your colleagues to test. Before a child uses it, a guardian must understand and agree to the recording purpose."
   },
   "credits": {
-    "localVideoNotice": "This video is read from your device and is not uploaded. Confirm permissions before publishing it."
+    "localVideoNotice": "The source video is read from your device. A finished video uploads only if you choose Create playback link and confirm the upload. Confirm permissions before sharing."
   },
   "navigation": {
     "library": "Scene library",

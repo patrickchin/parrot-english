@@ -20,7 +20,7 @@ for (const language of added) test(`${language.code} opens directly, persists, a
   expect(selector!.height).toBeGreaterThanOrEqual(44);
   await page.reload();
   await expect(page.getByRole('button', { name: language.start, exact: true })).toBeEnabled();
-  await page.goto(`/${language.code}/library/teens`);
+  await page.goto(`/${language.code}/library/all`);
   await expect(page.getByRole('searchbox', { name: language.search, exact: true })).toBeVisible();
   await page.goto(`/${language.code}/dubs`);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(language.dubs);

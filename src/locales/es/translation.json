@@ -136,11 +136,11 @@
     "recordDescription": "Escucha el original, pulsa Grabar y habla. Pulsa Detener cuando termines.",
     "watchTitle": "3. Mira tu versión.",
     "watchDescription": "Tu grabación sustituye las frases de tu personaje. Los demás conservan sus voces originales.",
-    "recordingAdvice": "Es mejor usar auriculares. El verde muestra el audio original; el naranja, tu voz. El cursor marca el momento actual. Las formas de onda muestran el volumen, no puntúan la pronunciación; el original incluye música y efectos. Los doblajes se guardan en este navegador. Puedes continuarlos o borrarlos en Mis doblajes. No se suben a ningún servidor. En el móvil, usa Safari o Chrome; la grabación dentro de WeChat no se ha verificado.",
+    "recordingAdvice": "Es mejor usar auriculares. El verde muestra el audio original; el naranja, tu voz. El cursor marca el momento actual. Las formas de onda muestran el volumen, no puntúan la pronunciación; el original incluye música y efectos. Los borradores de doblaje se guardan en este navegador. Puedes continuarlos o borrarlos en Mis doblajes. El vídeo terminado solo se sube si eliges Crear enlace de reproducción y confirmas la subida. En el móvil, usa Safari o Chrome; la grabación dentro de WeChat no se ha verificado.",
     "guardianConsent": "Por ahora es para que tú y tus compañeros hagáis pruebas. Antes de que lo use un niño, su tutor debe conocer y aceptar la finalidad de la grabación."
   },
   "credits": {
-    "localVideoNotice": "Este vídeo se lee desde tu dispositivo y no se sube. Confirma los permisos antes de publicarlo."
+    "localVideoNotice": "El vídeo original se lee desde tu dispositivo. El vídeo terminado solo se sube si eliges Crear enlace de reproducción y confirmas la subida. Confirma los permisos antes de compartirlo."
   },
   "navigation": {
     "library": "Escenas",

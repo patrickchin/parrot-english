@@ -7,7 +7,7 @@ import { clips, packs } from '../content-fixtures';
 test('the production build browses published packs and reloads the selected pack', async ({ page }) => {
   const response = await page.goto('/en/packs');
   expect(response?.status()).toBe(200);
-  const gallery = page.getByRole('navigation', { name: 'Content packs', exact: true });
+  const gallery = page.getByRole('navigation', { name: 'Packs', exact: true });
   await expect(gallery.getByRole('link')).toHaveCount(packs.length);
   const pack = packs[0];
   await gallery.getByRole('link', { name: pack.data.title, exact: true }).click();
@@ -50,7 +50,7 @@ test('the public build reads a selected device file without uploading it or requ
   expect(requests).toEqual([]);
 });
 
-for (const path of ['/en/', '/zh/', '/en/library/teens', '/zh/library/younger-age-5', '/en/scenes/toy-story-infinity', '/en/dubs', '/zh/dubs/']) test(`localized production path ${path} opens in its requested language`, async ({ page }) => {
+for (const path of ['/en/', '/zh/', '/en/packs', '/zh/packs', '/en/library/all', '/zh/library/all', '/en/scenes/toy-story-infinity', '/en/dubs', '/zh/dubs/']) test(`localized production path ${path} opens in its requested language`, async ({ page }) => {
   const response = await page.goto(path);
   expect(response?.status()).toBe(200);
   const english = path.startsWith('/en/');
@@ -58,14 +58,14 @@ for (const path of ['/en/', '/zh/', '/en/library/teens', '/zh/library/younger-ag
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   if (path.includes('/scenes/')) await expect(page.getByRole('button', { name: english ? 'Start dubbing' : '开始配音', exact: true })).toBeEnabled();
   else if (path.includes('/dubs')) await expect(page.getByRole('heading', { level: 1 })).toHaveText(english ? 'My dubs' : '我的配音');
-  else await expect(page.getByRole('searchbox', { name: path.includes('/library/') ? english ? 'Find a scene' : '查找片段' : english ? 'Find a franchise or tag' : '查找系列或标签', exact: true })).toBeVisible();
+  else await expect(page.getByRole('searchbox', { name: path.includes('/library/') ? english ? 'Find a scene' : '查找片段' : english ? 'Find a pack' : '查找内容包', exact: true })).toBeVisible();
 });
 
 for (const [language, heading, search, start] of [
   ['es', 'Mis doblajes', 'Buscar una escena', 'Empezar a doblar'],
   ['ja', '自分の吹き替え', 'シーンを探す', '吹き替えを始める'],
   ['ko', '내 더빙', '장면 찾기', '더빙 시작'],
-]) for (const route of ['/', '/library/teens', '/dubs', '/scenes/patrick']) test(`production ${language}${route} opens in its requested language`, async ({ page }) => {
+]) for (const route of ['/', '/library/all', '/dubs', '/scenes/patrick']) test(`production ${language}${route} opens in its requested language`, async ({ page }) => {
   const response = await page.goto('/' + language + route);
   expect(response?.status()).toBe(200);
   await expect(page.locator('html')).toHaveAttribute('lang', language);
