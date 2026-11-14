@@ -52,6 +52,8 @@ See [engineering evidence](engineering-readiness.md).
 
 Source is isolated on `codex/franchise-pack-uploads`, based on the released
 commit above. Other sessions' edits in the shared checkout remain untouched.
+Review steps: [content PR #275](https://github.com/patrickchin/parrot-english/pull/275)
+and [implementation PR #276](https://github.com/patrickchin/parrot-english/pull/276).
 New source, content, cloud setup, and publication are separate milestones.
 Nothing in this section implies the new API is hosted.
 
@@ -76,7 +78,12 @@ bundles. Owner and anonymous guest APIs have separate triggers and execution
 roles. The dedicated APIs address ESA's four-fetch execution limit and ten-second
 gateway response wait; they do not introduce a database or learner accounts.
 
-Latest local verification is recorded as it completes. Earlier assessments are
+Latest [candidate verification](pack-management-verification.md): TypeScript,
+39 app / 17 content / 1 boundary / 28 API tests pass. Focused browser coverage
+resolves to 281 passes / 16 intentional skips after targeted reruns. Extra visual
+and built-player checks are awaiting recovery from independently diagnosed local
+network-port exhaustion; Git pushes are affected too. No unrelated process or
+OS setting was changed. Earlier assessments are
 historical evidence, not checks of this increment:
 [product](product-readiness.md), [engineering](engineering-readiness.md),
 [content](content-readiness.md).
