@@ -175,3 +175,90 @@ The initial focused run could not bind a local server in the sandbox (`EPERM`).
 Its authorized escalated retry was interrupted at the coordinator's request
 before test execution while the candidate base is reconciled. These edits are
 **not yet browser-verified**. No passing focused result is claimed.
+
+## Owner-pack friend-testing implementation and verification
+
+The owner subsequently selected friend testing, owner-published content packs,
+pack browsing/selection, and no end-user upload interface, while deferring
+creator-permission work. That supersedes the initial release-priority proposal
+for this software cycle. The coordinator reconciled the working branch to
+remote main `cc7deb2d1ac27c9cb0b3ed63501cfac0e157b3d7`, retaining all **128**
+authored scenes. Application changes are in candidate commit
+`cf3d2bcf552aea3692c9ff94b067c4c6ed8ceb07`; subsequent portrait-test corrections
+and replay diagnostic instrumentation are test-only follow-ups. Production
+publication is not established by these local results.
+
+The new browser coverage in `tests/browser/pack-browser.spec.ts` checks authored
+pack metadata and counts; header discovery; gallery/detail keyboard behavior at
+320, 390, 768 and 1440 pixels; no user-upload controls; runtime addition and
+withdrawal of a pack containing an unchanged authored scene; search restricted
+to the selected pack; browser history, reload and language changes; recording,
+local save, My dubs resume and Back retaining the owning pack; and distinct
+empty/unknown-pack recovery. A no-results search must retain the selected pack's
+authored guidance. Existing source/playback/save checks were preserved.
+
+| Verification | Observed result |
+| --- | --- |
+| Candidate `npm test` phase | TypeScript passed; 38 app + 15 content + 1 boundary = **54 passed**, zero failed/skipped |
+| Full `npm run test:all` browser phase | **597 selected: 558 passed, 24 skipped, 15 failed**, 22.5 minutes; exit 1 |
+| New pack-browser scenarios in the full run | 17 passed, 1 explicit WebKit microphone skip; Chromium/mobile record-save-resume passed |
+| Production-build pack browse/deep-link/reload | Passed; per-scene production playback covered the 128-scene authored catalog |
+| Corrected collection tests | 18 passed across Chromium/mobile/WebKit |
+| Pack-scoped search, history, language and guidance after no-results search | 3 passed across Chromium/mobile/WebKit after the notice-preservation correction |
+| Final authored-portrait and fallback-role checks | 6 passed across Chromium/mobile/WebKit, including every selectable role in all 128 scenes |
+| WebKit timing follow-up, one worker/shared browser | Capture timing and cancellation passed; stress seed 2026 passed; replay timing failed again during initial capture: 3 passed, 1 failed |
+| Fresh browser with only WebKit replay-timing | 1 passed, with original capture/sync/error assertions retained |
+| Final four-case WebKit sequence with bounded diagnostics | 4 passed, 41.7 seconds; same capture/cancellation/stress-2026/replay order, unchanged assertions and guards |
+
+Twelve failures in the full run came from pre-existing test assumptions exposed
+by the newer main content: three collection assertions on each browser still
+assumed three internet memes/raw source-name grouping, and portrait checks used
+unlocalized authored names. Corrected collection expectations use authored tags
+and retain each scene's source label. Portrait coverage now also handles the
+schema's optional image: named off-screen speakers remain selectable without
+an invented picture, while provided images still must load at least 192 pixels
+wide and retain source/series-specific identity. Common names such as Boy and
+Matt in unrelated performances are not conflated. All of those corrected test
+groups subsequently passed; no role, media or authored name was changed.
+
+The other three full-run failures were WebKit media timing interruptions in
+capture-timing, replay-timing (during capture), and stress seed 2026. The stress
+trace shows the native video clock staying at 0.700 seconds while audio advances
+for roughly 121 ms, triggering the unchanged drift guard; the disappearing Stop
+control is a consequence, not proof of a navigation regression. Capture/stress
+passed the bounded follow-up. Replay failed after other capture tests but passed
+alone in a fresh browser. A final repeat of the same four-case sequence with
+bounded diagnostic sampling also passed all four checks; its failure-only
+`early-capture-clocks` attachment was therefore not generated. The native timing
+interruption remains intermittent; order/session sensitivity is a hypothesis,
+not an established root cause or fix. Preserve these failures as an engineering
+follow-up. No runtime guard or error assertion was weakened, and
+these results do not establish physical iPhone/Android or WeChat reliability.
+
+Retained local evidence:
+
+- Full suite: `/tmp/parrotbook-owner-packs-final.log` and
+  `/tmp/parrotbook-owner-packs-final-results/`.
+- Collection/guidance delta: `/tmp/parrotbook-owner-packs-delta.log` and
+  `/tmp/parrotbook-owner-packs-delta-results/` (24 passed, three portrait
+  assertions subsequently corrected).
+- Final portraits: `/tmp/parrotbook-owner-packs-portraits-final.log` and
+  `/tmp/parrotbook-owner-packs-portraits-final-results/` (6 passed).
+- Shared-browser WebKit timing follow-up:
+  `/tmp/parrotbook-owner-packs-webkit-isolated.log` and
+  `/tmp/parrotbook-owner-packs-webkit-isolated-results/`.
+- Fresh replay-only run: `/tmp/parrotbook-owner-packs-replay-fresh.log` and
+  `/tmp/parrotbook-owner-packs-replay-fresh-results/` (1 passed).
+- Final four-case sequence:
+  `/tmp/parrotbook-owner-packs-webkit-sequence-diagnostics.log` and
+  `/tmp/parrotbook-owner-packs-webkit-sequence-diagnostics-results/` (4 passed).
+- Explicit screenshots remain under
+  `~/Pictures/Screenshots/Codex/parrot-english/`, including
+  `content-packs-{320,390,768,1440}.png`.
+
+The full command did not finish green; report its actual result alongside these
+successful affected checks and the remaining WebKit investigation. No further
+full-suite restart was needed for these bounded, independently checked changes.
+Friend testing is scoped to the verified Chrome paths; this is not a clean
+all-browser release claim. The coordinator requested an end to test work after
+the final bounded sequence, and no further browser checks were started.
