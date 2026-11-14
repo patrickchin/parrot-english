@@ -2,18 +2,85 @@ import { waveformOnset } from './waveform-pixels';
 import { readScene } from '../content-fixtures';
 import { test, expect } from './fixtures';
 
+test.afterEach(async ({ page }, info) => {
+  if (info.status === info.expectedStatus) return;
+  const capture = await page.evaluate(() => {
+    const audit = (window as unknown as { replayAudit?: {
+      captureFrames: unknown[]; captureEvents: unknown[]; presentedFrames: unknown[];
+    } }).replayAudit;
+    return { frames: audit?.captureFrames, events: audit?.captureEvents,
+      presentedFrames: audit?.presentedFrames,
+      alerts: [...document.querySelectorAll('[role="alert"]')].map(node => node.textContent) };
+  }).catch(() => ({ unavailable: true }));
+  await info.attach('early-capture-clocks', { body: JSON.stringify(capture), contentType: 'application/json' });
+});
+
 test('replay reuses decoded takes and aligns a rendered audio transient with the picture', async ({ page }) => {
   await page.addInitScript(() => {
     const NativeContext = AudioContext;
-    type Audit = { context: AudioContext; decodes: number; transient?: number; frames: { now: number; media: number }[] };
-    const audit = { decodes: 0, frames: [] } as unknown as Audit;
+    type Primitive = string | number | boolean | undefined;
+    type Audit = { context: AudioContext; input?: AudioContext; decodes: number; transient?: number;
+      frames: { now: number; media: number }[]; captureFrames: Record<string, Primitive>[];
+      captureEvents: Record<string, Primitive>[]; presentedFrames: Record<string, Primitive>[]; captureFinished?: boolean };
+    const audit = { decodes: 0, frames: [], captureFrames: [], captureEvents: [], presentedFrames: [] } as unknown as Audit;
     (window as unknown as { replayAudit: Audit }).replayAudit = audit;
+    const sample = () => {
+      const video = document.querySelector('video');
+      const stamp = audit.context?.getOutputTimestamp();
+      return { now: performance.now(), video: video?.currentTime, paused: video?.paused,
+        seeking: video?.seeking, readyState: video?.readyState, rate: video?.playbackRate,
+        audio: audit.context?.currentTime, state: audit.context?.state,
+        input: audit.input?.currentTime, inputState: audit.input?.state,
+        outputTime: stamp?.contextTime, outputPerformanceTime: stamp?.performanceTime };
+    };
+    const remember = (rows: Record<string, Primitive>[], value: Record<string, Primitive>, limit: number) => {
+      rows.push(value); if (rows.length > limit) rows.shift();
+    };
+    let observed: HTMLVideoElement | undefined;
+    const earlyFrames = () => {
+      const video = document.querySelector('video');
+      if (video && audit.context) remember(audit.captureFrames, sample(), 360);
+      if (video && video !== observed && video.requestVideoFrameCallback) {
+        observed = video;
+        const presented: VideoFrameRequestCallback = (now, metadata) => {
+          remember(audit.presentedFrames, { now, media: metadata.mediaTime,
+            expectedDisplayTime: metadata.expectedDisplayTime, presented: metadata.presentedFrames }, 180);
+          if (!audit.captureFinished) video.requestVideoFrameCallback(presented);
+        };
+        video.requestVideoFrameCallback(presented);
+      }
+      if (document.querySelector('[role="alert"]')) audit.captureFinished = true;
+      if (!audit.captureFinished) requestAnimationFrame(earlyFrames);
+    };
+    requestAnimationFrame(earlyFrames);
+    for (const event of ['playing', 'pause', 'waiting', 'stalled', 'seeking', 'seeked']) {
+      document.addEventListener(event, e => {
+        if (e.target instanceof HTMLVideoElement && !audit.captureFinished) {
+          remember(audit.captureEvents, { event, ...sample() }, 60);
+        }
+      }, true);
+    }
+    const NativeWorklet = AudioWorkletNode;
+    window.AudioWorkletNode = class extends NativeWorklet {
+      constructor(context: BaseAudioContext, name: string, options?: AudioWorkletNodeOptions) {
+        super(context, name, options);
+        if (name !== 'capture-waveform') return;
+        this.port.addEventListener('message', event => {
+          if (event.data.type === 'started' || event.data.type === 'stopped') {
+            remember(audit.captureEvents, { event: 'worklet.' + event.data.type,
+              startedAt: event.data.time, ...sample() }, 60);
+            if (event.data.type === 'stopped') audit.captureFinished = true;
+          }
+        });
+      }
+    };
     window.AudioContext = class extends NativeContext {
       constructor(options?: AudioContextOptions) { super(options); audit.context = this; }
       decodeAudioData(bytes: ArrayBuffer) { audit.decodes++; return super.decodeAudioData(bytes); }
     };
     Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: async () => {
       const context = new NativeContext(); await context.resume();
+      audit.input = context;
       const oscillator = context.createOscillator(), gain = context.createGain();
       const output = context.createMediaStreamDestination();
       oscillator.connect(gain).connect(output);

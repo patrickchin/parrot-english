@@ -149,7 +149,8 @@
     "main": "メインナビゲーション",
     "howToDub": "吹き替えのやり方",
     "language": "表示言語",
-    "dubs": "自分の吹き替え"
+    "dubs": "自分の吹き替え",
+    "packs": "コンテンツパック"
   },
   "library": {
     "sceneCount": "{{count}}シーン",
@@ -209,5 +210,14 @@
   },
   "app": {
     "title": "Parrotbook · 英語で吹き替え"
+  },
+  "packs": {
+    "introduction": "コンテンツパックを選んで、吹き替えるシーンを探しましょう。",
+    "allPacks": "すべてのコンテンツパック",
+    "by": "作成者：{{author}}",
+    "scenes": "パック内のシーン",
+    "emptyTitle": "コンテンツパックはまだありません",
+    "emptyDescription": "新しいパックが公開されると、ここに表示されます。",
+    "emptyPack": "このパックにはシーンがありません"
   }
 }

@@ -1,4 +1,5 @@
 import { test, expect, setLanguage, headerDestination } from './fixtures';
+import { clips } from '../content-fixtures';
 
 test('the readable Toy Story URL keeps its name through saving, reload and resume', async ({ page }) => {
   await page.goto('/library/older-audience');
@@ -14,10 +15,12 @@ test('the readable Toy Story URL keeps its name through saving, reload and resum
   await expect(page).toHaveURL(/\/library\/all$/);
   await (await headerDestination(page, '我的配音')).click();
   await page.getByRole('button', { name: /^继续配音：飞向宇宙！/ }).click();
-  await expect(page).toHaveURL(savedUrl);
+  const resumedUrl = new URL(savedUrl);
+  resumedUrl.searchParams.set('pack', clips.find(clip => clip.routeSlug === 'toy-story-infinity')!.packId);
+  await expect(page).toHaveURL(resumedUrl.href);
   await expect(page.getByRole('button', { name: '开始录音', exact: true })).toBeEnabled();
   await setLanguage(page, 'en');
-  await expect(page).toHaveURL(savedUrl.replace('/zh/', '/en/'));
+  await expect(page).toHaveURL(resumedUrl.href.replace('/zh/', '/en/'));
   await expect(page.getByRole('button', { name: 'Record', exact: true })).toBeEnabled();
 });
 
@@ -130,22 +133,26 @@ test('My dubs shows storage read failures and retries without an empty-state cla
 });
 
 
-test('navigation shares the language-selector row and its phone menu supports the keyboard', async ({ page }) => {
-  for (const path of ['/library/older-audience', '/dubs']) {
+test('navigation shares the language-selector row and its compact menu supports the keyboard', async ({ page }) => {
+  for (const path of ['/library/older-audience', '/dubs', '/packs']) {
     await page.goto(path);
     await setLanguage(page, 'en');
     for (const width of [320, 390, 768, 1440]) {
       await page.setViewportSize({ width, height: 900 });
       const menu = page.getByRole('button', { name: 'Main navigation', exact: true });
-      const control = width < 768 ? menu : page.getByRole('link', { name: 'My dubs', exact: true });
+      const compact = await menu.isVisible();
+      const control = compact ? menu : page.getByRole('link', { name: 'My dubs', exact: true });
       const language = page.getByRole('combobox');
       await expect(control).toBeInViewport();
       const navigationBox = (await control.boundingBox())!;
       const languageBox = (await language.boundingBox())!;
       expect(Math.abs(navigationBox.y + navigationBox.height / 2 - languageBox.y - languageBox.height / 2)).toBeLessThan(1);
       expect(navigationBox.x + navigationBox.width).toBeLessThanOrEqual(languageBox.x + 1);
+      const brand = (await page.getByRole('link', { name: 'Parrotbook home', exact: true }).boundingBox())!;
+      const firstNavigation = compact ? navigationBox : (await page.getByRole('link', { name: 'Scene library', exact: true }).boundingBox())!;
+      expect(brand.x + brand.width).toBeLessThanOrEqual(firstNavigation.x + 1);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-      if (width < 768) {
+      if (compact) {
         await menu.focus(); await menu.press('Enter');
         await expect(page.getByRole('menu')).toBeVisible();
         await expect(page.getByRole('menuitem', { name: 'My dubs', exact: true })).toBeVisible();

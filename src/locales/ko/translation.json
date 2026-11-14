@@ -149,7 +149,8 @@
     "main": "주 메뉴",
     "howToDub": "더빙하는 방법",
     "language": "화면 언어",
-    "dubs": "내 더빙"
+    "dubs": "내 더빙",
+    "packs": "콘텐츠 팩"
   },
   "library": {
     "sceneCount": "장면 {{count}}개",
@@ -209,5 +210,14 @@
   },
   "app": {
     "title": "Parrotbook · 영어 더빙"
+  },
+  "packs": {
+    "introduction": "콘텐츠 팩을 고른 다음 더빙할 장면을 선택하세요.",
+    "allPacks": "모든 콘텐츠 팩",
+    "by": "제작: {{author}}",
+    "scenes": "이 팩의 장면",
+    "emptyTitle": "아직 콘텐츠 팩이 없어요",
+    "emptyDescription": "새 팩이 공개되면 여기에 표시돼요.",
+    "emptyPack": "이 팩에는 장면이 없어요"
   }
 }

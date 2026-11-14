@@ -149,7 +149,8 @@
     "main": "Main navigation",
     "howToDub": "How to dub",
     "language": "UI language",
-    "dubs": "My dubs"
+    "dubs": "My dubs",
+    "packs": "Content packs"
   },
   "library": {
     "sceneCount": "{{count}} scenes",
@@ -209,5 +210,14 @@
   },
   "app": {
     "title": "Parrotbook · English dubbing"
+  },
+  "packs": {
+    "introduction": "Choose a pack, then pick a scene to dub.",
+    "allPacks": "All content packs",
+    "by": "By {{author}}",
+    "scenes": "Scenes in this pack",
+    "emptyTitle": "No content packs yet",
+    "emptyDescription": "New packs will appear here when they are published.",
+    "emptyPack": "No scenes in this pack"
   }
 }

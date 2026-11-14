@@ -149,7 +149,8 @@
     "main": "Navegación principal",
     "howToDub": "Cómo doblar",
     "language": "Idioma de la interfaz",
-    "dubs": "Mis doblajes"
+    "dubs": "Mis doblajes",
+    "packs": "Paquetes de contenido"
   },
   "library": {
     "sceneCount": "{{count}} escenas",
@@ -209,5 +210,14 @@
   },
   "app": {
     "title": "Parrotbook · Doblaje en inglés"
+  },
+  "packs": {
+    "introduction": "Elige un paquete y después una escena para doblar.",
+    "allPacks": "Todos los paquetes",
+    "by": "Por {{author}}",
+    "scenes": "Escenas de este paquete",
+    "emptyTitle": "Aún no hay paquetes",
+    "emptyDescription": "Los nuevos paquetes aparecerán aquí cuando se publiquen.",
+    "emptyPack": "Este paquete no tiene escenas"
   }
 }

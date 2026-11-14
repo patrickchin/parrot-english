@@ -6,6 +6,11 @@ recordings remain in the browser. Both sources stay in this repository. Content
 publication remains an explicit OSS operation; committing content alone does not
 publish it. No database or new service is introduced.
 
+For the owner-only stage, publish, and withdrawal commands, see the
+[owner quickstart](release/owner-pack-quickstart.md). It includes the verified
+128-scene staging result and explains its dependency on existing hosted media.
+This workflow does not require a learner upload interface.
+
 The current 128 scenes are packaged into Memes & clips, First English,
 Ages 10–12, and Teenagers. Each pack owns its library summaries, searchable text,
 scene manifests, timed English subtitles, Chinese hints, roles, portraits,
@@ -116,6 +121,9 @@ folder's aggregate revision identifies the complete catalog snapshot.
 Inspect staged output before uploading. Source packs remain outside `public/`
 and are never imported into application JavaScript. `npm run build` rejects pack
 folders, scene manifests, waveforms, and media accidentally copied into `dist/`.
+Staging does not download `mediaBase` assets. The current release contains JSON
+plus references to existing OSS media, rather than a standalone portable media
+archive. No credentials or network requests are required to validate or stage.
 
 Authoring scripts use `scripts/content-paths.mjs` to find scenes and update pack
 summaries/search text. No generated catalog or search index is written to `src/`.
@@ -148,6 +156,8 @@ catalog. The catalog uses `Cache-Control: no-store` so refreshes discover change
 versioned objects can be cached. Upload new external `mediaBase` files before
 publishing references to them. The command does not build, commit, push, or
 deploy the player. A Git commit or push does not replace this publication step.
+The publisher restages the current source rather than promoting an arbitrary
+staged directory. If content changed since inspection, review the new revision.
 
 The `Deploy player` GitHub workflow checks the complete diff of each `main` push.
 Changes limited to `content/`, `docs/`, `README.md`, and known authoring scripts
