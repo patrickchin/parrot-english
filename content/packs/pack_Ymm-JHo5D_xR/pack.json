@@ -1,0 +1,603 @@
+{
+  "version": 1,
+  "id": "pack_Ymm-JHo5D_xR",
+  "title": "Up",
+  "franchise": "Up",
+  "description": "English dubbing scenes from Up.",
+  "author": "Parrotbook",
+  "scenes": [
+    {
+      "id": "scene_nJ9pMesA",
+      "slug": "squirrel",
+      "title": "松鼠！",
+      "english": "Squirrel!",
+      "note": "Up",
+      "source": "https://www.youtube.com/watch?v=Fi2i7iuA1n4&t=95s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/squirrel/squirrel-poster-e20d10b48ef2.jpg",
+      "tags": [
+        "Up",
+        "飞屋环游记",
+        "Dug",
+        "Carl",
+        "道格",
+        "卡尔",
+        "dog",
+        "狗",
+        "animals",
+        "动物",
+        "talking collar",
+        "会说话的项圈"
+      ],
+      "quotes": [
+        "My master made me this collar. He is a good and smart master, and he made me this collar so that I may talk.",
+        "我的主人给我做了这个项圈。他是个善良又聪明的主人，这个项圈能让我说话。",
+        "Squirrel!",
+        "松鼠！",
+        "My master is good and smart.",
+        "我的主人善良又聪明。",
+        "It's impossible!",
+        "这不可能！",
+        "Oh, it is because my master is smart.",
+        "哦，这有可能，因为我的主人很聪明。"
+      ],
+      "manifest": "scenes/squirrel/scene.json"
+    },
+    {
+      "id": "scene_IuDLtAby",
+      "slug": "meet-dug",
+      "title": "刚认识就喜欢你！",
+      "english": "I have just met you, and I love you.",
+      "note": "Up",
+      "source": "https://www.youtube.com/watch?v=Fi2i7iuA1n4&t=83s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/meet-dug/meet-dug-poster-42f496b588d1.jpg",
+      "tags": [
+        "Up",
+        "飞屋环游记",
+        "Russell",
+        "Dug",
+        "Carl",
+        "罗素",
+        "道格",
+        "卡尔",
+        "dog",
+        "狗",
+        "greetings",
+        "打招呼",
+        "friendship",
+        "友谊"
+      ],
+      "quotes": [
+        "Speak!",
+        "说话！",
+        "Hi there!",
+        "你们好！",
+        "Did that dog just say hi there?",
+        "那只狗刚才说了“你们好”吗？",
+        "Oh, yes! My name is Dug. I have just met you, and I love you.",
+        "哦，是的！我叫道格。我刚认识你，就已经喜欢你了。"
+      ],
+      "manifest": "scenes/meet-dug/scene.json"
+    },
+    {
+      "id": "scene_LtZ9BfnLwbo",
+      "slug": "up-cross-the-porch",
+      "routeSlug": "up-cross-the-porch",
+      "title": "我能帮你过点什么吗？",
+      "english": "Can I help you cross something?",
+      "note": "Up",
+      "source": "https://www.youtube.com/watch?v=w8NzWsA5188&t=2s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/up-cross-the-porch/up-cross-the-porch-poster-9108681301fd.jpg",
+      "tags": [
+        "Up",
+        "我能帮你过点什么吗？",
+        "Russell",
+        "Carl",
+        "罗素",
+        "卡尔"
+      ],
+      "quotes": [
+        "Good afternoon. My name is Russell, and I am a Wilderness Explorer in Tribe fifty-four, Sweat Lodge twelve. Are you in need of any assistance today, sir?",
+        "下午好，我叫罗素，是54部落12分队的荒野探险家。先生，您需要帮助吗？",
+        "No.",
+        "不需要。",
+        "I could help you cross the street.",
+        "我可以扶您过马路。",
+        "No.",
+        "不需要。",
+        "I could help you cross your yard.",
+        "我可以扶您穿过院子。",
+        "No.",
+        "不需要。",
+        "I could help you cross your porch.",
+        "我可以扶您走过门廊。",
+        "No.",
+        "不需要。",
+        "Well, I gotta help you cross something.",
+        "我总得扶您过点什么。",
+        "Uh, no. I'm doing fine.",
+        "不用了，我挺好。"
+      ],
+      "manifest": "scenes/up-cross-the-porch/scene.json"
+    },
+    {
+      "id": "scene_Pz29dRMAdd0",
+      "slug": "up-find-a-snipe",
+      "routeSlug": "up-find-a-snipe",
+      "title": "你听过沙锥鸟吗？",
+      "english": "Have you heard of a snipe?",
+      "note": "Up",
+      "source": "https://www.youtube.com/watch?v=w8NzWsA5188&t=89s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/up-find-a-snipe/up-find-a-snipe-poster-b74d23091e3c.jpg",
+      "tags": [
+        "Up",
+        "你听过沙锥鸟吗？",
+        "Carl",
+        "Russell",
+        "卡尔",
+        "罗素"
+      ],
+      "quotes": [
+        "You want to assist an old person?",
+        "你想帮助老人？",
+        "Yep! Then I'll be a Senior Wilderness Explorer.",
+        "对！这样我就能成为高级荒野探险家了。",
+        "You ever heard of a snipe?",
+        "你听说过沙锥鸟吗？",
+        "Snipe?",
+        "沙锥鸟？",
+        "Bird. Beady eyes. Every night it sneaks in my yard and gobbles my poor azaleas. I'm elderly and infirm. I can't catch it. If only someone could help me.",
+        "一种小眼睛的鸟。每晚偷偷跑进院子吃我的杜鹃花。我年老体弱，抓不到它。要是有人能帮我就好了。",
+        "Me! Me! I'll do it!",
+        "我！我来帮忙！",
+        "Oh, I don't know. It's awfully crafty. You'd have to clap your hands three times to lure it in.",
+        "这可不好说，它很狡猾。你得拍三下手才能引它出来。",
+        "I'll find him, Mr. Fredricksen!",
+        "我会找到它的，弗雷德里克森先生！",
+        "I think its burrow is two blocks down. If you go...",
+        "它的窝好像在两个街区外。你往……",
+        "Two blocks down. Got it!",
+        "两个街区外，明白了！"
+      ],
+      "manifest": "scenes/up-find-a-snipe/scene.json"
+    },
+    {
+      "id": "scene_tbGsw9t4_kI",
+      "slug": "up-found-the-snipe",
+      "routeSlug": "up-found-the-snipe",
+      "title": "它们喜欢巧克力吗？",
+      "english": "Do they like chocolate?",
+      "note": "Up",
+      "source": "https://www.youtube.com/watch?v=PocShNsZjPE&t=49s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/up-found-the-snipe/up-found-the-snipe-poster-eae30660d72a.jpg",
+      "tags": [
+        "Up",
+        "它们喜欢巧克力吗？",
+        "Russell",
+        "Carl",
+        "罗素",
+        "卡尔"
+      ],
+      "quotes": [
+        "I found the snipe!",
+        "我找到沙锥鸟了！",
+        "Oh, did you?",
+        "是吗？",
+        "Are they tall?",
+        "它们很高吗？",
+        "Oh, yes, they're very tall.",
+        "是的，非常高。",
+        "Do they have a lot of colors?",
+        "它们有很多颜色吗？",
+        "They do indeed.",
+        "确实有。",
+        "Do they like chocolate?",
+        "它们喜欢巧克力吗？",
+        "Oh, yeah. Chocolate.",
+        "当然喜欢巧克力。"
+      ],
+      "manifest": "scenes/up-found-the-snipe/scene.json"
+    }
+  ],
+  "locales": {
+    "en": {
+      "scenes": {
+        "scene_nJ9pMesA": {
+          "title": "Squirrel!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 95–109.5 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_IuDLtAby": {
+          "title": "I just met you!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 83.75–95.05 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_LtZ9BfnLwbo": {
+          "title": "Can I help you cross something?",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_Pz29dRMAdd0": {
+          "title": "Have you heard of a snipe?",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_tbGsw9t4_kI": {
+          "title": "Do they like chocolate?",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        }
+      },
+      "roles": {
+        "role_i_3nIjrN": {
+          "name": "Dug",
+          "hint": "4 lines"
+        },
+        "role_tD36hMnXUVc": {
+          "name": "Carl",
+          "hint": "1 line"
+        },
+        "role_LMfavnX8qAw": {
+          "name": "Russell",
+          "hint": "1 line"
+        },
+        "role_AkxqSDuU": {
+          "name": "Dug",
+          "hint": "2 lines"
+        },
+        "role_D1aZwWlTtkk": {
+          "name": "Carl",
+          "hint": "1 line"
+        },
+        "role_chi9JH8XMY4": {
+          "name": "Russell",
+          "hint": "5 lines"
+        },
+        "role_BDRzhE5Z6q8": {
+          "name": "Carl",
+          "hint": "5 lines"
+        },
+        "role_SxE__9y_T3s": {
+          "name": "Carl",
+          "hint": "5 lines"
+        },
+        "role_ajs5aku0O4s": {
+          "name": "Russell",
+          "hint": "5 lines"
+        },
+        "role_iF2a-6KO_e0": {
+          "name": "Russell",
+          "hint": "4 lines"
+        },
+        "role_kYO5OsI8PP4": {
+          "name": "Carl",
+          "hint": "4 lines"
+        }
+      },
+      "notices": {
+        "library": "Adult prototype testing · Dubs save in this browser. No uploads. Redistribution permission for the meme clips is unconfirmed.",
+        "scene": "This scene is for adult prototype testing. The full film is not beginner learning material for children.The creators do not endorse this product."
+      }
+    },
+    "zh-CN": {
+      "scenes": {
+        "scene_nJ9pMesA": {
+          "title": "松鼠！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 95–109.5 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_IuDLtAby": {
+          "title": "刚认识就喜欢你！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 83.75–95.05 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_LtZ9BfnLwbo": {
+          "title": "我能帮你过点什么吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_Pz29dRMAdd0": {
+          "title": "你听过沙锥鸟吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_tbGsw9t4_kI": {
+          "title": "它们喜欢巧克力吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        }
+      },
+      "roles": {
+        "role_i_3nIjrN": {
+          "name": "道格",
+          "hint": "4 句台词"
+        },
+        "role_tD36hMnXUVc": {
+          "name": "卡尔",
+          "hint": "1 句台词"
+        },
+        "role_LMfavnX8qAw": {
+          "name": "罗素",
+          "hint": "1 句台词"
+        },
+        "role_AkxqSDuU": {
+          "name": "道格",
+          "hint": "2 句台词"
+        },
+        "role_D1aZwWlTtkk": {
+          "name": "卡尔",
+          "hint": "1 句台词"
+        },
+        "role_chi9JH8XMY4": {
+          "name": "罗素",
+          "hint": "5 句台词"
+        },
+        "role_BDRzhE5Z6q8": {
+          "name": "卡尔",
+          "hint": "5 句台词"
+        },
+        "role_SxE__9y_T3s": {
+          "name": "卡尔",
+          "hint": "5 句台词"
+        },
+        "role_ajs5aku0O4s": {
+          "name": "罗素",
+          "hint": "5 句台词"
+        },
+        "role_iF2a-6KO_e0": {
+          "name": "罗素",
+          "hint": "4 句台词"
+        },
+        "role_kYO5OsI8PP4": {
+          "name": "卡尔",
+          "hint": "4 句台词"
+        }
+      },
+      "notices": {
+        "library": "成人原型测试 · 配音保存在此浏览器，不会上传。影视梗片段尚未确认再分发许可。",
+        "scene": "本片段用于成人原型测试；完整电影并非儿童入门教材。创作者未对本产品作出背书。"
+      }
+    },
+    "es": {
+      "scenes": {
+        "scene_nJ9pMesA": {
+          "title": "¡Una ardilla!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 95–109.5 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_IuDLtAby": {
+          "title": "¡Acabo de conocerte!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 83.75–95.05 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_LtZ9BfnLwbo": {
+          "title": "¿Te ayudo a cruzar algo?",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_Pz29dRMAdd0": {
+          "title": "¿Has oído hablar de la agachadiza?",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_tbGsw9t4_kI": {
+          "title": "¿Les gusta el chocolate?",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        }
+      },
+      "roles": {
+        "role_i_3nIjrN": {
+          "name": "Dug",
+          "hint": "4 frases"
+        },
+        "role_tD36hMnXUVc": {
+          "name": "Carl",
+          "hint": "1 frase"
+        },
+        "role_LMfavnX8qAw": {
+          "name": "Russell",
+          "hint": "1 frase"
+        },
+        "role_AkxqSDuU": {
+          "name": "Dug",
+          "hint": "2 frases"
+        },
+        "role_D1aZwWlTtkk": {
+          "name": "Carl",
+          "hint": "1 frase"
+        },
+        "role_chi9JH8XMY4": {
+          "name": "Russell",
+          "hint": "5 frases"
+        },
+        "role_BDRzhE5Z6q8": {
+          "name": "Carl",
+          "hint": "5 frases"
+        },
+        "role_SxE__9y_T3s": {
+          "name": "Carl",
+          "hint": "5 frases"
+        },
+        "role_ajs5aku0O4s": {
+          "name": "Russell",
+          "hint": "5 frases"
+        },
+        "role_iF2a-6KO_e0": {
+          "name": "Russell",
+          "hint": "4 frases"
+        },
+        "role_kYO5OsI8PP4": {
+          "name": "Carl",
+          "hint": "4 frases"
+        }
+      },
+      "notices": {
+        "library": "Pruebas del prototipo con adultos · Los doblajes se guardan en este navegador y no se suben. No se ha confirmado el permiso de redistribución de estos fragmentos.",
+        "scene": "Esta escena es para pruebas del prototipo con adultos. La película completa no es material de iniciación para niños.Los creadores no respaldan este producto."
+      }
+    },
+    "ja": {
+      "scenes": {
+        "scene_nJ9pMesA": {
+          "title": "リスだ！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の95–109.5秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_IuDLtAby": {
+          "title": "今、会ったばかりだけど！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の83.75–95.05秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_LtZ9BfnLwbo": {
+          "title": "何かを渡るお手伝いは？",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_Pz29dRMAdd0": {
+          "title": "シギって知ってる？",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_tbGsw9t4_kI": {
+          "title": "チョコレートは好き？",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        }
+      },
+      "roles": {
+        "role_i_3nIjrN": {
+          "name": "ダグ",
+          "hint": "セリフ4行"
+        },
+        "role_tD36hMnXUVc": {
+          "name": "カール",
+          "hint": "セリフ1行"
+        },
+        "role_LMfavnX8qAw": {
+          "name": "ラッセル",
+          "hint": "セリフ1行"
+        },
+        "role_AkxqSDuU": {
+          "name": "ダグ",
+          "hint": "セリフ2行"
+        },
+        "role_D1aZwWlTtkk": {
+          "name": "カール",
+          "hint": "セリフ1行"
+        },
+        "role_chi9JH8XMY4": {
+          "name": "Russell",
+          "hint": "セリフ 5 行"
+        },
+        "role_BDRzhE5Z6q8": {
+          "name": "Carl",
+          "hint": "セリフ 5 行"
+        },
+        "role_SxE__9y_T3s": {
+          "name": "Carl",
+          "hint": "セリフ 5 行"
+        },
+        "role_ajs5aku0O4s": {
+          "name": "Russell",
+          "hint": "セリフ 5 行"
+        },
+        "role_iF2a-6KO_e0": {
+          "name": "Russell",
+          "hint": "セリフ 4 行"
+        },
+        "role_kYO5OsI8PP4": {
+          "name": "Carl",
+          "hint": "セリフ 4 行"
+        }
+      },
+      "notices": {
+        "library": "大人向け試作版テスト・吹き替えはこのブラウザに保存され、アップロードされません。使用している映像の再配布許諾は未確認です。",
+        "scene": "このシーンは大人による試作版のテスト用です。映画全編は、子ども向けの入門教材ではありません。作品の制作者がこの製品を推奨しているわけではありません。"
+      }
+    },
+    "ko": {
+      "scenes": {
+        "scene_nJ9pMesA": {
+          "title": "다람쥐다!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 95–109.5초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_IuDLtAby": {
+          "title": "이제 막 만났지만!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 83.75–95.05초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_LtZ9BfnLwbo": {
+          "title": "건너는 걸 도와드릴까요?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_Pz29dRMAdd0": {
+          "title": "도요새를 들어 봤니?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_tbGsw9t4_kI": {
+          "title": "초콜릿을 좋아해요?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        }
+      },
+      "roles": {
+        "role_i_3nIjrN": {
+          "name": "더그",
+          "hint": "대사 4개"
+        },
+        "role_tD36hMnXUVc": {
+          "name": "칼",
+          "hint": "대사 1개"
+        },
+        "role_LMfavnX8qAw": {
+          "name": "러셀",
+          "hint": "대사 1개"
+        },
+        "role_AkxqSDuU": {
+          "name": "더그",
+          "hint": "대사 2개"
+        },
+        "role_D1aZwWlTtkk": {
+          "name": "칼",
+          "hint": "대사 1개"
+        },
+        "role_chi9JH8XMY4": {
+          "name": "Russell",
+          "hint": "대사 5줄"
+        },
+        "role_BDRzhE5Z6q8": {
+          "name": "Carl",
+          "hint": "대사 5줄"
+        },
+        "role_SxE__9y_T3s": {
+          "name": "Carl",
+          "hint": "대사 5줄"
+        },
+        "role_ajs5aku0O4s": {
+          "name": "Russell",
+          "hint": "대사 5줄"
+        },
+        "role_iF2a-6KO_e0": {
+          "name": "Russell",
+          "hint": "대사 4줄"
+        },
+        "role_kYO5OsI8PP4": {
+          "name": "Carl",
+          "hint": "대사 4줄"
+        }
+      },
+      "notices": {
+        "library": "성인 대상 시제품 테스트 · 더빙은 이 브라우저에 저장되며 업로드되지 않아요. 영상 클립의 재배포 허가는 확인되지 않았어요.",
+        "scene": "이 장면은 성인을 대상으로 한 시제품 테스트용이에요. 영화 전체가 어린이 입문 학습 자료인 것은 아니에요.원작 제작자가 이 제품을 보증하는 것은 아니에요."
+      }
+    }
+  }
+}

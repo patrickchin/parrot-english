@@ -1,0 +1,569 @@
+{
+  "version": 1,
+  "id": "pack_pXD2f6O5JFHW",
+  "title": "Toy Story",
+  "franchise": "Toy Story",
+  "description": "English dubbing scenes from Toy Story.",
+  "author": "Parrotbook",
+  "scenes": [
+    {
+      "id": "scene_fEAVzgFh",
+      "slug": "infinity",
+      "routeSlug": "toy-story-infinity",
+      "title": "飞向宇宙！",
+      "english": "To infinity and beyond!",
+      "note": "Toy Story",
+      "source": "https://www.youtube.com/watch?v=T2b-Ve0GHBw&t=25s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/infinity/infinity-poster-2dccdca1aa1a.jpg",
+      "tags": [
+        "Toy Story",
+        "玩具总动员",
+        "Buzz Lightyear",
+        "Woody",
+        "Buzz",
+        "胡迪",
+        "巴斯光年",
+        "flying",
+        "飞行",
+        "challenge",
+        "挑战"
+      ],
+      "quotes": [
+        "No, you can't.",
+        "不，你不会。",
+        "Yes, I can.",
+        "不，我会。",
+        "You can't! Can't, can't, can't!",
+        "你不会！不会，不会，不会！",
+        "I tell you, I could fly around this room with my eyes closed.",
+        "告诉你，我闭着眼睛都能绕着房间飞。",
+        "Okay, then, Mr. Lightyear. Prove it.",
+        "那好吧，光年先生。证明给我看。",
+        "All right, then I will. Stand back, everyone.",
+        "好，我来证明。大家往后站。",
+        "To infinity and beyond!",
+        "飞向宇宙，浩瀚无垠！"
+      ],
+      "manifest": "scenes/infinity/scene.json"
+    },
+    {
+      "id": "scene_txYTl2tq",
+      "slug": "you-are-a-toy",
+      "title": "你是个玩具！",
+      "english": "You are a toy!",
+      "note": "Toy Story",
+      "source": "https://www.youtube.com/watch?v=wRsTXf4jvhY&t=45s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/you-are-a-toy/you-are-a-toy-poster-7b86b448fcdc.jpg",
+      "tags": [
+        "Toy Story",
+        "玩具总动员",
+        "Buzz Lightyear",
+        "Woody",
+        "Buzz",
+        "胡迪",
+        "巴斯光年",
+        "toys",
+        "玩具",
+        "argument",
+        "争论"
+      ],
+      "quotes": [
+        "You are a toy! You aren't the real Buzz Lightyear! You're an action figure! You are a child's plaything!",
+        "你是个玩具！你不是真正的巴斯光年！你是一个人偶，是孩子的玩具！",
+        "You are a sad, strange little man, and you have my pity. Farewell.",
+        "你是一个可怜又奇怪的小家伙，我同情你。告辞。",
+        "Oh, yeah? Well, good riddance, you loony!",
+        "哦，是吗？走了正好，你这个疯子！"
+      ],
+      "manifest": "scenes/you-are-a-toy/scene.json"
+    },
+    {
+      "id": "scene_Ciq_cd4H",
+      "slug": "falling-with-style",
+      "title": "有风格地落下！",
+      "english": "This isn't flying.",
+      "note": "Toy Story",
+      "source": "https://www.youtube.com/watch?v=zffvi3dTVIo&t=189s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/falling-with-style/falling-with-style-poster-ee6964ce2bcd.jpg",
+      "tags": [
+        "Toy Story",
+        "玩具总动员",
+        "Buzz Lightyear",
+        "Woody",
+        "Buzz",
+        "胡迪",
+        "巴斯光年",
+        "flying",
+        "飞行",
+        "adventure",
+        "冒险"
+      ],
+      "quotes": [
+        "Hey, Buzz! You're flying!",
+        "嘿，巴斯！你在飞！",
+        "This isn't flying. This is falling with style.",
+        "这不叫飞，这叫有风格地落下。",
+        "To infinity and beyond!",
+        "飞向宇宙，浩瀚无垠！",
+        "Buzz! We missed the truck!",
+        "巴斯！我们错过卡车了！",
+        "We're not aiming for the truck.",
+        "我们的目标不是卡车。"
+      ],
+      "manifest": "scenes/falling-with-style/scene.json"
+    },
+    {
+      "id": "scene_78PngUk4uMA",
+      "slug": "toy-story-mrs-nesbitt",
+      "routeSlug": "toy-story-mrs-nesbitt",
+      "title": "奈斯比特太太",
+      "english": "Mrs. Nesbitt",
+      "note": "Toy Story",
+      "source": "https://www.youtube.com/watch?v=l7u7SAoyF9Y&t=35s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/toy-story-mrs-nesbitt/toy-story-mrs-nesbitt-poster-459774f523d5.jpg",
+      "tags": [
+        "Toy Story",
+        "奈斯比特太太",
+        "Woody",
+        "Buzz Lightyear",
+        "胡迪",
+        "巴斯光年"
+      ],
+      "quotes": [
+        "Buzz? Hey! Buzz, are you okay?",
+        "巴斯，你没事吧？",
+        "Gone. It's all gone. All of it's gone. Bye-bye. See ya.",
+        "没了。全没了。再见了。",
+        "What happened to you?",
+        "你怎么了？",
+        "One minute you're defending the whole galaxy, and suddenly you find yourself sucking down Darjeeling with Marie Antoinette and her little sister.",
+        "刚才还在保卫整个银河，转眼却在陪玛丽王后和她妹妹喝茶。",
+        "I think you've had enough tea for today. Let's get you out of here, Buzz.",
+        "你今天茶喝够了。我们走吧，巴斯。",
+        "Don't you get it? You see the hat? I am Mrs. Nesbitt!",
+        "你还不明白吗？看见这顶帽子了吗？我是奈斯比特太太！",
+        "Snap out of it, Buzz!",
+        "清醒点，巴斯！"
+      ],
+      "manifest": "scenes/toy-story-mrs-nesbitt/scene.json"
+    },
+    {
+      "id": "scene_ILkvhup_YFY",
+      "slug": "toy-story-two-buzzes",
+      "routeSlug": "toy-story-two-buzzes",
+      "title": "我有激光",
+      "english": "I have a laser",
+      "note": "Toy Story",
+      "source": "https://www.youtube.com/watch?v=BpcGI_IgbQM&t=85s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/toy-story-two-buzzes/toy-story-two-buzzes-poster-85cddfc985c4.jpg",
+      "tags": [
+        "Toy Story",
+        "Toy Story 2",
+        "我有激光",
+        "Buzz Lightyear",
+        "Utility Belt Buzz",
+        "巴斯光年",
+        "腰带巴斯"
+      ],
+      "quotes": [
+        "Ow! What are you doing?",
+        "哎哟！你在干什么？",
+        "You're in direct violation of code six four zero four point five, stating all Space Rangers are to be in hypersleep until awakened by authorized personnel.",
+        "你违反了条例6404.5：所有太空骑警必须休眠，直到获授权人员唤醒。",
+        "Buzz!",
+        "巴斯！",
+        "You're breaking ranks, Ranger. Buzz Lightyear to Star Command. I've got an AWOL Space Ranger.",
+        "你擅离岗位了，骑警。巴斯光年呼叫星际总部，有太空骑警逃离岗位。",
+        "Tell me I wasn't this delusional.",
+        "我以前没有这么糊涂吧。",
+        "No back talk. I have a laser, and I will use it.",
+        "不许顶嘴。我有激光，而且我会使用它。",
+        "You mean the laser that's a light bulb?",
+        "你说的是那个小灯泡激光？"
+      ],
+      "manifest": "scenes/toy-story-two-buzzes/scene.json"
+    }
+  ],
+  "locales": {
+    "en": {
+      "scenes": {
+        "scene_fEAVzgFh": {
+          "title": "To infinity and beyond!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 25.15–50.05 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_txYTl2tq": {
+          "title": "You are a toy!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 45.05–63.65 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_Ciq_cd4H": {
+          "title": "Falling with style!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 189.45–213.25 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_78PngUk4uMA": {
+          "title": "Mrs. Nesbitt",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_ILkvhup_YFY": {
+          "title": "I have a laser",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        }
+      },
+      "roles": {
+        "role_jPzYR5J6EIU": {
+          "name": "Woody",
+          "hint": "3 lines"
+        },
+        "role_a9_OwCFQ": {
+          "name": "Buzz Lightyear",
+          "hint": "4 lines"
+        },
+        "role_f58ELG8A": {
+          "name": "Woody",
+          "hint": "2 lines"
+        },
+        "role_q1JOcg9gD7M": {
+          "name": "Buzz Lightyear",
+          "hint": "1 line"
+        },
+        "role_PbbqOHSVd2c": {
+          "name": "Woody",
+          "hint": "2 lines"
+        },
+        "role_dG7FU8MF": {
+          "name": "Buzz Lightyear",
+          "hint": "3 lines"
+        },
+        "role_AKeW1fapsu8": {
+          "name": "Woody",
+          "hint": "4 lines"
+        },
+        "role_fo0NHYDjW7o": {
+          "name": "Buzz Lightyear",
+          "hint": "3 lines"
+        },
+        "role_EBCAuBAeMgQ": {
+          "name": "Buzz Lightyear",
+          "hint": "4 lines"
+        },
+        "role_NYvRYCuAHCc": {
+          "name": "Utility Belt Buzz",
+          "hint": "3 lines"
+        }
+      },
+      "notices": {
+        "library": "Adult prototype testing · Dubs save in this browser. No uploads. Redistribution permission for the meme clips is unconfirmed.",
+        "scene": "This scene is for adult prototype testing. The full film is not beginner learning material for children.The creators do not endorse this product."
+      }
+    },
+    "zh-CN": {
+      "scenes": {
+        "scene_fEAVzgFh": {
+          "title": "飞向宇宙！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 25.15–50.05 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_txYTl2tq": {
+          "title": "你是个玩具！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 45.05–63.65 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_Ciq_cd4H": {
+          "title": "有风格地落下！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 189.45–213.25 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_78PngUk4uMA": {
+          "title": "奈斯比特太太",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_ILkvhup_YFY": {
+          "title": "我有激光",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        }
+      },
+      "roles": {
+        "role_jPzYR5J6EIU": {
+          "name": "胡迪",
+          "hint": "3 句台词"
+        },
+        "role_a9_OwCFQ": {
+          "name": "巴斯光年",
+          "hint": "4 句台词"
+        },
+        "role_f58ELG8A": {
+          "name": "胡迪",
+          "hint": "2 句台词"
+        },
+        "role_q1JOcg9gD7M": {
+          "name": "巴斯光年",
+          "hint": "1 句台词"
+        },
+        "role_PbbqOHSVd2c": {
+          "name": "胡迪",
+          "hint": "2 句台词"
+        },
+        "role_dG7FU8MF": {
+          "name": "巴斯光年",
+          "hint": "3 句台词"
+        },
+        "role_AKeW1fapsu8": {
+          "name": "胡迪",
+          "hint": "4 句台词"
+        },
+        "role_fo0NHYDjW7o": {
+          "name": "巴斯光年",
+          "hint": "3 句台词"
+        },
+        "role_EBCAuBAeMgQ": {
+          "name": "巴斯光年",
+          "hint": "4 句台词"
+        },
+        "role_NYvRYCuAHCc": {
+          "name": "腰带巴斯",
+          "hint": "3 句台词"
+        }
+      },
+      "notices": {
+        "library": "成人原型测试 · 配音保存在此浏览器，不会上传。影视梗片段尚未确认再分发许可。",
+        "scene": "本片段用于成人原型测试；完整电影并非儿童入门教材。创作者未对本产品作出背书。"
+      }
+    },
+    "es": {
+      "scenes": {
+        "scene_fEAVzgFh": {
+          "title": "¡Hasta el infinito y más allá!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 25.15–50.05 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_txYTl2tq": {
+          "title": "¡Eres un juguete!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 45.05–63.65 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_Ciq_cd4H": {
+          "title": "¡Caer con estilo!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 189.45–213.25 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_78PngUk4uMA": {
+          "title": "La señora Nesbitt",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_ILkvhup_YFY": {
+          "title": "Tengo un láser",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        }
+      },
+      "roles": {
+        "role_jPzYR5J6EIU": {
+          "name": "Woody",
+          "hint": "3 frases"
+        },
+        "role_a9_OwCFQ": {
+          "name": "Buzz Lightyear",
+          "hint": "4 frases"
+        },
+        "role_f58ELG8A": {
+          "name": "Woody",
+          "hint": "2 frases"
+        },
+        "role_q1JOcg9gD7M": {
+          "name": "Buzz Lightyear",
+          "hint": "1 frase"
+        },
+        "role_PbbqOHSVd2c": {
+          "name": "Woody",
+          "hint": "2 frases"
+        },
+        "role_dG7FU8MF": {
+          "name": "Buzz Lightyear",
+          "hint": "3 frases"
+        },
+        "role_AKeW1fapsu8": {
+          "name": "Woody",
+          "hint": "4 frases"
+        },
+        "role_fo0NHYDjW7o": {
+          "name": "Buzz Lightyear",
+          "hint": "3 frases"
+        },
+        "role_EBCAuBAeMgQ": {
+          "name": "Buzz Lightyear",
+          "hint": "4 frases"
+        },
+        "role_NYvRYCuAHCc": {
+          "name": "Utility Belt Buzz",
+          "hint": "3 frases"
+        }
+      },
+      "notices": {
+        "library": "Pruebas del prototipo con adultos · Los doblajes se guardan en este navegador y no se suben. No se ha confirmado el permiso de redistribución de estos fragmentos.",
+        "scene": "Esta escena es para pruebas del prototipo con adultos. La película completa no es material de iniciación para niños.Los creadores no respaldan este producto."
+      }
+    },
+    "ja": {
+      "scenes": {
+        "scene_fEAVzgFh": {
+          "title": "無限のかなたへ、さあ行くぞ！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の25.15–50.05秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_txYTl2tq": {
+          "title": "君はおもちゃだ！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の45.05–63.65秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_Ciq_cd4H": {
+          "title": "かっこよく落ちる！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の189.45–213.25秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_78PngUk4uMA": {
+          "title": "ネズビット夫人",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_ILkvhup_YFY": {
+          "title": "レーザーを持っているぞ",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        }
+      },
+      "roles": {
+        "role_jPzYR5J6EIU": {
+          "name": "ウッディ",
+          "hint": "セリフ3行"
+        },
+        "role_a9_OwCFQ": {
+          "name": "バズ・ライトイヤー",
+          "hint": "セリフ4行"
+        },
+        "role_f58ELG8A": {
+          "name": "ウッディ",
+          "hint": "セリフ2行"
+        },
+        "role_q1JOcg9gD7M": {
+          "name": "バズ・ライトイヤー",
+          "hint": "セリフ1行"
+        },
+        "role_PbbqOHSVd2c": {
+          "name": "ウッディ",
+          "hint": "セリフ2行"
+        },
+        "role_dG7FU8MF": {
+          "name": "バズ・ライトイヤー",
+          "hint": "セリフ3行"
+        },
+        "role_AKeW1fapsu8": {
+          "name": "Woody",
+          "hint": "セリフ 4 行"
+        },
+        "role_fo0NHYDjW7o": {
+          "name": "Buzz Lightyear",
+          "hint": "セリフ 3 行"
+        },
+        "role_EBCAuBAeMgQ": {
+          "name": "Buzz Lightyear",
+          "hint": "セリフ 4 行"
+        },
+        "role_NYvRYCuAHCc": {
+          "name": "Utility Belt Buzz",
+          "hint": "セリフ 3 行"
+        }
+      },
+      "notices": {
+        "library": "大人向け試作版テスト・吹き替えはこのブラウザに保存され、アップロードされません。使用している映像の再配布許諾は未確認です。",
+        "scene": "このシーンは大人による試作版のテスト用です。映画全編は、子ども向けの入門教材ではありません。作品の制作者がこの製品を推奨しているわけではありません。"
+      }
+    },
+    "ko": {
+      "scenes": {
+        "scene_fEAVzgFh": {
+          "title": "무한한 공간 저 너머로!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 25.15–50.05초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_txYTl2tq": {
+          "title": "넌 장난감이야!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 45.05–63.65초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_Ciq_cd4H": {
+          "title": "멋지게 떨어지는 거야!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 189.45–213.25초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_78PngUk4uMA": {
+          "title": "네즈빗 부인",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_ILkvhup_YFY": {
+          "title": "레이저가 있다",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        }
+      },
+      "roles": {
+        "role_jPzYR5J6EIU": {
+          "name": "우디",
+          "hint": "대사 3개"
+        },
+        "role_a9_OwCFQ": {
+          "name": "버즈 라이트이어",
+          "hint": "대사 4개"
+        },
+        "role_f58ELG8A": {
+          "name": "우디",
+          "hint": "대사 2개"
+        },
+        "role_q1JOcg9gD7M": {
+          "name": "버즈 라이트이어",
+          "hint": "대사 1개"
+        },
+        "role_PbbqOHSVd2c": {
+          "name": "우디",
+          "hint": "대사 2개"
+        },
+        "role_dG7FU8MF": {
+          "name": "버즈 라이트이어",
+          "hint": "대사 3개"
+        },
+        "role_AKeW1fapsu8": {
+          "name": "Woody",
+          "hint": "대사 4줄"
+        },
+        "role_fo0NHYDjW7o": {
+          "name": "Buzz Lightyear",
+          "hint": "대사 3줄"
+        },
+        "role_EBCAuBAeMgQ": {
+          "name": "Buzz Lightyear",
+          "hint": "대사 4줄"
+        },
+        "role_NYvRYCuAHCc": {
+          "name": "Utility Belt Buzz",
+          "hint": "대사 3줄"
+        }
+      },
+      "notices": {
+        "library": "성인 대상 시제품 테스트 · 더빙은 이 브라우저에 저장되며 업로드되지 않아요. 영상 클립의 재배포 허가는 확인되지 않았어요.",
+        "scene": "이 장면은 성인을 대상으로 한 시제품 테스트용이에요. 영화 전체가 어린이 입문 학습 자료인 것은 아니에요.원작 제작자가 이 제품을 보증하는 것은 아니에요."
+      }
+    }
+  }
+}

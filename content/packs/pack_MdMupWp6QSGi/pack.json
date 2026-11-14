@@ -1,0 +1,424 @@
+{
+  "version": 1,
+  "id": "pack_MdMupWp6QSGi",
+  "title": "The Big Bang Theory",
+  "franchise": "The Big Bang Theory",
+  "description": "English dubbing scenes from The Big Bang Theory.",
+  "author": "Parrotbook",
+  "scenes": [
+    {
+      "id": "scene_s8bVKn-BMFI",
+      "slug": "big-bang-the-present",
+      "title": "一份礼物，还是现在？",
+      "english": "A present or the present?",
+      "note": "The Big Bang Theory",
+      "source": "https://www.youtube.com/watch?v=uQ9YMK3n5kk&t=29s",
+      "cohort": "teens",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/big-bang-the-present/big-bang-the-present-poster-ca33ce14e0a1.jpg",
+      "tags": [
+        "The Big Bang Theory",
+        "Big Bang Theory",
+        "生活大爆炸",
+        "Penny",
+        "Amy",
+        "Sheldon",
+        "Leonard",
+        "佩妮",
+        "艾米",
+        "谢尔顿",
+        "莱纳德",
+        "Pictionary",
+        "你画我猜",
+        "wordplay",
+        "文字游戏",
+        "gift",
+        "礼物"
+      ],
+      "quotes": [
+        "A gift! A present! Present!",
+        "礼物！一份礼物！礼物！",
+        "Yeah!",
+        "对了！",
+        "Oh, Leonard. Now, how can you not get that?",
+        "哦，莱纳德，你怎么会猜不出来呢？",
+        "In what universe is that a present?",
+        "在哪个宇宙里，这幅画能叫礼物？",
+        "It's not a present. It's the present. Look, there's you and me. There's Penny and Amy. We're playing Pictionary in the present.",
+        "不是“一份礼物”，是“现在”。看，这是你和我，这是佩妮和艾米。我们现在正在玩你画我猜。",
+        "Oh my God, we're gonna kill them.",
+        "天哪，咱们肯定能完胜他们。"
+      ],
+      "manifest": "scenes/big-bang-the-present/scene.json"
+    },
+    {
+      "id": "scene_guZULjk7gGk",
+      "slug": "big-bang-notebook",
+      "title": "上课得准备笔记本",
+      "english": "A lesson needs a notebook",
+      "note": "The Big Bang Theory",
+      "source": "https://www.youtube.com/watch?v=hiBXVUMDugY&t=0s",
+      "cohort": "teens",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/big-bang-notebook/big-bang-notebook-poster-8a4b8caa86a5.jpg",
+      "tags": [
+        "The Big Bang Theory",
+        "Big Bang Theory",
+        "生活大爆炸",
+        "Sheldon",
+        "Penny",
+        "谢尔顿",
+        "佩妮",
+        "notebook",
+        "笔记本",
+        "school",
+        "学校",
+        "studying",
+        "学习"
+      ],
+      "quotes": [
+        "All right, let us begin. Where's your notebook?",
+        "好，开始吧。你的笔记本呢？",
+        "Um, I don't have one.",
+        "呃，我没带。",
+        "How are you going to take notes without a notebook?",
+        "没笔记本你怎么记笔记？",
+        "I have to take notes?",
+        "我还得记笔记？",
+        "How else are you gonna study for the tests?",
+        "不然你拿什么复习考试呢？",
+        "There's gonna be a test?",
+        "还要考试？",
+        "Tests. Here. That's college-ruled. I hope that's not too intimidating.",
+        "是好几场考试。给你，这是大学生用的横线本，希望不会吓到你。",
+        "Thank you.",
+        "谢谢。",
+        "You're welcome.",
+        "不客气。"
+      ],
+      "manifest": "scenes/big-bang-notebook/scene.json"
+    },
+    {
+      "id": "scene_5XN5XS_M_Mw",
+      "slug": "big-bang-long-lesson",
+      "routeSlug": "not-for-two-thousand-six-hundred-years",
+      "title": "我可憋不了两千六百年",
+      "english": "Not for two thousand six hundred years",
+      "note": "The Big Bang Theory",
+      "source": "https://www.youtube.com/watch?v=hiBXVUMDugY&t=106s",
+      "cohort": "teens",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/big-bang-long-lesson/big-bang-long-lesson-poster-56c3606bec56.jpg",
+      "tags": [
+        "The Big Bang Theory",
+        "Penny",
+        "Sheldon",
+        "lesson",
+        "bathroom",
+        "佩妮",
+        "谢尔顿",
+        "上课",
+        "洗手间"
+      ],
+      "quotes": [
+        "Oh. Two thousand six hundred years?",
+        "哦，两千六百年？",
+        "Yeah, give or take. As I was saying, it's a warm summer evening in ancient Greece.",
+        "对，大概吧。刚才我讲到，古希腊一个温暖的夏夜。",
+        "Yes, Penny?",
+        "什么事，佩妮？",
+        "I have to go to the bathroom.",
+        "我想去洗手间。",
+        "Well, can't you hold it?",
+        "呃，你不能忍一忍吗？",
+        "Not for two thousand six hundred years.",
+        "我可憋不了两千六百年。"
+      ],
+      "manifest": "scenes/big-bang-long-lesson/scene.json"
+    }
+  ],
+  "locales": {
+    "en": {
+      "scenes": {
+        "scene_s8bVKn-BMFI": {
+          "title": "A present or the present?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 29.75–59.82 seconds of the original upload. Competitive sarcasm; the final remark about winning is figurative. Later technical jargon is excluded."
+        },
+        "scene_guZULjk7gGk": {
+          "title": "A lesson needs a notebook",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 0.2–29.15 seconds of the original upload. Condescending sarcasm and a college-ruled notebook joke. Stops before the long physics monologue."
+        },
+        "scene_5XN5XS_M_Mw": {
+          "title": "Not for two thousand six hundred years",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 106.55–120.45 seconds of the original upload. Classroom-style sarcasm and a bathroom request. The technical lecture and accusation about Leonard’s research are excluded."
+        }
+      },
+      "roles": {
+        "role_diR5NHLuXjg": {
+          "name": "Penny",
+          "hint": "2 lines"
+        },
+        "role_aq9wnwNPoEw": {
+          "name": "Amy",
+          "hint": "1 line"
+        },
+        "role_NpF-EvAghCU": {
+          "name": "Sheldon",
+          "hint": "2 lines"
+        },
+        "role_ZGo8poyoQiY": {
+          "name": "Leonard",
+          "hint": "1 line"
+        },
+        "role_ThTu0ZZV87U": {
+          "name": "Sheldon",
+          "hint": "5 lines"
+        },
+        "role_Euuq4k13lbM": {
+          "name": "Penny",
+          "hint": "4 lines"
+        },
+        "role_oerHj7CpZxs": {
+          "name": "Penny",
+          "hint": "3 lines"
+        },
+        "role_9ZB7SS6ZoTs": {
+          "name": "Sheldon",
+          "hint": "3 lines"
+        }
+      },
+      "notices": {
+        "library": "Adult prototype testing · Dubs save in this browser. No uploads. Redistribution permission for the meme clips is unconfirmed.",
+        "scene": "This scene is for adult prototype testing. The full film is not beginner learning material for children.The creators do not endorse this product."
+      }
+    },
+    "zh-CN": {
+      "scenes": {
+        "scene_s8bVKn-BMFI": {
+          "title": "一份礼物，还是现在？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 29.75–59.82 秒的连续节选。Competitive sarcasm; the final remark about winning is figurative. Later technical jargon is excluded."
+        },
+        "scene_guZULjk7gGk": {
+          "title": "上课得准备笔记本",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 0.2–29.15 秒的连续节选。Condescending sarcasm and a college-ruled notebook joke. Stops before the long physics monologue."
+        },
+        "scene_5XN5XS_M_Mw": {
+          "title": "我可憋不了两千六百年",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 106.55–120.45 秒的连续节选。Classroom-style sarcasm and a bathroom request. The technical lecture and accusation about Leonard’s research are excluded."
+        }
+      },
+      "roles": {
+        "role_diR5NHLuXjg": {
+          "name": "佩妮",
+          "hint": "2 句台词"
+        },
+        "role_aq9wnwNPoEw": {
+          "name": "艾米",
+          "hint": "1 句台词"
+        },
+        "role_NpF-EvAghCU": {
+          "name": "谢尔顿",
+          "hint": "2 句台词"
+        },
+        "role_ZGo8poyoQiY": {
+          "name": "莱纳德",
+          "hint": "1 句台词"
+        },
+        "role_ThTu0ZZV87U": {
+          "name": "谢尔顿",
+          "hint": "5 句台词"
+        },
+        "role_Euuq4k13lbM": {
+          "name": "佩妮",
+          "hint": "4 句台词"
+        },
+        "role_oerHj7CpZxs": {
+          "name": "佩妮",
+          "hint": "3 句台词"
+        },
+        "role_9ZB7SS6ZoTs": {
+          "name": "谢尔顿",
+          "hint": "3 句台词"
+        }
+      },
+      "notices": {
+        "library": "成人原型测试 · 配音保存在此浏览器，不会上传。影视梗片段尚未确认再分发许可。",
+        "scene": "本片段用于成人原型测试；完整电影并非儿童入门教材。创作者未对本产品作出背书。"
+      }
+    },
+    "es": {
+      "scenes": {
+        "scene_s8bVKn-BMFI": {
+          "title": "¿Un regalo o el presente?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 29.75–59.82 del vídeo original. Sarcasmo competitivo. El comentario final sobre ganar es figurado. Se excluye la jerga técnica posterior."
+        },
+        "scene_guZULjk7gGk": {
+          "title": "Para la clase hace falta un cuaderno",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 0.2–29.15 del vídeo original. Sarcasmo condescendiente y un juego de palabras sobre un cuaderno de rayado universitario. Termina antes del largo monólogo de física."
+        },
+        "scene_5XN5XS_M_Mw": {
+          "title": "No puedo aguantar dos mil seiscientos años",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 106.55–120.45 del vídeo original. Sarcasmo en forma de clase y una petición para ir al baño. Se excluyen la explicación técnica y la acusación sobre la investigación de Leonard."
+        }
+      },
+      "roles": {
+        "role_diR5NHLuXjg": {
+          "name": "Penny",
+          "hint": "2 frases"
+        },
+        "role_aq9wnwNPoEw": {
+          "name": "Amy",
+          "hint": "1 frase"
+        },
+        "role_NpF-EvAghCU": {
+          "name": "Sheldon",
+          "hint": "2 frases"
+        },
+        "role_ZGo8poyoQiY": {
+          "name": "Leonard",
+          "hint": "1 frase"
+        },
+        "role_ThTu0ZZV87U": {
+          "name": "Sheldon",
+          "hint": "5 frases"
+        },
+        "role_Euuq4k13lbM": {
+          "name": "Penny",
+          "hint": "4 frases"
+        },
+        "role_oerHj7CpZxs": {
+          "name": "Penny",
+          "hint": "3 frases"
+        },
+        "role_9ZB7SS6ZoTs": {
+          "name": "Sheldon",
+          "hint": "3 frases"
+        }
+      },
+      "notices": {
+        "library": "Pruebas del prototipo con adultos · Los doblajes se guardan en este navegador y no se suben. No se ha confirmado el permiso de redistribución de estos fragmentos.",
+        "scene": "Esta escena es para pruebas del prototipo con adultos. La película completa no es material de iniciación para niños.Los creadores no respaldan este producto."
+      }
+    },
+    "ja": {
+      "scenes": {
+        "scene_s8bVKn-BMFI": {
+          "title": "プレゼント？それとも現在？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の29.75–59.82秒の抜粋です。 競争心からの皮肉があります。最後の「勝つ」という発言は比喩です。その後の専門用語は含みません。"
+        },
+        "scene_guZULjk7gGk": {
+          "title": "授業にはノートが必要",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の0.2–29.15秒の抜粋です。 見下すような皮肉と、大学用の罫線ノートに関する冗談があります。長い物理の独白の前で終わります。"
+        },
+        "scene_5XN5XS_M_Mw": {
+          "title": "二千六百年も我慢できないよ",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の106.55–120.45秒の抜粋です。 授業風の皮肉と、トイレに行くお願いがあります。専門的な講義やレナードの研究への非難は含みません。"
+        }
+      },
+      "roles": {
+        "role_diR5NHLuXjg": {
+          "name": "ペニー",
+          "hint": "セリフ2行"
+        },
+        "role_aq9wnwNPoEw": {
+          "name": "エイミー",
+          "hint": "セリフ1行"
+        },
+        "role_NpF-EvAghCU": {
+          "name": "シェルドン",
+          "hint": "セリフ2行"
+        },
+        "role_ZGo8poyoQiY": {
+          "name": "レナード",
+          "hint": "セリフ1行"
+        },
+        "role_ThTu0ZZV87U": {
+          "name": "シェルドン",
+          "hint": "セリフ5行"
+        },
+        "role_Euuq4k13lbM": {
+          "name": "ペニー",
+          "hint": "セリフ4行"
+        },
+        "role_oerHj7CpZxs": {
+          "name": "ペニー",
+          "hint": "セリフ3行"
+        },
+        "role_9ZB7SS6ZoTs": {
+          "name": "シェルドン",
+          "hint": "セリフ3行"
+        }
+      },
+      "notices": {
+        "library": "大人向け試作版テスト・吹き替えはこのブラウザに保存され、アップロードされません。使用している映像の再配布許諾は未確認です。",
+        "scene": "このシーンは大人による試作版のテスト用です。映画全編は、子ども向けの入門教材ではありません。作品の制作者がこの製品を推奨しているわけではありません。"
+      }
+    },
+    "ko": {
+      "scenes": {
+        "scene_s8bVKn-BMFI": {
+          "title": "선물일까, 현재일까?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 29.75–59.82초 구간을 발췌했어요. 경쟁심이 담긴 비꼼이 있어요. 마지막에 이긴다는 말은 비유예요. 이후의 전문 용어는 제외했어요."
+        },
+        "scene_guZULjk7gGk": {
+          "title": "수업에는 공책이 필요해",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 0.2–29.15초 구간을 발췌했어요. 잘난 체하는 비꼼과 대학용 줄 공책에 관한 농담이 있어요. 긴 물리학 독백 전에 끝나요."
+        },
+        "scene_5XN5XS_M_Mw": {
+          "title": "이천육백 년은 못 참겠어",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 106.55–120.45초 구간을 발췌했어요. 수업식 비꼼과 화장실에 가겠다는 요청이 있어요. 전문 강의와 레너드의 연구에 대한 비난은 제외했어요."
+        }
+      },
+      "roles": {
+        "role_diR5NHLuXjg": {
+          "name": "페니",
+          "hint": "대사 2개"
+        },
+        "role_aq9wnwNPoEw": {
+          "name": "에이미",
+          "hint": "대사 1개"
+        },
+        "role_NpF-EvAghCU": {
+          "name": "셸던",
+          "hint": "대사 2개"
+        },
+        "role_ZGo8poyoQiY": {
+          "name": "레너드",
+          "hint": "대사 1개"
+        },
+        "role_ThTu0ZZV87U": {
+          "name": "셸던",
+          "hint": "대사 5개"
+        },
+        "role_Euuq4k13lbM": {
+          "name": "페니",
+          "hint": "대사 4개"
+        },
+        "role_oerHj7CpZxs": {
+          "name": "페니",
+          "hint": "대사 3개"
+        },
+        "role_9ZB7SS6ZoTs": {
+          "name": "셸던",
+          "hint": "대사 3개"
+        }
+      },
+      "notices": {
+        "library": "성인 대상 시제품 테스트 · 더빙은 이 브라우저에 저장되며 업로드되지 않아요. 영상 클립의 재배포 허가는 확인되지 않았어요.",
+        "scene": "이 장면은 성인을 대상으로 한 시제품 테스트용이에요. 영화 전체가 어린이 입문 학습 자료인 것은 아니에요.원작 제작자가 이 제품을 보증하는 것은 아니에요."
+      }
+    }
+  }
+}

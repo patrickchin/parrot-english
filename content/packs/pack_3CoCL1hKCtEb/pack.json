@@ -1,183 +1,11 @@
 {
   "version": 1,
-  "id": "pack_-gi9JmjuIfy5",
-  "title": "First English",
-  "description": "Short beginner conversations for internal prototype testing.",
+  "id": "pack_3CoCL1hKCtEb",
+  "title": "Gogo's Adventures with English",
+  "franchise": "Gogo's Adventures with English",
+  "description": "English dubbing scenes from Gogo's Adventures with English.",
   "author": "Parrotbook",
   "scenes": [
-    {
-      "id": "scene_X42Wva5CnXM",
-      "slug": "first-english-good-morning",
-      "routeSlug": "first-english-good-morning",
-      "title": "早上好！你好吗？",
-      "english": "Good morning! How are you?",
-      "note": "English Singsing",
-      "source": "https://www.youtube.com/watch?v=AA5hOCxlRaI&t=4s",
-      "cohort": "younger-age-5",
-      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/first-english-good-morning/first-english-good-morning-poster-ed7e4a5c9236.jpg",
-      "tags": [
-        "English Singsing",
-        "beginner",
-        "first English",
-        "英语启蒙",
-        "greetings",
-        "good morning",
-        "how are you",
-        "问好"
-      ],
-      "quotes": [
-        "Good morning.",
-        "早上好。",
-        "Good morning, everyone.",
-        "大家早上好。",
-        "How are you?",
-        "你好吗？",
-        "Fine, thanks. How are you?",
-        "我很好，谢谢。你们好吗？",
-        "Great!",
-        "很好！"
-      ],
-      "manifest": "scenes/first-english-good-morning/scene.json"
-    },
-    {
-      "id": "scene_nvIB2uFTLc8",
-      "slug": "first-english-nice-to-meet-you",
-      "routeSlug": "first-english-nice-to-meet-you",
-      "title": "很高兴认识你",
-      "english": "Nice to meet you",
-      "note": "English Singsing",
-      "source": "https://www.youtube.com/watch?v=AA5hOCxlRaI&t=16s",
-      "cohort": "younger-age-5",
-      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/first-english-nice-to-meet-you/first-english-nice-to-meet-you-poster-34f9c54930f9.jpg",
-      "tags": [
-        "English Singsing",
-        "beginner",
-        "first English",
-        "英语启蒙",
-        "introductions",
-        "please",
-        "thank you",
-        "classroom",
-        "认识朋友"
-      ],
-      "quotes": [
-        "Come in, please.",
-        "请进。",
-        "Nice to meet you.",
-        "很高兴认识你。",
-        "My name is Kate.",
-        "我叫凯特。",
-        "Nice to meet you, too.",
-        "我们也很高兴认识你。",
-        "Sit down, please.",
-        "请坐。",
-        "Thank you.",
-        "谢谢。"
-      ],
-      "manifest": "scenes/first-english-nice-to-meet-you/scene.json"
-    },
-    {
-      "id": "scene_cjkZKJp7Wq0",
-      "slug": "first-english-book-and-box",
-      "routeSlug": "first-english-book-and-box",
-      "title": "这是什么？一本书！",
-      "english": "What's this? A book!",
-      "note": "English Singsing",
-      "source": "https://www.youtube.com/watch?v=eUazfCkQq84&t=14s",
-      "cohort": "younger-age-5",
-      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/first-english-book-and-box/first-english-book-and-box-poster-7936e27ebfad.jpg",
-      "tags": [
-        "English Singsing",
-        "beginner",
-        "first English",
-        "英语启蒙",
-        "book",
-        "box",
-        "this",
-        "that",
-        "书",
-        "盒子"
-      ],
-      "quotes": [
-        "What's this?",
-        "这是什么？",
-        "It's a book.",
-        "这是一本书。",
-        "What's that?",
-        "那是什么？",
-        "Haha, it's a box!",
-        "哈哈，那是一个盒子！",
-        "Wow!",
-        "哇！"
-      ],
-      "manifest": "scenes/first-english-book-and-box/scene.json"
-    },
-    {
-      "id": "scene_xF5xlXcwdvw",
-      "slug": "first-english-can-you-swim",
-      "routeSlug": "first-english-can-you-swim",
-      "title": "你会游泳吗？",
-      "english": "Can you swim?",
-      "note": "English Singsing",
-      "source": "https://www.youtube.com/watch?v=LMs5M_IiQbc&t=28s",
-      "cohort": "younger-age-5",
-      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/first-english-can-you-swim/first-english-can-you-swim-poster-ad7761660c8a.jpg",
-      "tags": [
-        "English Singsing",
-        "beginner",
-        "first English",
-        "英语启蒙",
-        "swim",
-        "can",
-        "yes",
-        "no",
-        "游泳"
-      ],
-      "quotes": [
-        "Can you swim?",
-        "你会游泳吗？",
-        "Yes, I can.",
-        "是的，我会。",
-        "Can you swim?",
-        "你会游泳吗？",
-        "No, I can't.",
-        "不，我不会。"
-      ],
-      "manifest": "scenes/first-english-can-you-swim/scene.json"
-    },
-    {
-      "id": "scene_soM_ejjEqc0",
-      "slug": "first-english-birthday-present",
-      "routeSlug": "first-english-birthday-present",
-      "title": "这是送给你的",
-      "english": "This is for you",
-      "note": "English Singsing",
-      "source": "https://www.youtube.com/watch?v=LMs5M_IiQbc&t=45s",
-      "cohort": "younger-age-5",
-      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/first-english-birthday-present/first-english-birthday-present-poster-f51f0fc3f84a.jpg",
-      "tags": [
-        "English Singsing",
-        "beginner",
-        "first English",
-        "英语启蒙",
-        "birthday",
-        "present",
-        "thank you",
-        "生日",
-        "礼物"
-      ],
-      "quotes": [
-        "Welcome, everyone.",
-        "欢迎大家。",
-        "Happy birthday!",
-        "生日快乐！",
-        "This is for you.",
-        "这是送给你的。",
-        "Thank you.",
-        "谢谢。"
-      ],
-      "manifest": "scenes/first-english-birthday-present/scene.json"
-    },
     {
       "id": "scene_YEtT30gD2zw",
       "slug": "gogo-magic-flowers",
@@ -688,31 +516,6 @@
   "locales": {
     "en": {
       "scenes": {
-        "scene_X42Wva5CnXM": {
-          "title": "Good morning! How are you?",
-          "licence": "Redistribution permission unconfirmed",
-          "changes": "Internal prototype review; continuous excerpt from 4.35–16.2 seconds of the source upload. A classroom greeting, with the class chorus retained as one practice role. No jokes, tense changes, or implied meanings."
-        },
-        "scene_nvIB2uFTLc8": {
-          "title": "Nice to meet you",
-          "licence": "Redistribution permission unconfirmed",
-          "changes": "Internal prototype review; continuous excerpt from 16.6–34 seconds of the source upload. Original source name Kate is preserved in text and audio. The class reply is a chorus; the child in blue offers a seat. All roles provide a complete reusable phrase."
-        },
-        "scene_cjkZKJp7Wq0": {
-          "title": "What's this? A book!",
-          "licence": "Redistribution permission unconfirmed",
-          "changes": "Internal prototype review; continuous excerpt from 14.9–35.95 seconds of the source upload. Cartoon dog speaks. Stops after the box reveal and reaction, before the next pencil reveal. Original English captions remain on screen."
-        },
-        "scene_xF5xlXcwdvw": {
-          "title": "Can you swim?",
-          "licence": "Redistribution permission unconfirmed",
-          "changes": "Internal prototype review; continuous excerpt from 28.7–39.2 seconds of the source upload. Children discuss a swimming-party invitation, with visible gestures. This is language practice, not swimming instruction; the later pool sequence is excluded."
-        },
-        "scene_soM_ejjEqc0": {
-          "title": "This is for you",
-          "licence": "Redistribution permission unconfirmed",
-          "changes": "Internal prototype review; continuous excerpt from 45.7–56.5 seconds of the source upload. Birthday scene beside a supervised pool; no swimming action in the selected exchange. Stops before the song and later montage."
-        },
         "scene_YEtT30gD2zw": {
           "title": "Magic flowers!",
           "licence": "Redistribution permission unconfirmed",
@@ -765,66 +568,6 @@
         }
       },
       "roles": {
-        "role_9C7GkSJ3GZ4": {
-          "name": "Class",
-          "hint": "3 lines"
-        },
-        "role_z7O3Brz5bTs": {
-          "name": "Teacher",
-          "hint": "2 lines"
-        },
-        "role_NbJyPNcbblM": {
-          "name": "Teacher",
-          "hint": "1 line"
-        },
-        "role_aj7joqDnZyA": {
-          "name": "Kate",
-          "hint": "3 lines"
-        },
-        "role_sWh9h03ep24": {
-          "name": "Class",
-          "hint": "1 line"
-        },
-        "role_JbyyfeuB93Q": {
-          "name": "Child in blue",
-          "hint": "1 line"
-        },
-        "role_HDH0Ul9i7F8": {
-          "name": "Sally",
-          "hint": "2 lines"
-        },
-        "role_biGkzogETqI": {
-          "name": "Child in blue",
-          "hint": "1 line"
-        },
-        "role_Hh6xcW9eG7g": {
-          "name": "Child in purple",
-          "hint": "1 line"
-        },
-        "role_MXwPkAvrD98": {
-          "name": "Dog",
-          "hint": "1 line"
-        },
-        "role_Ex6aSXisvvs": {
-          "name": "Child in blue",
-          "hint": "2 lines"
-        },
-        "role_-0NxEbZrU68": {
-          "name": "Child in purple",
-          "hint": "1 line"
-        },
-        "role_VTNuIGSirwY": {
-          "name": "Dog",
-          "hint": "1 line"
-        },
-        "role_qMDOxsX3cME": {
-          "name": "Sally",
-          "hint": "2 lines"
-        },
-        "role_c20cLSGQdAQ": {
-          "name": "Child in blue",
-          "hint": "2 lines"
-        },
         "role_QlsPddNBXGQ": {
           "name": "Jenny",
           "hint": "2 lines"
@@ -953,31 +696,6 @@
     },
     "zh-CN": {
       "scenes": {
-        "scene_X42Wva5CnXM": {
-          "title": "早上好！你好吗？",
-          "licence": "未确认再分发许可",
-          "changes": "内部原型测试；原上传 4.35–16.2 秒的连续节选。A classroom greeting, with the class chorus retained as one practice role. No jokes, tense changes, or implied meanings."
-        },
-        "scene_nvIB2uFTLc8": {
-          "title": "很高兴认识你",
-          "licence": "未确认再分发许可",
-          "changes": "内部原型测试；原上传 16.6–34 秒的连续节选。Original source name Kate is preserved in text and audio. The class reply is a chorus; the individual boy offers a seat. All roles provide a complete reusable phrase."
-        },
-        "scene_cjkZKJp7Wq0": {
-          "title": "这是什么？一本书！",
-          "licence": "未确认再分发许可",
-          "changes": "内部原型测试；原上传 14.9–35.95 秒的连续节选。Cartoon dog speaks. Stops after the box reveal and reaction, before the next pencil reveal. Original English captions remain on screen."
-        },
-        "scene_xF5xlXcwdvw": {
-          "title": "你会游泳吗？",
-          "licence": "未确认再分发许可",
-          "changes": "内部原型测试；原上传 28.7–39.2 秒的连续节选。Children discuss a swimming-party invitation, with visible gestures. This is language practice, not swimming instruction; the later pool sequence is excluded."
-        },
-        "scene_soM_ejjEqc0": {
-          "title": "这是送给你的",
-          "licence": "未确认再分发许可",
-          "changes": "内部原型测试；原上传 45.7–56.5 秒的连续节选。Birthday scene beside a supervised pool; no swimming action in the selected exchange. Stops before the song and later montage."
-        },
         "scene_YEtT30gD2zw": {
           "title": "花朵变颜色了！",
           "licence": "未确认再分发许可",
@@ -1030,66 +748,6 @@
         }
       },
       "roles": {
-        "role_9C7GkSJ3GZ4": {
-          "name": "同学们",
-          "hint": "3 句台词"
-        },
-        "role_z7O3Brz5bTs": {
-          "name": "老师",
-          "hint": "2 句台词"
-        },
-        "role_NbJyPNcbblM": {
-          "name": "老师",
-          "hint": "1 句台词"
-        },
-        "role_aj7joqDnZyA": {
-          "name": "凯特",
-          "hint": "3 句台词"
-        },
-        "role_sWh9h03ep24": {
-          "name": "同学们",
-          "hint": "1 句台词"
-        },
-        "role_JbyyfeuB93Q": {
-          "name": "蓝衣小朋友",
-          "hint": "1 句台词"
-        },
-        "role_HDH0Ul9i7F8": {
-          "name": "萨莉",
-          "hint": "2 句台词"
-        },
-        "role_biGkzogETqI": {
-          "name": "蓝衣小朋友",
-          "hint": "1 句台词"
-        },
-        "role_Hh6xcW9eG7g": {
-          "name": "紫衣小朋友",
-          "hint": "1 句台词"
-        },
-        "role_MXwPkAvrD98": {
-          "name": "小狗",
-          "hint": "1 句台词"
-        },
-        "role_Ex6aSXisvvs": {
-          "name": "蓝衣小朋友",
-          "hint": "2 句台词"
-        },
-        "role_-0NxEbZrU68": {
-          "name": "紫衣小朋友",
-          "hint": "1 句台词"
-        },
-        "role_VTNuIGSirwY": {
-          "name": "小狗",
-          "hint": "1 句台词"
-        },
-        "role_qMDOxsX3cME": {
-          "name": "萨莉",
-          "hint": "2 句台词"
-        },
-        "role_c20cLSGQdAQ": {
-          "name": "蓝衣小朋友",
-          "hint": "2 句台词"
-        },
         "role_QlsPddNBXGQ": {
           "name": "珍妮",
           "hint": "2 句台词"
@@ -1218,31 +876,6 @@
     },
     "es": {
       "scenes": {
-        "scene_X42Wva5CnXM": {
-          "title": "¡Buenos días! ¿Cómo estás?",
-          "licence": "Permiso de redistribución sin confirmar",
-          "changes": "Prueba interna del prototipo; fragmento de los segundos 4.35–16.2 del vídeo original. Saludo en el aula; la respuesta en coro se conserva como un personaje practicable. No hay bromas, cambios de tiempo verbal ni significados implícitos."
-        },
-        "scene_nvIB2uFTLc8": {
-          "title": "Encantado de conocerte",
-          "licence": "Permiso de redistribución sin confirmar",
-          "changes": "Prueba interna del prototipo; fragmento de los segundos 16.6–34 del vídeo original. El nombre original Kate se conserva en el texto y el audio. La clase responde en grupo y el personaje de azul ofrece un asiento. Todos los personajes tienen una frase completa y reutilizable."
-        },
-        "scene_cjkZKJp7Wq0": {
-          "title": "¿Qué es esto? ¡Un libro!",
-          "licence": "Permiso de redistribución sin confirmar",
-          "changes": "Prueba interna del prototipo; fragmento de los segundos 14.9–35.95 del vídeo original. Habla un perro de dibujos animados. Termina después de mostrar la caja y la reacción, antes de mostrar el siguiente lápiz. Se conservan los subtítulos originales en inglés."
-        },
-        "scene_xF5xlXcwdvw": {
-          "title": "¿Sabes nadar?",
-          "licence": "Permiso de redistribución sin confirmar",
-          "changes": "Prueba interna del prototipo; fragmento de los segundos 28.7–39.2 del vídeo original. Los niños hablan de una invitación a una fiesta en la piscina y se ven sus gestos. Es práctica de idiomas, no una clase de natación. Se excluye la secuencia posterior en la piscina."
-        },
-        "scene_soM_ejjEqc0": {
-          "title": "Esto es para ti",
-          "licence": "Permiso de redistribución sin confirmar",
-          "changes": "Prueba interna del prototipo; fragmento de los segundos 45.7–56.5 del vídeo original. Escena de cumpleaños junto a una piscina vigilada. No se nada durante el diálogo elegido. Termina antes de la canción y el montaje posterior."
-        },
         "scene_YEtT30gD2zw": {
           "title": "¡Flores mágicas!",
           "licence": "Permiso de redistribución sin confirmar",
@@ -1295,66 +928,6 @@
         }
       },
       "roles": {
-        "role_9C7GkSJ3GZ4": {
-          "name": "Clase",
-          "hint": "3 frases"
-        },
-        "role_z7O3Brz5bTs": {
-          "name": "Profesor",
-          "hint": "2 frases"
-        },
-        "role_NbJyPNcbblM": {
-          "name": "Profesor",
-          "hint": "1 frase"
-        },
-        "role_aj7joqDnZyA": {
-          "name": "Kate",
-          "hint": "3 frases"
-        },
-        "role_sWh9h03ep24": {
-          "name": "Clase",
-          "hint": "1 frase"
-        },
-        "role_JbyyfeuB93Q": {
-          "name": "Niño de azul",
-          "hint": "1 frase"
-        },
-        "role_HDH0Ul9i7F8": {
-          "name": "Sally",
-          "hint": "2 frases"
-        },
-        "role_biGkzogETqI": {
-          "name": "Niño de azul",
-          "hint": "1 frase"
-        },
-        "role_Hh6xcW9eG7g": {
-          "name": "Niño de morado",
-          "hint": "1 frase"
-        },
-        "role_MXwPkAvrD98": {
-          "name": "Perro",
-          "hint": "1 frase"
-        },
-        "role_Ex6aSXisvvs": {
-          "name": "Niño de azul",
-          "hint": "2 frases"
-        },
-        "role_-0NxEbZrU68": {
-          "name": "Niño de morado",
-          "hint": "1 frase"
-        },
-        "role_VTNuIGSirwY": {
-          "name": "Perro",
-          "hint": "1 frase"
-        },
-        "role_qMDOxsX3cME": {
-          "name": "Sally",
-          "hint": "2 frases"
-        },
-        "role_c20cLSGQdAQ": {
-          "name": "Niño de azul",
-          "hint": "2 frases"
-        },
         "role_QlsPddNBXGQ": {
           "name": "Jenny",
           "hint": "2 frases"
@@ -1483,31 +1056,6 @@
     },
     "ja": {
       "scenes": {
-        "scene_X42Wva5CnXM": {
-          "title": "おはよう！元気？",
-          "licence": "再配布の許諾は未確認",
-          "changes": "内部試作テスト用。元の動画の4.35–16.2秒の抜粋です。 教室でのあいさつです。クラス全員の返事は1つの練習用の役にしています。冗談、時制の変化、暗に示す意味はありません。"
-        },
-        "scene_nvIB2uFTLc8": {
-          "title": "はじめまして",
-          "licence": "再配布の許諾は未確認",
-          "changes": "内部試作テスト用。元の動画の16.6–34秒の抜粋です。 元の名前Kateは文字と音声でそのままにしています。クラスの返事は全員で言い、青い服の子が席を勧めます。どの役にも、ほかでも使える完全なフレーズがあります。"
-        },
-        "scene_cjkZKJp7Wq0": {
-          "title": "これは何？本だよ！",
-          "licence": "再配布の許諾は未確認",
-          "changes": "内部試作テスト用。元の動画の14.9–35.95秒の抜粋です。 アニメの犬が話します。箱を見せた後の反応までで、次に鉛筆を見せる前で終わります。元の英語字幕は画面に残っています。"
-        },
-        "scene_xF5xlXcwdvw": {
-          "title": "泳げる？",
-          "licence": "再配布の許諾は未確認",
-          "changes": "内部試作テスト用。元の動画の28.7–39.2秒の抜粋です。 子どもたちが身ぶりを交え、水泳パーティーの招待について話します。語学練習であり、水泳の指導ではありません。その後のプールの場面は含みません。"
-        },
-        "scene_soM_ejjEqc0": {
-          "title": "これ、どうぞ",
-          "licence": "再配布の許諾は未確認",
-          "changes": "内部試作テスト用。元の動画の45.7–56.5秒の抜粋です。 監督者のいるプールのそばの誕生日の場面です。選んだ会話中に泳ぐ動作はありません。歌や、その後の編集シーンの前で終わります。"
-        },
         "scene_YEtT30gD2zw": {
           "title": "お花の色が変わった！",
           "licence": "再配布の許諾は未確認",
@@ -1560,66 +1108,6 @@
         }
       },
       "roles": {
-        "role_9C7GkSJ3GZ4": {
-          "name": "クラスのみんな",
-          "hint": "セリフ3行"
-        },
-        "role_z7O3Brz5bTs": {
-          "name": "先生",
-          "hint": "セリフ2行"
-        },
-        "role_NbJyPNcbblM": {
-          "name": "先生",
-          "hint": "セリフ1行"
-        },
-        "role_aj7joqDnZyA": {
-          "name": "ケイト",
-          "hint": "セリフ3行"
-        },
-        "role_sWh9h03ep24": {
-          "name": "クラスのみんな",
-          "hint": "セリフ1行"
-        },
-        "role_JbyyfeuB93Q": {
-          "name": "青い服の子",
-          "hint": "セリフ1行"
-        },
-        "role_HDH0Ul9i7F8": {
-          "name": "サリー",
-          "hint": "セリフ2行"
-        },
-        "role_biGkzogETqI": {
-          "name": "青い服の子",
-          "hint": "セリフ1行"
-        },
-        "role_Hh6xcW9eG7g": {
-          "name": "紫の服の子",
-          "hint": "セリフ1行"
-        },
-        "role_MXwPkAvrD98": {
-          "name": "犬",
-          "hint": "セリフ1行"
-        },
-        "role_Ex6aSXisvvs": {
-          "name": "青い服の子",
-          "hint": "セリフ2行"
-        },
-        "role_-0NxEbZrU68": {
-          "name": "紫の服の子",
-          "hint": "セリフ1行"
-        },
-        "role_VTNuIGSirwY": {
-          "name": "犬",
-          "hint": "セリフ1行"
-        },
-        "role_qMDOxsX3cME": {
-          "name": "サリー",
-          "hint": "セリフ2行"
-        },
-        "role_c20cLSGQdAQ": {
-          "name": "青い服の子",
-          "hint": "セリフ2行"
-        },
         "role_QlsPddNBXGQ": {
           "name": "ジェニー",
           "hint": "セリフ2行"
@@ -1748,31 +1236,6 @@
     },
     "ko": {
       "scenes": {
-        "scene_X42Wva5CnXM": {
-          "title": "좋은 아침! 잘 지내?",
-          "licence": "재배포 허가 미확인",
-          "changes": "내부 시제품 테스트용. 원본 영상의 4.35–16.2초 구간을 발췌했어요. 교실 인사 장면이며 학급 전체의 응답을 하나의 연습 역할로 유지해요. 농담, 시제 변화나 숨은 뜻은 없어요."
-        },
-        "scene_nvIB2uFTLc8": {
-          "title": "만나서 반가워",
-          "licence": "재배포 허가 미확인",
-          "changes": "내부 시제품 테스트용. 원본 영상의 16.6–34초 구간을 발췌했어요. 원본 이름 Kate를 글과 오디오에 그대로 유지해요. 학급 전체가 함께 답하고 파란 옷을 입은 아이가 자리를 권해요. 모든 역할에 다른 상황에도 쓸 수 있는 완전한 표현이 있어요."
-        },
-        "scene_cjkZKJp7Wq0": {
-          "title": "이게 뭐야? 책이야!",
-          "licence": "재배포 허가 미확인",
-          "changes": "내부 시제품 테스트용. 원본 영상의 14.9–35.95초 구간을 발췌했어요. 만화 속 강아지가 말해요. 상자를 보여 주고 반응한 뒤, 다음 연필을 보여 주기 전에 끝나요. 원본 영어 자막은 화면에 남아 있어요."
-        },
-        "scene_xF5xlXcwdvw": {
-          "title": "수영할 수 있어?",
-          "licence": "재배포 허가 미확인",
-          "changes": "내부 시제품 테스트용. 원본 영상의 28.7–39.2초 구간을 발췌했어요. 아이들이 몸짓을 보이며 수영 파티 초대를 이야기해요. 언어 연습이며 수영 교육이 아니에요. 이후의 수영장 장면은 제외했어요."
-        },
-        "scene_soM_ejjEqc0": {
-          "title": "이거 네 거야",
-          "licence": "재배포 허가 미확인",
-          "changes": "내부 시제품 테스트용. 원본 영상의 45.7–56.5초 구간을 발췌했어요. 감독자가 있는 수영장 옆 생일 장면이에요. 선택한 대화에는 수영 동작이 없어요. 노래와 이후의 편집 영상 전에 끝나요."
-        },
         "scene_YEtT30gD2zw": {
           "title": "꽃 색깔이 바뀌었어요!",
           "licence": "재배포 허가 미확인",
@@ -1825,66 +1288,6 @@
         }
       },
       "roles": {
-        "role_9C7GkSJ3GZ4": {
-          "name": "학급 친구들",
-          "hint": "대사 3개"
-        },
-        "role_z7O3Brz5bTs": {
-          "name": "선생님",
-          "hint": "대사 2개"
-        },
-        "role_NbJyPNcbblM": {
-          "name": "선생님",
-          "hint": "대사 1개"
-        },
-        "role_aj7joqDnZyA": {
-          "name": "케이트",
-          "hint": "대사 3개"
-        },
-        "role_sWh9h03ep24": {
-          "name": "학급 친구들",
-          "hint": "대사 1개"
-        },
-        "role_JbyyfeuB93Q": {
-          "name": "파란 옷을 입은 아이",
-          "hint": "대사 1개"
-        },
-        "role_HDH0Ul9i7F8": {
-          "name": "샐리",
-          "hint": "대사 2개"
-        },
-        "role_biGkzogETqI": {
-          "name": "파란 옷을 입은 아이",
-          "hint": "대사 1개"
-        },
-        "role_Hh6xcW9eG7g": {
-          "name": "보라색 옷을 입은 아이",
-          "hint": "대사 1개"
-        },
-        "role_MXwPkAvrD98": {
-          "name": "강아지",
-          "hint": "대사 1개"
-        },
-        "role_Ex6aSXisvvs": {
-          "name": "파란 옷을 입은 아이",
-          "hint": "대사 2개"
-        },
-        "role_-0NxEbZrU68": {
-          "name": "보라색 옷을 입은 아이",
-          "hint": "대사 1개"
-        },
-        "role_VTNuIGSirwY": {
-          "name": "강아지",
-          "hint": "대사 1개"
-        },
-        "role_qMDOxsX3cME": {
-          "name": "샐리",
-          "hint": "대사 2개"
-        },
-        "role_c20cLSGQdAQ": {
-          "name": "파란 옷을 입은 아이",
-          "hint": "대사 2개"
-        },
         "role_QlsPddNBXGQ": {
           "name": "제니",
           "hint": "대사 2개"

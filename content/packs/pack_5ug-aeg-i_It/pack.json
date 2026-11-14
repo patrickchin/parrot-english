@@ -1,0 +1,828 @@
+{
+  "version": 1,
+  "id": "pack_5ug-aeg-i_It",
+  "title": "Friends",
+  "franchise": "Friends",
+  "description": "English dubbing scenes from Friends.",
+  "author": "Parrotbook",
+  "scenes": [
+    {
+      "id": "scene_pywI3ZgiZ-Y",
+      "slug": "friends-moving-couch",
+      "title": "转不过弯的沙发",
+      "english": "A sofa that will not turn",
+      "note": "Friends",
+      "source": "https://www.youtube.com/watch?v=UJHa8Bjjy1k&t=165s",
+      "cohort": "teens",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/friends-moving-couch/friends-moving-couch-poster-e23b414e4b24.jpg",
+      "tags": [
+        "Friends",
+        "老友记",
+        "六人行",
+        "Rachel",
+        "Ross",
+        "Chandler",
+        "Rachel and Chandler",
+        "瑞秋",
+        "罗斯",
+        "钱德勒",
+        "瑞秋和钱德勒",
+        "couch",
+        "sofa",
+        "沙发",
+        "moving",
+        "搬家"
+      ],
+      "quotes": [
+        "I just don't think it's gonna fit.",
+        "我觉得这根本放不进去。",
+        "Oh, yeah, it will! Come on. Up, up, up, up, up! Yes! Here we go! Pivot! Pivot! Pivot! Pivot! Pivot! Pivot!",
+        "能放进去的！来，往上、往上、往上、往上、往上！对了！来吧。转！转！转！转！转！转！",
+        "Shut up! Shut up! Shut up!",
+        "闭嘴！闭嘴！闭嘴！",
+        "Okay. I don't think it's gonna pivot anymore.",
+        "好吧，我觉得它转不动了。",
+        "You think?",
+        "你才发现啊？"
+      ],
+      "manifest": "scenes/friends-moving-couch/scene.json"
+    },
+    {
+      "id": "scene_lPxb4HHQVrQ",
+      "slug": "friends-thesaurus",
+      "title": "乔伊发现同义词词典",
+      "english": "Joey discovers a thesaurus",
+      "note": "Friends",
+      "source": "https://www.youtube.com/watch?v=ZeTeCcvIVMo&t=0s",
+      "cohort": "teens",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/friends-thesaurus/friends-thesaurus-poster-d0f3a596607a.jpg",
+      "tags": [
+        "Friends",
+        "老友记",
+        "六人行",
+        "Ross",
+        "Joey",
+        "罗斯",
+        "乔伊",
+        "thesaurus",
+        "同义词词典",
+        "vocabulary",
+        "词汇"
+      ],
+      "quotes": [
+        "What... what you working on?",
+        "你……你在忙什么？",
+        "Oh, Monica and Chandler's recommendation. I want it to sound smart, but I don't know any big words or anything, so...",
+        "给莫妮卡和钱德勒写推荐信。我想写得有水平，可我不认识什么高级词汇，所以……",
+        "Well, why don't you use your thesaurus?",
+        "那你为什么不用同义词词典呢？",
+        "What'd I just say?",
+        "我刚才说什么来着？",
+        "Watch. Here, you, uh, you highlight the word you want to change, go under Tools...",
+        "看这里。你选中想改的词，再打开“工具”……",
+        "And the thesaurus generates, gives, gives a whole list of choices.",
+        "同义词词典就会生成，给出……给出一整列选项。",
+        "You can pick the word that sounds smartest.",
+        "你可以挑听起来最有学问的那个词。",
+        "Oh my God, that's great! I'm smart! No, no, I'm brainy, bright, clever. I love this thing!",
+        "天哪，太棒了！我真聪明！不，不，我是才思敏捷、机灵、睿智。我爱这个功能！"
+      ],
+      "manifest": "scenes/friends-thesaurus/scene.json"
+    },
+    {
+      "id": "scene__ZPXHnc-PuE",
+      "slug": "friends-cheesecake",
+      "title": "选哪一半芝士蛋糕",
+      "english": "Choosing a half of the cheesecake",
+      "note": "Friends",
+      "source": "https://www.youtube.com/watch?v=FxLDcqiOSZI&t=55s",
+      "cohort": "teens",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/friends-cheesecake/friends-cheesecake-poster-7c4243dbd2b7.jpg",
+      "tags": [
+        "Friends",
+        "老友记",
+        "六人行",
+        "Rachel",
+        "Chandler",
+        "瑞秋",
+        "钱德勒",
+        "cheesecake",
+        "芝士蛋糕",
+        "food",
+        "食物",
+        "sharing",
+        "分享"
+      ],
+      "quotes": [
+        "All right, pick a half.",
+        "好，选一半吧。",
+        "Okay, well, this side looks bigger. Uh, there's more crust on this side. Y'know? So, maybe if I measured...",
+        "好吧。这边看着大一些。不过这边的饼皮更多。你看？要不我量一下……",
+        "Oh, for God's sake, just pick a piece!",
+        "天哪，你就随便选一块吧！",
+        "All right, pick that.",
+        "好吧，我选那块。",
+        "That's also the smaller piece.",
+        "那块也更小一些。",
+        "Okay. There you go. Enjoy your half, my friend, but that is it. No sharing, no switching, and don't come crying to me if you eat your piece too fast.",
+        "行，给你。好好享用你那一半吧，朋友。不过说定了，不分着吃、不交换。要是你吃得太快，可别来求我。"
+      ],
+      "manifest": "scenes/friends-cheesecake/scene.json"
+    },
+    {
+      "id": "scene_ib-oCCujJSU",
+      "slug": "friends-return-couch",
+      "title": "退回半张沙发",
+      "english": "Returning half a sofa",
+      "note": "Friends",
+      "source": "https://www.youtube.com/watch?v=UJHa8Bjjy1k&t=239s",
+      "cohort": "teens",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/friends-return-couch/friends-return-couch-poster-55c443822fb4.jpg",
+      "tags": [
+        "Friends",
+        "老友记",
+        "六人行",
+        "Shop assistant",
+        "Ross",
+        "店员",
+        "罗斯",
+        "couch",
+        "sofa",
+        "沙发",
+        "returns",
+        "退货"
+      ],
+      "quotes": [
+        "It's cut in half.",
+        "它被切成两半了。",
+        "That's what I'm telling you.",
+        "我就是这个意思啊。",
+        "Did you cut this couch in half?",
+        "是你把沙发切成两半的吗？",
+        "This couch is cut in half. I would like to exchange it for one that is not cut in half.",
+        "这张沙发被切成两半了。我想换一张没有被切成两半的。",
+        "You're telling me this couch was delivered to you like this?",
+        "你是说，沙发送来时就是这样？",
+        "Look, I'm a reasonable man. I will accept store credit.",
+        "听着，我是讲道理的人。给我店铺购物额度也行。",
+        "I'll give you store credit in the amount of four dollars.",
+        "我可以给你四美元的购物额度。",
+        "I will take it.",
+        "成交。"
+      ],
+      "manifest": "scenes/friends-return-couch/scene.json"
+    },
+    {
+      "id": "scene_VcyyHi5Kk4A",
+      "slug": "friends-vacuum-attachments",
+      "title": "那个吸尘器配件是做什么的？",
+      "english": "What is that vacuum attachment for?",
+      "note": "Friends",
+      "source": "https://www.youtube.com/watch?v=fOcYm9udNQA&t=4s",
+      "cohort": "teens",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/friends-vacuum-attachments/friends-vacuum-attachments-poster-35fbfce24f48.jpg",
+      "tags": [
+        "Friends",
+        "老友记",
+        "六人行",
+        "Rachel",
+        "Chandler",
+        "瑞秋",
+        "钱德勒",
+        "vacuum",
+        "吸尘器",
+        "cleaning",
+        "打扫"
+      ],
+      "quotes": [
+        "Ta-da!",
+        "看！",
+        "Are we greeting each other this way now? Because I like that.",
+        "咱们现在这样打招呼了吗？我挺喜欢。",
+        "Look! I cleaned! I did the windows, I did the floors.",
+        "看，我打扫了！我擦了窗户，清了地板。",
+        "I even used all those attachments on the vacuum, except for that little round one with the bristles. I don't know what that's for.",
+        "我连吸尘器那些配件都用上了，除了那个带刷毛的小圆头。我不知道它是干什么的。",
+        "Oh, yeah, nobody knows, and we're not supposed to ask.",
+        "哦，没人知道，而且咱们还不能问。"
+      ],
+      "manifest": "scenes/friends-vacuum-attachments/scene.json"
+    },
+    {
+      "id": "scene_U4HGHLNvT3k",
+      "slug": "friends-unpaid-bill",
+      "title": "想象一下不马上付账单",
+      "english": "Imagine not paying the bill immediately",
+      "note": "Friends",
+      "source": "https://www.youtube.com/watch?v=fOcYm9udNQA&t=103s",
+      "cohort": "teens",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/friends-unpaid-bill/friends-unpaid-bill-poster-b155c0ef3635.jpg",
+      "tags": [
+        "Friends",
+        "老友记",
+        "六人行",
+        "Ross",
+        "Monica",
+        "罗斯",
+        "莫妮卡",
+        "phone bill",
+        "电话账单",
+        "money",
+        "钱"
+      ],
+      "quotes": [
+        "All right, you madcap gal. Try to imagine this. The phone bill arrives, but you don't pay it right away.",
+        "好吧，你这位疯丫头。想象一下：电话账单来了，可你没有马上付。",
+        "Why not?",
+        "为什么不付？",
+        "Because you're a kook! Instead, you wait until they send you a notice.",
+        "因为你是个怪人啊！你偏要等他们发来催缴通知。",
+        "I could do that.",
+        "这我能做到。"
+      ],
+      "manifest": "scenes/friends-unpaid-bill/scene.json"
+    },
+    {
+      "id": "scene_h81smyBB8mI",
+      "slug": "friends-brown-jar",
+      "routeSlug": "what-was-in-that-brown-jar",
+      "title": "那个棕色罐子里装的是什么？",
+      "english": "What was in that brown jar?",
+      "note": "Friends",
+      "source": "https://www.youtube.com/watch?v=IHJI6_VpH00&t=7s",
+      "cohort": "teens",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/friends-brown-jar/friends-brown-jar-poster-ba64e48c5ef8.jpg",
+      "tags": [
+        "Friends",
+        "Joey",
+        "Chandler",
+        "fridge",
+        "food",
+        "乔伊",
+        "钱德勒",
+        "冰箱",
+        "食物"
+      ],
+      "quotes": [
+        "Well, you don't look good, Joe.",
+        "呃，乔伊，你气色不太好啊。",
+        "Well, the fridge broke, so I had to eat everything. Cold cuts, ice cream, limes.",
+        "冰箱坏了，所以我只好把里面的东西都吃了。冷切肉、冰淇淋、青柠。",
+        "And hey, what was in that brown jar?",
+        "对了，那个棕色罐子里装的是什么？",
+        "That's still in there?",
+        "那东西还在里面？",
+        "Not anymore.",
+        "现在不在了。"
+      ],
+      "manifest": "scenes/friends-brown-jar/scene.json"
+    }
+  ],
+  "locales": {
+    "en": {
+      "scenes": {
+        "scene_pywI3ZgiZ-Y": {
+          "title": "A sofa that will not turn",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 165.9–198.4 seconds of the original upload. Raised voices and a repeated rude command to be quiet. The earlier sketch innuendo is excluded."
+        },
+        "scene_lPxb4HHQVrQ": {
+          "title": "Joey discovers a thesaurus",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 0–37.2 seconds of the original upload. Adoption recommendation is the background. The later dating innuendo is excluded."
+        },
+        "scene__ZPXHnc-PuE": {
+          "title": "Choosing a half of the cheesecake",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 55.7–85.4 seconds of the original upload. Food squabbling; the surrounding story involves taking someone else’s cake. Later wedding and sexual jokes in the source compilation are excluded."
+        },
+        "scene_ib-oCCujJSU": {
+          "title": "Returning half a sofa",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 239.1–277.65 seconds of the original upload. Comic dishonest return attempt, not consumer advice. No earlier sketch innuendo."
+        },
+        "scene_VcyyHi5Kk4A": {
+          "title": "What is that vacuum attachment for?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 4.1–24.05 seconds of the original upload. Dry sarcasm. Source title mentions OCD; this cut is about cleaning and does not teach a diagnosis."
+        },
+        "scene_U4HGHLNvT3k": {
+          "title": "Imagine not paying the bill immediately",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 103.35–123.72 seconds of the original upload. Teasing about rigid habits and a slang label. Comic hypothetical, not financial advice. Later family insults are excluded."
+        },
+        "scene_h81smyBB8mI": {
+          "title": "What was in that brown jar?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 7.2–23.25 seconds of the original upload. Gross-out food joke and deliberately poor food-safety judgment, not advice. Stops before the payment argument, violent shove, and adult subplot."
+        }
+      },
+      "roles": {
+        "role_2N9MYrRXSfA": {
+          "name": "Rachel",
+          "hint": "1 line"
+        },
+        "role_63qAU3MP3yo": {
+          "name": "Ross",
+          "hint": "2 lines"
+        },
+        "role_4x8NV4PfgqM": {
+          "name": "Chandler",
+          "hint": "1 line"
+        },
+        "role_JcuuVsaRRGI": {
+          "name": "Rachel and Chandler",
+          "hint": "1 line"
+        },
+        "role_XaaU0DIckP8": {
+          "name": "Ross",
+          "hint": "5 lines"
+        },
+        "role_9o381Ya55Qo": {
+          "name": "Joey",
+          "hint": "3 lines"
+        },
+        "role_taz3h1D5Pw4": {
+          "name": "Rachel",
+          "hint": "4 lines"
+        },
+        "role_Jy_lg0MhfG4": {
+          "name": "Chandler",
+          "hint": "2 lines"
+        },
+        "role_YET3ltc6fQU": {
+          "name": "Shop assistant",
+          "hint": "4 lines"
+        },
+        "role_Oo3yWRIKTU0": {
+          "name": "Ross",
+          "hint": "4 lines"
+        },
+        "role_rTn_pxCsnxc": {
+          "name": "Rachel",
+          "hint": "3 lines"
+        },
+        "role_h_9HmVzsQ1E": {
+          "name": "Chandler",
+          "hint": "2 lines"
+        },
+        "role_VQ73BCpz9sk": {
+          "name": "Ross",
+          "hint": "2 lines"
+        },
+        "role_hl4hEF54S8A": {
+          "name": "Monica",
+          "hint": "2 lines"
+        },
+        "role_aR1LFDLlZOg": {
+          "name": "Chandler",
+          "hint": "2 lines"
+        },
+        "role_eUgVQq3TJ18": {
+          "name": "Joey",
+          "hint": "3 lines"
+        }
+      },
+      "notices": {
+        "library": "Adult prototype testing · Dubs save in this browser. No uploads. Redistribution permission for the meme clips is unconfirmed.",
+        "scene": "This scene is for adult prototype testing. The full film is not beginner learning material for children.The creators do not endorse this product."
+      }
+    },
+    "zh-CN": {
+      "scenes": {
+        "scene_pywI3ZgiZ-Y": {
+          "title": "转不过弯的沙发",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 165.9–198.4 秒的连续节选。Raised voices and a repeated rude command to be quiet. The earlier sketch innuendo is excluded."
+        },
+        "scene_lPxb4HHQVrQ": {
+          "title": "乔伊发现同义词词典",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 0–37.2 秒的连续节选。Adoption recommendation is the background. The later dating innuendo is excluded."
+        },
+        "scene__ZPXHnc-PuE": {
+          "title": "选哪一半芝士蛋糕",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 55.7–85.4 秒的连续节选。Food squabbling; the surrounding story involves taking someone else’s cake. Later wedding and sexual jokes in the source compilation are excluded."
+        },
+        "scene_ib-oCCujJSU": {
+          "title": "退回半张沙发",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 239.1–277.65 秒的连续节选。Comic dishonest return attempt, not consumer advice. No earlier sketch innuendo."
+        },
+        "scene_VcyyHi5Kk4A": {
+          "title": "那个吸尘器配件是做什么的？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 4.1–24.05 秒的连续节选。Dry sarcasm. Source title mentions OCD; this cut is about cleaning and does not teach a diagnosis."
+        },
+        "scene_U4HGHLNvT3k": {
+          "title": "想象一下不马上付账单",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 103.35–123.72 秒的连续节选。Teasing about rigid habits and a slang label. Comic hypothetical, not financial advice. Later family insults are excluded."
+        },
+        "scene_h81smyBB8mI": {
+          "title": "那个棕色罐子里装的是什么？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 7.2–23.25 秒的连续节选。Gross-out food joke and deliberately poor food-safety judgment, not advice. Stops before the payment argument, violent shove, and adult subplot."
+        }
+      },
+      "roles": {
+        "role_2N9MYrRXSfA": {
+          "name": "瑞秋",
+          "hint": "1 句台词"
+        },
+        "role_63qAU3MP3yo": {
+          "name": "罗斯",
+          "hint": "2 句台词"
+        },
+        "role_4x8NV4PfgqM": {
+          "name": "钱德勒",
+          "hint": "1 句台词"
+        },
+        "role_JcuuVsaRRGI": {
+          "name": "瑞秋和钱德勒",
+          "hint": "1 句台词"
+        },
+        "role_XaaU0DIckP8": {
+          "name": "罗斯",
+          "hint": "5 句台词"
+        },
+        "role_9o381Ya55Qo": {
+          "name": "乔伊",
+          "hint": "3 句台词"
+        },
+        "role_taz3h1D5Pw4": {
+          "name": "瑞秋",
+          "hint": "4 句台词"
+        },
+        "role_Jy_lg0MhfG4": {
+          "name": "钱德勒",
+          "hint": "2 句台词"
+        },
+        "role_YET3ltc6fQU": {
+          "name": "店员",
+          "hint": "4 句台词"
+        },
+        "role_Oo3yWRIKTU0": {
+          "name": "罗斯",
+          "hint": "4 句台词"
+        },
+        "role_rTn_pxCsnxc": {
+          "name": "瑞秋",
+          "hint": "3 句台词"
+        },
+        "role_h_9HmVzsQ1E": {
+          "name": "钱德勒",
+          "hint": "2 句台词"
+        },
+        "role_VQ73BCpz9sk": {
+          "name": "罗斯",
+          "hint": "2 句台词"
+        },
+        "role_hl4hEF54S8A": {
+          "name": "莫妮卡",
+          "hint": "2 句台词"
+        },
+        "role_aR1LFDLlZOg": {
+          "name": "钱德勒",
+          "hint": "2 句台词"
+        },
+        "role_eUgVQq3TJ18": {
+          "name": "乔伊",
+          "hint": "3 句台词"
+        }
+      },
+      "notices": {
+        "library": "成人原型测试 · 配音保存在此浏览器，不会上传。影视梗片段尚未确认再分发许可。",
+        "scene": "本片段用于成人原型测试；完整电影并非儿童入门教材。创作者未对本产品作出背书。"
+      }
+    },
+    "es": {
+      "scenes": {
+        "scene_pywI3ZgiZ-Y": {
+          "title": "Un sofá que no gira",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 165.9–198.4 del vídeo original. Voces elevadas y una orden grosera de callarse repetida. Se excluyen las insinuaciones de la escena anterior."
+        },
+        "scene_lPxb4HHQVrQ": {
+          "title": "Joey descubre un diccionario de sinónimos",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 0–37.2 del vídeo original. El contexto es una recomendación para una adopción. Se excluyen las insinuaciones posteriores sobre citas."
+        },
+        "scene__ZPXHnc-PuE": {
+          "title": "Elegir la mitad de la tarta de queso",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 55.7–85.4 del vídeo original. Discusión por comida; la historia incluye llevarse la tarta de otra persona. Se excluyen las bromas posteriores sobre bodas y sexo de la recopilación original."
+        },
+        "scene_ib-oCCujJSU": {
+          "title": "Devolver medio sofá",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 239.1–277.65 del vídeo original. Intento cómico de devolución deshonesta, no un consejo para consumidores. No incluye las insinuaciones de la escena anterior."
+        },
+        "scene_VcyyHi5Kk4A": {
+          "title": "¿Para qué sirve ese accesorio de la aspiradora?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 4.1–24.05 del vídeo original. Sarcasmo seco. El título original menciona el TOC, pero este fragmento trata de limpieza y no enseña a diagnosticar."
+        },
+        "scene_U4HGHLNvT3k": {
+          "title": "Imagina no pagar la factura enseguida",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 103.35–123.72 del vídeo original. Bromas sobre hábitos rígidos y una expresión coloquial. Es una situación hipotética cómica, no un consejo financiero. Se excluyen los insultos familiares posteriores."
+        },
+        "scene_h81smyBB8mI": {
+          "title": "¿Qué había en ese tarro marrón?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 7.2–23.25 del vídeo original. Broma de comida desagradable y una decisión deliberadamente mala sobre seguridad alimentaria; no es un consejo. Termina antes de la discusión sobre el pago, el empujón violento y la trama para adultos."
+        }
+      },
+      "roles": {
+        "role_2N9MYrRXSfA": {
+          "name": "Rachel",
+          "hint": "1 frase"
+        },
+        "role_63qAU3MP3yo": {
+          "name": "Ross",
+          "hint": "2 frases"
+        },
+        "role_4x8NV4PfgqM": {
+          "name": "Chandler",
+          "hint": "1 frase"
+        },
+        "role_JcuuVsaRRGI": {
+          "name": "Rachel y Chandler",
+          "hint": "1 frase"
+        },
+        "role_XaaU0DIckP8": {
+          "name": "Ross",
+          "hint": "5 frases"
+        },
+        "role_9o381Ya55Qo": {
+          "name": "Joey",
+          "hint": "3 frases"
+        },
+        "role_taz3h1D5Pw4": {
+          "name": "Rachel",
+          "hint": "4 frases"
+        },
+        "role_Jy_lg0MhfG4": {
+          "name": "Chandler",
+          "hint": "2 frases"
+        },
+        "role_YET3ltc6fQU": {
+          "name": "Dependiente",
+          "hint": "4 frases"
+        },
+        "role_Oo3yWRIKTU0": {
+          "name": "Ross",
+          "hint": "4 frases"
+        },
+        "role_rTn_pxCsnxc": {
+          "name": "Rachel",
+          "hint": "3 frases"
+        },
+        "role_h_9HmVzsQ1E": {
+          "name": "Chandler",
+          "hint": "2 frases"
+        },
+        "role_VQ73BCpz9sk": {
+          "name": "Ross",
+          "hint": "2 frases"
+        },
+        "role_hl4hEF54S8A": {
+          "name": "Monica",
+          "hint": "2 frases"
+        },
+        "role_aR1LFDLlZOg": {
+          "name": "Chandler",
+          "hint": "2 frases"
+        },
+        "role_eUgVQq3TJ18": {
+          "name": "Joey",
+          "hint": "3 frases"
+        }
+      },
+      "notices": {
+        "library": "Pruebas del prototipo con adultos · Los doblajes se guardan en este navegador y no se suben. No se ha confirmado el permiso de redistribución de estos fragmentos.",
+        "scene": "Esta escena es para pruebas del prototipo con adultos. La película completa no es material de iniciación para niños.Los creadores no respaldan este producto."
+      }
+    },
+    "ja": {
+      "scenes": {
+        "scene_pywI3ZgiZ-Y": {
+          "title": "曲がれないソファ",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の165.9–198.4秒の抜粋です。 大きな声や、黙るように乱暴に繰り返す発言があります。それ以前の含みのある場面は含みません。"
+        },
+        "scene_lPxb4HHQVrQ": {
+          "title": "ジョーイが類語辞典を発見",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の0–37.2秒の抜粋です。 養子縁組の推薦が背景にあります。その後の恋愛に関する含みのある話は含みません。"
+        },
+        "scene__ZPXHnc-PuE": {
+          "title": "チーズケーキはどっちの半分？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の55.7–85.4秒の抜粋です。 食べ物をめぐる口げんかで、前後の話には他人のケーキを持っていく行動があります。元の編集動画の後半にある結婚式や性的な冗談は含みません。"
+        },
+        "scene_ib-oCCujJSU": {
+          "title": "半分のソファを返品",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の239.1–277.65秒の抜粋です。 不正な返品を試みるコメディであり、消費者向けの助言ではありません。それ以前の含みのある場面は含みません。"
+        },
+        "scene_VcyyHi5Kk4A": {
+          "title": "その掃除機の部品は何に使うの？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の4.1–24.05秒の抜粋です。 淡々とした皮肉があります。元のタイトルにはOCDの表記がありますが、この場面は掃除についてであり、診断を教えるものではありません。"
+        },
+        "scene_U4HGHLNvT3k": {
+          "title": "請求書をすぐ払わなかったら？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の103.35–123.72秒の抜粋です。 几帳面な習慣や俗語による呼び名をからかう場面です。コメディの仮定の話であり、金融上の助言ではありません。その後の家族への悪口は含みません。"
+        },
+        "scene_h81smyBB8mI": {
+          "title": "あの茶色い瓶には何が入ってたの？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の7.2–23.25秒の抜粋です。 気持ち悪さを笑いにする食べ物の冗談と、わざと不適切に描かれた食品衛生の判断です。助言ではありません。支払いの口論、乱暴に押す行動、大人向けの筋書きの前で終わります。"
+        }
+      },
+      "roles": {
+        "role_2N9MYrRXSfA": {
+          "name": "レイチェル",
+          "hint": "セリフ1行"
+        },
+        "role_63qAU3MP3yo": {
+          "name": "ロス",
+          "hint": "セリフ2行"
+        },
+        "role_4x8NV4PfgqM": {
+          "name": "チャンドラー",
+          "hint": "セリフ1行"
+        },
+        "role_JcuuVsaRRGI": {
+          "name": "レイチェルとチャンドラー",
+          "hint": "セリフ1行"
+        },
+        "role_XaaU0DIckP8": {
+          "name": "ロス",
+          "hint": "セリフ5行"
+        },
+        "role_9o381Ya55Qo": {
+          "name": "ジョーイ",
+          "hint": "セリフ3行"
+        },
+        "role_taz3h1D5Pw4": {
+          "name": "レイチェル",
+          "hint": "セリフ4行"
+        },
+        "role_Jy_lg0MhfG4": {
+          "name": "チャンドラー",
+          "hint": "セリフ2行"
+        },
+        "role_YET3ltc6fQU": {
+          "name": "店員",
+          "hint": "セリフ4行"
+        },
+        "role_Oo3yWRIKTU0": {
+          "name": "ロス",
+          "hint": "セリフ4行"
+        },
+        "role_rTn_pxCsnxc": {
+          "name": "レイチェル",
+          "hint": "セリフ3行"
+        },
+        "role_h_9HmVzsQ1E": {
+          "name": "チャンドラー",
+          "hint": "セリフ2行"
+        },
+        "role_VQ73BCpz9sk": {
+          "name": "ロス",
+          "hint": "セリフ2行"
+        },
+        "role_hl4hEF54S8A": {
+          "name": "モニカ",
+          "hint": "セリフ2行"
+        },
+        "role_aR1LFDLlZOg": {
+          "name": "チャンドラー",
+          "hint": "セリフ2行"
+        },
+        "role_eUgVQq3TJ18": {
+          "name": "ジョーイ",
+          "hint": "セリフ3行"
+        }
+      },
+      "notices": {
+        "library": "大人向け試作版テスト・吹き替えはこのブラウザに保存され、アップロードされません。使用している映像の再配布許諾は未確認です。",
+        "scene": "このシーンは大人による試作版のテスト用です。映画全編は、子ども向けの入門教材ではありません。作品の制作者がこの製品を推奨しているわけではありません。"
+      }
+    },
+    "ko": {
+      "scenes": {
+        "scene_pywI3ZgiZ-Y": {
+          "title": "모퉁이를 돌지 못하는 소파",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 165.9–198.4초 구간을 발췌했어요. 높아진 목소리와 조용히 하라는 무례한 명령이 반복돼요. 앞선 장면의 암시는 제외했어요."
+        },
+        "scene_lPxb4HHQVrQ": {
+          "title": "조이의 유의어 사전 발견",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 0–37.2초 구간을 발췌했어요. 입양 추천이 배경이에요. 이후의 연애 관련 암시는 제외했어요."
+        },
+        "scene__ZPXHnc-PuE": {
+          "title": "치즈 케이크의 어느 쪽을 고를까",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 55.7–85.4초 구간을 발췌했어요. 음식을 두고 다투며 주변 이야기에는 남의 케이크를 가져가는 내용이 있어요. 원본 모음 영상의 이후 결혼식 및 성적 농담은 제외했어요."
+        },
+        "scene_ib-oCCujJSU": {
+          "title": "소파 반쪽 반품하기",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 239.1–277.65초 구간을 발췌했어요. 부정직한 반품 시도를 웃음으로 그린 장면이며 소비자 조언이 아니에요. 앞선 장면의 암시는 포함하지 않아요."
+        },
+        "scene_VcyyHi5Kk4A": {
+          "title": "그 청소기 부속품은 어디에 쓰는 거야?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 4.1–24.05초 구간을 발췌했어요. 무심한 비꼼이 있어요. 원본 제목에 강박장애가 언급되지만 이 장면은 청소에 관한 내용이며 진단을 가르치지 않아요."
+        },
+        "scene_U4HGHLNvT3k": {
+          "title": "청구서를 바로 내지 않는다면?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 103.35–123.72초 구간을 발췌했어요. 엄격한 습관과 속어 별명을 놀리는 장면이에요. 웃음을 위한 가정이지 금융 조언이 아니에요. 이후의 가족 모욕은 제외했어요."
+        },
+        "scene_h81smyBB8mI": {
+          "title": "그 갈색 병에 뭐가 있었지?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 7.2–23.25초 구간을 발췌했어요. 불쾌한 음식 농담과 의도적으로 잘못된 식품 안전 판단이 나오며 조언이 아니에요. 계산 다툼, 거친 밀침과 성인용 부차 줄거리 전에 끝나요."
+        }
+      },
+      "roles": {
+        "role_2N9MYrRXSfA": {
+          "name": "레이철",
+          "hint": "대사 1개"
+        },
+        "role_63qAU3MP3yo": {
+          "name": "로스",
+          "hint": "대사 2개"
+        },
+        "role_4x8NV4PfgqM": {
+          "name": "챈들러",
+          "hint": "대사 1개"
+        },
+        "role_JcuuVsaRRGI": {
+          "name": "레이철과 챈들러",
+          "hint": "대사 1개"
+        },
+        "role_XaaU0DIckP8": {
+          "name": "로스",
+          "hint": "대사 5개"
+        },
+        "role_9o381Ya55Qo": {
+          "name": "조이",
+          "hint": "대사 3개"
+        },
+        "role_taz3h1D5Pw4": {
+          "name": "레이철",
+          "hint": "대사 4개"
+        },
+        "role_Jy_lg0MhfG4": {
+          "name": "챈들러",
+          "hint": "대사 2개"
+        },
+        "role_YET3ltc6fQU": {
+          "name": "점원",
+          "hint": "대사 4개"
+        },
+        "role_Oo3yWRIKTU0": {
+          "name": "로스",
+          "hint": "대사 4개"
+        },
+        "role_rTn_pxCsnxc": {
+          "name": "레이철",
+          "hint": "대사 3개"
+        },
+        "role_h_9HmVzsQ1E": {
+          "name": "챈들러",
+          "hint": "대사 2개"
+        },
+        "role_VQ73BCpz9sk": {
+          "name": "로스",
+          "hint": "대사 2개"
+        },
+        "role_hl4hEF54S8A": {
+          "name": "모니카",
+          "hint": "대사 2개"
+        },
+        "role_aR1LFDLlZOg": {
+          "name": "챈들러",
+          "hint": "대사 2개"
+        },
+        "role_eUgVQq3TJ18": {
+          "name": "조이",
+          "hint": "대사 3개"
+        }
+      },
+      "notices": {
+        "library": "성인 대상 시제품 테스트 · 더빙은 이 브라우저에 저장되며 업로드되지 않아요. 영상 클립의 재배포 허가는 확인되지 않았어요.",
+        "scene": "이 장면은 성인을 대상으로 한 시제품 테스트용이에요. 영화 전체가 어린이 입문 학습 자료인 것은 아니에요.원작 제작자가 이 제품을 보증하는 것은 아니에요."
+      }
+    }
+  }
+}

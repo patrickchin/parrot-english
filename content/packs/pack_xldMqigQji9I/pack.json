@@ -1,0 +1,556 @@
+{
+  "version": 1,
+  "id": "pack_xldMqigQji9I",
+  "title": "Kung Fu Panda",
+  "franchise": "Kung Fu Panda",
+  "description": "English dubbing scenes from Kung Fu Panda.",
+  "author": "Parrotbook",
+  "scenes": [
+    {
+      "id": "scene_wr2NM2nf",
+      "slug": "secret-ingredient",
+      "title": "没有秘密配料！",
+      "english": "There is no secret ingredient.",
+      "note": "Kung Fu Panda",
+      "source": "https://www.youtube.com/watch?v=K7DnFGdqT8c&t=27s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/secret-ingredient/secret-ingredient-poster-7e3595f151be.jpg",
+      "tags": [
+        "Kung Fu Panda",
+        "功夫熊猫",
+        "Mr. Ping",
+        "Po",
+        "平先生",
+        "阿宝",
+        "cooking",
+        "做饭",
+        "noodles",
+        "面条",
+        "belief",
+        "信念"
+      ],
+      "quotes": [
+        "Come here. The secret ingredient is nothing.",
+        "过来。秘密配料就是——什么都没有。",
+        "Huh?",
+        "啊？",
+        "You heard me. Nothing. There is no secret ingredient.",
+        "你没听错。什么都没有。没有什么秘密配料。",
+        "Wait, wait. It's just plain old noodle soup? You don't add some kind of special sauce or something?",
+        "等等，就是普通的面汤？你没有加什么特别的酱料之类的吗？",
+        "Don't have to. To make something special, you just have to believe it's special.",
+        "不需要。要让一样东西变得特别，只需要相信它是特别的。"
+      ],
+      "manifest": "scenes/secret-ingredient/scene.json"
+    },
+    {
+      "id": "scene_kuOni4tB",
+      "slug": "today-is-a-gift",
+      "title": "我没有不开心！",
+      "english": "I'm not upset!",
+      "note": "Kung Fu Panda",
+      "source": "https://www.youtube.com/watch?v=PSBfcpqICvY&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/today-is-a-gift/today-is-a-gift-poster-f697ac5d1902.jpg",
+      "tags": [
+        "Kung Fu Panda",
+        "功夫熊猫",
+        "Oogway",
+        "Po",
+        "乌龟大师",
+        "阿宝",
+        "feelings",
+        "情绪",
+        "food",
+        "食物"
+      ],
+      "quotes": [
+        "I understand. You eat when you are upset.",
+        "我理解。你不开心的时候就会吃东西。",
+        "Upset? I'm not upset. What makes you think I'm upset?",
+        "不开心？我没有不开心。你为什么觉得我不开心？",
+        "So why are you upset?",
+        "那么，你为什么不开心？"
+      ],
+      "manifest": "scenes/today-is-a-gift/scene.json"
+    },
+    {
+      "id": "scene_0OwJPdKTGPc",
+      "slug": "panda-noodle-dream",
+      "routeSlug": "panda-noodle-dream",
+      "title": "梦见面条",
+      "english": "Dreaming about noodles",
+      "note": "Kung Fu Panda",
+      "source": "https://www.youtube.com/watch?v=tIiv-YDtCXY&t=61s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/panda-noodle-dream/panda-noodle-dream-poster-825197b75aa0.jpg",
+      "tags": [
+        "Kung Fu Panda",
+        "梦见面条",
+        "Mr. Ping",
+        "Po",
+        "平先生",
+        "阿宝"
+      ],
+      "quotes": [
+        "What were you doing up there? All that noise.",
+        "你在楼上干什么？那么吵。",
+        "Oh, nothing. Just had a crazy dream.",
+        "没什么，就是做了个奇怪的梦。",
+        "About what? Huh? What were you dreaming about?",
+        "梦见了什么？",
+        "What was I... I was dreaming about... noodles.",
+        "我梦见……面条。",
+        "Noodles? You were really dreaming about noodles?",
+        "面条？你真的梦见了面条？",
+        "Yeah. What else would I be dreaming about?",
+        "对啊，不然还能梦见什么？",
+        "Oh, careful! That soup is sharp. Oh, happy day! My son finally having the noodle dream!",
+        "小心，这汤烫。真是好日子！我儿子终于梦见面条了！"
+      ],
+      "manifest": "scenes/panda-noodle-dream/scene.json"
+    },
+    {
+      "id": "scene_87NyKFKTV9c",
+      "slug": "panda-free-to-eat",
+      "routeSlug": "panda-free-to-eat",
+      "title": "你可以吃了",
+      "english": "You are free to eat",
+      "note": "Kung Fu Panda",
+      "source": "https://www.youtube.com/watch?v=KtsOkdO3wTw&t=94s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/panda-free-to-eat/panda-free-to-eat-poster-ab05a3cdb17b.jpg",
+      "tags": [
+        "Kung Fu Panda",
+        "你可以吃了",
+        "Shifu",
+        "Po",
+        "师父",
+        "阿宝"
+      ],
+      "quotes": [
+        "After you, panda.",
+        "你先请，熊猫。",
+        "Just like that? No sit-ups? No, no, no, no, no ten-mile hike?",
+        "就这样？不用做仰卧起坐，也不用走十英里？",
+        "I vowed to train you, and you have been trained. You are free to eat. Enjoy.",
+        "我答应训练你，现在你已经完成训练。可以吃了，请享用。",
+        "Hey!",
+        "嘿！",
+        "I said you are free to eat. Have a dumpling.",
+        "我说你可以吃了。来个包子。",
+        "Hey!",
+        "嘿！"
+      ],
+      "manifest": "scenes/panda-free-to-eat/scene.json"
+    },
+    {
+      "id": "scene_szm7GJTTBds",
+      "slug": "panda-inner-peace",
+      "routeSlug": "panda-inner-peace",
+      "title": "什么的内心平静？",
+      "english": "Inner peace of what?",
+      "note": "Kung Fu Panda",
+      "source": "https://www.youtube.com/watch?v=1eP4xQpYHfw&t=147s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/panda-inner-peace/panda-inner-peace-poster-dc1c6382bda1.jpg",
+      "tags": [
+        "Kung Fu Panda",
+        "Kung Fu Panda 2",
+        "什么的内心平静？",
+        "Po",
+        "Shifu",
+        "阿宝",
+        "师父"
+      ],
+      "quotes": [
+        "Wow. Awesome. How did you do that?",
+        "哇，太厉害了。你怎么做到的？",
+        "Inner peace.",
+        "内心平静。",
+        "Inner peace? That's cool. Inner peace of what?",
+        "内心平静？真酷。什么的内心平静？",
+        "It is the next phase of your training. Every master must find his path to inner peace.",
+        "这是你下一阶段的训练。每位大师都要找到通往内心平静的道路。"
+      ],
+      "manifest": "scenes/panda-inner-peace/scene.json"
+    }
+  ],
+  "locales": {
+    "en": {
+      "scenes": {
+        "scene_wr2NM2nf": {
+          "title": "No secret ingredient!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 27.45–50.55 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_kuOni4tB": {
+          "title": "I'm not upset!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 0.25–12.3 seconds of the original upload. The isolated proverb is replaced by Po/Oogway’s short question-and-answer exchange from the same scene."
+        },
+        "scene_0OwJPdKTGPc": {
+          "title": "Dreaming about noodles",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_87NyKFKTV9c": {
+          "title": "You are free to eat",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        },
+        "scene_szm7GJTTBds": {
+          "title": "Inner peace of what?",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        }
+      },
+      "roles": {
+        "role_q93mX0oX": {
+          "name": "Mr. Ping",
+          "hint": "3 lines"
+        },
+        "role_KLqdqSbZHmw": {
+          "name": "Po",
+          "hint": "2 lines"
+        },
+        "role__OrFsrNE": {
+          "name": "Oogway",
+          "hint": "2 lines"
+        },
+        "role_-aBSnmfkqjk": {
+          "name": "Po",
+          "hint": "1 line"
+        },
+        "role_g0jPPlcNkUQ": {
+          "name": "Mr. Ping",
+          "hint": "4 lines"
+        },
+        "role_BGhegRLBHS4": {
+          "name": "Po",
+          "hint": "3 lines"
+        },
+        "role_odkF-xJfSPg": {
+          "name": "Shifu",
+          "hint": "3 lines"
+        },
+        "role_TY1pCRHc9Fs": {
+          "name": "Po",
+          "hint": "3 lines"
+        },
+        "role_OMj0OxuLlII": {
+          "name": "Po",
+          "hint": "2 lines"
+        },
+        "role_AnJwAbTjjmA": {
+          "name": "Shifu",
+          "hint": "2 lines"
+        }
+      },
+      "notices": {
+        "library": "Adult prototype testing · Dubs save in this browser. No uploads. Redistribution permission for the meme clips is unconfirmed.",
+        "scene": "This scene is for adult prototype testing. The full film is not beginner learning material for children.The creators do not endorse this product."
+      }
+    },
+    "zh-CN": {
+      "scenes": {
+        "scene_wr2NM2nf": {
+          "title": "没有秘密配料！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 27.45–50.55 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_kuOni4tB": {
+          "title": "我没有不开心！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 0.25–12.3 秒的节选。The isolated proverb is replaced by Po/Oogway’s short question-and-answer exchange from the same scene."
+        },
+        "scene_0OwJPdKTGPc": {
+          "title": "梦见面条",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_87NyKFKTV9c": {
+          "title": "你可以吃了",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        },
+        "scene_szm7GJTTBds": {
+          "title": "什么的内心平静？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        }
+      },
+      "roles": {
+        "role_q93mX0oX": {
+          "name": "平先生",
+          "hint": "3 句台词"
+        },
+        "role_KLqdqSbZHmw": {
+          "name": "阿宝",
+          "hint": "2 句台词"
+        },
+        "role__OrFsrNE": {
+          "name": "乌龟大师",
+          "hint": "2 句台词"
+        },
+        "role_-aBSnmfkqjk": {
+          "name": "阿宝",
+          "hint": "1 句台词"
+        },
+        "role_g0jPPlcNkUQ": {
+          "name": "平先生",
+          "hint": "4 句台词"
+        },
+        "role_BGhegRLBHS4": {
+          "name": "阿宝",
+          "hint": "3 句台词"
+        },
+        "role_odkF-xJfSPg": {
+          "name": "师父",
+          "hint": "3 句台词"
+        },
+        "role_TY1pCRHc9Fs": {
+          "name": "阿宝",
+          "hint": "3 句台词"
+        },
+        "role_OMj0OxuLlII": {
+          "name": "阿宝",
+          "hint": "2 句台词"
+        },
+        "role_AnJwAbTjjmA": {
+          "name": "师父",
+          "hint": "2 句台词"
+        }
+      },
+      "notices": {
+        "library": "成人原型测试 · 配音保存在此浏览器，不会上传。影视梗片段尚未确认再分发许可。",
+        "scene": "本片段用于成人原型测试；完整电影并非儿童入门教材。创作者未对本产品作出背书。"
+      }
+    },
+    "es": {
+      "scenes": {
+        "scene_wr2NM2nf": {
+          "title": "¡No hay ingrediente secreto!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 27.45–50.55 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_kuOni4tB": {
+          "title": "¡No estoy enfadado!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 0.25–12.3 del vídeo original. La frase aislada se sustituye por un breve diálogo de preguntas y respuestas entre Po y Oogway de la misma escena."
+        },
+        "scene_0OwJPdKTGPc": {
+          "title": "Soñar con fideos",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_87NyKFKTV9c": {
+          "title": "Puedes comer",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        },
+        "scene_szm7GJTTBds": {
+          "title": "¿Paz interior de qué?",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        }
+      },
+      "roles": {
+        "role_q93mX0oX": {
+          "name": "Sr. Ping",
+          "hint": "3 frases"
+        },
+        "role_KLqdqSbZHmw": {
+          "name": "Po",
+          "hint": "2 frases"
+        },
+        "role__OrFsrNE": {
+          "name": "Maestro Oogway",
+          "hint": "2 frases"
+        },
+        "role_-aBSnmfkqjk": {
+          "name": "Po",
+          "hint": "1 frase"
+        },
+        "role_g0jPPlcNkUQ": {
+          "name": "Mr. Ping",
+          "hint": "4 frases"
+        },
+        "role_BGhegRLBHS4": {
+          "name": "Po",
+          "hint": "3 frases"
+        },
+        "role_odkF-xJfSPg": {
+          "name": "Shifu",
+          "hint": "3 frases"
+        },
+        "role_TY1pCRHc9Fs": {
+          "name": "Po",
+          "hint": "3 frases"
+        },
+        "role_OMj0OxuLlII": {
+          "name": "Po",
+          "hint": "2 frases"
+        },
+        "role_AnJwAbTjjmA": {
+          "name": "Shifu",
+          "hint": "2 frases"
+        }
+      },
+      "notices": {
+        "library": "Pruebas del prototipo con adultos · Los doblajes se guardan en este navegador y no se suben. No se ha confirmado el permiso de redistribución de estos fragmentos.",
+        "scene": "Esta escena es para pruebas del prototipo con adultos. La película completa no es material de iniciación para niños.Los creadores no respaldan este producto."
+      }
+    },
+    "ja": {
+      "scenes": {
+        "scene_wr2NM2nf": {
+          "title": "秘密の材料なんてない！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の27.45–50.55秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_kuOni4tB": {
+          "title": "落ち込んでなんかいない！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の0.25–12.3秒の抜粋です。 単独の格言ではなく、同じシーンのポーとウーグウェイの短い問答を使っています。"
+        },
+        "scene_0OwJPdKTGPc": {
+          "title": "麺の夢を見た",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_87NyKFKTV9c": {
+          "title": "食べてもいいぞ",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        },
+        "scene_szm7GJTTBds": {
+          "title": "何の心の平穏？",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        }
+      },
+      "roles": {
+        "role_q93mX0oX": {
+          "name": "ミスター・ピン",
+          "hint": "セリフ3行"
+        },
+        "role_KLqdqSbZHmw": {
+          "name": "ポー",
+          "hint": "セリフ2行"
+        },
+        "role__OrFsrNE": {
+          "name": "ウーグウェイ導師",
+          "hint": "セリフ2行"
+        },
+        "role_-aBSnmfkqjk": {
+          "name": "ポー",
+          "hint": "セリフ1行"
+        },
+        "role_g0jPPlcNkUQ": {
+          "name": "Mr. Ping",
+          "hint": "セリフ 4 行"
+        },
+        "role_BGhegRLBHS4": {
+          "name": "Po",
+          "hint": "セリフ 3 行"
+        },
+        "role_odkF-xJfSPg": {
+          "name": "Shifu",
+          "hint": "セリフ 3 行"
+        },
+        "role_TY1pCRHc9Fs": {
+          "name": "Po",
+          "hint": "セリフ 3 行"
+        },
+        "role_OMj0OxuLlII": {
+          "name": "Po",
+          "hint": "セリフ 2 行"
+        },
+        "role_AnJwAbTjjmA": {
+          "name": "Shifu",
+          "hint": "セリフ 2 行"
+        }
+      },
+      "notices": {
+        "library": "大人向け試作版テスト・吹き替えはこのブラウザに保存され、アップロードされません。使用している映像の再配布許諾は未確認です。",
+        "scene": "このシーンは大人による試作版のテスト用です。映画全編は、子ども向けの入門教材ではありません。作品の制作者がこの製品を推奨しているわけではありません。"
+      }
+    },
+    "ko": {
+      "scenes": {
+        "scene_wr2NM2nf": {
+          "title": "비밀 재료는 없어!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 27.45–50.55초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_kuOni4tB": {
+          "title": "나 안 속상해!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 0.25–12.3초 구간을 발췌했어요. 단독 격언 대신 같은 장면에서 포와 우그웨이가 나누는 짧은 문답을 사용해요."
+        },
+        "scene_0OwJPdKTGPc": {
+          "title": "국수 꿈을 꾸다",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_87NyKFKTV9c": {
+          "title": "먹어도 좋다",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        },
+        "scene_szm7GJTTBds": {
+          "title": "무엇의 마음의 평화요?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        }
+      },
+      "roles": {
+        "role_q93mX0oX": {
+          "name": "핑 아저씨",
+          "hint": "대사 3개"
+        },
+        "role_KLqdqSbZHmw": {
+          "name": "포",
+          "hint": "대사 2개"
+        },
+        "role__OrFsrNE": {
+          "name": "우그웨이 사부",
+          "hint": "대사 2개"
+        },
+        "role_-aBSnmfkqjk": {
+          "name": "포",
+          "hint": "대사 1개"
+        },
+        "role_g0jPPlcNkUQ": {
+          "name": "Mr. Ping",
+          "hint": "대사 4줄"
+        },
+        "role_BGhegRLBHS4": {
+          "name": "Po",
+          "hint": "대사 3줄"
+        },
+        "role_odkF-xJfSPg": {
+          "name": "Shifu",
+          "hint": "대사 3줄"
+        },
+        "role_TY1pCRHc9Fs": {
+          "name": "Po",
+          "hint": "대사 3줄"
+        },
+        "role_OMj0OxuLlII": {
+          "name": "Po",
+          "hint": "대사 2줄"
+        },
+        "role_AnJwAbTjjmA": {
+          "name": "Shifu",
+          "hint": "대사 2줄"
+        }
+      },
+      "notices": {
+        "library": "성인 대상 시제품 테스트 · 더빙은 이 브라우저에 저장되며 업로드되지 않아요. 영상 클립의 재배포 허가는 확인되지 않았어요.",
+        "scene": "이 장면은 성인을 대상으로 한 시제품 테스트용이에요. 영화 전체가 어린이 입문 학습 자료인 것은 아니에요.원작 제작자가 이 제품을 보증하는 것은 아니에요."
+      }
+    }
+  }
+}

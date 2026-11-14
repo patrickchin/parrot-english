@@ -1,0 +1,691 @@
+{
+  "version": 1,
+  "id": "pack_97c9X80HGvH-",
+  "title": "Shrek",
+  "franchise": "Shrek",
+  "description": "English dubbing scenes from Shrek.",
+  "author": "Parrotbook",
+  "scenes": [
+    {
+      "id": "scene_BeIAKV4J",
+      "slug": "onions",
+      "title": "怪物就像洋葱",
+      "english": "Ogres are like onions.",
+      "note": "Shrek",
+      "source": "https://www.youtube.com/watch?v=aJQmVZSAqlc",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/onions/onions-poster-v1.jpg",
+      "tags": [
+        "Shrek",
+        "怪物史莱克",
+        "怪物史瑞克",
+        "史莱克",
+        "驴子",
+        "Donkey",
+        "food",
+        "食物",
+        "layers",
+        "层次"
+      ],
+      "quotes": [
+        "No! Layers! Onions have layers. Ogres have layers. Onions have layers.",
+        "不！层次！洋葱有层次，怪物也有层次。",
+        "You get it? We both have layers.",
+        "你明白了吗？我们都有层次。",
+        "Oh, you both have layers.",
+        "哦，你们都有层次。"
+      ],
+      "manifest": "scenes/onions/scene.json"
+    },
+    {
+      "id": "scene_4ds3OMdO",
+      "slug": "do-the-roar",
+      "title": "吼一声嘛！",
+      "english": "Do the roar!",
+      "note": "Shrek",
+      "source": "https://www.youtube.com/watch?v=6I5B0jyLBUg&t=14s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/do-the-roar/do-the-roar-poster-4592e0d9dfc6.jpg",
+      "tags": [
+        "Shrek Forever After",
+        "Shrek",
+        "怪物史莱克",
+        "怪物史瑞克",
+        "Boy's father",
+        "Boy",
+        "Fiona",
+        "男孩的爸爸",
+        "小男孩",
+        "史莱克",
+        "菲奥娜",
+        "birthday",
+        "生日",
+        "party",
+        "派对"
+      ],
+      "quotes": [
+        "Excuse me, Mr. Shrek. Could you do that ogre roar of yours for my son? He's a big, big fan.",
+        "打扰了，史莱克先生。可以为我儿子表演一下怪物吼叫吗？他是你的超级粉丝。",
+        "Do the roar.",
+        "吼一声嘛。",
+        "You know, I'd rather not. It's my kids' birthday party.",
+        "我还是不想。这是我孩子们的生日聚会。",
+        "Do the roar.",
+        "吼一声嘛。",
+        "Honey, why don't you go check on the cake?",
+        "亲爱的，你去看看蛋糕好吗？",
+        "Sure. And don't forget the candles.",
+        "好。别忘了蜡烛。"
+      ],
+      "manifest": "scenes/do-the-roar/scene.json"
+    },
+    {
+      "id": "scene_HY-tFxVL",
+      "slug": "are-we-there-yet",
+      "title": "我们到了吗？",
+      "english": "Are we there yet?",
+      "note": "Shrek",
+      "source": "https://www.youtube.com/watch?v=Gn51xYvJhQI&t=14s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/are-we-there-yet/are-we-there-yet-poster-28b2064057ea.jpg",
+      "tags": [
+        "Shrek 2",
+        "Shrek",
+        "怪物史莱克",
+        "怪物史瑞克",
+        "Donkey",
+        "Fiona",
+        "驴子",
+        "史莱克",
+        "菲奥娜",
+        "travel",
+        "旅行",
+        "impatience",
+        "不耐烦"
+      ],
+      "quotes": [
+        "Are we there yet?",
+        "我们到了吗？",
+        "No!",
+        "没有！",
+        "Are we there yet?",
+        "我们到了吗？",
+        "Yes.",
+        "到了。",
+        "Really?",
+        "真的吗？",
+        "No!",
+        "没有！",
+        "Are we there yet?",
+        "我们到了吗？",
+        "No!",
+        "没有！",
+        "Are we there yet?",
+        "我们到了吗？",
+        "No, we are not!",
+        "没有，我们还没到！"
+      ],
+      "manifest": "scenes/are-we-there-yet/scene.json"
+    },
+    {
+      "id": "scene_XFfwULcF",
+      "slug": "my-swamp",
+      "title": "谁让你们来这里的？",
+      "english": "Who sent you here?",
+      "note": "Shrek",
+      "source": "https://www.youtube.com/watch?v=xuS9UxuUZ3Y&t=96s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/my-swamp/my-swamp-poster-18fb523fc3a0.jpg",
+      "tags": [
+        "Shrek",
+        "怪物史莱克",
+        "怪物史瑞克",
+        "Donkey",
+        "Pinocchio",
+        "Little pig",
+        "驴子",
+        "匹诺曹",
+        "史莱克",
+        "小猪",
+        "fairy tales",
+        "童话",
+        "eviction",
+        "驱逐"
+      ],
+      "quotes": [
+        "I didn't invite them.",
+        "不是我邀请他们的。",
+        "Oh, gosh, no one invited us.",
+        "天啊，没人邀请我们。",
+        "What?",
+        "什么？",
+        "We were forced to come here.",
+        "我们是被迫来这里的。",
+        "By who?",
+        "被谁逼的？",
+        "Lord Farquaad!",
+        "法夸德领主！",
+        "He huffed and he puffed and he—",
+        "他呼哧呼哧地吹气，然后他——",
+        "Signed an eviction notice.",
+        "签了一张驱逐通知。"
+      ],
+      "manifest": "scenes/my-swamp/scene.json"
+    },
+    {
+      "id": "scene_a3BDHKKQn54",
+      "slug": "shrek-muffin-man",
+      "routeSlug": "shrek-muffin-man",
+      "title": "你认识松饼人吗？",
+      "english": "Do you know the Muffin Man?",
+      "note": "Shrek",
+      "source": "https://www.youtube.com/watch?v=mFl8nzZuExE&t=41s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/shrek-muffin-man/shrek-muffin-man-poster-b8665f4d1246.jpg",
+      "tags": [
+        "Shrek",
+        "你认识松饼人吗？",
+        "Gingy",
+        "Lord Farquaad",
+        "姜饼人",
+        "法尔夸德"
+      ],
+      "quotes": [
+        "Okay, I'll tell you. Do you know the Muffin Man?",
+        "好吧，我告诉你。你认识松饼人吗？",
+        "The Muffin Man?",
+        "松饼人？",
+        "The Muffin Man.",
+        "松饼人。",
+        "Yes, I know the Muffin Man. Who lives on Drury Lane?",
+        "我认识松饼人。住在德鲁里巷的那个？",
+        "Well, she's married to the Muffin Man.",
+        "她嫁给了松饼人。",
+        "The Muffin Man?",
+        "松饼人？",
+        "The Muffin Man!",
+        "松饼人！",
+        "She's married to the Muffin Man.",
+        "她嫁给了松饼人。"
+      ],
+      "manifest": "scenes/shrek-muffin-man/scene.json"
+    }
+  ],
+  "locales": {
+    "en": {
+      "scenes": {
+        "scene_BeIAKV4J": {
+          "title": "Ogres are like onions",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Excerpt from 00:19.4–00:35.1 of a landscape upload of the onion conversation, compressed with dubbing timing markers."
+        },
+        "scene_4ds3OMdO": {
+          "title": "Do the roar!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 14.5–30.9 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_HY-tFxVL": {
+          "title": "Are we there yet?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 14.5–24.95 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_XFfwULcF": {
+          "title": "Who sent you here?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 96.4–109.6 seconds of the original upload. Uses the eviction conversation immediately after the swamp outburst, rather than padding the shout with crowd reactions."
+        },
+        "scene_a3BDHKKQn54": {
+          "title": "Do you know the Muffin Man?",
+          "licence": "Redistribution permission not confirmed",
+          "changes": "Internal prototype testing; continuous excerpt from the credited source. Listen, choose a role, and record your version."
+        }
+      },
+      "roles": {
+        "role_aBTF2CU4": {
+          "name": "Shrek",
+          "hint": "2 lines · Try an explanation"
+        },
+        "role_1xuLJg1A": {
+          "name": "Donkey",
+          "hint": "1 line · Have a sudden realization"
+        },
+        "role_fQeXDxQ7A-I": {
+          "name": "Boy's father",
+          "hint": "1 line"
+        },
+        "role_Kx8gM4db": {
+          "name": "Boy",
+          "hint": "2 lines"
+        },
+        "role_HxBpf2F4gNA": {
+          "name": "Shrek",
+          "hint": "2 lines"
+        },
+        "role_c6niQ-oI2rA": {
+          "name": "Fiona",
+          "hint": "1 line"
+        },
+        "role_OhnCGoVU": {
+          "name": "Donkey",
+          "hint": "5 lines"
+        },
+        "role__qQJ8UfC": {
+          "name": "Shrek",
+          "hint": "4 lines"
+        },
+        "role_YoD156O5n0s": {
+          "name": "Fiona",
+          "hint": "1 line"
+        },
+        "role_Rp4xE21Pv6o": {
+          "name": "Donkey",
+          "hint": "1 line"
+        },
+        "role_stZNsPqJ3SU": {
+          "name": "Pinocchio",
+          "hint": "3 lines"
+        },
+        "role_VNG5X2g-": {
+          "name": "Shrek",
+          "hint": "2 lines"
+        },
+        "role_WP8iVeXihIk": {
+          "name": "Little pig",
+          "hint": "2 lines"
+        },
+        "role_7XN0VQR8hM4": {
+          "name": "Gingy",
+          "hint": "4 lines"
+        },
+        "role_A77uZ7IIAyQ": {
+          "name": "Lord Farquaad",
+          "hint": "4 lines"
+        }
+      },
+      "notices": {
+        "library": "Adult prototype testing · Dubs save in this browser. No uploads. Redistribution permission for the meme clips is unconfirmed.",
+        "scene": "This scene is for adult prototype testing. The full film is not beginner learning material for children.The creators do not endorse this product."
+      }
+    },
+    "zh-CN": {
+      "scenes": {
+        "scene_BeIAKV4J": {
+          "title": "怪物就像洋葱",
+          "licence": "未确认再分发许可",
+          "changes": "从同一段洋葱对话的横版上传中选取 00:19.4–00:35.1，压缩并添加配音时间标记。"
+        },
+        "scene_4ds3OMdO": {
+          "title": "吼一声嘛！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 14.5–30.9 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_HY-tFxVL": {
+          "title": "我们到了吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 14.5–24.95 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_XFfwULcF": {
+          "title": "谁让你们来这里的？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 96.4–109.6 秒的节选。Uses the eviction conversation immediately after the swamp outburst, rather than padding the shout with crowd reactions."
+        },
+        "scene_a3BDHKKQn54": {
+          "title": "你认识松饼人吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传的连续节选。听原声，选角色，录下自己的版本。"
+        }
+      },
+      "roles": {
+        "role_aBTF2CU4": {
+          "name": "史莱克",
+          "hint": "2 句台词 · 挑战一段解释"
+        },
+        "role_1xuLJg1A": {
+          "name": "驴子",
+          "hint": "1 句台词 · 模仿恍然大悟"
+        },
+        "role_fQeXDxQ7A-I": {
+          "name": "男孩的爸爸",
+          "hint": "1 句台词"
+        },
+        "role_Kx8gM4db": {
+          "name": "小男孩",
+          "hint": "2 句台词"
+        },
+        "role_HxBpf2F4gNA": {
+          "name": "史莱克",
+          "hint": "2 句台词"
+        },
+        "role_c6niQ-oI2rA": {
+          "name": "菲奥娜",
+          "hint": "1 句台词"
+        },
+        "role_OhnCGoVU": {
+          "name": "驴子",
+          "hint": "5 句台词"
+        },
+        "role__qQJ8UfC": {
+          "name": "史莱克",
+          "hint": "4 句台词"
+        },
+        "role_YoD156O5n0s": {
+          "name": "菲奥娜",
+          "hint": "1 句台词"
+        },
+        "role_Rp4xE21Pv6o": {
+          "name": "驴子",
+          "hint": "1 句台词"
+        },
+        "role_stZNsPqJ3SU": {
+          "name": "匹诺曹",
+          "hint": "3 句台词"
+        },
+        "role_VNG5X2g-": {
+          "name": "史莱克",
+          "hint": "2 句台词"
+        },
+        "role_WP8iVeXihIk": {
+          "name": "小猪",
+          "hint": "2 句台词"
+        },
+        "role_7XN0VQR8hM4": {
+          "name": "姜饼人",
+          "hint": "4 句台词"
+        },
+        "role_A77uZ7IIAyQ": {
+          "name": "法尔夸德",
+          "hint": "4 句台词"
+        }
+      },
+      "notices": {
+        "library": "成人原型测试 · 配音保存在此浏览器，不会上传。影视梗片段尚未确认再分发许可。",
+        "scene": "本片段用于成人原型测试；完整电影并非儿童入门教材。创作者未对本产品作出背书。"
+      }
+    },
+    "es": {
+      "scenes": {
+        "scene_BeIAKV4J": {
+          "title": "Los ogros son como las cebollas",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Fragmento de 00:19.4–00:35.1 de un vídeo horizontal de la conversación de la cebolla, comprimido con marcas de tiempo para el doblaje."
+        },
+        "scene_4ds3OMdO": {
+          "title": "¡Haz el rugido!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 14.5–30.9 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_HY-tFxVL": {
+          "title": "¿Ya hemos llegado?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 14.5–24.95 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_XFfwULcF": {
+          "title": "¿Quién os ha mandado aquí?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 96.4–109.6 del vídeo original. Se usa la conversación sobre el desalojo justo después del grito en el pantano, en lugar de alargarlo con reacciones de la multitud."
+        },
+        "scene_a3BDHKKQn54": {
+          "title": "¿Conoces al Hombre de los Muffins?",
+          "licence": "Permiso de redistribución no confirmado",
+          "changes": "Pruebas internas del prototipo; fragmento continuo de la fuente acreditada. Escucha, elige un personaje y graba tu versión."
+        }
+      },
+      "roles": {
+        "role_aBTF2CU4": {
+          "name": "Shrek",
+          "hint": "2 frases · Prueba a explicarlo"
+        },
+        "role_1xuLJg1A": {
+          "name": "Asno",
+          "hint": "1 frase · Expresa que acabas de entenderlo"
+        },
+        "role_fQeXDxQ7A-I": {
+          "name": "Padre del niño",
+          "hint": "1 frase"
+        },
+        "role_Kx8gM4db": {
+          "name": "Niño",
+          "hint": "2 frases"
+        },
+        "role_HxBpf2F4gNA": {
+          "name": "Shrek",
+          "hint": "2 frases"
+        },
+        "role_c6niQ-oI2rA": {
+          "name": "Fiona",
+          "hint": "1 frase"
+        },
+        "role_OhnCGoVU": {
+          "name": "Asno",
+          "hint": "5 frases"
+        },
+        "role__qQJ8UfC": {
+          "name": "Shrek",
+          "hint": "4 frases"
+        },
+        "role_YoD156O5n0s": {
+          "name": "Fiona",
+          "hint": "1 frase"
+        },
+        "role_Rp4xE21Pv6o": {
+          "name": "Asno",
+          "hint": "1 frase"
+        },
+        "role_stZNsPqJ3SU": {
+          "name": "Pinocho",
+          "hint": "3 frases"
+        },
+        "role_VNG5X2g-": {
+          "name": "Shrek",
+          "hint": "2 frases"
+        },
+        "role_WP8iVeXihIk": {
+          "name": "Cerdito",
+          "hint": "2 frases"
+        },
+        "role_7XN0VQR8hM4": {
+          "name": "Gingy",
+          "hint": "4 frases"
+        },
+        "role_A77uZ7IIAyQ": {
+          "name": "Lord Farquaad",
+          "hint": "4 frases"
+        }
+      },
+      "notices": {
+        "library": "Pruebas del prototipo con adultos · Los doblajes se guardan en este navegador y no se suben. No se ha confirmado el permiso de redistribución de estos fragmentos.",
+        "scene": "Esta escena es para pruebas del prototipo con adultos. La película completa no es material de iniciación para niños.Los creadores no respaldan este producto."
+      }
+    },
+    "ja": {
+      "scenes": {
+        "scene_BeIAKV4J": {
+          "title": "オーガはタマネギみたいなもの",
+          "licence": "再配布の許諾は未確認",
+          "changes": "タマネギの会話の横向き動画から00:19.4〜00:35.1を抜粋し、圧縮して吹き替えの時間マーカーを追加しています。"
+        },
+        "scene_4ds3OMdO": {
+          "title": "ほえてみて！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の14.5–30.9秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_HY-tFxVL": {
+          "title": "まだ着かないの？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の14.5–24.95秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_XFfwULcF": {
+          "title": "誰に言われて来たんだ？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の96.4–109.6秒の抜粋です。 沼で叫んだ直後の立ち退きに関する会話を使っています。群衆の反応で叫びの場面を引き延ばしてはいません。"
+        },
+        "scene_a3BDHKKQn54": {
+          "title": "マフィンマンを知ってる？",
+          "licence": "再配布の許可は未確認",
+          "changes": "内部プロトタイプのテスト用。出典の映像から連続した場面を抜粋。聞いて、役を選び、自分の声を録音します。"
+        }
+      },
+      "roles": {
+        "role_aBTF2CU4": {
+          "name": "シュレック",
+          "hint": "セリフ2行 · 説明してみよう"
+        },
+        "role_1xuLJg1A": {
+          "name": "ドンキー",
+          "hint": "セリフ1行 · はっと気づいた感じで"
+        },
+        "role_fQeXDxQ7A-I": {
+          "name": "男の子のパパ",
+          "hint": "セリフ1行"
+        },
+        "role_Kx8gM4db": {
+          "name": "男の子",
+          "hint": "セリフ2行"
+        },
+        "role_HxBpf2F4gNA": {
+          "name": "シュレック",
+          "hint": "セリフ2行"
+        },
+        "role_c6niQ-oI2rA": {
+          "name": "フィオナ",
+          "hint": "セリフ1行"
+        },
+        "role_OhnCGoVU": {
+          "name": "ドンキー",
+          "hint": "セリフ5行"
+        },
+        "role__qQJ8UfC": {
+          "name": "シュレック",
+          "hint": "セリフ4行"
+        },
+        "role_YoD156O5n0s": {
+          "name": "フィオナ",
+          "hint": "セリフ1行"
+        },
+        "role_Rp4xE21Pv6o": {
+          "name": "ドンキー",
+          "hint": "セリフ1行"
+        },
+        "role_stZNsPqJ3SU": {
+          "name": "ピノキオ",
+          "hint": "セリフ3行"
+        },
+        "role_VNG5X2g-": {
+          "name": "シュレック",
+          "hint": "セリフ2行"
+        },
+        "role_WP8iVeXihIk": {
+          "name": "子ブタ",
+          "hint": "セリフ2行"
+        },
+        "role_7XN0VQR8hM4": {
+          "name": "Gingy",
+          "hint": "セリフ 4 行"
+        },
+        "role_A77uZ7IIAyQ": {
+          "name": "Lord Farquaad",
+          "hint": "セリフ 4 行"
+        }
+      },
+      "notices": {
+        "library": "大人向け試作版テスト・吹き替えはこのブラウザに保存され、アップロードされません。使用している映像の再配布許諾は未確認です。",
+        "scene": "このシーンは大人による試作版のテスト用です。映画全編は、子ども向けの入門教材ではありません。作品の制作者がこの製品を推奨しているわけではありません。"
+      }
+    },
+    "ko": {
+      "scenes": {
+        "scene_BeIAKV4J": {
+          "title": "오거는 양파와 같아",
+          "licence": "재배포 허가 미확인",
+          "changes": "양파 대화의 가로형 영상에서 00:19.4–00:35.1 구간을 발췌해 압축하고 더빙 시간 표시를 추가했어요."
+        },
+        "scene_4ds3OMdO": {
+          "title": "한번 포효해 봐!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 14.5–30.9초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_HY-tFxVL": {
+          "title": "아직 멀었어?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 14.5–24.95초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_XFfwULcF": {
+          "title": "누가 너희를 보냈어?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 96.4–109.6초 구간을 발췌했어요. 늪에서 소리친 직후의 퇴거 대화를 사용해요. 군중의 반응으로 고함 장면을 늘리지 않았어요."
+        },
+        "scene_a3BDHKKQn54": {
+          "title": "머핀 맨을 아니?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 프로토타입 테스트용 원본의 연속 장면입니다. 듣고 역할을 골라 자신의 목소리로 녹음하세요."
+        }
+      },
+      "roles": {
+        "role_aBTF2CU4": {
+          "name": "슈렉",
+          "hint": "대사 2개 · 설명해 봐요"
+        },
+        "role_1xuLJg1A": {
+          "name": "동키",
+          "hint": "대사 1개 · 갑자기 깨달은 느낌으로"
+        },
+        "role_fQeXDxQ7A-I": {
+          "name": "아이의 아빠",
+          "hint": "대사 1개"
+        },
+        "role_Kx8gM4db": {
+          "name": "남자아이",
+          "hint": "대사 2개"
+        },
+        "role_HxBpf2F4gNA": {
+          "name": "슈렉",
+          "hint": "대사 2개"
+        },
+        "role_c6niQ-oI2rA": {
+          "name": "피오나",
+          "hint": "대사 1개"
+        },
+        "role_OhnCGoVU": {
+          "name": "동키",
+          "hint": "대사 5개"
+        },
+        "role__qQJ8UfC": {
+          "name": "슈렉",
+          "hint": "대사 4개"
+        },
+        "role_YoD156O5n0s": {
+          "name": "피오나",
+          "hint": "대사 1개"
+        },
+        "role_Rp4xE21Pv6o": {
+          "name": "동키",
+          "hint": "대사 1개"
+        },
+        "role_stZNsPqJ3SU": {
+          "name": "피노키오",
+          "hint": "대사 3개"
+        },
+        "role_VNG5X2g-": {
+          "name": "슈렉",
+          "hint": "대사 2개"
+        },
+        "role_WP8iVeXihIk": {
+          "name": "아기 돼지",
+          "hint": "대사 2개"
+        },
+        "role_7XN0VQR8hM4": {
+          "name": "Gingy",
+          "hint": "대사 4줄"
+        },
+        "role_A77uZ7IIAyQ": {
+          "name": "Lord Farquaad",
+          "hint": "대사 4줄"
+        }
+      },
+      "notices": {
+        "library": "성인 대상 시제품 테스트 · 더빙은 이 브라우저에 저장되며 업로드되지 않아요. 영상 클립의 재배포 허가는 확인되지 않았어요.",
+        "scene": "이 장면은 성인을 대상으로 한 시제품 테스트용이에요. 영화 전체가 어린이 입문 학습 자료인 것은 아니에요.원작 제작자가 이 제품을 보증하는 것은 아니에요."
+      }
+    }
+  }
+}

@@ -1,0 +1,590 @@
+{
+  "version": 1,
+  "id": "pack_8MUJmabY0bBJ",
+  "title": "SpongeBob SquarePants",
+  "franchise": "SpongeBob SquarePants",
+  "description": "English dubbing scenes from SpongeBob SquarePants.",
+  "author": "Parrotbook",
+  "scenes": [
+    {
+      "id": "scene_KHUVKWak",
+      "slug": "patrick",
+      "title": "不，这是派大星！",
+      "english": "No, this is Patrick.",
+      "note": "SpongeBob SquarePants",
+      "source": "https://www.youtube.com/watch?v=dwifOuuMkfo",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/patrick/patrick-poster-v1.jpg",
+      "tags": [
+        "SpongeBob SquarePants",
+        "SpongeBob",
+        "Sponge Bob",
+        "海绵宝宝",
+        "派大星",
+        "来电者",
+        "Patrick",
+        "Caller",
+        "phone call",
+        "电话",
+        "Krusty Krab",
+        "蟹堡王"
+      ],
+      "quotes": [
+        "Is this the Krusty Krab?",
+        "请问是蟹堡王吗？",
+        "No, this is Patrick.",
+        "不，这是派大星。",
+        "Is this the Krusty Krab?",
+        "请问是蟹堡王吗？",
+        "No! This is Patrick!",
+        "不！这是派大星！"
+      ],
+      "manifest": "scenes/patrick/scene.json"
+    },
+    {
+      "id": "scene_LnSPbYi0",
+      "slug": "chocolate",
+      "title": "巧克力？！",
+      "english": "Chocolate!",
+      "note": "SpongeBob SquarePants",
+      "source": "https://www.youtube.com/watch?v=NBhxIyT8Slg",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/chocolate/chocolate-poster-v1.jpg",
+      "tags": [
+        "SpongeBob SquarePants",
+        "SpongeBob",
+        "Sponge Bob",
+        "海绵宝宝",
+        "顾客",
+        "派大星",
+        "Patrick",
+        "Customer",
+        "food",
+        "食物",
+        "selling",
+        "推销"
+      ],
+      "quotes": [
+        "Chocolate? Did you say chocolate?",
+        "巧克力？你说的是巧克力吗？",
+        "Yes, sir. With or without nuts?",
+        "是的，先生。要有坚果的，还是没有坚果的？",
+        "Chocolate?! Chocolate!",
+        "巧克力？！巧克力！"
+      ],
+      "manifest": "scenes/chocolate/scene.json"
+    },
+    {
+      "id": "scene_1eCjBRKF",
+      "slug": "wumbo",
+      "title": "调成 Wumbo！",
+      "english": "I wumbo, you wumbo.",
+      "note": "SpongeBob SquarePants",
+      "source": "https://www.youtube.com/watch?v=--hsVknT1c0&t=2s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/wumbo/wumbo-poster-7ea5bd1144c5.jpg",
+      "tags": [
+        "SpongeBob SquarePants",
+        "SpongeBob",
+        "Sponge Bob",
+        "海绵宝宝",
+        "Patrick",
+        "派大星",
+        "wordplay",
+        "文字游戏",
+        "mini",
+        "迷你"
+      ],
+      "quotes": [
+        "You know what the problem is?",
+        "你知道问题是什么吗？",
+        "What?",
+        "什么？",
+        "You got it set to M for mini, when it should be set to W for Wumbo.",
+        "你把它设成了代表迷你的 M，而它应该设成代表 Wumbo 的 W。",
+        "Patrick, I don't think Wumbo is a real word.",
+        "派大星，我觉得 Wumbo 不是一个真正的词。",
+        "Come on! You know, I Wumbo, you Wumbo. He, she, me, Wumbo.",
+        "别这样！你知道的，我 Wumbo，你 Wumbo，他、她、我，Wumbo。（这是剧中的虚构词。）"
+      ],
+      "manifest": "scenes/wumbo/scene.json"
+    },
+    {
+      "id": "scene_MkR1_VOc",
+      "slug": "im-ready",
+      "title": "我准备好了！",
+      "english": "I'm ready! I'm ready! I'm ready!",
+      "note": "SpongeBob SquarePants",
+      "source": "https://www.youtube.com/watch?v=AGTH7rOEbxE&t=18s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/im-ready/im-ready-poster-f26643dd80e2.jpg",
+      "tags": [
+        "SpongeBob SquarePants",
+        "SpongeBob",
+        "Sponge Bob",
+        "海绵宝宝",
+        "Squidward",
+        "章鱼哥",
+        "driving test",
+        "驾驶考试",
+        "excitement",
+        "兴奋"
+      ],
+      "quotes": [
+        "I'm ready! I'm ready!",
+        "我准备好了！我准备好了！",
+        "Squidward! Squidward!",
+        "章鱼哥！章鱼哥！",
+        "What?",
+        "什么事？",
+        "I'm ready, Squidward!",
+        "章鱼哥，我准备好了！",
+        "Ready to move?",
+        "准备好搬家了吗？",
+        "No! I'm ready to pass my boating test!",
+        "不是！我准备好通过驾驶考试了！"
+      ],
+      "manifest": "scenes/im-ready/scene.json"
+    },
+    {
+      "id": "scene_F9ob5jiT",
+      "slug": "mayonnaise",
+      "title": "蛋黄酱是乐器吗？",
+      "english": "Is mayonnaise an instrument?",
+      "note": "SpongeBob SquarePants",
+      "source": "https://www.youtube.com/watch?v=bJ1-CMJY7CE&t=9s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/mayonnaise/mayonnaise-poster-0d26c71bfc79.jpg",
+      "tags": [
+        "SpongeBob SquarePants",
+        "SpongeBob",
+        "Sponge Bob",
+        "海绵宝宝",
+        "Squidward",
+        "Plankton",
+        "Patrick",
+        "章鱼哥",
+        "痞老板",
+        "派大星",
+        "music",
+        "音乐",
+        "instruments",
+        "乐器",
+        "food",
+        "食物"
+      ],
+      "quotes": [
+        "How many of you have played musical instruments before?",
+        "你们有多少人以前演奏过乐器？",
+        "Do instruments of torture count?",
+        "刑具算不算？",
+        "No.",
+        "不算。",
+        "Is mayonnaise an instrument?",
+        "蛋黄酱是乐器吗？",
+        "No, Patrick, mayonnaise is not an instrument.",
+        "不是，派大星，蛋黄酱不是乐器。",
+        "Horseradish is not an instrument either.",
+        "辣根也不是乐器。"
+      ],
+      "manifest": "scenes/mayonnaise/scene.json"
+    }
+  ],
+  "locales": {
+    "en": {
+      "scenes": {
+        "scene_KHUVKWak": {
+          "title": "No, this is Patrick!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Excerpts from 00:00–00:08 and 00:17–00:23.2, joined and compressed with dubbing timing markers."
+        },
+        "scene_LnSPbYi0": {
+          "title": "Chocolate?!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Excerpt from 00:10.8–00:22.2, compressed with dubbing timing markers."
+        },
+        "scene_1eCjBRKF": {
+          "title": "Set it to Wumbo!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 2.55–21.95 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_MkR1_VOc": {
+          "title": "I’m ready!",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 18.2–28.7 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_F9ob5jiT": {
+          "title": "Is mayonnaise an instrument?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing; excerpt from 9.15–24.4 seconds of the original upload. Expanded to include the surrounding character exchange and its payoff."
+        }
+      },
+      "roles": {
+        "role_GMoleWKV": {
+          "name": "Patrick",
+          "hint": "2 lines · Try two moods"
+        },
+        "role_VMR9ThiJ": {
+          "name": "Caller",
+          "hint": "2 lines · Ask the same question"
+        },
+        "role_-pse1q5d": {
+          "name": "Customer",
+          "hint": "2 lines · Show a change in mood"
+        },
+        "role_S1FPrc0B": {
+          "name": "Patrick",
+          "hint": "1 line · With or without"
+        },
+        "role_v-seIUIJ": {
+          "name": "Patrick",
+          "hint": "3 lines"
+        },
+        "role_llrWB6OVSyA": {
+          "name": "SpongeBob",
+          "hint": "2 lines"
+        },
+        "role_K490suAd": {
+          "name": "SpongeBob",
+          "hint": "4 lines"
+        },
+        "role_ZsxADi00XhU": {
+          "name": "Squidward",
+          "hint": "2 lines"
+        },
+        "role_-6cZmGav": {
+          "name": "Squidward",
+          "hint": "4 lines"
+        },
+        "role_biDyZtCKZuA": {
+          "name": "Plankton",
+          "hint": "1 line"
+        },
+        "role_cGjaFVM0": {
+          "name": "Patrick",
+          "hint": "1 line"
+        }
+      },
+      "notices": {
+        "library": "Adult prototype testing · Dubs save in this browser. No uploads. Redistribution permission for the meme clips is unconfirmed.",
+        "scene": "This scene is for adult prototype testing. The full film is not beginner learning material for children.The creators do not endorse this product."
+      }
+    },
+    "zh-CN": {
+      "scenes": {
+        "scene_KHUVKWak": {
+          "title": "不，这是派大星！",
+          "licence": "未确认再分发许可",
+          "changes": "选取原片 00:00–00:08 与 00:17–00:23.2，拼接、压缩并添加配音时间标记。"
+        },
+        "scene_LnSPbYi0": {
+          "title": "巧克力？！",
+          "licence": "未确认再分发许可",
+          "changes": "选取原片 00:10.8–00:22.2，压缩并添加配音时间标记。"
+        },
+        "scene_1eCjBRKF": {
+          "title": "调成 Wumbo！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 2.55–21.95 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_MkR1_VOc": {
+          "title": "我准备好了！",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 18.2–28.7 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        },
+        "scene_F9ob5jiT": {
+          "title": "蛋黄酱是乐器吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试；原上传 9.15–24.4 秒的节选。Expanded to include the surrounding character exchange and its payoff."
+        }
+      },
+      "roles": {
+        "role_GMoleWKV": {
+          "name": "派大星",
+          "hint": "2 句台词 · 试试两种语气"
+        },
+        "role_VMR9ThiJ": {
+          "name": "来电者",
+          "hint": "2 句相同的问题"
+        },
+        "role_-pse1q5d": {
+          "name": "顾客",
+          "hint": "2 句台词 · 演出情绪变化"
+        },
+        "role_S1FPrc0B": {
+          "name": "派大星",
+          "hint": "1 句台词 · with or without"
+        },
+        "role_v-seIUIJ": {
+          "name": "派大星",
+          "hint": "3 句台词"
+        },
+        "role_llrWB6OVSyA": {
+          "name": "海绵宝宝",
+          "hint": "2 句台词"
+        },
+        "role_K490suAd": {
+          "name": "海绵宝宝",
+          "hint": "4 句台词"
+        },
+        "role_ZsxADi00XhU": {
+          "name": "章鱼哥",
+          "hint": "2 句台词"
+        },
+        "role_-6cZmGav": {
+          "name": "章鱼哥",
+          "hint": "4 句台词"
+        },
+        "role_biDyZtCKZuA": {
+          "name": "痞老板",
+          "hint": "1 句台词"
+        },
+        "role_cGjaFVM0": {
+          "name": "派大星",
+          "hint": "1 句台词"
+        }
+      },
+      "notices": {
+        "library": "成人原型测试 · 配音保存在此浏览器，不会上传。影视梗片段尚未确认再分发许可。",
+        "scene": "本片段用于成人原型测试；完整电影并非儿童入门教材。创作者未对本产品作出背书。"
+      }
+    },
+    "es": {
+      "scenes": {
+        "scene_KHUVKWak": {
+          "title": "¡No, soy Patricio!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Fragmentos de 00:00–00:08 y 00:17–00:23.2, unidos y comprimidos con marcas de tiempo para el doblaje."
+        },
+        "scene_LnSPbYi0": {
+          "title": "¡¿Chocolate?!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Fragmento de 00:10.8–00:22.2, comprimido con marcas de tiempo para el doblaje."
+        },
+        "scene_1eCjBRKF": {
+          "title": "¡Ponlo en Wumbo!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 2.55–21.95 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_MkR1_VOc": {
+          "title": "¡Estoy listo!",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 18.2–28.7 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        },
+        "scene_F9ob5jiT": {
+          "title": "¿La mayonesa es un instrumento?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo; fragmento de los segundos 9.15–24.4 del vídeo original. Se ha ampliado para incluir el diálogo entre los personajes y su desenlace."
+        }
+      },
+      "roles": {
+        "role_GMoleWKV": {
+          "name": "Patricio",
+          "hint": "2 frases · Prueba dos tonos"
+        },
+        "role_VMR9ThiJ": {
+          "name": "Persona que llama",
+          "hint": "2 frases · Haz la misma pregunta"
+        },
+        "role_-pse1q5d": {
+          "name": "Cliente",
+          "hint": "2 frases · Expresa un cambio de emoción"
+        },
+        "role_S1FPrc0B": {
+          "name": "Patricio",
+          "hint": "1 frase · Con o sin"
+        },
+        "role_v-seIUIJ": {
+          "name": "Patricio",
+          "hint": "3 frases"
+        },
+        "role_llrWB6OVSyA": {
+          "name": "Bob Esponja",
+          "hint": "2 frases"
+        },
+        "role_K490suAd": {
+          "name": "Bob Esponja",
+          "hint": "4 frases"
+        },
+        "role_ZsxADi00XhU": {
+          "name": "Calamardo",
+          "hint": "2 frases"
+        },
+        "role_-6cZmGav": {
+          "name": "Calamardo",
+          "hint": "4 frases"
+        },
+        "role_biDyZtCKZuA": {
+          "name": "Plancton",
+          "hint": "1 frase"
+        },
+        "role_cGjaFVM0": {
+          "name": "Patricio",
+          "hint": "1 frase"
+        }
+      },
+      "notices": {
+        "library": "Pruebas del prototipo con adultos · Los doblajes se guardan en este navegador y no se suben. No se ha confirmado el permiso de redistribución de estos fragmentos.",
+        "scene": "Esta escena es para pruebas del prototipo con adultos. La película completa no es material de iniciación para niños.Los creadores no respaldan este producto."
+      }
+    },
+    "ja": {
+      "scenes": {
+        "scene_KHUVKWak": {
+          "title": "いいえ、パトリックです！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "00:00〜00:08と00:17〜00:23.2の抜粋をつなぎ、圧縮して吹き替えの時間マーカーを追加しています。"
+        },
+        "scene_LnSPbYi0": {
+          "title": "チョコレート？！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "00:10.8〜00:22.2の抜粋を圧縮し、吹き替えの時間マーカーを追加しています。"
+        },
+        "scene_1eCjBRKF": {
+          "title": "ワンボに切り替えて！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の2.55–21.95秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_MkR1_VOc": {
+          "title": "準備オーケー！",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の18.2–28.7秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        },
+        "scene_F9ob5jiT": {
+          "title": "マヨネーズは楽器？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の9.15–24.4秒の抜粋です。 前後のキャラクターの会話と、その結末まで含めています。"
+        }
+      },
+      "roles": {
+        "role_GMoleWKV": {
+          "name": "パトリック",
+          "hint": "セリフ2行 · 2つの気持ちで"
+        },
+        "role_VMR9ThiJ": {
+          "name": "電話の相手",
+          "hint": "セリフ2行 · 同じ質問をしてみよう"
+        },
+        "role_-pse1q5d": {
+          "name": "お客さん",
+          "hint": "セリフ2行 · 気持ちの変化を表してみよう"
+        },
+        "role_S1FPrc0B": {
+          "name": "パトリック",
+          "hint": "セリフ1行 · あり・なしを言ってみよう"
+        },
+        "role_v-seIUIJ": {
+          "name": "パトリック",
+          "hint": "セリフ3行"
+        },
+        "role_llrWB6OVSyA": {
+          "name": "スポンジ・ボブ",
+          "hint": "セリフ2行"
+        },
+        "role_K490suAd": {
+          "name": "スポンジ・ボブ",
+          "hint": "セリフ4行"
+        },
+        "role_ZsxADi00XhU": {
+          "name": "イカルド",
+          "hint": "セリフ2行"
+        },
+        "role_-6cZmGav": {
+          "name": "イカルド",
+          "hint": "セリフ4行"
+        },
+        "role_biDyZtCKZuA": {
+          "name": "プランクトン",
+          "hint": "セリフ1行"
+        },
+        "role_cGjaFVM0": {
+          "name": "パトリック",
+          "hint": "セリフ1行"
+        }
+      },
+      "notices": {
+        "library": "大人向け試作版テスト・吹き替えはこのブラウザに保存され、アップロードされません。使用している映像の再配布許諾は未確認です。",
+        "scene": "このシーンは大人による試作版のテスト用です。映画全編は、子ども向けの入門教材ではありません。作品の制作者がこの製品を推奨しているわけではありません。"
+      }
+    },
+    "ko": {
+      "scenes": {
+        "scene_KHUVKWak": {
+          "title": "아니, 난 뚱이야!",
+          "licence": "재배포 허가 미확인",
+          "changes": "00:00–00:08 및 00:17–00:23.2 구간을 이어 붙이고 압축했으며 더빙 시간 표시를 추가했어요."
+        },
+        "scene_LnSPbYi0": {
+          "title": "초콜릿?!",
+          "licence": "재배포 허가 미확인",
+          "changes": "00:10.8–00:22.2 구간을 압축하고 더빙 시간 표시를 추가했어요."
+        },
+        "scene_1eCjBRKF": {
+          "title": "웜보로 바꿔!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 2.55–21.95초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_MkR1_VOc": {
+          "title": "난 준비됐어!",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 18.2–28.7초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        },
+        "scene_F9ob5jiT": {
+          "title": "마요네즈도 악기야?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 9.15–24.4초 구간을 발췌했어요. 앞뒤 인물들의 대화와 마무리까지 포함하도록 확장했어요."
+        }
+      },
+      "roles": {
+        "role_GMoleWKV": {
+          "name": "뚱이",
+          "hint": "대사 2개 · 두 가지 말투로 해 봐요"
+        },
+        "role_VMR9ThiJ": {
+          "name": "전화한 사람",
+          "hint": "대사 2개 · 같은 질문을 해 봐요"
+        },
+        "role_-pse1q5d": {
+          "name": "손님",
+          "hint": "대사 2개 · 감정 변화를 표현해 봐요"
+        },
+        "role_S1FPrc0B": {
+          "name": "뚱이",
+          "hint": "대사 1개 · 있는지 없는지 말해 봐요"
+        },
+        "role_v-seIUIJ": {
+          "name": "뚱이",
+          "hint": "대사 3개"
+        },
+        "role_llrWB6OVSyA": {
+          "name": "스폰지밥",
+          "hint": "대사 2개"
+        },
+        "role_K490suAd": {
+          "name": "스폰지밥",
+          "hint": "대사 4개"
+        },
+        "role_ZsxADi00XhU": {
+          "name": "징징이",
+          "hint": "대사 2개"
+        },
+        "role_-6cZmGav": {
+          "name": "징징이",
+          "hint": "대사 4개"
+        },
+        "role_biDyZtCKZuA": {
+          "name": "플랑크톤",
+          "hint": "대사 1개"
+        },
+        "role_cGjaFVM0": {
+          "name": "뚱이",
+          "hint": "대사 1개"
+        }
+      },
+      "notices": {
+        "library": "성인 대상 시제품 테스트 · 더빙은 이 브라우저에 저장되며 업로드되지 않아요. 영상 클립의 재배포 허가는 확인되지 않았어요.",
+        "scene": "이 장면은 성인을 대상으로 한 시제품 테스트용이에요. 영화 전체가 어린이 입문 학습 자료인 것은 아니에요.원작 제작자가 이 제품을 보증하는 것은 아니에요."
+      }
+    }
+  }
+}

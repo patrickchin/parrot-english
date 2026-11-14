@@ -1,0 +1,1815 @@
+{
+  "version": 1,
+  "id": "pack_p6kgbSm16XFq",
+  "title": "Memes",
+  "franchise": "Memes",
+  "description": "Internet moments for dubbing practice.",
+  "author": "Parrotbook",
+  "scenes": [
+    {
+      "id": "scene_FpZe9z38b59Y",
+      "slug": "corn-corntastic-day",
+      "routeSlug": "corn-corntastic-day",
+      "title": "祝你有玉米般美好的一天！",
+      "english": "A corntastic day!",
+      "note": "Recess Therapy",
+      "source": "https://www.youtube.com/watch?v=1VbZE6YhjKk&t=58s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/corn-corntastic-day/corn-corntastic-day-poster-b3f6e9729984.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "viral",
+        "Recess Therapy",
+        "Corn Kid",
+        "Tariq",
+        "Julian",
+        "玉米男孩",
+        "网络热梗",
+        "food",
+        "wishes",
+        "pun"
+      ],
+      "quotes": [
+        "I hope you really have a corntastic day!",
+        "祝你们有玉米般美好的一天！这里把 corn 和 fantastic 合成一个双关词。",
+        "A corntastic day?",
+        "玉米般美好的一天？",
+        "What? It's just a pun about corn!",
+        "怎么了？这只是一个关于玉米的双关语！"
+      ],
+      "manifest": "scenes/corn-corntastic-day/scene.json"
+    },
+    {
+      "id": "scene_8PxHtlQ-Kmz2",
+      "slug": "apparently-get-dizzy",
+      "routeSlug": "apparently-get-dizzy",
+      "title": "显然，你会晕！",
+      "english": "Apparently, you get dizzy!",
+      "note": "Apparently Kid",
+      "source": "https://www.youtube.com/watch?v=rz5TGN7eUcM&t=24s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/apparently-get-dizzy/apparently-get-dizzy-poster-f16b038cc33c.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "viral",
+        "Apparently Kid",
+        "Noah Ritter",
+        "WNEP",
+        "apparently",
+        "显然男孩",
+        "采访",
+        "rides",
+        "dizzy"
+      ],
+      "quotes": [
+        "Tell me about the ride. What did you think about the ride?",
+        "说说这个游乐项目吧，你觉得怎么样？",
+        "Well, it was great.",
+        "嗯，太棒了。",
+        "Why?",
+        "为什么？",
+        "Because apparently you're spinning around, and apparently every time you get dizzy.",
+        "因为显然你会转来转去，而且显然每次都会晕。",
+        "Yeah?",
+        "是吗？",
+        "That's all you do is get dizzy.",
+        "你做的就是晕来晕去。",
+        "Is it fun?",
+        "好玩吗？",
+        "Yeah.",
+        "好玩。"
+      ],
+      "manifest": "scenes/apparently-get-dizzy/scene.json"
+    },
+    {
+      "id": "scene_j-QpbSVYvMHT",
+      "slug": "emotional-damage",
+      "routeSlug": "emotional-damage",
+      "title": "精神伤害！",
+      "english": "Emotional damage!",
+      "note": "Steven He",
+      "source": "https://www.youtube.com/watch?v=miD_TWmdGIY&t=61s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/emotional-damage/emotional-damage-poster-9d648afab2f2.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "viral",
+        "Steven He",
+        "Emotional Damage",
+        "精神伤害",
+        "破防",
+        "gaming",
+        "reaction",
+        "comedy"
+      ],
+      "quotes": [
+        "Steven, when you get so fat?",
+        "史蒂文，你什么时候变得这么胖了？这是一句不礼貌的讽刺台词。",
+        "Emotional damage!",
+        "精神伤害！",
+        "You want some therapy?",
+        "你想来点心理治疗吗？",
+        "You probably could just hold down the block button.",
+        "你也许只要一直按住格挡键就行了。"
+      ],
+      "manifest": "scenes/emotional-damage/scene.json"
+    },
+    {
+      "id": "scene_gmA1nMTBH0WD",
+      "slug": "weather-boy",
+      "routeSlug": "weather-boy",
+      "title": "你也想知道吧，天气男孩？",
+      "english": "Wouldn't you like to know, weather boy?",
+      "note": "FOX5 Las Vegas",
+      "source": "https://www.youtube.com/watch?v=XOi2jFIhZhA&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/weather-boy/weather-boy-poster-92ff1792dc00.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "viral",
+        "weather boy",
+        "Weather Boi",
+        "Ted Pretty",
+        "FOX5",
+        "天气男孩",
+        "采访",
+        "reaction",
+        "sarcasm"
+      ],
+      "quotes": [
+        "Here's an actual customer out here.",
+        "这里有一位真正的顾客。",
+        "What's the best kind of firework to buy?",
+        "买哪种烟花最好？",
+        "Wouldn't you like to know, weather boy?",
+        "你也想知道吧，天气男孩？这是一句故意调侃的回答。",
+        "Where are your parents?",
+        "你爸妈在哪儿？",
+        "Kid's sketchy. Back to you guys.",
+        "这孩子有点可疑。交回演播室。"
+      ],
+      "manifest": "scenes/weather-boy/scene.json"
+    },
+    {
+      "id": "scene_REHQ__wvTaUe",
+      "slug": "i-like-turtles",
+      "routeSlug": "i-like-turtles",
+      "title": "我喜欢乌龟！",
+      "english": "I like turtles!",
+      "note": "KGW News",
+      "source": "https://www.youtube.com/watch?v=CMNry4PE93Y&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/i-like-turtles/i-like-turtles-poster-06320883fc2a.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "viral",
+        "I like turtles",
+        "Zombie Kid",
+        "Turtle Boy",
+        "Jonathon Ware",
+        "Nancy Francis",
+        "KGW",
+        "我喜欢乌龟",
+        "僵尸男孩",
+        "采访",
+        "turtles",
+        "reaction"
+      ],
+      "quotes": [
+        "Back here live at the Waterfront Village with my friend, the zombie, Jonathon.",
+        "这里是滨水村的直播现场，我身边是僵尸朋友乔纳森。",
+        "You're looking good. Jonathon just got an awesome face paint job. What do you think?",
+        "你看起来不错。乔纳森刚画了很棒的脸部彩绘，你觉得怎么样？",
+        "I like turtles.",
+        "我喜欢乌龟。",
+        "All right. You're a great zombie.",
+        "好吧。你是个很棒的僵尸。"
+      ],
+      "manifest": "scenes/i-like-turtles/scene.json"
+    },
+    {
+      "id": "scene_wdxzuqi-c3ht",
+      "slug": "nine-plus-ten",
+      "routeSlug": "nine-plus-ten",
+      "title": "九加十等于多少？",
+      "english": "What's nine plus ten?",
+      "note": "9 + 10 = 21",
+      "source": "https://www.youtube.com/watch?v=wSRHxVDMzvc&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/nine-plus-ten/nine-plus-ten-poster-1beb60757213.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "Vine",
+        "9+10",
+        "21",
+        "nine plus ten",
+        "twenty-one",
+        "九加十",
+        "二十一",
+        "math",
+        "reaction"
+      ],
+      "quotes": [
+        "You stupid.",
+        "你真笨。这是原片中的不礼貌说法。",
+        "No, I'm not.",
+        "不，我不笨。",
+        "What's nine plus ten?",
+        "九加十等于多少？",
+        "Twenty-one.",
+        "二十一。这是搞笑的错误答案；正确答案是十九。",
+        "You stupid.",
+        "你真笨。保留原始玩笑台词。"
+      ],
+      "manifest": "scenes/nine-plus-ten/scene.json"
+    },
+    {
+      "id": "scene_DmadrOyxIpf-",
+      "slug": "they-were-roommates",
+      "routeSlug": "they-were-roommates",
+      "title": "她们居然是室友！",
+      "english": "And they were roommates!",
+      "note": "Matt Sukkar",
+      "source": "https://www.youtube.com/watch?v=y-P0m0M_8pc&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/they-were-roommates/they-were-roommates-poster-113b72896224.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "Vine",
+        "Matt Sukkar",
+        "roommates",
+        "and they were roommates",
+        "室友",
+        "舍友",
+        "reaction",
+        "deadpan"
+      ],
+      "quotes": [
+        "And they were roommates!",
+        "而且她们还是室友！",
+        "Oh my God, they were roommates.",
+        "天哪，她们居然是室友。"
+      ],
+      "manifest": "scenes/they-were-roommates/scene.json"
+    },
+    {
+      "id": "scene_PXO6Cy4dTP3o",
+      "slug": "can-i-pet-that-dog",
+      "routeSlug": "can-i-pet-that-dog",
+      "title": "我能摸摸那只狗吗？",
+      "english": "Can I pet that dog?",
+      "note": "Kayla Holley and Acesyn",
+      "source": "https://www.youtube.com/watch?v=YYx51ZrSn3g&t=3s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/can-i-pet-that-dog/can-i-pet-that-dog-poster-d246bf829c14.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "TikTok",
+        "can I pet that dog",
+        "can I pet that dawg",
+        "Acesyn",
+        "Kayla Holley",
+        "我能摸狗吗",
+        "狗",
+        "requests",
+        "permission",
+        "repetition"
+      ],
+      "quotes": [
+        "Can I pet that dog?",
+        "我能摸摸那只狗吗？",
+        "No.",
+        "不行。",
+        "Can I pet that dog?",
+        "我能摸摸那只狗吗？",
+        "No, he's sleeping.",
+        "不行，它在睡觉。",
+        "Can I pet that dog?",
+        "我能摸摸那只狗吗？这次声音更响、语气更急切。"
+      ],
+      "manifest": "scenes/can-i-pet-that-dog/scene.json"
+    },
+    {
+      "id": "scene_anSh31W2Rkrc",
+      "slug": "in-me-mums-car",
+      "routeSlug": "in-me-mums-car",
+      "title": "我在妈妈的车里！",
+      "english": "I'm in me mum's car!",
+      "note": "Tristan Simmonds",
+      "source": "https://www.instagram.com/reel/B_Pzd8yh8ZT/",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/in-me-mums-car/in-me-mums-car-poster-a9adfa717bf6.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "Vine",
+        "Instagram",
+        "Tristan Simmonds",
+        "in me mum's car",
+        "broom broom",
+        "妈妈的车",
+        "嘟嘟",
+        "requests",
+        "reaction"
+      ],
+      "quotes": [
+        "I'm in me mum's car.",
+        "我在我妈妈的车里。这里的 me 是原表演中的方言用法，标准写法是 my。",
+        "Broom broom!",
+        "嘟嘟！这是模仿引擎的声音。",
+        "Get out me car!",
+        "从我的车里出去！保留原声中的非正式用法。",
+        "Aw!",
+        "哎呀！"
+      ],
+      "manifest": "scenes/in-me-mums-car/scene.json"
+    },
+    {
+      "id": "scene_euPqQlJ4f1W0",
+      "slug": "lei-jun-are-you-ok",
+      "routeSlug": "lei-jun-are-you-ok",
+      "title": "你们还好吗？",
+      "english": "Are you OK?",
+      "note": "Lei Jun / 雷军",
+      "source": "https://www.youtube.com/watch?v=rKT-169biQw&t=75s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/lei-jun-are-you-ok/lei-jun-are-you-ok-poster-6dd510a4bd68.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "viral",
+        "Lei Jun",
+        "雷军",
+        "Xiaomi",
+        "小米",
+        "Are you OK",
+        "Are you okay",
+        "Bilibili",
+        "哔哩哔哩",
+        "stage",
+        "thanks",
+        "intonation"
+      ],
+      "quotes": [
+        "Thank you. Are you okay?",
+        "谢谢。你们还好吗？这里是原演讲中与现场观众互动的问句。",
+        "Are you okay?",
+        "你们还好吗？",
+        "Thank you! Thank you!",
+        "谢谢！谢谢！"
+      ],
+      "manifest": "scenes/lei-jun-are-you-ok/scene.json"
+    },
+    {
+      "id": "scene_qptUJeRGWMoo",
+      "slug": "road-work-ahead",
+      "routeSlug": "road-work-ahead",
+      "title": "前方道路施工？",
+      "english": "Road work ahead?",
+      "note": "Drew Gooden",
+      "source": "https://www.youtube.com/watch?v=6tJkvKbQ8J8&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/road-work-ahead/road-work-ahead-poster-a4b0b7fd3134.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "Drew Gooden",
+        "Road work ahead",
+        "前方施工",
+        "wordplay"
+      ],
+      "quotes": [
+        "Road work ahead?",
+        "前方道路施工？",
+        "Uh, yeah, I sure hope it does.",
+        "呃，是啊，我当然希望它能正常工作。笑点把 work 从“施工”读成“工作”。"
+      ],
+      "manifest": "scenes/road-work-ahead/scene.json"
+    },
+    {
+      "id": "scene_s_HPfmp4LrgV",
+      "slug": "hurricane-tortilla",
+      "routeSlug": "hurricane-tortilla",
+      "title": "墨西哥薄饼飓风！",
+      "english": "Hurricane Tortilla!",
+      "note": "Hurricane Tortilla",
+      "source": "https://www.youtube.com/watch?v=21jLmc_Il3o&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/hurricane-tortilla/hurricane-tortilla-poster-622375fbdd5f.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "Hurricane Tortilla",
+        "Hurricane Katrina",
+        "飓风薄饼",
+        "wordplay"
+      ],
+      "quotes": [
+        "Whoa! Hurricane Katrina!",
+        "哇！卡特里娜飓风！",
+        "More like Hurricane Tortilla!",
+        "还不如叫“墨西哥薄饼飓风”！这是押韵的玩笑。"
+      ],
+      "manifest": "scenes/hurricane-tortilla/scene.json"
+    },
+    {
+      "id": "scene_x9PNzvY9pXSb",
+      "slug": "dropped-my-croissant",
+      "routeSlug": "dropped-my-croissant",
+      "title": "我差点把羊角面包掉了！",
+      "english": "I could’ve dropped my croissant!",
+      "note": "Terry and Terrel",
+      "source": "https://www.youtube.com/watch?v=ZzWqfJFxC0w&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/dropped-my-croissant/dropped-my-croissant-poster-e7cfa9488a19.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "croissant",
+        "Terry",
+        "Terrel",
+        "羊角面包",
+        "reaction"
+      ],
+      "quotes": [
+        "Stop!",
+        "停！",
+        "I could've dropped my croissant!",
+        "我差点把羊角面包掉了！"
+      ],
+      "manifest": "scenes/dropped-my-croissant/scene.json"
+    },
+    {
+      "id": "scene_gTwFs3Tea1zC",
+      "slug": "look-at-those-chickens",
+      "routeSlug": "look-at-those-chickens",
+      "title": "快看那些小鸡！",
+      "english": "Look at all those chickens!",
+      "note": "Look at all those chickens",
+      "source": "https://www.youtube.com/watch?v=NsLKQTh-Bqo&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/look-at-those-chickens/look-at-those-chickens-poster-438a99a49d21.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "look at all those chickens",
+        "chickens",
+        "geese",
+        "小鸡",
+        "鹅",
+        "reaction"
+      ],
+      "quotes": [
+        "Look at all those chickens!",
+        "快看那些小鸡！画面中实际是鹅，把它们叫成鸡就是笑点。"
+      ],
+      "manifest": "scenes/look-at-those-chickens/scene.json"
+    },
+    {
+      "id": "scene_iu-4psvRA1Iq",
+      "slug": "i-smell-like-beef",
+      "routeSlug": "i-smell-like-beef",
+      "title": "我闻起来像牛肉。",
+      "english": "I smell like beef.",
+      "note": "Katie and Ava Ryan",
+      "source": "https://www.youtube.com/watch?v=5eZyspecXJE&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/i-smell-like-beef/i-smell-like-beef-poster-bf1c3fd4fac5.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "Katie Ryan",
+        "Ava Ryan",
+        "I smell like beef",
+        "beefbaby",
+        "牛肉",
+        "repetition"
+      ],
+      "quotes": [
+        "I smell like beef.",
+        "我闻起来像牛肉。",
+        "I smell like beef.",
+        "我闻起来像牛肉。保留原片中重复的语气变化。"
+      ],
+      "manifest": "scenes/i-smell-like-beef/scene.json"
+    },
+    {
+      "id": "scene_AE4M4qwZvNZp",
+      "slug": "i-want-waffle-fries",
+      "routeSlug": "i-want-waffle-fries",
+      "title": "我要格子薯条！",
+      "english": "I want waffle fries!",
+      "note": "Waffle fries / itsmewario48",
+      "source": "https://www.youtube.com/watch?v=UYNa4PMitTg&t=4s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/i-want-waffle-fries/i-want-waffle-fries-poster-601955261614.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "waffle fries",
+        "itsmewario48",
+        "Boozoo",
+        "格子薯条",
+        "character voice"
+      ],
+      "quotes": [
+        "What are you doing in my house?",
+        "你在我家里干什么？",
+        "I want waffle fries.",
+        "我想要格子薯条。"
+      ],
+      "manifest": "scenes/i-want-waffle-fries/scene.json"
+    },
+    {
+      "id": "scene_IZqmbc9eyfD8",
+      "slug": "very-demure-mindful",
+      "routeSlug": "very-demure-mindful",
+      "title": "非常端庄，非常有分寸。",
+      "english": "Very demure, very mindful.",
+      "note": "Jools Lebron",
+      "source": "https://www.youtube.com/watch?v=E7RJ4S61zV8&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/very-demure-mindful/very-demure-mindful-poster-ad0ec17ba505.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "Jools Lebron",
+        "joolieannie",
+        "very demure",
+        "very mindful",
+        "端庄",
+        "有分寸",
+        "TikTok"
+      ],
+      "quotes": [
+        "You see how I do my makeup for work?",
+        "你看我上班时怎么化妆？",
+        "Very demure, very mindful.",
+        "非常端庄，非常有分寸。"
+      ],
+      "manifest": "scenes/very-demure-mindful/scene.json"
+    },
+    {
+      "id": "scene_HzKQCXHxvTWx",
+      "slug": "avocado-thanks",
+      "routeSlug": "avocado-thanks",
+      "title": "是牛油果！谢谢！",
+      "english": "It’s an avocado! Thanks!",
+      "note": "Avocado gift",
+      "source": "https://www.youtube.com/watch?v=k-cavEKkirc&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/avocado-thanks/avocado-thanks-poster-ca466899b29e.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "avocado",
+        "thanks",
+        "gift",
+        "牛油果",
+        "礼物",
+        "gratitude"
+      ],
+      "quotes": [
+        "It's an avocado!",
+        "是一个牛油果！",
+        "Thanks!",
+        "谢谢！"
+      ],
+      "manifest": "scenes/avocado-thanks/scene.json"
+    },
+    {
+      "id": "scene_JON3IWC7bnZz",
+      "slug": "valentino-white-bag",
+      "routeSlug": "valentino-white-bag",
+      "title": "口红洒进我的白包里了！",
+      "english": "Lipstick in my Valentino white bag!",
+      "note": "Valentino bag reaction",
+      "source": "https://www.youtube.com/watch?v=M1eNd_5T1DM&t=0s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/valentino-white-bag/valentino-white-bag-poster-e3f4ae70b0f3.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "Valentino",
+        "lipstick",
+        "white bag",
+        "华伦天奴",
+        "口红",
+        "reaction"
+      ],
+      "quotes": [
+        "I spilled lipstick in your Valentino bag.",
+        "我把口红洒进你的华伦天奴包里了。",
+        "Oh, you spilled—",
+        "哦，你洒了——",
+        "Lipstick in my Valentino white bag!",
+        "口红洒进了我的华伦天奴白包里！"
+      ],
+      "manifest": "scenes/valentino-white-bag/scene.json"
+    },
+    {
+      "id": "scene_0WS9Utc_6kb7",
+      "slug": "god-and-anime",
+      "routeSlug": "god-and-anime",
+      "title": "上帝和动漫的力量！",
+      "english": "The power of God and anime!",
+      "note": "Sensai Matt",
+      "source": "https://www.youtube.com/watch?v=iOv6RVpE4RY&t=3s",
+      "cohort": "older-audience",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/god-and-anime/god-and-anime-poster-ac123d4ea900.jpg",
+      "tags": [
+        "meme",
+        "internet",
+        "Sensai Matt",
+        "God and anime",
+        "动漫之力",
+        "reaction"
+      ],
+      "quotes": [
+        "I have the power of God and anime on my side!",
+        "我有上帝和动漫的力量站在我这边！这是夸张的角色表演。"
+      ],
+      "manifest": "scenes/god-and-anime/scene.json"
+    }
+  ],
+  "locales": {
+    "en": {
+      "scenes": {
+        "scene_FpZe9z38b59Y": {
+          "title": "A corntastic day!",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "Continuous excerpt of the original spoken interview. Corntastic is a pun combining corn and fantastic."
+        },
+        "scene_8PxHtlQ-Kmz2": {
+          "title": "Apparently, you get dizzy!",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "Continuous excerpt of the original fair interview. Spontaneous repetition and informal grammar are preserved."
+        },
+        "scene_j-QpbSVYvMHT": {
+          "title": "Emotional damage!",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "Continuous excerpt of the original comedy sketch. Includes an insulting body comment and nonstandard grammar; intended for adult prototype testing."
+        },
+        "scene_gmA1nMTBH0WD": {
+          "title": "Wouldn't you like to know, weather boy?",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "A planned father-and-son joke on FOX5; not a spontaneous confrontation. Fireworks sales appear in the background; sarcastic speech is preserved."
+        },
+        "scene_REHQ__wvTaUe": {
+          "title": "I like turtles!",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "Original 2007 KGW broadcast, not the later promotional recreation. Zombie face paint; an unexpected comic answer."
+        },
+        "scene_wdxzuqi-c3ht": {
+          "title": "What's nine plus ten?",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "One complete Vine exchange, without the archive’s duplicate loop. Includes an insult and informal grammar. Twenty-one is the joke; the correct answer is nineteen. Original identities unverified."
+        },
+        "scene_DmadrOyxIpf-": {
+          "title": "And they were roommates!",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "Original two-speaker Vine exchange; Matt Sukkar echoes an unidentified woman. No relationship is inferred beyond the words. Includes Oh my God."
+        },
+        "scene_PXO6Cy4dTP3o": {
+          "title": "Can I pet that dog?",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "Original indoor family video of Acesyn and his mother Kayla, not a bear remix. Repeated requests and raised voice are preserved; respect an adult’s refusal."
+        },
+        "scene_anSh31W2Rkrc": {
+          "title": "I'm in me mum's car!",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "Original family Vine from Tristan Simmonds’s Instagram repost. Regional me-for-my and engine imitation are preserved; not standard written English."
+        },
+        "scene_euPqQlJ4f1W0": {
+          "title": "Are you OK?",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "Raw 2015 Lei Jun stage speech, not the song remix. Original crowd cheers remain. Practise thanks and question intonation without mocking an accent; not a current product offer."
+        },
+        "scene_qptUJeRGWMoo": {
+          "title": "Road work ahead?",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "Work changes from a noun on the sign to a verb in the reply."
+        },
+        "scene_s_HPfmp4LrgV": {
+          "title": "Hurricane Tortilla!",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "Wordplay with a disaster name and exaggerated tortilla pronunciation."
+        },
+        "scene_x9PNzvY9pXSb": {
+          "title": "I could’ve dropped my croissant!",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "Startle reaction with the original laughter retained."
+        },
+        "scene_gTwFs3Tea1zC": {
+          "title": "Look at all those chickens!",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "The birds are geese. Calling them chickens is the joke, not factual vocabulary."
+        },
+        "scene_iu-4psvRA1Iq": {
+          "title": "I smell like beef.",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "Original family performance: two repetitions with changing tone."
+        },
+        "scene_AE4M4qwZvNZp": {
+          "title": "I want waffle fries!",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "One creator performs both vocal registers. The archive includes a character illustration."
+        },
+        "scene_IZqmbc9eyfD8": {
+          "title": "Very demure, very mindful.",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "Original Jools Lebron performance in a compilation. Satire, not universal workplace rules; later comparisons/commentary excluded."
+        },
+        "scene_HzKQCXHxvTWx": {
+          "title": "It’s an avocado! Thanks!",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "Original gift-opening reaction; performer identity unverified."
+        },
+        "scene_JON3IWC7bnZz": {
+          "title": "Lipstick in my Valentino white bag!",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "Two original speakers; stammering remains in the audio. Identities and relationship unverified."
+        },
+        "scene_0WS9Utc_6kb7": {
+          "title": "The power of God and anime!",
+          "licence": "Redistribution permission unconfirmed; internal adult prototype testing only.",
+          "changes": "Complete original roleplay boast. Surrounding profanity, the next speaker and scream are outside the excerpt."
+        }
+      },
+      "roles": {
+        "role_WDa2qw2rRSIE": {
+          "name": "Tariq",
+          "hint": "2 lines"
+        },
+        "role_5T_dtN_VZNtx": {
+          "name": "Julian",
+          "hint": "1 line"
+        },
+        "role_Yy-b9OPmi2zq": {
+          "name": "Sofia",
+          "hint": "4 lines"
+        },
+        "role_RY510V7EvoEG": {
+          "name": "Noah",
+          "hint": "4 lines"
+        },
+        "role_8rsUvsJbhZ0u": {
+          "name": "Aunty",
+          "hint": "1 line"
+        },
+        "role_HX_rjb--3ZnC": {
+          "name": "Steven's dad",
+          "hint": "2 lines"
+        },
+        "role_PvfiRglGg5ME": {
+          "name": "Steven",
+          "hint": "1 line"
+        },
+        "role_YujmamimpATV": {
+          "name": "Ted Pretty",
+          "hint": "4 lines"
+        },
+        "role_hA3AEZ9spCsX": {
+          "name": "Ted's son",
+          "hint": "1 line"
+        },
+        "role_iBKCjfDwYh6S": {
+          "name": "Nancy Francis",
+          "hint": "3 lines"
+        },
+        "role_53AOEvhSt-HG": {
+          "name": "Jonathon",
+          "hint": "1 line"
+        },
+        "role_BBo6bXnMNXuh": {
+          "name": "Questioner",
+          "hint": "3 lines"
+        },
+        "role_RbHL9yEzn11-": {
+          "name": "Boy",
+          "hint": "2 lines"
+        },
+        "role_3PfScUczuh1u": {
+          "name": "Woman",
+          "hint": "1 line"
+        },
+        "role_obiKywJtOR7o": {
+          "name": "Matt",
+          "hint": "1 line"
+        },
+        "role_z-ONdnV-mP49": {
+          "name": "Acesyn",
+          "hint": "3 lines"
+        },
+        "role_D4pxGfyfhQpD": {
+          "name": "Kayla",
+          "hint": "2 lines"
+        },
+        "role_x1dzufHQJ3ei": {
+          "name": "Tristan",
+          "hint": "3 lines"
+        },
+        "role_izpuf8ej_j0n": {
+          "name": "Mum",
+          "hint": "1 line"
+        },
+        "role_XZ61BUhpEP3s": {
+          "name": "Lei Jun",
+          "hint": "3 lines"
+        },
+        "role_lrh2SduXQHbr": {
+          "name": "Drew",
+          "hint": "2 lines"
+        },
+        "role_w29WAhLT0w0_": {
+          "name": "Boy",
+          "hint": "2 lines"
+        },
+        "role_4EIlJI3iuyqG": {
+          "name": "Terrel",
+          "hint": "2 lines"
+        },
+        "role_jW130fBXYF3P": {
+          "name": "Girl",
+          "hint": "1 line"
+        },
+        "role_xQuDmcoCHlGQ": {
+          "name": "Ava",
+          "hint": "2 lines"
+        },
+        "role_s-h9GzDEQvwN": {
+          "name": "Creator",
+          "hint": "2 lines"
+        },
+        "role_O1w5E8RjExmy": {
+          "name": "Jools",
+          "hint": "2 lines"
+        },
+        "role_sGpDGpEdpXqm": {
+          "name": "Boy",
+          "hint": "2 lines"
+        },
+        "role_Ro8znii84V-S": {
+          "name": "First speaker",
+          "hint": "1 line"
+        },
+        "role_V6rQaU_ALv9Q": {
+          "name": "Bag owner",
+          "hint": "2 lines"
+        },
+        "role_0m__GRbzTzYd": {
+          "name": "Matt",
+          "hint": "1 line"
+        }
+      },
+      "notices": {
+        "library": "Adult prototype testing · Dubs save in this browser. No uploads. Redistribution permission for the meme clips is unconfirmed.",
+        "scene": "This scene is for adult prototype testing. The full film is not beginner learning material for children.The creators do not endorse this product."
+      }
+    },
+    "zh-CN": {
+      "scenes": {
+        "scene_FpZe9z38b59Y": {
+          "title": "祝你有玉米般美好的一天！",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "原始采访的连续节选。Corntastic 是 corn 与 fantastic 组成的双关词。"
+        },
+        "scene_8PxHtlQ-Kmz2": {
+          "title": "显然，你会晕！",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "原始游乐场采访的连续节选。保留即兴重复与口语表达。"
+        },
+        "scene_j-QpbSVYvMHT": {
+          "title": "精神伤害！",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "原始喜剧短片的连续节选。含身材嘲讽和非标准语法，仅供内部成人原型测试。"
+        },
+        "scene_gmA1nMTBH0WD": {
+          "title": "你也想知道吧，天气男孩？",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "FOX5记者与儿子事先安排的玩笑，并非突发冲突。背景中有烟花销售，保留讽刺语气。"
+        },
+        "scene_REHQ__wvTaUe": {
+          "title": "我喜欢乌龟！",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "2007年KGW原始采访，并非后来的宣传重演。含僵尸彩绘和出人意料的搞笑回答。"
+        },
+        "scene_wdxzuqi-c3ht": {
+          "title": "九加十等于多少？",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "原始Vine的一次完整对话，去除档案中的重复循环。含不礼貌说法和非标准语法。二十一是笑点，正确答案是十九。原始身份未核实。"
+        },
+        "scene_DmadrOyxIpf-": {
+          "title": "她们居然是室友！",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "原始双人Vine对话；马特·苏卡重复一位身份未知女士的话。不推断人物关系。含Oh my God感叹语。"
+        },
+        "scene_PXO6Cy4dTP3o": {
+          "title": "我能摸摸那只狗吗？",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "Acesyn与母亲Kayla的原始室内家庭视频，并非配熊画面的混剪。保留反复请求和提高音量的表现；应尊重成人的拒绝。"
+        },
+        "scene_anSh31W2Rkrc": {
+          "title": "我在妈妈的车里！",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "Tristan Simmonds本人Instagram重发的原始家庭Vine。保留me代替my的方言用法和引擎拟声，不作为标准书面语。"
+        },
+        "scene_euPqQlJ4f1W0": {
+          "title": "你们还好吗？",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "雷军2015年原始英文演讲，并非歌曲混剪。保留观众欢呼。练习感谢和问句语调，不嘲笑口音；并非当前产品赠送活动。"
+        },
+        "scene_qptUJeRGWMoo": {
+          "title": "前方道路施工？",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "标牌中work是“施工”名词，回答中把它当作“工作”的动词。"
+        },
+        "scene_s_HPfmp4LrgV": {
+          "title": "墨西哥薄饼飓风！",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "用灾害名称和夸张的tortilla读音玩文字游戏。"
+        },
+        "scene_x9PNzvY9pXSb": {
+          "title": "我差点把羊角面包掉了！",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "保留原始受惊反应和笑声。"
+        },
+        "scene_gTwFs3Tea1zC": {
+          "title": "快看那些小鸡！",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "画面中是鹅。把它们叫成鸡是笑点，不作为事实词汇示范。"
+        },
+        "scene_iu-4psvRA1Iq": {
+          "title": "我闻起来像牛肉。",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "原始家庭表演；两次重复，语气不同。"
+        },
+        "scene_AE4M4qwZvNZp": {
+          "title": "我要格子薯条！",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "同一位创作者表演两种声线，原档案含角色插画。"
+        },
+        "scene_IZqmbc9eyfD8": {
+          "title": "非常端庄，非常有分寸。",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "合集中的Jools Lebron原始表演。是讽刺语气，不是通用职场规范；排除后续外貌比较和解说。"
+        },
+        "scene_HzKQCXHxvTWx": {
+          "title": "是牛油果！谢谢！",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "原始拆礼物反应；表演者身份未核实。"
+        },
+        "scene_JON3IWC7bnZz": {
+          "title": "口红洒进我的白包里了！",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "两位原始说话者；保留结巴声音，身份和关系未核实。"
+        },
+        "scene_0WS9Utc_6kb7": {
+          "title": "上帝和动漫的力量！",
+          "licence": "未确认再分发许可；仅供内部成人原型测试。",
+          "changes": "原始夸张角色表演中的完整名句。前面的粗口、下一位说话者和尖叫不在本片段中。"
+        }
+      },
+      "roles": {
+        "role_WDa2qw2rRSIE": {
+          "name": "Tariq",
+          "hint": "2 句台词"
+        },
+        "role_5T_dtN_VZNtx": {
+          "name": "Julian",
+          "hint": "1 句台词"
+        },
+        "role_Yy-b9OPmi2zq": {
+          "name": "Sofia",
+          "hint": "4 句台词"
+        },
+        "role_RY510V7EvoEG": {
+          "name": "Noah",
+          "hint": "4 句台词"
+        },
+        "role_8rsUvsJbhZ0u": {
+          "name": "Aunty",
+          "hint": "1 句台词"
+        },
+        "role_HX_rjb--3ZnC": {
+          "name": "Steven's dad",
+          "hint": "2 句台词"
+        },
+        "role_PvfiRglGg5ME": {
+          "name": "Steven",
+          "hint": "1 句台词"
+        },
+        "role_YujmamimpATV": {
+          "name": "Ted Pretty",
+          "hint": "4 句台词"
+        },
+        "role_hA3AEZ9spCsX": {
+          "name": "泰德的儿子",
+          "hint": "1 句台词"
+        },
+        "role_iBKCjfDwYh6S": {
+          "name": "Nancy Francis",
+          "hint": "3 句台词"
+        },
+        "role_53AOEvhSt-HG": {
+          "name": "Jonathon",
+          "hint": "1 句台词"
+        },
+        "role_BBo6bXnMNXuh": {
+          "name": "提问者",
+          "hint": "3 句台词"
+        },
+        "role_RbHL9yEzn11-": {
+          "name": "男孩",
+          "hint": "2 句台词"
+        },
+        "role_3PfScUczuh1u": {
+          "name": "路过的女士",
+          "hint": "1 句台词"
+        },
+        "role_obiKywJtOR7o": {
+          "name": "马特",
+          "hint": "1 句台词"
+        },
+        "role_z-ONdnV-mP49": {
+          "name": "Acesyn",
+          "hint": "3 句台词"
+        },
+        "role_D4pxGfyfhQpD": {
+          "name": "凯拉",
+          "hint": "2 句台词"
+        },
+        "role_x1dzufHQJ3ei": {
+          "name": "Tristan",
+          "hint": "3 句台词"
+        },
+        "role_izpuf8ej_j0n": {
+          "name": "妈妈",
+          "hint": "1 句台词"
+        },
+        "role_XZ61BUhpEP3s": {
+          "name": "雷军",
+          "hint": "3 句台词"
+        },
+        "role_lrh2SduXQHbr": {
+          "name": "Drew",
+          "hint": "2 句台词"
+        },
+        "role_w29WAhLT0w0_": {
+          "name": "男孩",
+          "hint": "2 句台词"
+        },
+        "role_4EIlJI3iuyqG": {
+          "name": "Terrel",
+          "hint": "2 句台词"
+        },
+        "role_jW130fBXYF3P": {
+          "name": "女孩",
+          "hint": "1 句台词"
+        },
+        "role_xQuDmcoCHlGQ": {
+          "name": "Ava",
+          "hint": "2 句台词"
+        },
+        "role_s-h9GzDEQvwN": {
+          "name": "创作者",
+          "hint": "2 句台词"
+        },
+        "role_O1w5E8RjExmy": {
+          "name": "Jools",
+          "hint": "2 句台词"
+        },
+        "role_sGpDGpEdpXqm": {
+          "name": "男孩",
+          "hint": "2 句台词"
+        },
+        "role_Ro8znii84V-S": {
+          "name": "第一位说话者",
+          "hint": "1 句台词"
+        },
+        "role_V6rQaU_ALv9Q": {
+          "name": "包的主人",
+          "hint": "2 句台词"
+        },
+        "role_0m__GRbzTzYd": {
+          "name": "Matt",
+          "hint": "1 句台词"
+        }
+      },
+      "notices": {
+        "library": "成人原型测试 · 配音保存在此浏览器，不会上传。影视梗片段尚未确认再分发许可。",
+        "scene": "本片段用于成人原型测试；完整电影并非儿童入门教材。创作者未对本产品作出背书。"
+      }
+    },
+    "es": {
+      "scenes": {
+        "scene_FpZe9z38b59Y": {
+          "title": "¡Que tengas un día maiztástico!",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Fragmento continuo de la entrevista original. Corntastic es un juego de palabras con corn y fantastic."
+        },
+        "scene_8PxHtlQ-Kmz2": {
+          "title": "¡Al parecer, te mareas!",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Fragmento continuo de la entrevista en la feria. Conserva repeticiones y gramática informal."
+        },
+        "scene_j-QpbSVYvMHT": {
+          "title": "¡Daño emocional!",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Fragmento continuo de una comedia. Incluye un comentario ofensivo sobre el cuerpo y gramática no estándar; pruebas internas con adultos."
+        },
+        "scene_gmA1nMTBH0WD": {
+          "title": "¿No te gustaría saberlo, chico del tiempo?",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Broma preparada entre padre e hijo en FOX5. Venta de fuegos artificiales de fondo; respuesta sarcástica."
+        },
+        "scene_REHQ__wvTaUe": {
+          "title": "¡Me gustan las tortugas!",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Emisión original de KGW de 2007, no la recreación promocional. Maquillaje de zombi y una respuesta inesperada."
+        },
+        "scene_wdxzuqi-c3ht": {
+          "title": "¿Cuánto es nueve más diez?",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Un intercambio completo de Vine, sin repetición. Incluye un insulto y gramática informal. Veintiuno es la broma; la respuesta correcta es diecinueve. Identidades sin verificar."
+        },
+        "scene_DmadrOyxIpf-": {
+          "title": "¡Y eran compañeras de piso!",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Diálogo original de Vine: Matt Sukkar repite a una mujer no identificada. No se infiere su relación. Incluye Oh my God."
+        },
+        "scene_PXO6Cy4dTP3o": {
+          "title": "¿Puedo acariciar a ese perro?",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Vídeo familiar original de Acesyn y su madre Kayla en casa, no el montaje con un oso. Peticiones repetidas y voz elevada; hay que respetar la negativa de un adulto."
+        },
+        "scene_anSh31W2Rkrc": {
+          "title": "¡Estoy en el coche de mi madre!",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Vine familiar original republicado en el Instagram de Tristan Simmonds. Conserva el dialecto me por my y la imitación del motor; no es inglés escrito estándar."
+        },
+        "scene_euPqQlJ4f1W0": {
+          "title": "¿Están bien?",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Discurso original de Lei Jun de 2015, no el remix musical. Conserva al público. Practica agradecimientos y preguntas sin burlarte del acento; no es una oferta actual."
+        },
+        "scene_qptUJeRGWMoo": {
+          "title": "¿Obras en la carretera?",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Work pasa de sustantivo en la señal a verbo en la respuesta."
+        },
+        "scene_s_HPfmp4LrgV": {
+          "title": "¡Huracán Tortilla!",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Juego de palabras con el nombre de un desastre y una pronunciación exagerada de tortilla."
+        },
+        "scene_x9PNzvY9pXSb": {
+          "title": "¡Podría haber tirado mi cruasán!",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Reacción de susto con las risas originales."
+        },
+        "scene_gTwFs3Tea1zC": {
+          "title": "¡Mira todas esas gallinas!",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Son gansos. Llamarlos gallinas es la broma, no vocabulario factual."
+        },
+        "scene_iu-4psvRA1Iq": {
+          "title": "Huelo a carne de res.",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Actuación familiar original: dos repeticiones con distinto tono."
+        },
+        "scene_AE4M4qwZvNZp": {
+          "title": "¡Quiero patatas rejilla!",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Un creador interpreta ambos registros vocales. El archivo incluye una ilustración de un personaje."
+        },
+        "scene_IZqmbc9eyfD8": {
+          "title": "Muy recatada, muy consciente.",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Actuación original de Jools Lebron en una recopilación. Sátira, no normas laborales universales; se excluye el comentario posterior."
+        },
+        "scene_HzKQCXHxvTWx": {
+          "title": "¡Es un aguacate! ¡Gracias!",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Reacción original al abrir un regalo; identidad sin verificar."
+        },
+        "scene_JON3IWC7bnZz": {
+          "title": "¡Pintalabios en mi bolso blanco de Valentino!",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Dos voces originales; se conserva el tartamudeo. Identidades y relación sin verificar."
+        },
+        "scene_0WS9Utc_6kb7": {
+          "title": "¡El poder de Dios y el anime!",
+          "licence": "Permiso de redistribución sin confirmar; solo pruebas internas con adultos.",
+          "changes": "Frase completa de la actuación original. El lenguaje vulgar anterior, la siguiente voz y el grito quedan fuera del fragmento."
+        }
+      },
+      "roles": {
+        "role_WDa2qw2rRSIE": {
+          "name": "Tariq",
+          "hint": "2 líneas"
+        },
+        "role_5T_dtN_VZNtx": {
+          "name": "Julian",
+          "hint": "1 línea"
+        },
+        "role_Yy-b9OPmi2zq": {
+          "name": "Sofia",
+          "hint": "4 líneas"
+        },
+        "role_RY510V7EvoEG": {
+          "name": "Noah",
+          "hint": "4 líneas"
+        },
+        "role_8rsUvsJbhZ0u": {
+          "name": "Aunty",
+          "hint": "1 línea"
+        },
+        "role_HX_rjb--3ZnC": {
+          "name": "Steven's dad",
+          "hint": "2 líneas"
+        },
+        "role_PvfiRglGg5ME": {
+          "name": "Steven",
+          "hint": "1 línea"
+        },
+        "role_YujmamimpATV": {
+          "name": "Ted Pretty",
+          "hint": "4 líneas"
+        },
+        "role_hA3AEZ9spCsX": {
+          "name": "Hijo de Ted",
+          "hint": "1 línea"
+        },
+        "role_iBKCjfDwYh6S": {
+          "name": "Nancy Francis",
+          "hint": "3 líneas"
+        },
+        "role_53AOEvhSt-HG": {
+          "name": "Jonathon",
+          "hint": "1 línea"
+        },
+        "role_BBo6bXnMNXuh": {
+          "name": "Quien pregunta",
+          "hint": "3 líneas"
+        },
+        "role_RbHL9yEzn11-": {
+          "name": "Niño",
+          "hint": "2 líneas"
+        },
+        "role_3PfScUczuh1u": {
+          "name": "Mujer",
+          "hint": "1 línea"
+        },
+        "role_obiKywJtOR7o": {
+          "name": "Matt",
+          "hint": "1 línea"
+        },
+        "role_z-ONdnV-mP49": {
+          "name": "Acesyn",
+          "hint": "3 líneas"
+        },
+        "role_D4pxGfyfhQpD": {
+          "name": "Kayla",
+          "hint": "2 líneas"
+        },
+        "role_x1dzufHQJ3ei": {
+          "name": "Tristan",
+          "hint": "3 líneas"
+        },
+        "role_izpuf8ej_j0n": {
+          "name": "Mamá",
+          "hint": "1 línea"
+        },
+        "role_XZ61BUhpEP3s": {
+          "name": "Lei Jun",
+          "hint": "3 líneas"
+        },
+        "role_lrh2SduXQHbr": {
+          "name": "Drew",
+          "hint": "2 líneas"
+        },
+        "role_w29WAhLT0w0_": {
+          "name": "Niño",
+          "hint": "2 líneas"
+        },
+        "role_4EIlJI3iuyqG": {
+          "name": "Terrel",
+          "hint": "2 líneas"
+        },
+        "role_jW130fBXYF3P": {
+          "name": "Niña",
+          "hint": "1 línea"
+        },
+        "role_xQuDmcoCHlGQ": {
+          "name": "Ava",
+          "hint": "2 líneas"
+        },
+        "role_s-h9GzDEQvwN": {
+          "name": "Creador",
+          "hint": "2 líneas"
+        },
+        "role_O1w5E8RjExmy": {
+          "name": "Jools",
+          "hint": "2 líneas"
+        },
+        "role_sGpDGpEdpXqm": {
+          "name": "Niño",
+          "hint": "2 líneas"
+        },
+        "role_Ro8znii84V-S": {
+          "name": "Primera voz",
+          "hint": "1 línea"
+        },
+        "role_V6rQaU_ALv9Q": {
+          "name": "Persona del bolso",
+          "hint": "2 líneas"
+        },
+        "role_0m__GRbzTzYd": {
+          "name": "Matt",
+          "hint": "1 línea"
+        }
+      },
+      "notices": {
+        "library": "Pruebas del prototipo con adultos · Los doblajes se guardan en este navegador y no se suben. No se ha confirmado el permiso de redistribución de estos fragmentos.",
+        "scene": "Esta escena es para pruebas del prototipo con adultos. La película completa no es material de iniciación para niños.Los creadores no respaldan este producto."
+      }
+    },
+    "ja": {
+      "scenes": {
+        "scene_FpZe9z38b59Y": {
+          "title": "コーンな素敵な一日を！",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "元のインタビューの連続した抜粋。Corntastic は corn と fantastic を合わせた言葉遊びです。"
+        },
+        "scene_8PxHtlQ-Kmz2": {
+          "title": "どうやら目が回るみたい！",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "遊園地での元のインタビューの連続した抜粋。自然な繰り返しと口語表現を残しています。"
+        },
+        "scene_j-QpbSVYvMHT": {
+          "title": "精神的ダメージ！",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "元のコメディーの連続した抜粋。体型への侮辱と非標準的な文法を含みます。成人の内部テスト用です。"
+        },
+        "scene_gmA1nMTBH0WD": {
+          "title": "知りたいんでしょ、お天気坊や？",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "FOX5の記者と息子が事前に考えた冗談。背景に花火販売が映り、皮肉な発言を含みます。"
+        },
+        "scene_REHQ__wvTaUe": {
+          "title": "カメが好き！",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "2007年のKGWの元の放送。後年の宣伝用再現ではありません。ゾンビのメイクと意外な返答を含みます。"
+        },
+        "scene_wdxzuqi-c3ht": {
+          "title": "9足す10は？",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "Vineの一度の完全なやり取り。重複ループは除外。侮辱と非標準的な文法を含みます。21は冗談で、正解は19です。元の人物の身元は未確認。"
+        },
+        "scene_DmadrOyxIpf-": {
+          "title": "しかもルームメイトだった！",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "元の二人のVineのやり取り。マット・サッカーが身元不明の女性の言葉を繰り返します。関係は推測しません。Oh my Godを含みます。"
+        },
+        "scene_PXO6Cy4dTP3o": {
+          "title": "あの犬をなでてもいい？",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "Acesynと母親Kaylaの元の室内映像で、クマとの合成ではありません。繰り返すお願いと大声を含みます。大人の拒否を尊重してください。"
+        },
+        "scene_anSh31W2Rkrc": {
+          "title": "ママの車に乗ってる！",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "Tristan Simmonds本人のInstagram再投稿による元の家族Vine。meをmyとして使う方言とエンジンの擬音を残しています。標準的な書き言葉ではありません。"
+        },
+        "scene_euPqQlJ4f1W0": {
+          "title": "みんな大丈夫？",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "雷軍の2015年の元の英語スピーチで、楽曲リミックスではありません。観客の歓声を残しています。口音を笑わず感謝と疑問文のイントネーションを練習します。現在の製品提供ではありません。"
+        },
+        "scene_qptUJeRGWMoo": {
+          "title": "この先、道路工事？",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "標識の名詞workを返答では動詞として使う言葉遊び。"
+        },
+        "scene_s_HPfmp4LrgV": {
+          "title": "ハリケーン・トルティーヤ！",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "災害名と誇張したtortillaの発音を使う言葉遊び。"
+        },
+        "scene_x9PNzvY9pXSb": {
+          "title": "クロワッサンを落とすところだった！",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "元の驚いた反応と笑い声を残しています。"
+        },
+        "scene_gTwFs3Tea1zC": {
+          "title": "あのニワトリたちを見て！",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "鳥はガチョウです。ニワトリと呼ぶのが冗談で、正しい動物名の例ではありません。"
+        },
+        "scene_iu-4psvRA1Iq": {
+          "title": "牛肉みたいな匂いがする。",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "元の家族映像。同じ言葉を異なる調子で二回繰り返します。"
+        },
+        "scene_AE4M4qwZvNZp": {
+          "title": "ワッフルフライが欲しい！",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "同じクリエイターが両方の声を演じます。元の映像にキャラクターの絵を含みます。"
+        },
+        "scene_IZqmbc9eyfD8": {
+          "title": "とても控えめ、とても思慮深く。",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "コンピレーション内のJools Lebron本人の演技。風刺であり普遍的な職場規則ではありません。後続の比較と解説は除外。"
+        },
+        "scene_HzKQCXHxvTWx": {
+          "title": "アボカドだ！ありがとう！",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "元のプレゼント開封時の反応。人物の身元は未確認。"
+        },
+        "scene_JON3IWC7bnZz": {
+          "title": "ヴァレンティノの白いバッグに口紅が！",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "元の二人の声と口ごもりを残しています。身元と関係は未確認。"
+        },
+        "scene_0WS9Utc_6kb7": {
+          "title": "神とアニメの力！",
+          "licence": "再配布の許可は未確認です。成人による内部試作テスト専用。",
+          "changes": "元の誇張した演技の一つの完全な台詞。前後の罵語、次の話者、叫び声は含みません。"
+        }
+      },
+      "roles": {
+        "role_WDa2qw2rRSIE": {
+          "name": "Tariq",
+          "hint": "セリフ 2 個"
+        },
+        "role_5T_dtN_VZNtx": {
+          "name": "Julian",
+          "hint": "セリフ 1 個"
+        },
+        "role_Yy-b9OPmi2zq": {
+          "name": "Sofia",
+          "hint": "セリフ 4 個"
+        },
+        "role_RY510V7EvoEG": {
+          "name": "Noah",
+          "hint": "セリフ 4 個"
+        },
+        "role_8rsUvsJbhZ0u": {
+          "name": "Aunty",
+          "hint": "セリフ 1 個"
+        },
+        "role_HX_rjb--3ZnC": {
+          "name": "Steven's dad",
+          "hint": "セリフ 2 個"
+        },
+        "role_PvfiRglGg5ME": {
+          "name": "Steven",
+          "hint": "セリフ 1 個"
+        },
+        "role_YujmamimpATV": {
+          "name": "Ted Pretty",
+          "hint": "セリフ4行"
+        },
+        "role_hA3AEZ9spCsX": {
+          "name": "テッドの息子",
+          "hint": "セリフ1行"
+        },
+        "role_iBKCjfDwYh6S": {
+          "name": "Nancy Francis",
+          "hint": "セリフ3行"
+        },
+        "role_53AOEvhSt-HG": {
+          "name": "Jonathon",
+          "hint": "セリフ1行"
+        },
+        "role_BBo6bXnMNXuh": {
+          "name": "質問する人",
+          "hint": "セリフ3行"
+        },
+        "role_RbHL9yEzn11-": {
+          "name": "男の子",
+          "hint": "セリフ2行"
+        },
+        "role_3PfScUczuh1u": {
+          "name": "通りかかった女性",
+          "hint": "セリフ1行"
+        },
+        "role_obiKywJtOR7o": {
+          "name": "マット",
+          "hint": "セリフ1行"
+        },
+        "role_z-ONdnV-mP49": {
+          "name": "Acesyn",
+          "hint": "セリフ3行"
+        },
+        "role_D4pxGfyfhQpD": {
+          "name": "Kayla",
+          "hint": "セリフ2行"
+        },
+        "role_x1dzufHQJ3ei": {
+          "name": "Tristan",
+          "hint": "セリフ3行"
+        },
+        "role_izpuf8ej_j0n": {
+          "name": "ママ",
+          "hint": "セリフ1行"
+        },
+        "role_XZ61BUhpEP3s": {
+          "name": "雷軍",
+          "hint": "セリフ3行"
+        },
+        "role_lrh2SduXQHbr": {
+          "name": "Drew",
+          "hint": "セリフ2行"
+        },
+        "role_w29WAhLT0w0_": {
+          "name": "男の子",
+          "hint": "セリフ2行"
+        },
+        "role_4EIlJI3iuyqG": {
+          "name": "Terrel",
+          "hint": "セリフ2行"
+        },
+        "role_jW130fBXYF3P": {
+          "name": "女の子",
+          "hint": "セリフ1行"
+        },
+        "role_xQuDmcoCHlGQ": {
+          "name": "Ava",
+          "hint": "セリフ2行"
+        },
+        "role_s-h9GzDEQvwN": {
+          "name": "クリエイター",
+          "hint": "セリフ2行"
+        },
+        "role_O1w5E8RjExmy": {
+          "name": "Jools",
+          "hint": "セリフ2行"
+        },
+        "role_sGpDGpEdpXqm": {
+          "name": "男の子",
+          "hint": "セリフ2行"
+        },
+        "role_Ro8znii84V-S": {
+          "name": "最初に話す人",
+          "hint": "セリフ1行"
+        },
+        "role_V6rQaU_ALv9Q": {
+          "name": "バッグの持ち主",
+          "hint": "セリフ2行"
+        },
+        "role_0m__GRbzTzYd": {
+          "name": "Matt",
+          "hint": "セリフ1行"
+        }
+      },
+      "notices": {
+        "library": "大人向け試作版テスト・吹き替えはこのブラウザに保存され、アップロードされません。使用している映像の再配布許諾は未確認です。",
+        "scene": "このシーンは大人による試作版のテスト用です。映画全編は、子ども向けの入門教材ではありません。作品の制作者がこの製品を推奨しているわけではありません。"
+      }
+    },
+    "ko": {
+      "scenes": {
+        "scene_FpZe9z38b59Y": {
+          "title": "옥수수처럼 멋진 하루!",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "원본 인터뷰의 연속 발췌. Corntastic은 corn과 fantastic을 합친 말장난입니다."
+        },
+        "scene_8PxHtlQ-Kmz2": {
+          "title": "아무래도 어지러워지나 봐요!",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "원본 놀이공원 인터뷰의 연속 발췌. 즉흥적인 반복과 구어체 문법을 유지했습니다."
+        },
+        "scene_j-QpbSVYvMHT": {
+          "title": "정신적 충격!",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "원본 코미디의 연속 발췌. 외모 비하 발언과 비표준 문법을 포함하며 성인 내부 테스트용입니다."
+        },
+        "scene_gmA1nMTBH0WD": {
+          "title": "궁금하지, 날씨 소년?",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "FOX5 기자와 아들이 미리 준비한 농담. 배경에 불꽃놀이 제품 판매가 보이며 비꼬는 말투가 나옵니다."
+        },
+        "scene_REHQ__wvTaUe": {
+          "title": "거북이가 좋아요!",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "2007년 KGW 원본 방송이며 이후의 홍보 재연이 아닙니다. 좀비 분장과 엉뚱한 답변이 나옵니다."
+        },
+        "scene_wdxzuqi-c3ht": {
+          "title": "9 더하기 10은?",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "중복 반복을 제외한 원본 Vine 대화 한 번. 모욕과 비표준 문법이 나옵니다. 21은 농담이며 정답은 19입니다. 원래 인물의 신원은 미확인입니다."
+        },
+        "scene_DmadrOyxIpf-": {
+          "title": "그런데 룸메이트였어!",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "Matt Sukkar가 신원 미상의 여성의 말을 반복하는 원본 Vine 대화. 두 사람의 관계를 추측하지 않습니다. Oh my God이 나옵니다."
+        },
+        "scene_PXO6Cy4dTP3o": {
+          "title": "저 개를 쓰다듬어도 돼요?",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "Acesyn과 엄마 Kayla의 원래 실내 가족 영상이며 곰 합성 영상이 아닙니다. 반복되는 부탁과 큰 목소리가 나오며 어른의 거절을 존중해야 합니다."
+        },
+        "scene_anSh31W2Rkrc": {
+          "title": "엄마 차 안이야!",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "Tristan Simmonds 본인의 Instagram 재게시 원본 가족 Vine. my 대신 me를 쓰는 방언과 엔진 흉내를 유지하며 표준 문어체가 아닙니다."
+        },
+        "scene_euPqQlJ4f1W0": {
+          "title": "다들 괜찮아요?",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "2015년 Lei Jun의 원래 영어 연설이며 노래 리믹스가 아닙니다. 관중 환호를 유지합니다. 억양을 조롱하지 않고 감사와 질문 억양을 연습하며 현재 제품 제공 행사가 아닙니다."
+        },
+        "scene_qptUJeRGWMoo": {
+          "title": "앞에 도로 공사?",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "표지판의 명사 work를 답변에서는 동사로 사용하는 말장난입니다."
+        },
+        "scene_s_HPfmp4LrgV": {
+          "title": "토르티야 허리케인!",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "재난 이름과 과장된 tortilla 발음을 이용한 말장난입니다."
+        },
+        "scene_x9PNzvY9pXSb": {
+          "title": "크루아상을 떨어뜨릴 뻔했잖아!",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "원래 놀라는 반응과 웃음소리를 유지합니다."
+        },
+        "scene_gTwFs3Tea1zC": {
+          "title": "저 닭들 좀 봐!",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "새는 거위입니다. 닭이라고 부르는 것이 농담이며 올바른 동물 이름의 예가 아닙니다."
+        },
+        "scene_iu-4psvRA1Iq": {
+          "title": "나한테 소고기 냄새가 나.",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "원래 가족 영상에서 같은 말을 다른 어조로 두 번 반복합니다."
+        },
+        "scene_AE4M4qwZvNZp": {
+          "title": "와플 감자튀김 먹고 싶어!",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "한 창작자가 두 목소리를 모두 연기합니다. 원본 영상에 캐릭터 그림이 포함됩니다."
+        },
+        "scene_IZqmbc9eyfD8": {
+          "title": "아주 단정하고, 아주 신중하게.",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "모음 영상에 담긴 Jools Lebron의 원래 연기입니다. 풍자이며 보편적인 직장 규칙이 아닙니다. 뒤의 비교와 해설은 제외합니다."
+        },
+        "scene_HzKQCXHxvTWx": {
+          "title": "아보카도네! 고마워!",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "원래 선물을 여는 반응이며 인물의 신원은 미확인입니다."
+        },
+        "scene_JON3IWC7bnZz": {
+          "title": "내 발렌티노 흰 가방에 립스틱이!",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "원래 두 화자의 목소리와 말더듬을 유지합니다. 신원과 관계는 미확인입니다."
+        },
+        "scene_0WS9Utc_6kb7": {
+          "title": "신과 애니메이션의 힘!",
+          "licence": "재배포 허가 미확인. 성인 대상 내부 프로토타입 테스트 전용.",
+          "changes": "원래 과장된 연기의 완전한 명대사입니다. 앞의 욕설과 다음 화자, 비명은 이 장면에서 제외합니다."
+        }
+      },
+      "roles": {
+        "role_WDa2qw2rRSIE": {
+          "name": "Tariq",
+          "hint": "대사 2개"
+        },
+        "role_5T_dtN_VZNtx": {
+          "name": "Julian",
+          "hint": "대사 1개"
+        },
+        "role_Yy-b9OPmi2zq": {
+          "name": "Sofia",
+          "hint": "대사 4개"
+        },
+        "role_RY510V7EvoEG": {
+          "name": "Noah",
+          "hint": "대사 4개"
+        },
+        "role_8rsUvsJbhZ0u": {
+          "name": "Aunty",
+          "hint": "대사 1개"
+        },
+        "role_HX_rjb--3ZnC": {
+          "name": "Steven's dad",
+          "hint": "대사 2개"
+        },
+        "role_PvfiRglGg5ME": {
+          "name": "Steven",
+          "hint": "대사 1개"
+        },
+        "role_YujmamimpATV": {
+          "name": "Ted Pretty",
+          "hint": "대사 4개"
+        },
+        "role_hA3AEZ9spCsX": {
+          "name": "테드의 아들",
+          "hint": "대사 1개"
+        },
+        "role_iBKCjfDwYh6S": {
+          "name": "Nancy Francis",
+          "hint": "대사 3개"
+        },
+        "role_53AOEvhSt-HG": {
+          "name": "Jonathon",
+          "hint": "대사 1개"
+        },
+        "role_BBo6bXnMNXuh": {
+          "name": "질문하는 사람",
+          "hint": "대사 3개"
+        },
+        "role_RbHL9yEzn11-": {
+          "name": "소년",
+          "hint": "대사 2개"
+        },
+        "role_3PfScUczuh1u": {
+          "name": "지나가던 여성",
+          "hint": "대사 1개"
+        },
+        "role_obiKywJtOR7o": {
+          "name": "맷",
+          "hint": "대사 1개"
+        },
+        "role_z-ONdnV-mP49": {
+          "name": "Acesyn",
+          "hint": "대사 3개"
+        },
+        "role_D4pxGfyfhQpD": {
+          "name": "Kayla",
+          "hint": "대사 2개"
+        },
+        "role_x1dzufHQJ3ei": {
+          "name": "Tristan",
+          "hint": "대사 3개"
+        },
+        "role_izpuf8ej_j0n": {
+          "name": "엄마",
+          "hint": "대사 1개"
+        },
+        "role_XZ61BUhpEP3s": {
+          "name": "레이쥔",
+          "hint": "대사 3개"
+        },
+        "role_lrh2SduXQHbr": {
+          "name": "Drew",
+          "hint": "대사 2개"
+        },
+        "role_w29WAhLT0w0_": {
+          "name": "소년",
+          "hint": "대사 2개"
+        },
+        "role_4EIlJI3iuyqG": {
+          "name": "Terrel",
+          "hint": "대사 2개"
+        },
+        "role_jW130fBXYF3P": {
+          "name": "소녀",
+          "hint": "대사 1개"
+        },
+        "role_xQuDmcoCHlGQ": {
+          "name": "Ava",
+          "hint": "대사 2개"
+        },
+        "role_s-h9GzDEQvwN": {
+          "name": "창작자",
+          "hint": "대사 2개"
+        },
+        "role_O1w5E8RjExmy": {
+          "name": "Jools",
+          "hint": "대사 2개"
+        },
+        "role_sGpDGpEdpXqm": {
+          "name": "소년",
+          "hint": "대사 2개"
+        },
+        "role_Ro8znii84V-S": {
+          "name": "첫 번째 화자",
+          "hint": "대사 1개"
+        },
+        "role_V6rQaU_ALv9Q": {
+          "name": "가방 주인",
+          "hint": "대사 2개"
+        },
+        "role_0m__GRbzTzYd": {
+          "name": "Matt",
+          "hint": "대사 1개"
+        }
+      },
+      "notices": {
+        "library": "성인 대상 시제품 테스트 · 더빙은 이 브라우저에 저장되며 업로드되지 않아요. 영상 클립의 재배포 허가는 확인되지 않았어요.",
+        "scene": "이 장면은 성인을 대상으로 한 시제품 테스트용이에요. 영화 전체가 어린이 입문 학습 자료인 것은 아니에요.원작 제작자가 이 제품을 보증하는 것은 아니에요."
+      }
+    }
+  }
+}
