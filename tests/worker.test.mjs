@@ -19,7 +19,7 @@ test('serves application assets, health, and HEAD requests without exposing unkn
 test('serves the app on page paths while missing assets and API routes stay 404', async () => {
   const worker = createWorker({ '/index.html': { type: 'text/html; charset=utf-8', body: 'app', encoding: 'utf8' } });
   const get = (path, method = 'GET') => worker.fetch(new Request('https://parrotbook.test' + path, { method }));
-  for (const path of ['/dubs', '/dubs/', '/en/dubs', '/zh/dubs/', '/packs', '/en/packs', '/zh/packs/pack_test-AB_9', '/library/teens', '/scenes/patrick', '/scenes/patrick/dubs/dub_abc123', '/scenes/patrick/', '/en', '/zh/', '/en/library/teens', '/zh/scenes/toy-story-infinity', '/en/scenes/patrick/dubs/dub_abc123', '/es/', '/ja/library/teens', '/ko/dubs', '/es/scenes/patrick', '/ja/scenes/patrick/dubs/dub_abc123']) {
+  for (const path of ['/dubs', '/dubs/', '/en/dubs', '/zh/dubs/', '/owner/packs', '/en/owner/packs', '/en/s/shr_ABCDEFGHIJKLMNOPQRSTUVWX', '/packs', '/en/packs', '/zh/packs/pack_test-AB_9', '/library/teens', '/scenes/patrick', '/scenes/patrick/dubs/dub_abc123', '/scenes/patrick/', '/en', '/zh/', '/en/library/teens', '/zh/scenes/toy-story-infinity', '/en/scenes/patrick/dubs/dub_abc123', '/es/', '/ja/library/teens', '/ko/dubs', '/es/scenes/patrick', '/ja/scenes/patrick/dubs/dub_abc123']) {
     const response = await get(path);
     assert.equal(response.status, 200);
     assert.match(response.headers.get('content-type'), /^text\/html/);
@@ -70,4 +70,21 @@ test('gzip text assets preserve Unicode content and ignore byte ranges of the co
   assert.equal(head.headers.get('content-encoding'), 'gzip');
   assert.equal(head.headers.get('content-length'), String(bytes.length));
   assert.equal(await head.text(), '');
+});
+
+
+test('public API configuration exposes only valid HTTPS endpoints and private pages avoid indexing', async () => {
+  const worker = createWorker({ '/index.html': { type: 'text/html', body: 'app', encoding: 'utf8' } });
+  for (const [path, key] of [['/api/owner-config', 'OWNER_API_URL'], ['/api/share-config', 'SHARE_API_URL']]) {
+    const get = (value) => worker.fetch(new Request('https://parrotbook.test' + path), undefined, { [key]: value });
+    for (const value of [undefined, '', 'http://example.com', 'https://secret@example.com', 'https://example.com/?key=secret', 'https://example.com/#secret']) assert.equal((await get(value)).status, 503);
+    const response = await get('https://api.example.com/');
+    assert.deepEqual(await response.json(), { apiBase: 'https://api.example.com' });
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+  }
+  for (const path of ['/en/owner/packs', '/en/s/shr_ABCDEFGHIJKLMNOPQRSTUVWX']) {
+    const response = await worker.fetch(new Request('https://parrotbook.test' + path));
+    assert.equal(response.headers.get('x-robots-tag'), 'noindex');
+    assert.equal(response.headers.get('referrer-policy'), 'no-referrer');
+  }
 });

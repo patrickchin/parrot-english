@@ -16,7 +16,7 @@ test('runtime discovery validates hosted packs and never fetches scene media bef
   assert.equal(loaded.clips.length, 2);
   assert.equal(requests.length, 2);
   assert.equal(new Set(loaded.clips.map(clip => clip.packId)).size, 1);
-  assert.deepEqual(loaded.packs, [{ id: pack.id, title: pack.title, description: pack.description,
+  assert.deepEqual(loaded.packs, [{ id: pack.id, title: pack.title, franchise: pack.franchise, uploader: 'Patrick', description: pack.description,
     author: pack.author, sceneCount: pack.scenes.length, poster: loaded.clips[0].poster }]);
   const clip = loaded.clips[0];
   const scene = await loadScene(clip);
@@ -30,6 +30,7 @@ test('pack trust boundaries reject traversal, unsupported versions, collisions a
   for (const value of [{ ...catalog, version: 99 }, { version: 1, packs: [catalog.packs[0], catalog.packs[0]] }, { version: 1, packs: [{ ...catalog.packs[0], manifest: '../secret.json' }] }]) assert.throws(() => validateCatalog(value));
   for (const change of [
     p => { p.title = '   '; },
+    p => { p.franchise = '   '; },
     p => { p.scenes[0].manifest = '../scene.json'; },
     p => { p.scenes[1].id = p.scenes[0].id; },
     p => { p.scenes[1].routeSlug = p.scenes[0].routeSlug ?? p.scenes[0].slug; },

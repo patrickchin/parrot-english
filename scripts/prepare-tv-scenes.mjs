@@ -22,10 +22,11 @@ const media = [], entries = [], slugs = [];
 await mkdir(output, { recursive: true });
 for (const entry of scenes) {
   const slug = entry.publicSlug;
-  let previous;
-  try { previous = JSON.parse(await readFile(`${sceneFolder(slug, entry.cohort)}/scene.json`, 'utf8')); } catch (error) { if (error.code !== 'ENOENT') throw error; }
-  if (!entry.sceneId || !entry.lines?.length || !entry.lines.every(line => line.words?.length)) throw new Error(`Align the dialogue before preparing ${slug}`);
   const source = recipe.sources.find(source => source.id === entry.sourceId);
+  const franchise = source.franchise ?? source.series;
+  let previous;
+  try { previous = JSON.parse(await readFile(`${sceneFolder(slug, franchise, entry.tags)}/scene.json`, 'utf8')); } catch (error) { if (error.code !== 'ENOENT') throw error; }
+  if (!entry.sceneId || !entry.lines?.length || !entry.lines.every(line => line.words?.length)) throw new Error(`Align the dialogue before preparing ${slug}`);
   const sourceLink = source.url.includes('youtube.com/') ? `${source.url}&t=${Math.floor(entry.start)}s` : source.url;
   const original = `${local}/review/${recipe.reviewFolder ?? entry.cohort}/${entry.slug}.mp4`;
   const hash = createHash('sha256').update(await readFile(original)).digest('hex').slice(0, 12);
@@ -48,8 +49,8 @@ for (const entry of scenes) {
     wordTiming: entry.wordTiming, rightsStatus: recipe.rightsStatus,
     credit: { title: `${source.series} — ${source.episode}`, attribution: source.attribution, source: sourceLink, licence: '未确认再分发许可', licenceUrl: source.url.includes('youtube.com/') ? 'https://www.youtube.com/howyoutubeworks/policies/copyright/' : source.url, changes: `内部原型测试；原上传 ${entry.start}–${entry.end} 秒的连续节选。${entry.contentNotes ?? entry.practice}` },
   };
-  await mkdir(sceneFolder(slug, entry.cohort), { recursive: true });
-  await writeFile(`${sceneFolder(slug, entry.cohort)}/scene.json`, JSON.stringify(scene, null, 2) + '\n');
+  await mkdir(sceneFolder(slug, franchise, entry.tags), { recursive: true });
+  await writeFile(`${sceneFolder(slug, franchise, entry.tags)}/scene.json`, JSON.stringify(scene, null, 2) + '\n');
   translations[entry.titleZh] = entry.title;
   entries.push({ id: scene.id, slug, routeSlug: entry.routeSlug ?? existingCatalog.find(clip => clip.slug === slug)?.routeSlug ?? slug, title: entry.titleZh, english: entry.title, note: source.franchise ?? source.series, source: scene.credit.source, cohort: preschool && entry.beginnerSuitable !== true ? 'older-audience' : entry.cohort, poster: scene.mediaBase + scene.poster });
   slugs.push(slug);

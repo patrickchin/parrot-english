@@ -14,8 +14,8 @@ for (const [cohort,file] of [['older-audience','content/meme-review-scenes.json'
  for (const entry of recipe.scenes) {
   const libraryFolder=cohort==='younger-age-5'&&entry.beginnerSuitable!==true?'older-audience':cohort;
   const slug=cohort==='younger-age-5'?entry.slug.replace(/^\d+-/,''):entry.slug;
-  const source=recipe.sources.find(s=>s.id===entry.sourceId); let previous;
-  try {previous=JSON.parse(await readFile(`${sceneFolder(slug, libraryFolder)}/scene.json`,'utf8'));} catch (error) {if(error.code!=='ENOENT')throw error;}
+  const source=recipe.sources.find(s=>s.id===entry.sourceId); const franchise=source.franchise??source.series??source.title; let previous;
+  try {previous=JSON.parse(await readFile(`${sceneFolder(slug, franchise, entry.tags)}/scene.json`,'utf8'));} catch (error) {if(error.code!=='ENOENT')throw error;}
   if (entry.preserveMedia) {
    generated.push({id:previous.id,slug,title:previous.title,english:({patrick:'No, this is Patrick.',chocolate:'Chocolate!',onions:'Ogres are like onions.'}[slug]??previous.lines[0].text),note:source.franchise??previous.credit.title,source:previous.credit.source,cohort:libraryFolder,poster:root+slug+'/'+previous.poster});continue;
   }
@@ -34,7 +34,7 @@ for (const [cohort,file] of [['older-audience','content/meme-review-scenes.json'
   const title=cohort==='younger-age-5'||entry.editType==='replacement'?entry.titleZh:previous.title;translations[title]=entry.title;
   const offset=source.sourceOffset??0;const sourceUrl=source.url+`&t=${Math.floor(entry.start+offset)}s`;
   const scene={version:1,id:entry.sceneId,title,tags:entry.tags,description:'内部原型测试；选角色，听原声，录下自己的版本。',duration:+Number(probe.format.duration).toFixed(3),video,mediaBase:root+slug+'/',poster:`${slug}-poster-${digest}.jpg`,waveform:`waveform-${digest}.json`,roles,lines,wordTiming:entry.wordTiming,rightsStatus:'redistribution-not-cleared',credit:{title:source.series??source.title,attribution:source.attribution,source:sourceUrl,licence:'未确认再分发许可',licenceUrl:'https://www.youtube.com/howyoutubeworks/policies/copyright/',changes:`内部原型测试；原上传 ${+(entry.start+offset).toFixed(3)}–${+(entry.end+offset).toFixed(3)} 秒的节选。${entry.editNote??''}`}};
-  await mkdir(sceneFolder(slug, libraryFolder),{recursive:true});await writeFile(`${sceneFolder(slug, libraryFolder)}/scene.json`,JSON.stringify(scene,null,2)+'\n');await writeFile(`${canonical}/${slug}.json`,JSON.stringify(scene,null,2)+'\n');
+  await mkdir(sceneFolder(slug, franchise, entry.tags),{recursive:true});await writeFile(`${sceneFolder(slug, franchise, entry.tags)}/scene.json`,JSON.stringify(scene,null,2)+'\n');await writeFile(`${canonical}/${slug}.json`,JSON.stringify(scene,null,2)+'\n');
   changed.push(slug);media.push({file:`${local}/${video}`,key:`clips/${slug}/${video}`},{file:`${local}/${scene.poster}`,key:`clips/${slug}/${scene.poster}`});
   generated.push({id:scene.id,slug,title,english:summaries[slug]??(cohort==='younger-age-5'?entry.title:entry.editType==='replacement'?entry.title:previous.lines[0].text),note:source.franchise??scene.credit.title,source:scene.credit.source,cohort:libraryFolder,poster:scene.mediaBase+scene.poster});
  }
