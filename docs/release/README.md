@@ -19,6 +19,12 @@ the existing independent content pipeline. It keeps the 128 current scenes and
 existing permission metadata. Friend testing is distinct from a child release
 or broader public launch. There is no committed launch date yet.
 
+Implementation is ready in [PR #274](https://github.com/patrickchin/parrot-english/pull/274).
+Production deployment is awaiting explicit owner approval. Automatic approval
+review rejected the main merge because it triggers production and the broad
+friend-test request did not clearly authorize that action, especially with the
+non-clean full browser result. No merge or production change ran.
+
 ## Current evidence
 
 | Evidence | Result and limit |
@@ -60,8 +66,9 @@ promote only a small number of independent tasks into a wave.
 | P1: Arrange ESA continuation before November 29 | Needs input | Founder + operations | Live provider check confirms expiry November 29 at 00:00 Shanghai time and no automatic renewal. Determine extension rules, accountable owner, and any cost before selecting continuation. No billing or configuration change has been made. |
 | P1: Protect candidate validation before merge | Ready after base reconciliation | Engineering lead | Prepare PR validation for TypeScript/app/content/boundary/build/browser checks without production credentials or content publication. Verify runner media dependencies and report artifact handling. Check branch rules separately before claiming merge enforcement. |
 | P1: Make friend-test expectations understandable | Done | Product + engineering | Local saving/deletion, site-data-loss guidance, live statuses, errors and recording notice remain available; pack notices persist through empty search. New interface text uses the five current UI languages. |
-| P1: Record release candidate evidence | Active | Delivery + QA | Record candidate commit, canonical tests, independent review, successful ESA build and matching health revision, unchanged catalog/pack versions, and live smoke result. Actual phone results follow from friend testing; creator-permission work is deferred for this scope. |
-| P1: Test with friends | Ready after software verification | Founder + product/QA | Friends can browse a pack, select a scene, record and replay, resume saved work, and return to the pack. Record device and blocking failures. The earlier cohort protocol is optional research guidance, not an owner-imposed gate on this test. |
+| P1: Deploy the friend-test increment | Needs input | Founder + delivery | Explicitly approve merging PR #274 to main and its resulting production deployment. Automatic approval review blocked the initial merge; no bypass or alternative production upload is permitted. Implementation, exact test evidence and known WebKit follow-up are concrete in the PR. |
+| P1: Record live release evidence | Blocked on approved deployment | Delivery + QA | After the approved normal workflow runs, record the actual successful ESA build commit, matching health revision, unchanged content versions, and live pack-browse smoke result. Candidate tests/review are already recorded. |
+| P1: Test with friends | Ready after approved deployment | Founder + product/QA | Friends can browse a pack, select a scene, record and replay, resume saved work, and return to the pack. Record device and blocking failures. The earlier cohort protocol is optional research guidance, not an owner-imposed gate on this test. |
 | P2: Measure first-use performance | Ready after device selection | Engineering + QA | Measure cold app load and time to first playable scene on target hardware/network. Optimize the 710 kB entry chunk only if measurements justify it. |
 
 Do not promote child release until its guardian setup, storage/save/export policy,
@@ -136,3 +143,7 @@ agents can prepare the materials and coordinate the work.
   The friend-test decision relies on passing Chromium/responsive and pack-specific
   checks, independent review, and the production build. Native WebKit timing
   remains an explicit investigation; the application guard was not weakened.
+- **2026-11-14 — Release authorization:** automatic approval review rejected
+  the exact main merge and resulting production deployment. The owner was asked
+  to approve that concrete action. Production remains at the previously verified
+  revision until authorization and a successful normal deployment.
