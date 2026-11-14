@@ -1,8 +1,6 @@
-import { readFile, writeFile, mkdir, mkdtemp, rm, lstat } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, rm, lstat } from 'node:fs/promises';
 import { dirname, join, resolve, relative } from 'node:path';
-import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
-import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { validateCatalog, validatePack, relativeContentPath, storageUrl } from '../src/content-pack.ts';
 import { validateScene } from '../src/scene.ts';
@@ -10,7 +8,6 @@ import { validateWaveform } from '../src/waveform.ts';
 
 export const bucket = 'parrotbook-media-f6e09412';
 export const contentBase = `https://${bucket}.oss-cn-hongkong.aliyuncs.com/content/`;
-const remoteRoot = `oss://${bucket}/content/`;
 const json = body => JSON.stringify(body, null, 2) + '\n';
 
 export async function validateDirectory(root = 'content') {
@@ -96,50 +93,82 @@ export async function stageDirectory(root = 'content', destination) {
   const catalog = { version: 1, packs };
   await mkdir(folder, { recursive: true });
   await writeFile(join(folder, 'catalog.json'), json(catalog));
-  return { ...validated, revision, folder, catalog };
+  return { ...validated, revision, folder, catalog, sourceCatalog: validated.catalog };
 }
 
-function oss(...args) {
-  try { return execFileSync('aliyun', ['ossutil', ...args, '--region', 'cn-hongkong'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }); }
-  catch (error) { throw new Error(`Alibaba CLI failed. Install/configure aliyun with ossutil 2.0. ${error.stderr?.toString() ?? error.message}`); }
+function ownerRequest() {
+  const token = process.env.OWNER_API_TOKEN, configured = process.env.OWNER_API_URL;
+  if (!configured || !token) throw new Error('Set OWNER_API_URL and OWNER_API_TOKEN for the owner upload API.');
+  const url = new URL(configured);
+  if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) throw new Error('OWNER_API_URL must be an HTTPS URL without credentials, query, or fragment.');
+  const base = url.href.replace(/\/$/, '');
+  return async (method, path, body) => {
+    const response = await fetch(base + path, { method, headers: {
+      Authorization: `Bearer ${token}`, ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+    }, body: body === undefined ? undefined : JSON.stringify(body), redirect: 'error', signal: AbortSignal.timeout(300000) });
+    let value;
+    try { value = await response.json(); }
+    catch { throw new Error(`Owner API returned an invalid response (${response.status}).`); }
+    if (!response.ok) throw new Error(`Owner API request failed (${response.status}): ${value.error ?? 'Request rejected.'}`);
+    return value;
+  };
 }
-function uploadCatalog(path) {
-  oss('cp', path, remoteRoot + 'catalog.json', '--force', '--cache-control', 'no-store', '--content-type', 'application/json');
-}
-export async function publishDirectory(root = 'content') {
-  const release = await stageDirectory(root);
-  // Verify existing external media before making a release discoverable.
-  for (let i = 0; i < release.remote.length; i += 8) {
-    await Promise.all(release.remote.slice(i, i + 8).map(async url => {
-      const response = await fetch(url, { method: 'HEAD', redirect: 'error', signal: AbortSignal.timeout(15000) });
-      if (!response.ok) throw new Error(`Referenced media is unavailable (${response.status}): ${url}`);
-    }));
+const mime = { json: 'application/json', mp4: 'video/mp4', m4a: 'audio/mp4', jpg: 'image/jpeg' };
+export async function publishDirectory(root = 'content', { replaceCatalog = false } = {}) {
+  const request = ownerRequest();
+  const release = await stageDirectory(root), uploads = [], transfers = [];
+  for (const pack of release.catalog.packs) {
+    const source = release.packFiles.get(pack.id);
+    const sourceEntry = release.sourceCatalog.packs.find(entry => entry.id === pack.id);
+    const packRoot = dirname(sourceEntry.manifest);
+    const files = new Map([...source].map(([path, bytes]) => [path === sourceEntry.manifest ? 'pack.json' : relative(packRoot, path).split('\\').join('/'), bytes]));
+    if (files.size !== source.size || [...files.keys()].some(path => !relativeContentPath(path, 'json|mp4|m4a|jpg'))) throw new Error(`Pack ${pack.id} references files outside its folder.`);
+    const types = new Map([...files.keys()].map(path => [path, mime[path.split('.').at(-1)]]));
+    const plan = await request('POST', '/uploads', { files: [...files].map(([path, bytes]) => ({ path, size: bytes.length, type: types.get(path) })) });
+    if (!/^upl_[A-Za-z0-9_-]{1,80}$/.test(plan.id) || !Array.isArray(plan.uploads) || plan.uploads.length !== files.size) throw new Error('Owner API returned an invalid upload plan.');
+    const seen = new Set();
+    for (const item of plan.uploads) {
+      const url = new URL(item.url);
+      if (!files.has(item.path) || seen.has(item.path) || url.origin !== new URL(contentBase).origin || url.username || url.password || url.hash || url.pathname !== `/content/uploads/${plan.id}/files/${item.path}` ||
+          item.headers?.['Content-Type'] !== types.get(item.path) || item.headers?.['x-oss-object-acl'] !== 'private' || Object.keys(item.headers).some(key => key.toLowerCase() === 'authorization')) throw new Error('Owner API returned an unsafe upload plan.');
+      seen.add(item.path); transfers.push({ ...item, bytes: files.get(item.path) });
+    }
+    uploads.push(plan.id);
   }
-  oss('cp', join(release.folder, 'objects') + '/', remoteRoot, '--recursive', '--force', '--cache-control', 'public,max-age=31536000,immutable');
-  uploadCatalog(join(release.folder, 'catalog.json'));
-  return release;
+  for (let index = 0; index < transfers.length; index += 8) {
+    const results = await Promise.allSettled(transfers.slice(index, index + 8).map(async item => {
+      // OSS receives only the signed upload headers, never the owner bearer.
+      const response = await fetch(item.url, { method: 'PUT', headers: item.headers, body: item.bytes,
+        redirect: 'error', signal: AbortSignal.timeout(120000) });
+      if (!response.ok) throw new Error(`Pack file upload failed (${response.status}): ${item.path}`);
+    }));
+    const failure = results.find(result => result.status === 'rejected');
+    if (failure) throw failure.reason;
+  }
+  const result = await request('POST', '/publish', { uploads, ...(replaceCatalog ? { replaceCatalog: true } : {}) });
+  if (!Array.isArray(result.packs) || result.packs.length !== uploads.length) throw new Error('Owner API returned an invalid publication result.');
+  return { ...release, catalog: validateCatalog({ version: 1, packs: result.packs.map(({ id, manifest, uploader }) => ({ id, manifest, uploader })) }) };
 }
 export async function removePack(packId) {
-  const catalog = validateCatalog(JSON.parse(oss('cat', remoteRoot + 'catalog.json')));
-  if (!catalog.packs.some(pack => pack.id === packId)) throw new Error(`Published pack not found: ${packId}`);
-  const folder = await mkdtemp(join(tmpdir(), 'parrotbook-catalog-'));
-  try {
-    const path = join(folder, 'catalog.json');
-    await writeFile(path, json({ ...catalog, packs: catalog.packs.filter(pack => pack.id !== packId) }));
-    uploadCatalog(path);
-  } finally { await rm(folder, { recursive: true, force: true }); }
+  if (!/^pack_[A-Za-z0-9_-]{1,80}$/.test(packId)) throw new Error('Provide a valid pack ID.');
+  return ownerRequest()('DELETE', '/packs/' + packId);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
-  const [command, argument] = process.argv.slice(2);
+  const [command, ...args] = process.argv.slice(2);
+  const replaceCatalog = args.includes('--replace-catalog');
+  if (args.some(arg => arg.startsWith('--') && arg !== '--replace-catalog') || (replaceCatalog && command !== 'publish')) throw new Error('Only publish supports --replace-catalog.');
+  const positional = args.filter(arg => arg !== '--replace-catalog');
+  if (positional.length > 1) throw new Error('Provide at most one content root or pack ID.');
+  const [argument] = positional;
   if (command === 'validate') {
     const result = await validateDirectory(argument);
     console.log(`Validated ${result.catalog.packs.length} packs, ${result.sceneCount} scenes, ${result.files.size} files; ${result.remote.length} existing OSS media references.`);
   } else if (command === 'stage' || command === 'publish') {
-    const result = await (command === 'stage' ? stageDirectory(argument) : publishDirectory(argument));
+    const result = await (command === 'stage' ? stageDirectory(argument) : publishDirectory(argument, { replaceCatalog }));
     console.log(`${command === 'stage' ? 'Staged' : 'Published'} ${result.catalog.packs.length} packs / ${result.sceneCount} scenes, release ${result.revision}. ${relative(process.cwd(), result.folder)}`);
   } else if (command === 'remove' && argument) {
     await removePack(argument);
-    console.log(`Withdrew ${argument}. Pack files and media remain stored; remove the entry from the source catalog before the next full publish.`);
-  } else throw new Error('Usage: node scripts/content.mjs validate|stage|publish [content-root] | remove pack_ID');
+    console.log(`Deleted ${argument} from discovery and owner management. Pack files and media remain stored; remove the entry from the source catalog to keep a later publish from adding it again.`);
+  } else throw new Error('Usage: node scripts/content.mjs validate|stage [content-root] | publish [content-root] [--replace-catalog] | remove pack_ID');
 }

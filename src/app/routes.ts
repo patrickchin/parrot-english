@@ -8,6 +8,8 @@ export const pageRoutes = [
   { id: 'library', path: '/:language/library/:folder' },
   { id: 'packs', path: '/:language/packs' },
   { id: 'pack', path: '/:language/packs/:packId' },
+  { id: 'owner', path: '/:language/owner/packs' },
+  { id: 'share', path: '/:language/s/:shareId' },
   { id: 'dubs', path: '/:language/dubs' },
   { id: 'scene', path: '/:language/scenes/:sceneName' },
   { id: 'dub', path: '/:language/scenes/:sceneName/dubs/:draftId' },
@@ -17,6 +19,7 @@ export const pageRoutes = [
 export const libraryPath = (folder: string, language: Language) => languagePath(generatePath('/library/:folder', { folder: encodeURIComponent(folder) }), language);
 export const dubsPath = (language: Language) => languagePath('/dubs', language);
 export const packsPath = (language: Language) => languagePath('/packs', language);
+export const ownerPacksPath = (language: Language) => languagePath('/owner/packs', language);
 export const packPath = (id: string, language: Language) => languagePath(generatePath('/packs/:packId', { packId: encodeURIComponent(id) }), language);
 export const scenePath = (slug: string, draftId?: string, language: Language = 'zh-CN', clips: readonly Clip[] = []) => {
   const clip = clips.find(clip => clip.slug === slug);
@@ -35,8 +38,10 @@ export function readRoute(href: string, clips: readonly Clip[] = []) {
   const route = match?.route.id;
   const sceneRoute = (route === 'scene' || route === 'dub') && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(params.sceneName ?? '');
   const packRoute = route === 'pack' && /^pack_[A-Za-z0-9_-]{1,80}$/.test(params.packId ?? '');
+  const shareRoute = route === 'share' && /^shr_[A-Za-z0-9_-]{24}$/.test(params.shareId ?? '');
   return {
-    page: route === 'dubs' ? 'dubs' : route === 'packs' ? 'packs' : packRoute ? 'pack' : sceneRoute ? 'scene' : route === 'home' || route === 'library' && (folder || params.folder === 'all') ? 'library' : 'not-found',
+    shareId: shareRoute ? params.shareId : undefined,
+    page: shareRoute ? 'share' : route === 'dubs' ? 'dubs' : route === 'owner' ? 'owner' : route === 'packs' ? 'packs' : packRoute ? 'pack' : sceneRoute ? 'scene' : route === 'home' || route === 'library' && (folder || params.folder === 'all') ? 'library' : 'not-found',
     directory: route === 'home',
     language: pathLanguage(url.pathname) ?? 'zh-CN',
     slug: clip?.slug ?? (sceneRoute ? params.sceneName! : ''),

@@ -36,7 +36,8 @@ const scenes = [
 const id = prefix => prefix + '_' + randomBytes(6).toString('base64url');
 await mkdir(directory, { recursive: true });
 for (const entry of scenes) {
-  const path = sceneFolder(entry.slug);
+  const franchise = entry.slug === 'onions' ? 'Shrek' : 'SpongeBob SquarePants';
+  const path = sceneFolder(entry.slug, franchise, entry.tags);
   await mkdir(path, { recursive: true });
   let previous;
   try { previous = JSON.parse(await readFile(path + '/scene.json', 'utf8')); } catch (error) { if (error.code !== 'ENOENT') throw error; }
@@ -47,7 +48,7 @@ for (const entry of scenes) {
     description:'成人原型配音测试；选角色，听原声，录下自己的版本。', duration:entry.duration, video:`${entry.slug}-v1.mp4`, poster:previous?.poster, waveform:previous?.waveform, wordTiming:previous?.wordTiming, roles,
     lines:entry.lines.map(([role,start,end,text,hint],i) => ({ id:previous?.lines[i]?.id ?? id('line'),roleId:roles[role].id,start,end,text,hint, words:previous?.lines[i]?.text === text && previous.lines[i].start === start && previous.lines[i].end === end ? previous.lines[i].words : undefined })),
     rightsStatus:'redistribution-not-cleared',
-    credit:{ title:entry.slug==='onions' ? 'Shrek' : 'SpongeBob SquarePants', attribution:entry.slug==='onions' ? '原作：DreamWorks Animation' : '原作：Nickelodeon / Viacom', source:entry.source, licence:'未确认再分发许可', licenceUrl:'https://www.youtube.com/howyoutubeworks/policies/copyright/', changes:entry.changes },
+    credit:{ title:franchise, attribution:entry.slug==='onions' ? '原作：DreamWorks Animation' : '原作：Nickelodeon / Viacom', source:entry.source, licence:'未确认再分发许可', licenceUrl:'https://www.youtube.com/howyoutubeworks/policies/copyright/', changes:entry.changes },
   };
   await writeFile(path + '/scene.json', JSON.stringify(scene, null, 2) + '\n');
   const args = ['-hide_banner','-loglevel','error'];

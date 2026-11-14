@@ -1,6 +1,7 @@
 // Local authoring paths only. Runtime content is fetched from the published OSS catalog.
 import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
+import { franchiseGroup } from '../src/franchises.ts';
 
 const index = JSON.parse(await readFile('content/catalog.json', 'utf8'));
 export const packs = await Promise.all(index.packs.map(async entry => ({
@@ -9,10 +10,17 @@ export const packs = await Promise.all(index.packs.map(async entry => ({
 })));
 export const catalog = packs.flatMap(pack => pack.value.scenes);
 
-export function sceneFolder(slug, cohort = 'older-audience') {
-  const pack = packs.find(pack => pack.value.scenes.some(scene => scene.slug === slug))
-    ?? packs.find(pack => pack.value.scenes.some(scene => scene.cohort === cohort));
-  if (!pack) throw new Error(`No content pack for ${slug} (${cohort}). Create a pack before authoring its scenes.`);
+function destinationPack(slug, source, tags = []) {
+  const franchise = source === undefined ? undefined : franchiseGroup({ note: source, tags });
+  const owner = packs.find(pack => pack.value.scenes.some(scene => scene.slug === slug));
+  if (owner && (!franchise || owner.value.franchise === franchise)) return owner;
+  const candidates = packs.filter(pack => pack.value.franchise === franchise);
+  if (candidates.length !== 1) throw new Error(`${candidates.length ? 'Ambiguous' : 'No'} content pack for ${slug} (${franchise ?? 'franchise required'}). Create or select a pack before authoring its scenes.`);
+  return candidates[0];
+}
+
+export function sceneFolder(slug, franchise, tags) {
+  const pack = packs.find(pack => pack.value.scenes.some(scene => scene.slug === slug)) ?? destinationPack(slug, franchise, tags);
   const scene = pack.value.scenes.find(scene => scene.slug === slug);
   return dirname(join(dirname(pack.file), scene?.manifest ?? `scenes/${slug}/scene.json`));
 }
@@ -26,10 +34,9 @@ export async function writeCatalog(entries = catalog) {
   }
   const contents = new Map(packs.map(pack => [pack, []]));
   const roleIds = new Map(packs.map(pack => [pack, new Set()]));
-  for (const entry of entries) {
-    const pack = packs.find(pack => pack.value.scenes.some(scene => scene.cohort === entry.cohort));
-    if (!pack) throw new Error(`No content pack for category ${entry.cohort}`);
-    const folder = sceneFolder(entry.slug, entry.cohort);
+  const assignments = entries.map(entry => ({ entry, pack: destinationPack(entry.slug, entry.note, entry.tags) }));
+  for (const { entry, pack } of assignments) {
+    const folder = sceneFolder(entry.slug, entry.note, entry.tags);
     const manifest = `scenes/${entry.slug}/scene.json`;
     const target = dirname(join(dirname(pack.file), manifest));
     if (folder !== target) {

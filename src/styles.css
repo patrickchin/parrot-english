@@ -152,8 +152,11 @@ button:disabled { cursor: not-allowed; }
 .result-summary { line-height: 16px; }
 .result-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: auto; }
 .result-actions > button { min-height: 56px; padding: 10px 8px; font-size: 16px; gap: 8px; }
-.dub-download { display: grid; gap: 4px; }
+.dub-download { display: grid; gap: 10px; }
 .dub-download > button { min-height: 56px; font-size: 18px; }
+.dub-share-actions, .dub-share-link { display: grid; gap: 12px; }
+.dub-share-note, .dub-share-link > p { color: var(--muted-foreground); font-size: 13px; line-height: 1.6; }
+.dub-share-link > label { font-size: 14px; font-weight: 600; }
 .player-result .practice-secondary { margin-top: 4px; }
 .player-footer { flex: none; width: 100%; max-width: 1280px; margin-inline: auto; padding: 2px 16px max(2px, env(safe-area-inset-bottom)); display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0 12px; }
 .player-error { margin-top: 10px; }
@@ -291,8 +294,8 @@ button:disabled { cursor: not-allowed; }
 .pack-cover { display: grid; place-items: center; width: 100%; aspect-ratio: 16/9; overflow: hidden; background: var(--accent); color: var(--accent-foreground); }
 .pack-cover img { width: 100%; height: 100%; min-height: 0; object-fit: cover; }
 .pack-card-copy { display: flex; flex: 1; flex-direction: column; gap: 10px; padding: 20px; }
-.pack-card-copy h2 { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 22px; font-weight: 650; line-height: 1.3; overflow-wrap: anywhere; }
-.pack-card-copy h2 > span { min-width: 0; }
+.pack-card-copy :is(h2, h3) { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 22px; font-weight: 650; line-height: 1.3; overflow-wrap: anywhere; }
+.pack-card-copy :is(h2, h3) > span { min-width: 0; }
 .pack-description { max-width: 72ch; color: var(--muted-foreground); font-size: 15px; line-height: 1.65; overflow-wrap: anywhere; }
 .pack-meta { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 20px; color: var(--muted-foreground); font-size: 13px; line-height: 1.6; }
 .pack-meta > span:last-child { font-variant-numeric: tabular-nums; }
@@ -301,11 +304,51 @@ button:disabled { cursor: not-allowed; }
 .pack-detail-heading > .library-back { margin-bottom: 20px; }
 .pack-detail-heading .pack-description { margin-top: 12px; font-size: 16px; }
 .pack-detail-heading .pack-meta { margin-top: 14px; }
+.pack-filters { display: flex; align-items: end; gap: 20px; margin: 0 0 28px; }
+.pack-filters label { display: grid; gap: 8px; min-width: 0; font-size: 14px; font-weight: 600; }
+.pack-filters .pack-query { flex: 1; }
+.owner-packs { max-width: 880px; }
+.owner-packs .pack-browser-heading > .library-back { margin-bottom: 20px; }
+.owner-panel { display: grid; gap: 16px; padding: 28px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); }
+.owner-panel > h2, .owner-panel-heading h2 { font-size: 20px; font-weight: 650; }
+.owner-panel > p, .owner-pack-preview > p { color: var(--muted-foreground); font-size: 15px; line-height: 1.65; }
+.owner-panel > label { font-size: 14px; font-weight: 600; }
+.owner-unlock { max-width: 560px; }
+.owner-unlock > button { justify-self: start; padding-inline: 24px; }
+.owner-panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.owner-file-input { min-height: 52px; height: auto; padding: 10px 12px; background: var(--secondary); line-height: 1.5; }
+.owner-file-input::file-selector-button { min-height: 30px; margin-right: 12px; font: inherit; }
+.owner-pack-preview { padding-top: 20px; border-top: 1px solid var(--border); }
+.owner-pack-preview h3 { margin-bottom: 8px; font-size: 24px; line-height: 1.3; font-weight: 650; overflow-wrap: anywhere; }
+.owner-pack-preview dl { display: grid; gap: 10px; margin-top: 20px; }
+.owner-pack-preview dl > div { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 16px; font-size: 14px; line-height: 1.6; }
+.owner-pack-preview dt { color: var(--muted-foreground); }
+.owner-pack-preview dd { overflow-wrap: anywhere; }
+.owner-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.owner-actions > button { min-height: 44px; padding-inline: 20px; }
+.owner-upload-progress { display: grid; gap: 10px; font-size: 14px; }
+.owner-upload-progress progress { width: 100%; height: 10px; accent-color: var(--primary); }
+.owner-current-file { color: var(--muted-foreground); overflow-wrap: anywhere; }
+.owner-error { margin-top: 20px; padding: 16px 20px; border: 1px solid var(--destructive); border-radius: var(--radius); color: var(--destructive); font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.owner-error p + p { margin-top: 6px; }
+.owner-published { display: grid; justify-items: start; gap: 12px; }
+.owner-pack-link { display: inline-flex; align-items: center; min-height: 44px; text-decoration: underline; text-underline-offset: 4px; }
+.owner-pack-link:focus-visible { outline: 3px solid var(--ring); outline-offset: 4px; }
+.owner-management { margin-top: 28px; }
+.owner-managed-list { display: grid; gap: 20px; }
+.owner-managed-list > li { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+.owner-managed-list > li:last-child { padding-bottom: 0; border-bottom: 0; }
+.owner-managed-list h3 { font-size: 17px; font-weight: 650; overflow-wrap: anywhere; }
+.owner-managed-list p { margin-top: 6px; color: var(--muted-foreground); font-size: 13px; line-height: 1.5; }
 @media (max-width: 639px) {
   .pack-grid { grid-template-columns: minmax(0, 1fr); }
   .pack-browser-heading { margin-block: 4px 24px; }
   .pack-card-copy { padding: 18px; }
-  .pack-card-copy h2 { font-size: 20px; }
+  .pack-card-copy :is(h2, h3) { font-size: 20px; }
+  .pack-filters { align-items: stretch; flex-direction: column; gap: 16px; }
+  .owner-panel { padding: 20px; }
+  .owner-pack-preview dl > div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .owner-managed-list > li { align-items: start; flex-direction: column; gap: 12px; }
 }
 @media (min-width: 640px) and (max-width: 1023px) {
   .scene-shelf { grid-template-columns: repeat(3, minmax(0, 1fr)); }

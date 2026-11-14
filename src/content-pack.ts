@@ -12,10 +12,10 @@ export type PackLocales = Record<string, {
   scenes: Record<string, SceneText>; roles: Record<string, RoleText>;
   notices?: { library: string; scene: string };
 }>;
-export type PublishedPack = { id: string; title: string; description: string; author: string; sceneCount: number; poster?: string };
+export type PublishedPack = { id: string; title: string; franchise?: string; uploader: string; description: string; author: string; sceneCount: number; poster?: string };
 export type ContentCatalog = { clips: Clip[]; packs: PublishedPack[]; locales: PackLocales };
-export type Catalog = { version: 1; packs: { id: string; manifest: string }[] };
-export type Pack = { version: 1; id: string; title: string; description: string; author: string; scenes: Omit<Clip, 'packId' | 'notices'>[]; locales?: PackLocales };
+export type Catalog = { version: 1; packs: { id: string; manifest: string; uploader: string }[] };
+export type Pack = { version: 1; id: string; title: string; franchise?: string; description: string; author: string; scenes: Omit<Clip, 'packId' | 'notices'>[]; locales?: PackLocales };
 
 const invalid = () => new Error('errors.contentLoad');
 const record = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -30,7 +30,7 @@ export function validateCatalog(value: unknown): Catalog {
   if (!record(value) || value.version !== 1 || !Array.isArray(value.packs) || value.packs.length > 100) throw invalid();
   const ids = new Set();
   for (const pack of value.packs) {
-    if (!record(pack) || !id(pack.id, 'pack') || ids.has(pack.id) || !relativeContentPath(pack.manifest)) throw invalid();
+    if (!record(pack) || !id(pack.id, 'pack') || ids.has(pack.id) || !relativeContentPath(pack.manifest) || !text(pack.uploader, 200) || !pack.uploader.trim()) throw invalid();
     ids.add(pack.id);
   }
   return value as Catalog;
@@ -57,6 +57,7 @@ function validateLocales(value: unknown, sceneIds: Set<string>): asserts value i
 export function validatePack(value: unknown, expectedId: string): Pack {
   if (!record(value) || value.version !== 1 || value.id !== expectedId || !id(value.id, 'pack') ||
       !text(value.title, 200) || !value.title.trim() || !text(value.description) || !text(value.author, 200) ||
+      (value.franchise !== undefined && (!text(value.franchise, 200) || !value.franchise.trim())) ||
       !Array.isArray(value.scenes) || value.scenes.length > 500) throw invalid();
   const ids = new Set<string>(), routes = new Set<string>();
   for (const scene of value.scenes) {
@@ -101,12 +102,12 @@ export async function loadContent(url: string, signal?: AbortSignal): Promise<Co
   const catalog = validateCatalog(await readJson(catalogUrl, signal, 64 * 1024));
   const packs = await Promise.all(catalog.packs.map(async entry => {
     const manifest = storageUrl(entry.manifest, catalogUrl, 'json');
-    return { pack: validatePack(await readJson(manifest, signal), entry.id), manifest };
+    return { pack: validatePack(await readJson(manifest, signal), entry.id), manifest, uploader: entry.uploader };
   }));
   const clips: Clip[] = [], publishedPacks: PublishedPack[] = [], locales: PackLocales = {};
   const ids = new Set(), slugs = new Set(), routes = new Set();
-  for (const { pack, manifest } of packs) {
-    publishedPacks.push({ id: pack.id, title: pack.title, description: pack.description, author: pack.author,
+  for (const { pack, manifest, uploader } of packs) {
+    publishedPacks.push({ id: pack.id, title: pack.title, franchise: pack.franchise, uploader, description: pack.description, author: pack.author,
       sceneCount: pack.scenes.length, poster: pack.scenes[0] ? storageUrl(pack.scenes[0].poster, manifest, 'jpg') : undefined });
     const notices: Clip['notices'] = {};
     for (const [language, resource] of Object.entries(pack.locales ?? {})) {

@@ -1,0 +1,52 @@
+# Provider Git build only; see docs/owner-upload-deployment.md.
+# The owner trigger is manual: native Bearer setup/readback are prerequisites.
+edition: 3.0.0
+name: parrotbook-owner-packs
+resources:
+  owner-api:
+    component: fc3
+    props:
+      region: cn-hongkong
+      functionName: parrotbook-owner-packs
+      runtime: nodejs20
+      handler: index.handler
+      code: ./api/dist
+      memorySize: 512
+      timeout: 120
+      internetAccess: true
+      role: ${env('OWNER_API_EXECUTION_ROLE_ARN')}
+      environmentVariables:
+        OWNER_API_BUCKET: parrotbook-media-f6e09412
+        OWNER_API_REGION: oss-cn-hongkong
+        OWNER_API_ORIGIN: https://parrotbook.com
+        OWNER_API_REVISION: ${env('OWNER_API_REVISION')}
+      # Native Node processes one request per instance. This caps the function.
+      # ponytail: one global writer; revisit storage transactions before scaling.
+      concurrencyConfig:
+        reservedConcurrency: 1
+  guest-sharing-api:
+    component: fc3
+    props:
+      region: cn-hongkong
+      functionName: parrotbook-guest-shares
+      runtime: nodejs20
+      handler: share.handler
+      code: ./api/dist
+      memorySize: 512
+      timeout: 60
+      internetAccess: true
+      role: ${env('SHARE_API_EXECUTION_ROLE_ARN')}
+      environmentVariables:
+        SHARE_API_BUCKET: parrotbook-media-f6e09412
+        SHARE_API_REGION: oss-cn-hongkong
+        SHARE_API_ORIGIN: https://parrotbook.com
+        SHARE_API_DAILY_LIMIT: '100'
+      # The OSS ticket count is correct only with a single global invocation.
+      concurrencyConfig:
+        reservedConcurrency: 1
+      triggers:
+        - triggerName: guest-http
+          triggerType: http
+          triggerConfig:
+            authType: anonymous
+            methods: [GET, POST, DELETE, OPTIONS]

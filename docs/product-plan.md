@@ -5,8 +5,11 @@ Date: 2026-10-28
 Software friend-test direction updated 2026-11-14: separate software delivery
 from creator-permission work for the current owner-directed test. Use the
 existing authored scenes as owner-published content packs that friends can
-browse and select. Only the owner publishes packs through the authenticated
-content command; there is no user pack-upload interface. Creator permissions
+browse and select. Only Patrick publishes packs through the owner API and private upload page;
+public users browse and search without accounts. The public catalogue is called
+Packs, replacing the separate tag directory. Existing tag groups become 21 packs
+containing the same 128 scenes, all labelled “Uploaded by Patrick.” The owner
+can upload, hide, show, or delete a pack independently of player deployment. Creator permissions
 are deferred for this work, rather than a blocker on implementing or testing
 the software. Existing permission labels remain factual metadata; no permission
 clearance is asserted. Child-release and wider public-operation work remain
@@ -36,9 +39,9 @@ than claiming a universal popularity ranking. Continue adding suitable local
 review scenes through the existing authoring workflow. Keep original speakers,
 complete exchanges, source credits, age guidance, and publication review. See
 [the discovery workflow](meme-discovery.md) and its first research batch.
-Internet meme clips share one **Memes** browse tag; creator names stay in source
-credits and searchable metadata. New meme sources must join this tag automatically.
-Film/TV franchises retain their own tags.
+Internet meme clips share one **Memes** pack; creator names stay in source
+credits and searchable metadata. New meme sources join this pack automatically.
+Film/TV franchises have their own packs; no separate tag catalogue is shown.
 No fixed schedule or unattended worker is configured; continue discovery during
 content authoring and publish verified batches when ready.
 
@@ -51,19 +54,22 @@ ESA application code. Redistribution rights remain unconfirmed. See
 actual state. Adult browser testing is complete for the documented paths;
 physical-device validation and any child pilot remain subsequent work.
 
-Adult POC sharing (2026-11-11): after completing a dub with at least one recorded
-line, testers can download an MP4 generated entirely on their device, then send
-or upload the file using their usual messaging or social apps. This adult-only
-test flow has no parent/child approval step, account, recording upload, or hosted
-sharing page. It does not change the guardian setup planned for a later child
-release. Current scene redistribution permissions remain unconfirmed.
+Adult friend-test sharing direction (2026-11-14): testers can practice and share
+without an account. Generate an MP4 on the device, then use its native share
+sheet or download it. An explicit Create share link action also uploads that
+video privately to OSS and produces an unlisted playback link valid for seven
+days. A removal capability stays on the creator’s device. There is no public
+recordings feed or automatic upload. This iteration adds a separate guest FC
+API; hosted setup and real browser verification remain required before enabling
+links. It does not change the guardian setup planned for a later child release.
+Current scene redistribution permissions remain unconfirmed.
 
 Adult POC saving (2026-11-11): accepted recordings and partial/completed lesson
 state autosave in browser IndexedDB. Each started session has its own `dub_…`
 identifier. My dubs lists saved attempts for continuing or deleting; starting
 over retains the earlier session. Saving preserves roles, line position,
-skipped/recorded turns, waveforms, and any selected local source file. There is
-no server recording store or account. Save failures remain visible and keep the
+skipped/recorded turns, waveforms, and any selected local source file. Drafts remain local; the optional finished-video sharing service is separate
+from draft storage. There is no learner account. Save failures remain visible and keep the
 current takes in memory for retry. Browser persistence is requested where
 supported, but clearing site data removes the drafts, and downloaded videos are
 the user's backup. This adult-test behavior supersedes session-only storage for

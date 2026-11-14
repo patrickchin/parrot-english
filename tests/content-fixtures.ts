@@ -9,7 +9,7 @@ export type FixtureClip = {
 };
 export const contentRoot = new URL('../content/', import.meta.url);
 export const catalog = JSON.parse(readFileSync(new URL('catalog.json', contentRoot), 'utf8')) as {
-  version: number; packs: { id: string; manifest: string }[];
+  version: number; packs: { id: string; manifest: string; uploader: string }[];
 };
 export const packs = catalog.packs.map(entry => ({
   entry, file: new URL(entry.manifest, contentRoot),

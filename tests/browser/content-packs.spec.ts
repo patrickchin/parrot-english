@@ -21,7 +21,7 @@ function communityPack() {
     scenes: { [scene.id]: { title: scene.title, licence: scene.credit.licence, changes: scene.credit.changes } },
     roles: { [scene.roles[0].id]: { name: 'Sam', hint: scene.roles[0].hint } },
   }]));
-  return { scene, pack: { version: 1, id: communityId, title: 'Community test', description: 'A dynamically published test pack.', author: 'Community creator', scenes: [summary], locales } };
+  return { scene, pack: { version: 1, id: communityId, title: 'Community test', franchise: 'Original', description: 'A dynamically published test pack.', author: 'Community creator', scenes: [summary], locales } };
 }
 
 test('publishing and withdrawing a pack updates discovery, search, playback and saved dubs without rebuilding', async ({ page }) => {
@@ -36,7 +36,7 @@ test('publishing and withdrawing a pack updates discovery, search, playback and 
   await search.fill('communitymagic');
   await expect(page.getByRole('button', { name: 'Choose scene: Community hello', exact: true })).toHaveCount(0);
 
-  current.packs.push({ id: communityId, manifest: communityPath });
+  current.packs.push({ id: communityId, manifest: communityPath, uploader: 'Patrick' });
   await page.reload();
   await search.fill('communitymagic');
   await page.getByRole('button', { name: 'Choose scene: Community hello', exact: true }).click();
@@ -84,17 +84,17 @@ test('failed or malformed packs show a retryable error and My dubs stays accessi
   await expect(page.getByRole('button', { name: 'Start dubbing', exact: true })).toHaveCount(0);
   await (await headerDestination(page, 'My dubs')).click();
   await expect(page.getByRole('heading', { level: 1, name: 'My dubs', exact: true })).toBeVisible();
-  await (await headerDestination(page, 'Scene library')).click();
+  await (await headerDestination(page, 'Packs')).click();
   broken = false;
   await page.getByRole('button', { name: 'Reload', exact: true }).click();
-  await expect(page.getByRole('searchbox', { name: 'Find a franchise or tag', exact: true })).toBeVisible();
+  await expect(page.getByRole('searchbox', { name: 'Find a pack', exact: true })).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
 test('an empty published catalog keeps categories and a single meaningful heading usable', async ({ page }) => {
   await page.route(catalogUrl, route => route.fulfill({ json: { version: 1, packs: [] } }));
   await page.goto('/en/');
-  await expect(page.getByRole('heading', { level: 1, name: 'Scene library', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Packs', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(0);
   await page.getByRole('link', { name: 'All scenes', exact: true }).click();
   await expect(page.getByRole('status')).toBeVisible();
