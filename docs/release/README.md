@@ -1,6 +1,6 @@
 # Parrotbook release board
 
-Updated 2026-11-14, Asia/Shanghai. Codex leads implementation, specialist agents,
+Updated 2026-11-15, Asia/Shanghai. Codex leads implementation, specialist agents,
 integration, and verification in this chat. Patrick owns participant contact and
 business decisions. [Product plan](../product-plan.md) owns the broader scope.
 
@@ -59,13 +59,13 @@ Nothing in this section implies the new API is hosted.
 
 | Work | Owner | State / next action |
 | --- | --- | --- |
-| One Packs catalogue and Patrick attribution | Delivery + content + UI | Implemented locally: 21 packs / 128 scenes; scene/waveform bytes preserved. Verify integrated navigation and browse/search. |
-| Owner API + private management page | Backend + UI | Implemented locally; validate upload/retry, private staging, publication, hide/show/delete, and independent review. |
-| Owner CLI uses the same serialized API | Content/backend | Replace direct catalog writes with the owner API; retain local validate/stage. Bootstrap with an explicit catalogue replacement. |
-| Guest file and link sharing | Backend + UI + delivery | Private sharing backend implemented; integrate native file share, explicit upload, playback, expiry, and creator removal. |
-| Hosted API setup | Operations + delivery | No FC functions or roles exist yet. Native Git pipeline, roles, owner Bearer trigger, HTTPS domains, OSS PUT CORS, concurrency caps, and guest cleanup remain to configure and smoke-test. [Runbook](../owner-upload-deployment.md). |
-| Candidate verification/review | QA + independent reviewer | Run TypeScript/app/content/boundary/API/build and rendered browser checks against the final source. Record actual failures and limits. |
-| New release and catalogue publication | Delivery | Prepare reviewable source and deployment evidence; merge only through normal Git deployment. New UI must not require the new catalogue schema before that catalogue is published. |
+| One Packs catalogue and Patrick attribution | Delivery + content + UI | Content PR #275 merged as e8f9878b and published at 2026-11-14T17:26:27Z: 21 packs / 128 scenes, all uploaded by Patrick. All 277 JSON objects and 513 media references verified. New flat Packs UI remains in PR #276. |
+| Owner API + private management page | Backend + UI | Implemented and independently reviewed; local API/browser checks cover upload/retry, staging, publication, hide/show/delete. Hosted setup remains. |
+| Owner CLI uses the same serialized API | Content/backend | Implemented: default merge preserves unrelated packs; explicit replacement is available. Publish the initial uploader-complete catalogue before enabling the new API. |
+| Guest file and link sharing | Backend + UI + delivery | Implemented and locally verified: native file share/download, explicit upload, playback, expiry, and creator removal. Hosted API acceptance remains. |
+| Hosted API setup | Operations + delivery | Alibaba sign-in verified; no FC functions or project roles created. Native Git import requests broad GitHub access including delete_repo; creating its default IAM role was rejected by automatic approval review. Recommend main-only GitHub Actions with a separate scoped OIDC role; requires the owner's deployment-policy exception. [Decision](api-deployment-decision.md), [runbook](../owner-upload-deployment.md). |
+| Candidate verification/review | QA + independent reviewer | Verified source 20479f33: TypeScript, app/content/boundary/API, player/API packaging, and 316 browser passes / 16 intentional skips. Physical phones and hosted provider behavior remain separate. |
+| New release and catalogue publication | Delivery | Catalogue prerequisite is complete. Application PR #276 remains unmerged; API hosting and hosted acceptance are pending. Player still serves c527d8cf. |
 | Physical-device friend test | Patrick + QA | Test complete recording/replay, sharing, resume/delete, mic deny/retry, app switching, audio routes, and network on actual phones. No device row has passed yet. |
 | WebKit timing investigation | Engineering + QA | Gather physical-device evidence before weakening guards or changing the audio model. Preserve diagnostics. |
 | ESA continuation | Patrick + operations | Site plan expires **2026-11-29 00:00 Asia/Shanghai**, renewal normal / duration 0. Confirm continuation and cost before that date; no purchase or billing change authorized or made. |
@@ -80,10 +80,9 @@ gateway response wait; they do not introduce a database or learner accounts.
 
 Latest [candidate verification](pack-management-verification.md): TypeScript,
 39 app / 17 content / 1 boundary / 28 API tests pass. Focused browser coverage
-resolves to 281 passes / 16 intentional skips after targeted reruns. Extra visual
-and built-player checks are awaiting recovery from independently diagnosed local
-network-port exhaustion; Git pushes are affected too. No unrelated process or
-OS setting was changed. Earlier assessments are
+resolves to 316 passes / 16 intentional skips after targeted reruns and the final
+23 built-player / 30 visual checks. Network exhaustion cleared before the new
+checks; Git pushes succeeded. No unrelated process or OS setting was changed. Earlier assessments are
 historical evidence, not checks of this increment:
 [product](product-readiness.md), [engineering](engineering-readiness.md),
 [content](content-readiness.md).

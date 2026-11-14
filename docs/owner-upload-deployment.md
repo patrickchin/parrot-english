@@ -4,6 +4,15 @@ Status: deployment preparation only. These files do not create a function,
 GitHub connection, trigger, domain, role, certificate, or upload key. A hosted
 owner API has not been verified by this runbook.
 
+2026-11-15 update: console sign-in is complete, but the repository import path
+requests GitHub `repo,repo:status,delete_repo`. No GitHub grant was accepted.
+Automatic approval review rejected creation of the missing default IAM role;
+no role was created. The [deployment decision](release/api-deployment-decision.md)
+proposes a narrower main-only GitHub Actions/OIDC path. It is **not approved**;
+the provider-pipeline instructions below remain the current deployment rule.
+The 21-pack catalogue prerequisite is now published; see the
+[publication record](release/pack-management-verification.md#catalogue-publication).
+
 ## Storage and execution
 
 ESA continues to serve the player and owner upload page. One Alibaba Function
