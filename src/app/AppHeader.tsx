@@ -6,7 +6,7 @@ import { LanguageSelect } from './LanguageSelect';
 import { useLayoutEffect, useState, type MouseEvent } from 'react';
 import { Menu } from '@base-ui/react/menu';
 import { Bird, Menu as MenuIcon } from 'lucide-react';
-import { dubsPath } from './routes';
+import { dubsPath, packsPath } from './routes';
 import { useSceneNavigation } from './useSceneNavigation';
 import { languagePath } from '../locale';
 
@@ -16,6 +16,7 @@ export function AppHeader({ onHelp, onBack }: { onHelp?: () => void; onBack?: ()
   const navigation = useSceneNavigation();
   const destinations = [
     { page: 'library', label: "navigation.library", href: languagePath('/', language) },
+    { page: 'packs', label: "navigation.packs", href: packsPath(language) },
     { page: 'dubs', label: "navigation.dubs", href: dubsPath(language) },
   ];
   function follow(event: MouseEvent<HTMLAnchorElement>, href: string) {
@@ -32,11 +33,11 @@ export function AppHeader({ onHelp, onBack }: { onHelp?: () => void; onBack?: ()
     {onBack && <Button variant="ghost" size="icon" onClick={onBack} aria-label={t("navigation.backToScenes")} className="size-11 shrink-0"><Icon name="back" /></Button>}
     <a href={languagePath('/', language)} onClick={e => { if (onBack) { e.preventDefault(); onBack(); } }} className="app-wordmark min-w-0 flex-1 rounded-lg font-display text-base max-[359px]:text-sm font-bold tracking-tight focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-brand sm:text-3xl" aria-label={t("navigation.home")}><Bird className="app-brand-mark" strokeWidth={2.2} aria-hidden="true" /><span>parrotbook</span></a>
     {!onBack && <nav aria-label={t("navigation.main")} className="app-navigation">
-      <div className="app-navigation-links">{destinations.map(item => <a key={item.page} href={item.href} aria-current={navigation.page === item.page ? 'page' : undefined} onClick={event => follow(event, item.href)}>{t(item.label)}</a>)}</div>
+      <div className="app-navigation-links">{destinations.map(item => <a key={item.page} href={item.href} aria-current={navigation.page === item.page || item.page === 'packs' && navigation.page === 'pack' ? 'page' : undefined} onClick={event => follow(event, item.href)}>{t(item.label)}</a>)}</div>
       <Menu.Root>
         <Menu.Trigger aria-label={t("navigation.main")} className="app-navigation-trigger"><MenuIcon size={20} strokeWidth={1.8} aria-hidden="true" /></Menu.Trigger>
         <Menu.Portal><Menu.Positioner align="end" sideOffset={8} className="app-select-positioner"><Menu.Popup className="app-select-popup">
-          {destinations.map(item => <Menu.LinkItem key={item.page} href={item.href} aria-current={navigation.page === item.page ? 'page' : undefined} closeOnClick className="app-select-option" onClick={event => follow(event, item.href)}>{t(item.label)}</Menu.LinkItem>)}
+          {destinations.map(item => <Menu.LinkItem key={item.page} href={item.href} aria-current={navigation.page === item.page || item.page === 'packs' && navigation.page === 'pack' ? 'page' : undefined} closeOnClick className="app-select-option" onClick={event => follow(event, item.href)}>{t(item.label)}</Menu.LinkItem>)}
         </Menu.Popup></Menu.Positioner></Menu.Portal>
       </Menu.Root>
     </nav>}

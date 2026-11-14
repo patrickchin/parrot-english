@@ -19,6 +19,13 @@ npm run content:stage
 npm run content:publish
 ```
 
+Validation and staging are local operations without cloud credentials. The
+owner's authenticated CLI is used only for publication or withdrawal. See the
+[owner pack quickstart](../docs/release/owner-pack-quickstart.md) for the verified
+128-scene artifact and commands. Staging packages referenced local files and
+retains existing OSS media URLs; it does not download a portable media archive
+or add a learner upload flow.
+
 Publication is explicit: committing pack changes does not publish them.
 `content:publish` uploads content to Alibaba OSS and updates its catalog; it does
 not build or deploy the player. Player releases use their separate application

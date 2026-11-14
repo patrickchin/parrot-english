@@ -2,6 +2,16 @@
 
 Date: 2026-10-28
 
+Software friend-test direction updated 2026-11-14: separate software delivery
+from creator-permission work for the current owner-directed test. Use the
+existing authored scenes as owner-published content packs that friends can
+browse and select. Only the owner publishes packs through the authenticated
+content command; there is no user pack-upload interface. Creator permissions
+are deferred for this work, rather than a blocker on implementing or testing
+the software. Existing permission labels remain factual metadata; no permission
+clearance is asserted. Child-release and wider public-operation work remain
+separate from this friend test.
+
 Audience and visual direction updated 2026-11-12: Parrotbook serves independent
 learners across ages, including children, teens, and adults. Use the green Pop
 Studio identity throughout the application: vivid green, forest ink, mint

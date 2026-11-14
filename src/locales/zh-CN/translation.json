@@ -149,7 +149,8 @@
     "main": "主导航",
     "howToDub": "怎么配音？",
     "language": "界面语言",
-    "dubs": "我的配音"
+    "dubs": "我的配音",
+    "packs": "内容包"
   },
   "library": {
     "sceneCount": "{{count}} 个片段",
@@ -209,5 +210,14 @@
   },
   "app": {
     "title": "Parrotbook · 英语配音"
+  },
+  "packs": {
+    "introduction": "选择一个内容包，再挑选想配音的片段。",
+    "allPacks": "全部内容包",
+    "by": "作者：{{author}}",
+    "scenes": "包内片段",
+    "emptyTitle": "暂无内容包",
+    "emptyDescription": "新内容包发布后会显示在这里。",
+    "emptyPack": "此内容包暂无片段"
   }
 }

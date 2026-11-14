@@ -2,7 +2,21 @@ import { scenePath } from './scene-path';
 import { test, expect } from './fixtures';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { clips } from '../content-fixtures';
+import { clips, packs } from '../content-fixtures';
+
+test('the production build browses published packs and reloads the selected pack', async ({ page }) => {
+  const response = await page.goto('/en/packs');
+  expect(response?.status()).toBe(200);
+  const gallery = page.getByRole('navigation', { name: 'Content packs', exact: true });
+  await expect(gallery.getByRole('link')).toHaveCount(packs.length);
+  const pack = packs[0];
+  await gallery.getByRole('link', { name: pack.data.title, exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1, name: pack.data.title, exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(pack.data.scenes.length);
+  await page.reload();
+  await expect(page.getByRole('heading', { level: 1, name: pack.data.title, exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(pack.data.scenes.length);
+});
 
 for (const clip of clips) test(`hosted ${clip.slug} opens and plays without a device file`, async ({ page }) => {
   await page.goto(scenePath(clip.slug));

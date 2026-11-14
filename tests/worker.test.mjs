@@ -19,7 +19,7 @@ test('serves application assets, health, and HEAD requests without exposing unkn
 test('serves the app on page paths while missing assets and API routes stay 404', async () => {
   const worker = createWorker({ '/index.html': { type: 'text/html; charset=utf-8', body: 'app', encoding: 'utf8' } });
   const get = (path, method = 'GET') => worker.fetch(new Request('https://parrotbook.test' + path, { method }));
-  for (const path of ['/dubs', '/dubs/', '/en/dubs', '/zh/dubs/', '/library/teens', '/scenes/patrick', '/scenes/patrick/dubs/dub_abc123', '/scenes/patrick/', '/en', '/zh/', '/en/library/teens', '/zh/scenes/toy-story-infinity', '/en/scenes/patrick/dubs/dub_abc123', '/es/', '/ja/library/teens', '/ko/dubs', '/es/scenes/patrick', '/ja/scenes/patrick/dubs/dub_abc123']) {
+  for (const path of ['/dubs', '/dubs/', '/en/dubs', '/zh/dubs/', '/packs', '/en/packs', '/zh/packs/pack_test-AB_9', '/library/teens', '/scenes/patrick', '/scenes/patrick/dubs/dub_abc123', '/scenes/patrick/', '/en', '/zh/', '/en/library/teens', '/zh/scenes/toy-story-infinity', '/en/scenes/patrick/dubs/dub_abc123', '/es/', '/ja/library/teens', '/ko/dubs', '/es/scenes/patrick', '/ja/scenes/patrick/dubs/dub_abc123']) {
     const response = await get(path);
     assert.equal(response.status, 200);
     assert.match(response.headers.get('content-type'), /^text\/html/);
@@ -27,7 +27,7 @@ test('serves the app on page paths while missing assets and API routes stay 404'
     assert.equal(await response.text(), 'app');
     assert.equal(await (await get(path, 'HEAD')).text(), '');
   }
-  for (const path of ['/assets/missing.js', '/scenes/missing/scene.json', '/api/missing', '/scenes/patrick/missing.js', '/en/assets/missing.js', '/zh/api/health', '/fr/scenes/patrick']) {
+  for (const path of ['/assets/missing.js', '/packs/pack_test/pack.json', '/packs/invalid', '/scenes/missing/scene.json', '/api/missing', '/scenes/patrick/missing.js', '/en/assets/missing.js', '/zh/api/health', '/fr/scenes/patrick']) {
     assert.equal((await get(path)).status, 404);
   }
 });

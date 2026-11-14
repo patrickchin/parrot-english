@@ -1,0 +1,4 @@
+interface:
+  display_name: "Parrotbook Manager"
+  short_description: "Lead Parrotbook release and delivery cycles"
+  default_prompt: "Use $parrotbook-manager to advance Parrotbook's highest-priority release work and update the release board."

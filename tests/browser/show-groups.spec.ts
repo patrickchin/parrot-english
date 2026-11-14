@@ -4,8 +4,9 @@ import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-const creators = ['Apparently Kid', 'Steven He', 'Recess Therapy'];
-const franchises = [...new Set(clips.map(clip => clip.note))].filter(title => !creators.includes(title));
+const memeScenes = clips.filter(clip => clip.tags.includes('meme') && clip.tags.includes('internet'));
+const creators = [...new Set(memeScenes.map(clip => clip.note))];
+const franchises = [...new Set(clips.filter(clip => !memeScenes.includes(clip)).map(clip => clip.note))];
 const collections = ['All scenes', 'Memes', ...franchises];
 
 test('the first page puts tags and every franchise on one level without individual scene results', async ({ page }, info) => {
@@ -107,19 +108,19 @@ test('the featured pick stays fixed through directory, franchise, tag and search
 });
 
 
-test('creator franchises share a searchable Memes collection and keep their source names', async ({ page }) => {
+test('internet memes share a searchable collection and keep their source names', async ({ page }) => {
   await page.goto('/en/');
   const tags = page.getByRole('navigation', { name: 'Browse tags', exact: true });
-  await expect(tags.getByRole('link', { name: 'Memes', exact: true })).toHaveAccessibleDescription('3 scenes');
+  await expect(tags.getByRole('link', { name: 'Memes', exact: true })).toHaveAccessibleDescription(`${memeScenes.length} scenes`);
   for (const creator of creators) await expect(tags.getByRole('link', { name: creator, exact: true })).toHaveCount(0);
   await page.getByRole('searchbox').fill('steven');
   await expect(tags.getByRole('link')).toHaveCount(1);
   await tags.getByRole('link', { name: 'Memes', exact: true }).click();
   await expect(page.getByRole('heading', { level: 2, name: 'Memes', exact: true })).toBeVisible();
-  await expect(page.getByRole('listitem')).toHaveCount(3);
-  for (const creator of creators) await expect(page.getByRole('list').getByText(creator, { exact: true })).toBeVisible();
+  await expect(page.getByRole('listitem')).toHaveCount(memeScenes.length);
+  for (const clip of memeScenes) await expect(page.getByRole('button', { name: `Choose scene: ${clip.english}`, exact: true }).getByText(clip.note, { exact: true })).toBeVisible();
   await page.reload();
-  await expect(page.getByRole('listitem')).toHaveCount(3);
+  await expect(page.getByRole('listitem')).toHaveCount(memeScenes.length);
 });
 
 test('collection controls share one row and short collections leave room to scroll', async ({ page }) => {

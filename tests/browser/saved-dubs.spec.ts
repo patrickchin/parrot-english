@@ -5,6 +5,13 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type { Scene } from '../../src/scene';
 import { routeShortScene } from './short-scene';
+import { clips } from '../content-fixtures';
+
+function resumedUrl(url: string) {
+  const expected = new URL(url);
+  expected.searchParams.set('pack', clips.find(clip => clip.slug === 'patrick')!.packId);
+  return expected.href;
+}
 
 test.use({ sampleScene: true });
 async function shortScene() {
@@ -137,7 +144,7 @@ test('completed and partial attempts stay separate; restarting keeps history and
     if (info.project.name === 'chromium') { const folder = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english'); await mkdir(folder, { recursive: true }); await page.screenshot({ path: join(folder, `saved-dubs-${width}.png`), fullPage: true }); }
   }
   await history.getByRole('button', { name: '继续配音：你在找谁？，Sintel', exact: true }).click();
-  await expect(page).toHaveURL(firstUrl); await expect(page.getByRole('heading', { name: '你的配音，完成啦！', exact: true })).toBeVisible();
+  await expect(page).toHaveURL(resumedUrl(firstUrl)); await expect(page.getByRole('heading', { name: '你的配音，完成啦！', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '返回片段', exact: true }).click();
   await (await headerDestination(page, '我的配音')).click();
   const row = history.getByRole('listitem').filter({ has: page.getByRole('button', { name: '继续配音：你在找谁？，Sintel', exact: true }) });
@@ -146,7 +153,7 @@ test('completed and partial attempts stay separate; restarting keeps history and
   await expect(history.getByRole('listitem')).toHaveCount(1);
   await page.reload(); await expect(history.getByRole('listitem')).toHaveCount(1);
   await history.getByRole('button', { name: '继续配音：你在找谁？，旅人', exact: true }).click();
-  await expect(page).toHaveURL(secondUrl); await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
+  await expect(page).toHaveURL(resumedUrl(secondUrl)); await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
 });
 
 test('quota errors preserve the last saved attempt and in-memory take, then retry saves it', async ({ page }) => {

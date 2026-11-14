@@ -106,6 +106,7 @@ test('the expanded shelf finds scenes by Chinese, English, and film, and opens a
 
 test('the scene shelf stays a keyboard-accessible grid', async ({ page }) => {
   await page.goto('/library/older-audience');
+  await expect(page.getByRole('listitem')).toHaveCount(filmCount);
   await expect(page.getByRole('button', { name: '列表视图', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: '网格视图', exact: true })).toHaveCount(0);
   const first = page.getByRole('button', { name: '选择片段：不，这是派大星！', exact: true });
@@ -123,8 +124,13 @@ test('the scene shelf stays a keyboard-accessible grid', async ({ page }) => {
   const back = page.getByRole('button', { name: '返回片段', exact: true });
   await expect(back).toHaveText('');
   await back.click();
+  await expect(page).toHaveURL(/\/zh\/library\/all$/);
+  await expect(page.getByRole('heading', { level: 2, name: '全部片段', exact: true })).toBeVisible();
+  await expect(page.getByRole('listitem')).toHaveCount(clips.length);
   await page.reload();
-  await expect(page.getByRole('listitem')).toHaveCount(filmCount);
+  await expect(page).toHaveURL(/\/zh\/library\/all$/);
+  await expect(page.getByRole('heading', { level: 2, name: '全部片段', exact: true })).toBeVisible();
+  await expect(page.getByRole('listitem')).toHaveCount(clips.length);
 });
 
 test('unknown pages, scenes and folders show an explicit error instead of another scene shelf', async ({ page }) => {

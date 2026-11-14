@@ -12,7 +12,8 @@ export type PackLocales = Record<string, {
   scenes: Record<string, SceneText>; roles: Record<string, RoleText>;
   notices?: { library: string; scene: string };
 }>;
-export type ContentCatalog = { clips: Clip[]; locales: PackLocales };
+export type PublishedPack = { id: string; title: string; description: string; author: string; sceneCount: number; poster?: string };
+export type ContentCatalog = { clips: Clip[]; packs: PublishedPack[]; locales: PackLocales };
 export type Catalog = { version: 1; packs: { id: string; manifest: string }[] };
 export type Pack = { version: 1; id: string; title: string; description: string; author: string; scenes: Omit<Clip, 'packId' | 'notices'>[]; locales?: PackLocales };
 
@@ -55,7 +56,7 @@ function validateLocales(value: unknown, sceneIds: Set<string>): asserts value i
 }
 export function validatePack(value: unknown, expectedId: string): Pack {
   if (!record(value) || value.version !== 1 || value.id !== expectedId || !id(value.id, 'pack') ||
-      !text(value.title, 200) || !value.title || !text(value.description) || !text(value.author, 200) ||
+      !text(value.title, 200) || !value.title.trim() || !text(value.description) || !text(value.author, 200) ||
       !Array.isArray(value.scenes) || value.scenes.length > 500) throw invalid();
   const ids = new Set<string>(), routes = new Set<string>();
   for (const scene of value.scenes) {
@@ -102,9 +103,11 @@ export async function loadContent(url: string, signal?: AbortSignal): Promise<Co
     const manifest = storageUrl(entry.manifest, catalogUrl, 'json');
     return { pack: validatePack(await readJson(manifest, signal), entry.id), manifest };
   }));
-  const clips: Clip[] = [], locales: PackLocales = {};
+  const clips: Clip[] = [], publishedPacks: PublishedPack[] = [], locales: PackLocales = {};
   const ids = new Set(), slugs = new Set(), routes = new Set();
   for (const { pack, manifest } of packs) {
+    publishedPacks.push({ id: pack.id, title: pack.title, description: pack.description, author: pack.author,
+      sceneCount: pack.scenes.length, poster: pack.scenes[0] ? storageUrl(pack.scenes[0].poster, manifest, 'jpg') : undefined });
     const notices: Clip['notices'] = {};
     for (const [language, resource] of Object.entries(pack.locales ?? {})) {
       if (resource.notices) notices[language] = resource.notices;
@@ -122,7 +125,7 @@ export async function loadContent(url: string, signal?: AbortSignal): Promise<Co
       }
     }
   }
-  return { clips, locales };
+  return { clips, packs: publishedPacks, locales };
 }
 
 export async function loadScene(clip: Clip, signal?: AbortSignal): Promise<Scene> {

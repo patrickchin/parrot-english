@@ -10,19 +10,20 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { folders } from './catalog';
 import { franchiseGroup, franchiseArtwork } from './franchises';
-import { libraryPath } from './app/routes';
+import { libraryPath, packsPath } from './app/routes';
 import { languagePath } from './locale';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 
-export function Library({ onChoose, folder, directory }: { onChoose: (slug: string, draftId?: string) => void; folder: string; directory: boolean }) {
+export function Library({ onChoose, folder, directory, packId }: { onChoose: (slug: string, draftId?: string) => void; folder: string; directory: boolean; packId?: string }) {
   const { t } = useTranslation();
-  const { clips } = useContent();
+  const { clips, packs } = useContent();
+  const pack = packs.find(item => item.id === packId);
   const { language } = useLanguage();
   const [params] = useSearchParams();
-  const categoryScenes = clips.filter(clip => folder === 'all' || clip.cohort === folder);
+  const categoryScenes = clips.filter(clip => (!packId || clip.packId === packId) && (folder === 'all' || clip.cohort === folder));
   const shows = [...new Set(categoryScenes.map(clip => franchiseGroup(clip)))];
   const show = shows.find(title => title === params.get('show')) ?? '';
-  const scope = `${directory}:${folder}:${show}`;
+  const scope = `${directory}:${folder}:${show}:${packId ?? ''}`;
   const [searchState, setSearchState] = useState({ scope, query: '' });
   if (searchState.scope !== scope) setSearchState({ scope, query: '' });
   const query = searchState.scope === scope ? searchState.query : '';
@@ -44,13 +45,18 @@ export function Library({ onChoose, folder, directory }: { onChoose: (slug: stri
   const normalize = (text: string) => text.normalize('NFKC').toLocaleLowerCase().trim();
   const visibleTags = tags.filter(tag => [tag.label, ...(tag.id === 'Memes' ? tag.scenes.map(clip => clip.note) : [])].some(label => normalize(label).includes(normalize(query))));
   // The catalog leads with the editorial pick, independently of browse filters.
-  const featured = clips[0];
-  const notices = [...new Set((directory ? clips : featured ? [featured, ...visible] : visible)
+  const featured = packId ? undefined : clips[0];
+  const notices = [...new Set((packId ? categoryScenes : directory ? clips : featured ? [featured, ...visible] : visible)
     .map(clip => clip.notices?.[language]?.library).filter((notice): notice is string => !!notice))];
   return <div className="library-shell min-h-dvh bg-paper text-ink">
     <AppHeader />
     <main className="library-main" data-directory={directory}>
-      {featured ? <section className="library-feature" aria-labelledby="featured-scene-title">
+      {packId ? <header className="pack-detail-heading">
+        <Link className="library-back" to={packsPath(language)}><Icon name="back" /><span>{t('packs.allPacks')}</span></Link>
+        <h1 className="font-display">{pack?.title}</h1>
+        {pack?.description && <p className="pack-description">{pack.description}</p>}
+        {pack && <p className="pack-meta"><span>{t('packs.by', { author: pack.author })}</span><span>{t('library.sceneCount', { count: pack.sceneCount })}</span></p>}
+      </header> : featured ? <section className="library-feature" aria-labelledby="featured-scene-title">
         <div className="library-feature-copy">
           <h1 className="font-display"><span>{t('library.headlineLead')}</span>{' '}<span>{t('library.headlineEnd')}</span></h1>
           <p>{t('library.introduction')}</p>
@@ -63,8 +69,8 @@ export function Library({ onChoose, folder, directory }: { onChoose: (slug: stri
       </section> : <h1 className="font-display text-3xl font-bold">{t('navigation.library')}</h1>}
       <section aria-label={t("navigation.library")}>
         <div className="library-toolbar" data-collection={!directory}>
-          {!directory && <Link className="library-back" to={languagePath('/', language)} aria-label={t('library.browseTags')}><Icon name="back" /><span>{t('library.browseTags')}</span></Link>}
-          <div className="library-scope"><h2>{directory ? t('library.browseTags') : show === 'Memes' ? t('library.memes') : show || (folder === 'all' ? t('library.allScenes') : t(folders.find(tag => tag.value === folder)!.title))}</h2>{!directory && <span>{t("library.sceneCount", { count: visible.length })}</span>}</div>
+          {!directory && !packId && <Link className="library-back" to={languagePath('/', language)} aria-label={t('library.browseTags')}><Icon name="back" /><span>{t('library.browseTags')}</span></Link>}
+          <div className="library-scope"><h2>{packId ? t('packs.scenes') : directory ? t('library.browseTags') : show === 'Memes' ? t('library.memes') : show || (folder === 'all' ? t('library.allScenes') : t(folders.find(tag => tag.value === folder)!.title))}</h2>{!directory && <span>{t("library.sceneCount", { count: visible.length })}</span>}</div>
           <InputGroup className="library-search h-12 bg-card">
             <InputGroupAddon><Icon name="search" /></InputGroupAddon>
             <InputGroupInput ref={search} type="search" aria-label={t(directory ? 'library.findATag' : 'library.findAScene')} placeholder={t(directory ? 'library.searchTags' : 'library.titleCharacterTagOrLine')} value={query} onChange={e => setQuery(e.target.value)} className="h-11 text-base sm:text-sm" />
@@ -88,7 +94,7 @@ export function Library({ onChoose, folder, directory }: { onChoose: (slug: stri
           </nav>
           {!visibleTags.length && <Card className="library-empty"><p role="status">{t('library.noTagsFound')}</p><Button onClick={clearSearch} className="mx-auto mt-5 h-12">{t('library.clearSearch')}</Button></Card>}
         </> : <>
-        {!visible.length && <Card className="library-empty"><p role="status">{t(categoryScenes.length ? "library.noScenesFound" : 'library.empty')}</p>{!!categoryScenes.length && <><p>{t("library.searchSuggestion")}</p><Button onClick={clearSearch} className="mx-auto mt-5 h-12">{t("library.showAllScenes")}<Icon name="arrow" /></Button></>}</Card>}
+        {!visible.length && <Card className="library-empty"><p role="status">{t(categoryScenes.length ? "library.noScenesFound" : packId ? 'packs.emptyPack' : 'library.empty')}</p>{!!categoryScenes.length && <><p>{t("library.searchSuggestion")}</p><Button onClick={clearSearch} className="mx-auto mt-5 h-12">{t("library.showAllScenes")}<Icon name="arrow" /></Button></>}</Card>}
         {shelves.map(shelf => <section key={shelf.title} aria-label={shelf.title || undefined} className="show-shelf">
           {shelf.title && !show && <div className="show-heading"><h3>{shelf.title === 'Memes' ? t('library.memes') : shelf.title}</h3><span>{t('library.sceneCount', { count: shelf.scenes.length })}</span></div>}
           <ul role="list" className="scene-shelf">{shelf.scenes.map(clip => <li key={clip.slug}>

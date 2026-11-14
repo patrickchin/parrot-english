@@ -12,6 +12,10 @@ Read the [product plan](docs/product-plan.md) for scope, content permissions,
 hosting, domain options, and the pilot sequence. The earlier application remains
 archived; the current player and GitHub deployment configuration are on `main`.
 
+The [release board](docs/release/README.md) tracks the current release recommendation,
+priorities, specialist assessments, and verification evidence. Future delivery
+cycles can use the included `parrotbook-manager` skill.
+
 New content prioritizes **memeable internet moments**: creator comedy, reactions,
 interviews, and viral exchanges, alongside recognizable film/TV memes. The
 [discovery queue and batch workflow](docs/meme-discovery.md) cover Chinese and
@@ -20,6 +24,12 @@ when a verified batch is ready.
 
 The first player is live at <https://parrotbook.com/>. Choose a scene and role,
 listen to the original dialogue, record each turn, then replay with your voice.
+Open **Content packs** in the navigation to browse the four owner-published packs
+and their 128 scenes. Each pack has its own scene list and search. Recording,
+saved-dub resume, language changes, and player Back keep the owning pack in
+context. Only the owner publishes through the authenticated content command;
+there is no user pack-upload interface. See the
+[owner packaging quickstart](docs/release/owner-pack-quickstart.md).
 The adult POC autosaves partial and completed attempts in this browser's
 IndexedDB. **My dubs** reopens a saved session with its role, current line,
 recordings, and progress. Starting over preserves the previous attempt;

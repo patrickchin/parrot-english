@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPath, useBeforeUnload, useBlocker, useLocation, useNavigate, type BlockerFunction } from 'react-router';
-import { libraryPath, readRoute, scenePath } from './routes';
+import { libraryPath, packPath, readRoute, scenePath } from './routes';
 import { languagePath, type Language } from '../locale';
 import { useContent } from './ContentProvider';
 
@@ -9,7 +9,7 @@ function languageOnly(previous: Page, next: Page) {
   return previous.language !== next.language && !!next.slug && next.slug === previous.slug && !next.draftId && !!previous.draftId;
 }
 function samePage(previous: Page, next: Page) {
-  return next.page === previous.page && next.slug === previous.slug && next.folder === previous.folder &&
+  return next.page === previous.page && next.slug === previous.slug && next.folder === previous.folder && next.packId === previous.packId &&
     (next.draftId === previous.draftId || languageOnly(previous, next));
 }
 
@@ -81,8 +81,12 @@ function useNavigationState() {
     },
     navigate(slug: string, draftId?: string) {
       const { page, href } = current.current;
-      const search = new URL(href, window.location.origin).search;
-      void go((slug ? scenePath(slug, draftId, page.language, clips) : libraryPath('all', page.language)) + search);
+      const params = new URL(href, window.location.origin).searchParams;
+      const targetPack = page.packId ?? (draftId ? clips.find(clip => clip.slug === slug)?.packId : undefined);
+      if (slug && targetPack) params.set('pack', targetPack);
+      if (!slug) params.delete('pack');
+      const search = params.size ? '?' + params : '';
+      void go((slug ? scenePath(slug, draftId, page.language, clips) : page.packId ? packPath(page.packId, page.language) : libraryPath('all', page.language)) + search);
     },
     confirm() { if (blocker.state === 'blocked') blocker.proceed(); },
     cancel() { if (blocker.state === 'blocked') blocker.reset(); },
