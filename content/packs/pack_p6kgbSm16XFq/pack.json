@@ -871,7 +871,7 @@
         }
       },
       "notices": {
-        "library": "Adult prototype testing · Dubs save in this browser. No uploads. Redistribution permission for the meme clips is unconfirmed.",
+        "library": "Adult prototype testing · Dubs save in this browser. Videos upload only when you confirm creating a playback link. Redistribution permission for the meme clips is unconfirmed.",
         "scene": "This scene is for adult prototype testing. The full film is not beginner learning material for children.The creators do not endorse this product."
       }
     },
@@ -1105,7 +1105,7 @@
         }
       },
       "notices": {
-        "library": "成人原型测试 · 配音保存在此浏览器，不会上传。影视梗片段尚未确认再分发许可。",
+        "library": "成人原型测试 · 配音保存在此浏览器。只有确认创建播放链接时，才会上传视频。影视梗片段尚未确认再分发许可。",
         "scene": "本片段用于成人原型测试；完整电影并非儿童入门教材。创作者未对本产品作出背书。"
       }
     },
@@ -1339,7 +1339,7 @@
         }
       },
       "notices": {
-        "library": "Pruebas del prototipo con adultos · Los doblajes se guardan en este navegador y no se suben. No se ha confirmado el permiso de redistribución de estos fragmentos.",
+        "library": "Pruebas del prototipo con adultos · Los doblajes se guardan en este navegador. Los vídeos solo se suben cuando confirmas la creación de un enlace de reproducción. No se ha confirmado el permiso de redistribución de estos fragmentos.",
         "scene": "Esta escena es para pruebas del prototipo con adultos. La película completa no es material de iniciación para niños.Los creadores no respaldan este producto."
       }
     },
@@ -1573,7 +1573,7 @@
         }
       },
       "notices": {
-        "library": "大人向け試作版テスト・吹き替えはこのブラウザに保存され、アップロードされません。使用している映像の再配布許諾は未確認です。",
+        "library": "大人向け試作版テスト・吹き替えはこのブラウザに保存され。再生リンクの作成を確認した場合に限り、動画がアップロードされます。使用している映像の再配布許諾は未確認です。",
         "scene": "このシーンは大人による試作版のテスト用です。映画全編は、子ども向けの入門教材ではありません。作品の制作者がこの製品を推奨しているわけではありません。"
       }
     },
@@ -1807,7 +1807,7 @@
         }
       },
       "notices": {
-        "library": "성인 대상 시제품 테스트 · 더빙은 이 브라우저에 저장되며 업로드되지 않아요. 영상 클립의 재배포 허가는 확인되지 않았어요.",
+        "library": "성인 대상 시제품 테스트 · 더빙은 이 브라우저에 저장돼요. 재생 링크 만들기를 확인할 때만 동영상이 업로드돼요. 영상 클립의 재배포 허가는 확인되지 않았어요.",
         "scene": "이 장면은 성인을 대상으로 한 시제품 테스트용이에요. 영화 전체가 어린이 입문 학습 자료인 것은 아니에요.원작 제작자가 이 제품을 보증하는 것은 아니에요."
       }
     }
