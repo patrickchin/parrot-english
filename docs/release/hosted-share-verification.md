@@ -74,9 +74,18 @@ patterns and signed-URL parameters, with no matches. Capabilities and signed
 URLs were not written to the audit or terminal output; creator authority was
 held in the ephemeral browser/runner memory only.
 
+## Later deployment verification
+
+Deployment readback is now green under the scoped CI role: workflow
+[43809621870](https://github.com/patrickchin/parrot-english/actions/runs/43809621870)
+verified `ee6fc7ab7322a98ddef302c89f8bc94cb7e21280`, runtime roles, both
+concurrency caps and unchanged owner authentication. Post-deploy owner
+missing/invalid tokens return 403, both website preflights return 204, and
+the removed synthetic share still returns 410. These are later operational
+checks, not a rerun of the earlier two-browser upload scenarios.
+
 ## Remaining release gates
 
-- Green deployment readback under the scoped CI role.
 - Dedicated API custom-domain DNS/TLS and hosted verification before enabling
   endpoint configuration for general friend testing.
 - Owner authenticated management methods and browser acceptance. Native Bearer
