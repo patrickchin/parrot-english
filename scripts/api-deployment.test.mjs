@@ -11,6 +11,8 @@ const revision = 'a'.repeat(40);
 const event = 'b'.repeat(40);
 const roleArn = name => `acs:ram::${account}:role/${name}`;
 const env = {
+  // The source-selection step exports a real revision in CI; this fixture uses a fake one.
+  API_REVISION: revision,
   GITHUB_ACTIONS: 'true', GITHUB_REPOSITORY: 'patrickchin/parrot-english', GITHUB_REF: 'refs/heads/main', GITHUB_EVENT_NAME: 'push', GITHUB_SHA: event,
   API_OIDC_PROVIDER_ARN: `acs:ram::${account}:oidc-provider/parrot-github-actions`, API_DEPLOY_ROLE_ARN: roleArn('parrotbook-fc-github-main'),
   OWNER_API_EXECUTION_ROLE_ARN: roleArn(functions[0].role), SHARE_API_EXECUTION_ROLE_ARN: roleArn(functions[1].role),
