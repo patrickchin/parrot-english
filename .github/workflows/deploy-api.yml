@@ -70,7 +70,7 @@ jobs:
       - name: Package API code and production dependencies
         run: npm --prefix api run package
       - name: Install pinned provider deployment tools
-        run: npm install --global @serverless-devs/s@3.1.11 js-yaml@4.1.1
+        run: npm install --global @serverless-devs/s@3.1.10 js-yaml@4.1.1
       - name: Verify the exact deployment descriptor
         run: node scripts/api-deployment.mjs check-config
       - uses: aliyun/setup-aliyun-cli-action@09a5f86915bb556e27bf050e9a5e339aeb073df5

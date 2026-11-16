@@ -49,7 +49,7 @@ No static AccessKey or broad Alibaba-to-GitHub grant is used. Workflow variables
 are `API_OIDC_PROVIDER_ARN`, `API_DEPLOY_ROLE_ARN`,
 `OWNER_API_EXECUTION_ROLE_ARN`, and `SHARE_API_EXECUTION_ROLE_ARN`.
 
-The workflow pins Serverless Devs 3.1.11 and FC3 0.1.27, verifies the descriptor
+The workflow pins Serverless Devs 3.1.10 and FC3 0.1.26, verifies the descriptor
 matches only the two reviewed functions, and supplies temporary credentials to
 the native CLI through its documented child-process environment. It explicitly
 captures stdout/stderr so provider failures cannot print native trigger tokens.

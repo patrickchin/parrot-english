@@ -48,7 +48,7 @@ export function verifyConfig(template) {
   for (const fn of functions) {
     const resource = template.resources[fn.resource];
     same(Object.keys(resource).sort(), ['component', 'props'], 'Unexpected component configuration.');
-    same(resource.component, 'fc3@0.1.27', 'The reviewed FC3 component version must be pinned.');
+    same(resource.component, 'fc3@0.1.26', 'The reviewed FC3 component version must be pinned.');
     const expected = {
       region, functionName: fn.name, runtime: 'nodejs20', handler: fn.handler, code: './api/dist', memorySize: 512,
       timeout: fn.timeout, internetAccess: true, role: `\${env('${fn.roleEnv}')}`, concurrencyConfig: { reservedConcurrency: 1 },

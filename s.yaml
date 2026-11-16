@@ -4,7 +4,7 @@ edition: 3.0.0
 name: parrotbook-owner-packs
 resources:
   owner-api:
-    component: fc3@0.1.27
+    component: fc3@0.1.26
     props:
       region: cn-hongkong
       functionName: parrotbook-owner-packs
@@ -25,7 +25,7 @@ resources:
       concurrencyConfig:
         reservedConcurrency: 1
   guest-sharing-api:
-    component: fc3@0.1.27
+    component: fc3@0.1.26
     props:
       region: cn-hongkong
       functionName: parrotbook-guest-shares

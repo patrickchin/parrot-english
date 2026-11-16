@@ -20,7 +20,7 @@ const env = {
 };
 const source = args => args[0] === 'rev-parse' ? revision + '\n' : '';
 const template = () => ({ edition: '3.0.0', name: 'parrotbook-owner-packs', resources: Object.fromEntries(functions.map(fn => [fn.resource, {
-  component: 'fc3@0.1.27', props: {
+  component: 'fc3@0.1.26', props: {
     region, functionName: fn.name, runtime: 'nodejs20', handler: fn.handler, code: './api/dist', memorySize: 512, timeout: fn.timeout,
     internetAccess: true, role: `\${env('${fn.roleEnv}')}`, concurrencyConfig: { reservedConcurrency: 1 },
     environmentVariables: fn.resource === 'owner-api' ? {

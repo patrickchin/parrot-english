@@ -5,6 +5,31 @@ import { mobileScreenshot, mobileViewports, touchControl } from './mobile-viewpo
 
 test.use({ sampleScene: true });
 
+test('phone and tablet layouts keep software notices and source hashes readable', async ({ page }, info) => {
+  const response = await page.goto('/software-notices.html');
+  expect(response?.status()).toBe(200);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Software notices');
+  const sourceHash = page.getByText('60a2818f76dcd1fee3155b1791304af104a0fc1b', { exact: true });
+  for (const viewport of mobileViewports) {
+    await page.setViewportSize(viewport);
+    await sourceHash.scrollIntoViewIfNeeded();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    expect(await sourceHash.evaluate(element => {
+      const range = document.createRange(); range.selectNodeContents(element);
+      return [...range.getClientRects()].every(box => box.left >= 0 && box.right <= innerWidth);
+    }), 'Every line of the complete source hash fits the viewport').toBe(true);
+    if (viewport.name === 'phone-portrait') await mobileScreenshot(page, info, 'software-notices', viewport.name);
+  }
+  await page.getByText('Full Mozilla Public License 2.0', { exact: true }).click();
+  await page.getByText('Full GNU Lesser General Public License 2.1', { exact: true }).click();
+  await expect(page.locator('pre')).toHaveCount(2);
+  for (const licence of await page.locator('pre').all()) await expect(licence).toBeVisible();
+  for (const viewport of mobileViewports) {
+    await page.setViewportSize(viewport);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+});
+
 test('phone and tablet layouts retain Packs navigation, practice controls and completion through rotation', async ({ page, browser }, info) => {
   console.log(`Mobile QA engine: ${info.project.name} ${browser.version()}`);
   const lines = await prepareMediaTest(page);
