@@ -147,7 +147,8 @@ export function cloudGet(path, run = execute) {
   let output;
   // Pinned CLI 3.5.3 emits remote provider errors as JSON only in this mode.
   // CLI 3.5.3 maps retry-count to its SDK's native retry limit. Only GETs use it.
-  try { output = run('aliyun', ['fc', 'GET', '/2023-03-30' + path, '--region', region, '--version', '2023-03-30', '--cli-ai-mode', '--retry-count', '2'], { timeout: 45000 }); }
+  // FC readback took 11.5s in the provider log, exceeding the CLI's 10s default.
+  try { output = run('aliyun', ['fc', 'GET', '/2023-03-30' + path, '--region', region, '--version', '2023-03-30', '--cli-ai-mode', '--retry-count', '2', '--read-timeout', '30'], { timeout: 45000 }); }
   catch (error) {
     // Native HTTP trigger output can contain owner tokens. Treat only a parsed
     // provider code as not-found; messages, stdout and config are never metadata.

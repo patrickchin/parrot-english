@@ -287,7 +287,7 @@ test('readback errors expose only known path, category, allowlisted stderr code 
   assert.equal(cloudGet(path, run({ stderr: '{"error_code":"FunctionNotFound"}' })), null);
   assert.deepEqual(cloudGet(path, (file, args, options) => {
     assert.equal(file, 'aliyun');
-    assert.deepEqual(args, ['fc', 'GET', '/2023-03-30' + path, '--region', region, '--version', '2023-03-30', '--cli-ai-mode', '--retry-count', '2']);
+    assert.deepEqual(args, ['fc', 'GET', '/2023-03-30' + path, '--region', region, '--version', '2023-03-30', '--cli-ai-mode', '--retry-count', '2', '--read-timeout', '30']);
     assert.deepEqual(options, { timeout: 45000 });
     return '{"triggers":[]}';
   }), { triggers: [] });
