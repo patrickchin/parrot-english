@@ -335,6 +335,7 @@ export function createOwnerApi({ client, bucket = ownerBucket, region = ownerReg
     }
     reject(404, 'Owner API route not found.');
   }
+  // Native FC owns Access-Control-* response headers; application checks remain below.
   return async eventBuffer => {
     const headers = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', Vary: 'Origin' };
     try {
@@ -351,11 +352,9 @@ export function createOwnerApi({ client, bucket = ownerBucket, region = ownerReg
       } catch (error) { if (error instanceof ApiError) throw error; reject(400, 'Malformed owner API request.'); }
       const requestHeaders = lowerHeaders(event.headers);
       if (requestHeaders.origin && !allowedOrigins.includes(requestHeaders.origin)) reject(403, 'This origin cannot use the owner API.');
-      if (requestHeaders.origin) headers['Access-Control-Allow-Origin'] = requestHeaders.origin;
       if (event.requestContext.http.method === 'OPTIONS') {
         const requested = String(requestHeaders['access-control-request-headers'] ?? '').split(',').map(value => value.trim().toLowerCase()).filter(Boolean);
         if (!requestHeaders.origin || !['GET', 'POST', 'PATCH', 'DELETE'].includes(requestHeaders['access-control-request-method']) || requested.some(value => !['authorization', 'content-type'].includes(value))) reject(403, 'Preflight request is not allowed.');
-        Object.assign(headers, { 'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE', 'Access-Control-Allow-Headers': 'Authorization, Content-Type', 'Access-Control-Max-Age': '600' });
         return { statusCode: 204, headers, body: '', isBase64Encoded: false };
       }
       const value = await route(event.requestContext.http.method, event.rawPath, body);

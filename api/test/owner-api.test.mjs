@@ -412,19 +412,22 @@ test('owner preflight admits both exact player origins for management without to
   for (const origin of ['https://parrotbook.com', 'https://www.parrotbook.com']) for (const method of ['GET', 'POST', 'PATCH', 'DELETE']) {
     const response = await request('OPTIONS', { origin, 'access-control-request-method': method, 'access-control-request-headers': 'authorization,content-type' });
     assert.equal(response.statusCode, 204);
-    assert.equal(response.headers['Access-Control-Allow-Origin'], origin);
+    assert.deepEqual(Object.keys(response.headers).filter(name => /^access-control-/i.test(name)), []);
     assert.equal(response.headers.Vary, 'Origin');
-    assert.match(response.headers['Access-Control-Allow-Methods'], new RegExp(method));
   }
   assert.deepEqual(storage.calls, []);
   for (const origin of ['https://untrusted.example', 'https://www.parrotbook.com.evil.example', 'null']) {
     for (const method of ['OPTIONS', 'GET']) {
       const response = await request(method, { origin, 'access-control-request-method': 'DELETE' });
       assert.equal(response.statusCode, 403);
-      assert.equal(response.headers['Access-Control-Allow-Origin'], undefined);
+      assert.deepEqual(Object.keys(response.headers).filter(name => /^access-control-/i.test(name)), []);
     }
   }
-  assert.equal((await request('OPTIONS', { origin: 'https://parrotbook.com', 'access-control-request-method': 'DELETE', 'access-control-request-headers': 'cookie' })).statusCode, 403);
+  for (const headers of [{}, { origin: 'https://parrotbook.com', 'access-control-request-method': 'PUT' }, { origin: 'https://parrotbook.com', 'access-control-request-method': 'DELETE', 'access-control-request-headers': 'cookie' }]) {
+    const response = await request('OPTIONS', headers);
+    assert.equal(response.statusCode, 403);
+    assert.deepEqual(Object.keys(response.headers).filter(name => /^access-control-/i.test(name)), []);
+  }
   assert.deepEqual(storage.calls, []);
 });
 
@@ -435,4 +438,23 @@ test('owner origin configuration rejects malformed allowlists before any storage
     assert.throws(() => createOwnerApi({ client, allowedOrigins }), TypeError);
   }
   assert.deepEqual(client.calls, []);
+});
+
+
+test('owner session GET leaves CORS response ownership to the native gateway', async () => {
+  const { call, storage } = setup();
+  for (const Origin of ['https://parrotbook.com', 'https://www.parrotbook.com']) {
+    const response = await call('GET', '/session', undefined, { headers: { Origin } });
+    assert.equal(response.statusCode, 200);
+    assert.deepEqual(response.value, { authenticated: true, revision: 'test-revision' });
+    assert.equal(response.headers.Vary, 'Origin');
+    assert.equal(response.headers['Cache-Control'], 'no-store');
+    assert.deepEqual(Object.keys(response.headers).filter(name => /^access-control-/i.test(name)), []);
+    // Native FC appends its origin header. A function copy would make this a
+    // comma-separated pair, which browsers reject even when both values match.
+    const gatewayHeaders = new Headers(response.headers);
+    gatewayHeaders.append('Access-Control-Allow-Origin', Origin);
+    assert.equal(gatewayHeaders.get('Access-Control-Allow-Origin'), Origin);
+  }
+  assert.deepEqual(storage.calls, []);
 });

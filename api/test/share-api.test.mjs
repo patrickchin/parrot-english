@@ -195,19 +195,22 @@ test('revocation commits before deletion, retries cleanup safely, and cannot be 
 
 test('public native trigger CORS preflight grants no storage access and rejects other origins', async () => {
   const { storage, call } = setup();
-  for (const Origin of ['https://parrotbook.com', 'https://www.parrotbook.com']) {
+  for (const Origin of ['https://parrotbook.com', 'https://www.parrotbook.com']) for (const method of ['GET', 'POST', 'DELETE']) {
     const response = await call('OPTIONS', '/shares', undefined, undefined, { Origin,
-      'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'authorization, content-type' });
+      'Access-Control-Request-Method': method, 'Access-Control-Request-Headers': 'authorization, content-type' });
     assert.equal(response.statusCode, 204);
-    assert.equal(response.headers['Access-Control-Allow-Origin'], Origin);
+    assert.deepEqual(Object.keys(response.headers).filter(name => /^access-control-/i.test(name)), []);
     assert.equal(response.headers.Vary, 'Origin');
   }
   for (const Origin of ['https://other.example', 'https://www.parrotbook.com.evil.example', 'null']) {
     for (const method of ['OPTIONS', 'POST']) {
       const response = await call(method, '/shares', method === 'POST' ? { title: 'X', size: 80 } : undefined, undefined, { Origin, 'Access-Control-Request-Method': 'POST' });
       assert.equal(response.statusCode, 403);
-      assert.equal(response.headers['Access-Control-Allow-Origin'], undefined);
+      assert.deepEqual(Object.keys(response.headers).filter(name => /^access-control-/i.test(name)), []);
     }
+  }
+  for (const headers of [{}, { Origin: 'https://parrotbook.com', 'Access-Control-Request-Method': 'PUT' }, { Origin: 'https://parrotbook.com', 'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'cookie' }]) {
+    assert.equal((await call('OPTIONS', '/shares', undefined, undefined, headers)).statusCode, 403);
   }
   assert.equal(storage.calls.length, 0);
   assert.equal((await handler(Buffer.from('{}'), {})).statusCode, 503);
@@ -235,4 +238,24 @@ test('guest origin configuration rejects malformed allowlists before any storage
     assert.throws(() => createShareApi({ client, config: { allowedOrigins } }), TypeError);
   }
   assert.deepEqual(client.calls, []);
+});
+
+
+test('published guest GET leaves one native gateway origin header and preserves privacy headers', async () => {
+  const { call, create, upload } = setup();
+  const share = await create(); upload(share);
+  assert.equal((await call('POST', '/shares/' + share.id + '/publish', {}, share.creatorToken)).statusCode, 200);
+  for (const Origin of ['https://parrotbook.com', 'https://www.parrotbook.com']) {
+    const response = await call('GET', '/shares/' + share.id, undefined, undefined, { Origin });
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.value.id, share.id);
+    assert.equal(response.value.creatorToken, undefined);
+    assert.equal(response.headers.Vary, 'Origin');
+    assert.equal(response.headers['Cache-Control'], 'no-store');
+    assert.equal(response.headers['X-Robots-Tag'], 'noindex');
+    assert.deepEqual(Object.keys(response.headers).filter(name => /^access-control-/i.test(name)), []);
+    const gatewayHeaders = new Headers(response.headers);
+    gatewayHeaders.append('Access-Control-Allow-Origin', Origin);
+    assert.equal(gatewayHeaders.get('Access-Control-Allow-Origin'), Origin);
+  }
 });
