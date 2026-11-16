@@ -117,6 +117,17 @@ function providerDiagnostic(stderr) {
   return { code: known ? family : 'unrecognized', notFound: rawCode === 'FunctionNotFound',
     ...(validId ? { requestId: id } : {}), ...(nativeRemote ? { httpStatus: status } : {}) };
 }
+const executionCodes = new Set(['ETIMEDOUT', 'ENOBUFS', 'ENOENT', 'ECONNRESET']);
+const executionSignals = new Set(['SIGTERM', 'SIGKILL', 'SIGABRT', 'SIGSEGV', 'SIGINT', 'SIGHUP', 'SIGPIPE', 'SIGILL', 'SIGBUS', 'SIGFPE', 'SIGTRAP', 'SIGQUIT']);
+function executionDiagnostic(error, stderr) {
+  let format = 'text';
+  try { JSON.parse(stderr); format = 'json'; } catch { /* Classification only. */ }
+  return [executionCodes.has(error.code) ? `executionCode=${error.code}` : '',
+    Number.isInteger(error.status) && error.status >= 0 && error.status <= 255 ? `exitStatus=${error.status}` : '',
+    executionSignals.has(error.signal) ? `signal=${error.signal}` : '',
+    `stderrBytes=${Buffer.byteLength(stderr)}`, `stderrFormat=${format}`,
+    stderr.trim() === 'ERROR: unexpected EOF' ? 'stderrKind=unexpected-eof' : ''].filter(Boolean);
+}
 export function cloudGet(path, run = execute) {
   const label = readbackPaths.has(path) ? `GET ${path}` : 'GET [unexpected path]';
   let output;
@@ -125,10 +136,11 @@ export function cloudGet(path, run = execute) {
   catch (error) {
     // Native HTTP trigger output can contain owner tokens. Treat only a parsed
     // provider code as not-found; messages, stdout and config are never metadata.
-    const diagnostic = providerDiagnostic(String(error.stderr ?? ''));
+    const stderr = String(error.stderr ?? '');
+    const diagnostic = providerDiagnostic(stderr);
     if (diagnostic.notFound) return null;
     const category = error.code === 'ETIMEDOUT' ? 'timeout' : 'child-exit';
-    const details = [category, diagnostic.code ? `providerCode=${diagnostic.code}` : '', diagnostic.requestId ? `requestId=${diagnostic.requestId}` : '', diagnostic.httpStatus ? `httpStatus=${diagnostic.httpStatus}` : ''].filter(Boolean);
+    const details = [category, diagnostic.code ? `providerCode=${diagnostic.code}` : '', diagnostic.requestId ? `requestId=${diagnostic.requestId}` : '', diagnostic.httpStatus ? `httpStatus=${diagnostic.httpStatus}` : '', ...(!diagnostic.code ? executionDiagnostic(error, stderr) : [])].filter(Boolean);
     fail(`FC readback ${label} failed (${details.join('; ')}).`);
   }
   try { return JSON.parse(output); }

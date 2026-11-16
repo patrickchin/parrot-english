@@ -257,6 +257,15 @@ fs.appendFileSync(process.env.TEST_TRACE, JSON.stringify({type:'native', publicT
 });
 
 
+function redactedFallback(path, format = 'json') {
+  return error => {
+    const prefix = `FC readback GET ${path} failed (child-exit; `;
+    assert.ok(error.message.startsWith(prefix));
+    assert.match(error.message.slice(prefix.length), new RegExp(`^(?:exitStatus=1; )?stderrBytes=\\d+; stderrFormat=${format}\\)\\.$`));
+    return true;
+  };
+}
+
 test('readback errors expose only known path, category, allowlisted stderr code and valid request ID', () => {
   const path = '/functions/parrotbook-owner-packs/triggers';
   const secret = 'private-trigger-token-sentinel';
@@ -267,14 +276,14 @@ test('readback errors expose only known path, category, allowlisted stderr code 
     return true;
   });
   assert.throws(() => cloudGet(path, run({ code: 'ETIMEDOUT', stderr: JSON.stringify({ error_code: 'InvalidArgument', request_id: '0123456789abcdef0123456789abcdef', error_message: secret }) })), /timeout; providerCode=InvalidArgument; requestId=0123456789abcdef0123456789abcdef/);
-  assert.throws(() => cloudGet(secret, run({ status: 1, stderr: JSON.stringify({ Code: secret, RequestId: secret }), stdout: JSON.stringify({ Code: 'AccessDenied', RequestId: requestId }) })), error => error.message === 'FC readback GET [unexpected path] failed (child-exit).');
+  assert.throws(() => cloudGet(secret, run({ status: 1, stderr: JSON.stringify({ Code: secret, RequestId: secret }), stdout: JSON.stringify({ Code: 'AccessDenied', RequestId: requestId }) })), redactedFallback('[unexpected path]'));
   assert.throws(() => cloudGet(path, () => secret), error => error.message === `FC readback GET ${path} failed (json-parse).`);
   assert.equal(cloudGet(path, run({ stderr: '{"Code":"FunctionNotFound"}' })), null);
   const nestedHex = 'abcdef0123456789abcdef0123456789';
   assert.throws(() => cloudGet(path, run({ stderr: JSON.stringify({ Code: 'AccessDenied', triggerConfig: { RequestId: nestedHex, Code: 'FunctionNotFound' }, Message: 'FunctionNotFound' }), stdout: 'FunctionNotFound' })), error => error.message === `FC readback GET ${path} failed (child-exit; providerCode=AccessDenied).`);
-  assert.throws(() => cloudGet(path, run({ stderr: JSON.stringify({ Message: 'FunctionNotFound', token: 'FunctionNotFound', triggerConfig: { Code: 'FunctionNotFound', RequestId: nestedHex } }) })), error => error.message === `FC readback GET ${path} failed (child-exit).`);
-  assert.throws(() => cloudGet(path, run({ stderr: 'FunctionNotFound', stdout: '{"Code":"FunctionNotFound"}' })), error => error.message === `FC readback GET ${path} failed (child-exit).`);
-  assert.throws(() => cloudGet(path, run({ stderr: JSON.stringify([{ Code: 'AccessDenied', RequestId: nestedHex }]) })), error => error.message === `FC readback GET ${path} failed (child-exit).`);
+  assert.throws(() => cloudGet(path, run({ stderr: JSON.stringify({ Message: 'FunctionNotFound', token: 'FunctionNotFound', triggerConfig: { Code: 'FunctionNotFound', RequestId: nestedHex } }) })), redactedFallback(path));
+  assert.throws(() => cloudGet(path, run({ stderr: 'FunctionNotFound', stdout: '{"Code":"FunctionNotFound"}' })), redactedFallback(path, 'text'));
+  assert.throws(() => cloudGet(path, run({ stderr: JSON.stringify([{ Code: 'AccessDenied', RequestId: nestedHex }]) })), redactedFallback(path));
   assert.equal(cloudGet(path, run({ stderr: '{"error_code":"FunctionNotFound"}' })), null);
   assert.deepEqual(cloudGet(path, (file, args) => {
     assert.equal(file, 'aliyun');
@@ -314,8 +323,37 @@ test('unknown codes gain only constant metadata from a validated native remote e
   const run = value => () => { throw { stderr: JSON.stringify(value) }; };
   assert.throws(() => cloudGet(path, run(envelope)), error => error.message === `FC readback GET ${path} failed (child-exit; providerCode=unrecognized; requestId=${requestId}; httpStatus=403).`);
   for (const change of [{ schemaVersion: 'v2' }, { schemaVersion: null }, { status_code: '403' }, { status_code: 403.5 }, { status_code: 399 }, { status_code: 600 }, { error_code: null }]) {
-    assert.throws(() => cloudGet(path, run({ ...envelope, ...change })), error => error.message === `FC readback GET ${path} failed (child-exit).`);
+    assert.throws(() => cloudGet(path, run({ ...envelope, ...change })), redactedFallback(path));
   }
   assert.throws(() => cloudGet(path, run({ ...envelope, request_id: 'private-non-id-sentinel' })), error => error.message === `FC readback GET ${path} failed (child-exit; providerCode=unrecognized; httpStatus=403).`);
-  assert.throws(() => cloudGet(path, run({ ...envelope, schemaVersion: undefined, status_code: undefined })), error => error.message === `FC readback GET ${path} failed (child-exit).`);
+  assert.throws(() => cloudGet(path, run({ ...envelope, schemaVersion: undefined, status_code: undefined })), redactedFallback(path));
+});
+
+
+test('plain CLI EOF and bounded process metadata diagnose transport without arbitrary strings', () => {
+  const path = '/functions/parrotbook-owner-packs/triggers';
+  const run = error => () => { throw error; };
+  assert.throws(() => cloudGet(path, run({ status: 1, stderr: 'ERROR: unexpected EOF\n' })), error => error.message === `FC readback GET ${path} failed (child-exit; exitStatus=1; stderrBytes=22; stderrFormat=text; stderrKind=unexpected-eof).`);
+  for (const code of ['ETIMEDOUT', 'ENOBUFS', 'ENOENT', 'ECONNRESET']) {
+    const category = code === 'ETIMEDOUT' ? 'timeout' : 'child-exit';
+    assert.throws(() => cloudGet(path, run({ code, status: 255, signal: 'SIGTERM', stderr: '' })), error => error.message === `FC readback GET ${path} failed (${category}; executionCode=${code}; exitStatus=255; signal=SIGTERM; stderrBytes=0; stderrFormat=text).`);
+  }
+  const secret = 'private-non-json-sentinel';
+  assert.throws(() => cloudGet(path, run({ code: secret, signal: secret, status: 256, stderr: secret, stdout: secret, message: secret })), error => error.message === `FC readback GET ${path} failed (child-exit; stderrBytes=${Buffer.byteLength(secret)}; stderrFormat=text).`);
+  for (const status of [-1, 1.5, '1']) assert.throws(() => cloudGet(path, run({ status, signal: 'SIGTERM.private', stderr: '' })), error => error.message === `FC readback GET ${path} failed (child-exit; stderrBytes=0; stderrFormat=text).`);
+  assert.throws(() => cloudGet(path, run({ status: 1, stderr: 'ERROR: unexpected EOF\n' + secret })), redactedFallback(path, 'text'));
+});
+
+test('real non-JSON readback subprocess failure exposes no private stderr or stdout', () => {
+  const wrapper = new URL('./api-deployment.mjs', import.meta.url).href;
+  const secret = 'private-plain-stderr-sentinel';
+  const provider = `process.stdout.write(${JSON.stringify(secret)}); process.stderr.write(${JSON.stringify(secret)}); process.exit(7);`;
+  const child = `import { cloudGet, execute } from ${JSON.stringify(wrapper)};
+    try { cloudGet('/functions/parrotbook-owner-packs/triggers', () => execute(process.execPath, ['-e', ${JSON.stringify(provider)}], {stdio:'inherit'})); process.exitCode=8; }
+    catch(error) { console.error(error.message); }`;
+  const result = spawnSync(process.execPath, ['--input-type=module', '-e', child], { encoding: 'utf8', stdio: 'pipe' });
+  assert.equal(result.status, 0);
+  assert.equal(result.stdout, '');
+  assert.equal(result.stderr, `FC readback GET /functions/parrotbook-owner-packs/triggers failed (child-exit; exitStatus=7; stderrBytes=${Buffer.byteLength(secret)}; stderrFormat=text).\n`);
+  assert.ok(!result.stderr.includes(secret));
 });
