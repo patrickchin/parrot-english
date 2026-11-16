@@ -45,6 +45,11 @@ removed through the intended creator UI. No additional share was created.
 The browser check did not independently re-read OSS object ACLs or list deleted
 objects; separate backend smoke testing covers those properties.
 
+A separate read-only burst of 12 simultaneous requests to a nonexistent share
+returned one application 404 and eleven provider 429 responses. This observes
+the configured single-invocation admission cap without creating tickets or
+uploads. It does not exercise the daily creation limit at its boundary.
+
 All contexts, browsers, and the initial isolated CLI browser were closed. No
 preview server was started. No cloud administration or Git mutation occurred.
 
