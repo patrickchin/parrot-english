@@ -1,14 +1,28 @@
 # Owner upload API deployment
 
-Status: deployment preparation only. These files do not create a function,
-GitHub connection, trigger, domain, role, certificate, or upload key. A hosted
-owner API has not been verified by this runbook.
+Updated 2026-11-16. Both native FC APIs and the ESA player are deployed and
+verified from merged main revision
+`ee6fc7ab7322a98ddef302c89f8bc94cb7e21280`. API workflow
+[43809621870](https://github.com/patrickchin/parrot-english/actions/runs/43809621870)
+passed function, runtime-role, concurrency-one, revision, and unchanged owner
+authentication readbacks. Player workflow
+[43809621843](https://github.com/patrickchin/parrot-english/actions/runs/43809621843)
+and ESA build `189354688290940` succeeded; public `/api/health` matched at
+2026-11-16 05:24:47 UTC.
 
-2026-11-16: Patrick approved the scoped GitHub Actions alternative. The
-repository now permits API packages built from merged main by that workflow;
-local/manual packages and unmerged production code remain prohibited. The
-[decision record](release/api-deployment-decision.md) explains the access scope.
-The existing 21-pack catalogue is published independently.
+The sole owner HTTP trigger uses native Bearer authentication. Missing/invalid
+tokens return 403, and unauthenticated apex/www preflights return 204. Hosted
+guest API and Chromium/WebKit upload, playback, and removal checks passed.
+Custom HTTPS and authenticated hosted owner CRUD acceptance remain before
+endpoint enablement: `/api/owner-config` and `/api/share-config` intentionally
+return 503. Both API DNS-only CNAMEs exist; two free DigiCert instances have been
+ordered, but verified contact/location and certificate issuance are pending.
+Automatic OSS lifecycle cleanup is deliberately disabled by Patrick's decision.
+
+The existing **21 packs / 128 scenes**, all uploaded by Patrick, are published
+independently. See the [release board](release/README.md),
+[hosted sharing evidence](release/hosted-share-verification.md), and
+[deployment decision and setup history](release/api-deployment-decision.md).
 
 ## Storage and execution
 
@@ -24,8 +38,9 @@ bucket `parrotbook-media-f6e09412` holds all media and structured content:
 | `content/catalog.json` | Public discovery entry point, replaced last with `no-store` |
 | `content/owner-packs.json` | Private, `no-store` management index retaining hidden packs |
 
-Learner recordings stay in the browser. There is no database, public upload
-account, media proxy, or media in either code bundle. Browser uploads go
+Learner drafts stay in the browser; optional guest sharing requires an explicit
+upload action as described below. There is no database, public upload account,
+media proxy, or media in either code bundle. Browser uploads go
 directly to OSS using short-lived signed URLs. FC reads metadata and media HEAD
 responses and copies objects within OSS before publishing the catalog.
 
@@ -56,12 +71,14 @@ captures stdout/stderr so provider failures cannot print native trigger tokens.
 The deployment role can update only these functions and the guest trigger; it
 cannot modify the owner's native trigger or write OSS data.
 
-First deployment: dispatch `Deploy APIs` on main with `bootstrap=true`. This
-creates the functions with global reserved concurrency one and leaves the owner
-trigger absent for separate native Bearer setup. Bootstrap is resumable after a
-partial creation. Normal deployments require the protected owner trigger and
-quotas to exist already, compare its exact configuration before/after, and verify
-function settings, runtime roles, revision, and quotas by native readback.
+Initial bootstrap is complete. For a new approved environment only,
+`bootstrap=true` first creates the functions without a guest trigger and verifies
+both global reserved concurrency caps equal one, then adds the guest trigger.
+It leaves the owner trigger absent for separate native Bearer setup. Bootstrap
+is resumable after a partial creation; it is not the normal redeployment path.
+Normal deployments require the existing protected owner trigger and quotas,
+compare its exact configuration before/after, and verify function settings,
+runtime roles, revision, and quotas by native readback.
 
 Full `s deploy --template s.yaml --assume-yes` is intentional: `--function`
 skips concurrency configuration. The pinned native trigger reconciler updates
@@ -70,33 +87,30 @@ The deployment gate enforces that preservation in memory without logging its
 secret configuration. See [trigger reconciler](https://github.com/devsapp/fc3/blob/master/src/subCommands/deploy/impl/trigger.ts)
 and [selection behavior](https://github.com/devsapp/fc3/blob/master/src/subCommands/deploy/index.ts).
 
-After bootstrap, configure native owner Bearer authentication and complete the
-hosted checks below before enabling either public API URL in ESA. A successful
-build alone does not certify authentication, CORS, uploads, expiry, or removal.
+Native owner Bearer setup and guest hosted acceptance are complete. Finish
+custom HTTPS and owner acceptance below before enabling the public API URLs in
+ESA. A successful build alone does not certify every hosted behavior. Native
+readbacks use pinned Alibaba CLI 3.5.3 with a 30-second read timeout, two retries
+for read-only GETs, and a 45-second total subprocess budget; the deployment
+history records the resolved provider-read timeout failure.
 
 ## Function and execution role
 
-Read-only cloud preflight on 2026-11-14 verified the known OSS bucket in the
-intended account. Hong Kong has no FC3 functions or Parrotbook custom domains.
-The FC service-linked role exists; the project owner/guest execution roles and
-an Application Center deployment role do not. The existing project role is for
-ESA Git deployment and must not be repurposed. The bucket is unversioned, has
-GET/HEAD CORS only, and `GetBucketLifecycle` returns `NoSuchLifecycle`.
+Historical preflight, 2026-11-14: the known OSS bucket was verified in the
+intended account. At that time Hong Kong had no FC3 functions or Parrotbook
+custom domains; the project runtime/deployment roles did not exist; the bucket
+was unversioned with GET/HEAD CORS only and no lifecycle configuration. No cloud
+configuration changed during that read-only preflight. These are historical
+observations, superseded by the 2026-11-16 setup and release receipts above.
 
-The catalogue prerequisite is complete. The two runtime roles and separate
-main-only deployment role were created and verified on 2026-11-16. Merge the
-reviewed source to main, dispatch the scoped API bootstrap workflow, and read
-back both function quotas; configure the private owner Bearer
-trigger; bind the two custom HTTPS domains; add the scoped OSS PUT CORS rule
-and guest lifecycle rules; then perform the hosted acceptance checks. Only
-after those pass should ESA expose the public endpoint URLs. The connected
-OpenAPI tools have not established an FC Application Center import operation;
-their suggested SAE application API belongs to a different service. Use the
-documented FC console import workflow. GitHub authorization, actual managed
-Node version, and owner Bearer preflight behavior remain unverified until that
-console setup and smoke test. No cloud configuration changed during preflight.
+The two runtime roles and separate main-only deployment role were created and
+verified on 2026-11-16. Both functions now exist with their intended settings and
+reserved concurrency one; the owner trigger is protected and preserved across
+the successful deployment. OSS PUT CORS is configured. The approved merged-main
+CI path above supersedes the earlier Application Center bootstrap proposal.
+The separate ESA deployment role is not repurposed.
 
-The intended function is `parrotbook-owner-packs`: `nodejs20`, `index.handler`,
+The deployed owner function is `parrotbook-owner-packs`: `nodejs20`, `index.handler`,
 512 MiB, 120-second timeout, code only from `api/dist`. It uses one concurrent
 invocation and has function reserved concurrency **1**. Do not add provisioned
 instances, another publisher function, VPC, NAS, or a database.
@@ -109,15 +123,16 @@ essential. Read it back using `GetConcurrencyConfig` and require
 [concurrency API](https://help.aliyun.com/zh/functioncompute/api-fc-2023-03-30-putconcurrencyconfig),
 and [FC3 YAML](https://docs.serverless-devs.com/user-guide/aliyun/fc3/spec/).
 
-Create a dedicated RAM role trusted by **Function Compute / FC**, attach
-[`execution-policy.json`](../infrastructure/owner-api/execution-policy.json), and
-provide its ARN to the deployment environment. This policy grants GetObject
-only on this project's `content/*` and `clips/*`, and PutObject only on uploads,
+The dedicated `parrotbook-owner-packs-runtime` RAM role is trusted by
+**Function Compute / FC** and uses
+[`execution-policy.json`](../infrastructure/owner-api/execution-policy.json).
+Its ARN is provided through `OWNER_API_EXECUTION_ROLE_ARN`. This policy grants
+GetObject only on this project's `content/*` and `clips/*`, and PutObject only on uploads,
 releases, the catalog, and the exact private management key
 `content/owner-packs.json`. It grants no listing, deletion, bucket configuration,
-or access to other projects. Use a separate deployment role limited to this
-function, its configuration, and passing this execution role. Do not use
-Application Center's broad default role for runtime code.
+or access to other projects. The separate deployment role is limited to the two
+reviewed functions and scoped deployment actions; it can pass only their two
+runtime roles. Do not broaden a runtime role to handle deployment.
 
 FC assumes the execution role and supplies temporary credentials per request as
 `context.credentials.accessKeyId`, `accessKeySecret`, and `securityToken`. The
@@ -127,54 +142,51 @@ and [Node context](https://www.alibabacloud.com/help/en/functioncompute/context-
 
 ## Native authentication, HTTPS, and CORS
 
-The descriptor deliberately does **not** create an owner HTTP trigger. Native opaque
-Bearer authentication is documented, but the current HTTP API/schema and FC3
-YAML reference do not establish its exact configuration enum. Do not guess that
-enum, create an anonymous trigger, or replace platform authentication with a
-custom password/session store.
+The descriptor deliberately does **not** manage the owner HTTP trigger. Its
+sole `owner-http` trigger was created in the FC console using native opaque
+Bearer authentication and read back with `authType: bearer`, an enabled token,
+and `GET`, `POST`, `PATCH`, `DELETE`, and `OPTIONS`. The successful API deployment
+preserved its exact configuration. Keep tokens private and do not log trigger
+configuration. Never accept a deployment that removes the trigger or makes
+owner mutations anonymous; do not replace native authentication with a custom
+password/session store.
 
-After the function exists:
+Both exact player origins, `https://parrotbook.com` and
+`https://www.parrotbook.com`, pass unauthenticated owner OPTIONS with 204 through
+the native testing endpoint; missing/invalid Bearer tokens return 403. The owner
+handler provides exact-origin CORS via `OWNER_API_ORIGINS`, a JSON array
+defaulting to `["https://parrotbook.com","https://www.parrotbook.com"]`. It echoes
+only the matched origin with `Vary: Origin`, allows `GET`, `POST`, `PATCH`,
+`DELETE` and `Authorization, Content-Type`, and returns preflight without OSS
+access. Foreign origins or unexpected methods/headers are rejected. CORS does
+not authenticate mutations. Authenticated management and the custom-domain
+browser path still need acceptance.
 
-1. In the FC console, create its sole HTTP trigger using **Bearer authentication**,
-   token type **Opaque**, and methods `GET`, `POST`, `PATCH`, `DELETE`, and
-   `OPTIONS`. Enabling OPTIONS alone does not implement browser preflight.
-   Use a fresh random 32–128 character
-   token with a valid unique token name. Keep the test token private.
-2. Read back the trigger with `GetTrigger`. Inspect the auth type and enabled
-   token configuration without logging the token itself. Record the provider
-   configuration shape for later declarative deployment. Confirm subsequent
-   code deployments preserve this manually configured trigger. Never accept a
-   deployment plan that deletes it or changes it to anonymous.
-3. Bind a dedicated custom HTTPS domain and certificate to the function. FC's
-   built-in `fcapp.run` domain is documented as testing only. A proposed name
-   such as `owner-api.parrotbook.com` is not an existing verified endpoint;
-   DNS/TLS setup and owner access may still be required. Protect the custom
-   domain with the same native Bearer authentication and route methods `GET`,
-   `POST`, `PATCH`, `DELETE`, and `OPTIONS`: verify its actual route, rather than
-   assuming trigger authentication automatically covers it.
-4. Configure and test CORS for both existing player origins, `https://parrotbook.com`
-   and `https://www.parrotbook.com`.
-   Allow `GET`, `POST`, `PATCH`, `DELETE`, and `Authorization, Content-Type`. Cross-origin
-   preflight carries no Bearer token and must succeed without permitting an
-   unauthenticated mutation. The newer gateway `corsConfig` feature requires
-   invited-test activation; do not assume the account has it. The owner handler
-   provides an exact-origin OPTIONS/CORS fallback, configured by
-   `OWNER_API_ORIGINS`, a JSON array defaulting to
-   `["https://parrotbook.com","https://www.parrotbook.com"]`. Only the matched
-   request origin is echoed, with `Vary: Origin`. Valid preflight returns
-   204 without accessing OSS; foreign origins or unexpected methods/headers
-   are rejected. This does not implement or bypass authentication. Native
-   Bearer must still let unauthenticated OPTIONS reach that fallback; the
-   primary documentation does not establish that exemption.
-   Verify the actual native preflight path and authenticated PATCH/DELETE in a
-   browser. Keep the endpoint disabled until a supported provider configuration
-   and any required fallback are verified; never make mutations anonymous to
-   solve preflight.
-5. Add an OSS CORS rule for both exact player origins, `PUT`, and the headers
-   returned with signed uploads, including `Content-Type` and
-   `x-oss-object-acl` (and `Content-MD5` if supplied). Preserve the existing
-   public GET/HEAD rule. Expose ETag if the client reads it. OSS handles the
-   browser's OPTIONS preflight through its bucket CORS configuration.
+OSS already has a PUT CORS rule for both exact player origins and signed-upload
+headers, while preserving public GET/HEAD CORS. Native readback and hosted
+API/OSS preflight checks passed; real Chromium/WebKit guest PUT uploads passed.
+Preserve `Content-Type` and `x-oss-object-acl` support (and `Content-MD5` if
+supplied). OSS handles browser OPTIONS through bucket CORS. Expose ETag if a
+client needs to read it.
+
+Custom HTTPS remains:
+
+1. Complete the required verified CA contact and actual location, then issue
+   the two already ordered free DigiCert RSA2048 Basic certificates. Add their
+   DNS validation challenges and record the actual issued NotAfter dates.
+   Allocated certificate instances are not issued certificates.
+2. Create native FC custom domains `owner-api.parrotbook.com` and
+   `share-api.parrotbook.com`, installing the corresponding certificates and
+   routing `/*` to their respective existing functions. The two DNS-only CNAMEs
+   to `1263482499936169.cn-hongkong.fc.aliyuncs.com` are already saved and
+   independently resolved; Cloudflare remains authoritative. No FC custom
+   HTTPS domain has been created yet. The built-in `fcapp.run` domains remain
+   testing endpoints.
+3. Protect the owner custom domain with native Bearer authentication and allow
+   its five required methods. Keep the guest domain anonymous and separate.
+   Verify the actual domain authentication, routing, TLS, exact-origin browser
+   preflight, and authenticated methods; do not assume trigger authentication
+   automatically protects a custom domain.
 
 The bucket is public-read, so each staging upload must explicitly sign
 `x-oss-object-acl: private`. Release copies must explicitly use their intended
@@ -189,41 +201,40 @@ and [CopyObject permissions](https://help.aliyun.com/zh/oss/developer-reference/
 
 ## Acceptance before enabling the owner page
 
-Use a disposable owner-authenticated upload through the intended deployment.
-Do not give the normal owner key to the browser UI until these checks pass:
+Deployment/native readbacks, missing/invalid-token rejection, apex/www owner
+preflight, and OSS PUT CORS are already verified. Authenticated hosted owner
+CRUD and the custom HTTPS path are still mandatory before enabling the page.
+Use a disposable pack and keep its Bearer token in ephemeral browser/runner
+memory; never save it, signed URLs, or private recordings in release evidence.
 
-- Confirm the provider fetched the intended merged main commit and `/session`
-  returns the exact `OWNER_API_REVISION`. Read back runtime, memory, timeout,
-  execution role, native single-request behavior, and global quota 1.
-- Verify missing and invalid Bearer tokens are rejected with HTTP 401 before
-  the handler runs, on both the custom domain and every accessible trigger URL.
-  Verify valid authentication, and unauthenticated browser preflight from the
-  exact page origin. Exercise the actual browser path, not only curl.
-- Hold one authenticated invocation active while starting another. Confirm the
-  second is throttled and does not execute concurrently; inspect request times
-  and FC invocation logs. A local mutex or single-instance setting alone is not
-  evidence of a global cap. All publication writes must be awaited before return.
+- Confirm authenticated `/session` returns the deployed `OWNER_API_REVISION`.
+  Check custom-domain TLS, routing, native Bearer protection, and both exact
+  player origins in a browser. Missing and invalid credentials must be rejected
+  before the handler on the custom domain and every accessible trigger URL;
+  the provider's verified rejection status is 403. Verify valid authentication
+  and unauthenticated OPTIONS without exposing an anonymous mutation path.
 - Initialize an upload, PUT a file directly to OSS with the supplied exact
   signed headers, and verify anonymous GET to that staging object is denied.
-  Exercise a failed upload and retry. Confirm malformed metadata, missing files,
-  stale source ETags, duplicate IDs, and incompatible franchise metadata do not
-  replace the public catalog.
-- Publish a complete valid pack. Check release files and media, then the public
-  catalog, search/franchise discovery, scene load, playback, and recording flow.
-  Retry the same publication and verify its defined idempotent result.
-- Start two catalog mutations together. Verify one is throttled or retried and
-  neither successful publication disappears from the final catalog.
+  Exercise a failed upload and retry, then publish the complete valid pack.
+  Check release files/media, public catalog, Packs discovery/search, scene load,
+  playback, and recording. Retry publication and verify its idempotent result.
+- List the disposable pack in owner management, hide it, confirm it is absent
+  from discovery but retained in management, show it again, then delete it.
+  Confirm deletion removes its catalog and management entries and preserves
+  unrelated packs. Immutable/shared pack files and media remain stored.
+- Exercise both the private browser page and the CLI against the same serialized
+  API. Recheck the public catalog after cleanup and record only non-secret
+  revision, authentication, domain, quota, and status evidence.
 
-Publish the franchise catalog, including every entry's `uploader`, from the
-first merged content-only release using the **existing main CLI**, before
-merging/deploying the feature that requires that field. The new API validates
-the current catalog before publication and cannot bootstrap over the former
-four-pack catalog with missing uploader fields. Verify the content publication
-first, then merge/deploy the API and player feature. From then on, the owner API is the **sole application
-catalog writer**: publication and withdrawal scripts must call it. Do not keep
-the former direct OSS CLI publication path running alongside it. Administrative
-bucket writes can bypass serialization and are outside this application's
-single-writer guarantee.
+The initial uploader-complete catalog prerequisite was fulfilled by the
+2026-11-14 content publication: 21 packs / 128 scenes, all uploaded by Patrick.
+That one-time publication used the then-current main CLI before the new feature
+was enabled. The owner API is now the **sole application catalog writer**:
+`npm run content:publish` and removal use `OWNER_API_URL` and `OWNER_API_TOKEN`
+to call it. Default publication merges and preserves unrelated packs;
+`--replace-catalog` is explicit. Do not restore a parallel direct OSS CLI writer.
+Administrative bucket writes can bypass serialization and are outside the
+application's single-writer guarantee.
 
 OSS PutObject does not support If-Match/If-None-Match catalog CAS. Serialization
 is therefore a correctness requirement, not a throughput optimization. Media
@@ -232,26 +243,38 @@ upload URL cannot change the copied bytes after validation. See [unsupported
 PutObject preconditions](https://help.aliyun.com/zh/oss/user-guide/0017-00000245)
 and [CopyObject source preconditions](https://help.aliyun.com/zh/oss/developer-reference/copyobject/).
 
+For full hosted regression coverage, also exercise malformed metadata, missing
+files, stale source ETags, duplicate IDs, incompatible franchise metadata,
+publication/removal retry after lost responses, and concurrent catalog mutations.
+Verify invalid input never replaces the public catalog and successful concurrent
+mutations are throttled/retried without lost entries. An authenticated overlap
+test should confirm a second invocation is throttled; a local mutex or
+single-instance setting is not evidence of a global cap. The deployed global
+quota-one readback is already recorded; these additional scenarios are not
+claims of completed hosted owner testing. All publication writes must be
+awaited before return.
+
 After acceptance, configure ESA's `OWNER_API_URL` with the verified custom HTTPS
 endpoint and release the player through its existing merged-Git build. The owner
 enters the upload key into the private page; keep it only in browser memory.
 Record the actual function revision, provider build, non-secret trigger/domain
-settings, quota readback, and smoke results in the release record. Rotate or
-disable the test token. Keep publication disabled if any prerequisite remains
+settings, quota readback, and smoke results in the release record. If a temporary
+acceptance token was used, disable it after verifying the intended owner key.
+Keep publication disabled if any prerequisite remains
 unverified; local tests are not evidence of a hosted service.
 
 ## Guest video sharing, without learner accounts
 
-Guest sharing is a separate public API, `parrotbook-guest-shares`, with native
+Guest sharing is a separate deployed public API, `parrotbook-guest-shares`, with native
 HTTP `authType: anonymous`. This does not change the owner trigger's native
 Bearer requirement or give guests owner credentials. The second function uses
 `share.handler`, Node 20, 512 MiB, a 60-second timeout, and reserved concurrency
 **1**. Its code is the separately compiled `api/dist/share.js` in the same Git
 build. Both functions use the provider pipeline above; neither contains media.
 
-Create a separate execution role with only
+Its separate `parrotbook-guest-shares-runtime` execution role uses only
 [`share-execution-policy.json`](../infrastructure/owner-api/share-execution-policy.json)
-and provide `SHARE_API_EXECUTION_ROLE_ARN` to the provider environment. This role
+and is supplied through `SHARE_API_EXECUTION_ROLE_ARN`. This role
 can access only `guest-shares/*`: private records, private videos, and daily
 quota tickets. PutObject requires the explicit private ACL. Delete permission
 is limited to uploaded/published videos; records and tickets cannot be deleted
@@ -287,9 +310,10 @@ An upload is one MP4, at most **25 MiB**. `POST /shares` binds the declared exac
 size into the OSS V4 signature using its `content-length` additional signed
 header, alongside `video/mp4` and private ACL. The signed PUT expires in fifteen
 minutes. Upload a Blob body using the returned headers: browser Fetch supplies
-Content-Length, which JavaScript must not set manually. The real OSS browser
-smoke must verify this signed length is sent and oversized/mismatched uploads
-are rejected. Do not fall back to an unbound upload URL. This uses the native
+Content-Length, which JavaScript must not set manually. Hosted Chromium/WebKit
+checks verified successful Blob PUTs with the signed headers. Broader abuse
+coverage must also verify oversized/mismatched uploads are rejected. Do not
+fall back to an unbound upload URL. This uses the native
 [V4 additional signed headers](https://help.aliyun.com/zh/oss/developer-reference/add-signatures-to-urls)
 and [SDK signatureUrlV4 parameters](https://github.com/ali-sdk/ali-oss/blob/master/lib/common/object/signatureUrlV4.js).
 
@@ -312,23 +336,38 @@ cap of 1 and a single deployed guest writer. A local process counter is not a
 substitute. Do not raise concurrency or deploy another function against these
 keys without transactional quota coordination.
 
-Recommend lifecycle rules scoped only to these prefixes: raw uploads after
-one day, quota tickets after one day, and published videos/records after eight
-days. Patrick explicitly selected **leave cleanup disabled** on 2026-11-16;
-do not apply these proposed rules or block friend testing on their approval.
-These are proposed rules, **not applied cloud changes**. Verify the
-provider's day-boundary behavior preserves all tickets throughout their UTC
-quota day, and handle noncurrent versions if bucket versioning is enabled.
-Seven-day access expiration is enforced by the API regardless of cleanup.
-Until lifecycle rules are configured, expired objects remain stored and billed.
+Patrick explicitly selected **leave automatic cleanup disabled** on 2026-11-16.
+No OSS lifecycle rule was applied, and lifecycle setup is neither a pending
+approval nor a friend-test gate. Seven-day link access expiration is enforced
+by the API regardless of cleanup; expired private objects remain stored and
+billed until removed. Creator removal still revokes access and deletes the
+share's raw/published videos. It does not delete quota tickets or records.
 
-Before enabling hosted sharing, read back the separate execution role and
-global quota, test simultaneous creations at the configured daily limit, and
-verify a second invocation is throttled rather than admitted concurrently.
-Exercise actual browser preflight and direct OSS PUT with its signed length,
-publish, new-browser playback, expired/pending/revoked links, wrong creator
-tokens, and retry after lost publish/delete responses. Anonymous OSS GET must
-fail for both raw and published objects. Confirm the share API cannot access
-the owner catalog, and that deleting a share stops playback without deleting
-quota tickets. Local SDK stubs prove request construction, not these hosted
-permissions, global scheduling, lifecycle rules, or browser network behavior.
+Hosted acceptance already completed against the provider testing endpoint:
+
+- Native execution-role and global quota-one readbacks passed. A read-only
+  12-request burst to a nonexistent share returned one application 404 and
+  eleven provider 429 responses; it did not create tickets or uploads.
+- API smoke verified private raw/published media, signed upload, publication,
+  ranged playback, wrong-token rejection, and creator removal/revocation.
+  Apex/www API and OSS preflights passed; a foreign API origin returned 403.
+- Real Chromium and WebKit UI checks each created, uploaded, published, played
+  in a fresh browser context, and removed one disposable share. Video playback
+  returned 206 and advanced; fresh viewers after removal received 410. Both
+  shares were removed. The later `ee6fc7ab` deployment preserved authentication
+  and both concurrency caps; the removed synthetic share remained 410. This
+  later operational check was not a rerun of the two-browser upload scenarios.
+
+See [the dated browser evidence](release/hosted-share-verification.md) for source
+revisions and limits. Custom HTTPS and its hosted verification remain before
+setting ESA's `SHARE_API_URL`; player endpoint configuration remains disabled
+alongside the pending owner acceptance.
+
+For full hosted regression coverage, still test simultaneous creations at the
+configured daily-limit boundary, oversized/mismatched signed uploads,
+expired/pending links, retry after lost publish/delete responses, and negative
+cross-role catalog access. Confirm creator removal cannot delete quota tickets.
+These extend the completed smoke and browser checks; they are not reported as
+passed. Local SDK stubs alone do not establish hosted permissions, scheduling,
+or browser network behavior. Physical-phone and in-app-browser recording/share
+coverage remains separate from the desktop engine checks.
