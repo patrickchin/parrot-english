@@ -5,6 +5,10 @@ phone support claim. It runs a freshly built production player locally, with
 one worker and one preview server. It does not deploy code or write to cloud
 storage.
 
+Final focused matrix: **45/45 passed, zero skips** — 15 Chromium and 15 WebKit
+cases locally, plus 15 Firefox cases on Linux CI. Both default encoding and
+forced native-AAC-unavailable cases produce a real MP4 with verified audio.
+
 ## Source and reproduction
 
 - Date: 2026-11-16, Asia/Shanghai.
@@ -12,6 +16,12 @@ storage.
   test-only mobile matrix additions in this change.
 - The focused rerun also includes the shared `VoiceWaveform.tsx` fix in this
   change, which moves the recovery status into normal flow below the plot.
+- Final local expanded matrix: application code from
+  `95adaf9321c5f219c9412d8ed50774bdb71575bd` plus the AAC implementation and
+  regression patch committed unchanged as
+  `8e33027da584dd3cfa8b2ff1d6657274efad420c`. The preview was built before that
+  commit, so its embedded revision remains `95adaf93`; the tested source code
+  includes the complete AAC fix. Linux CI tests the exact `8e33027d` commit.
 - Runner: Node 24.19.0, macOS ARM64; Playwright 1.61.1.
 - Command:
 
@@ -19,7 +29,7 @@ storage.
 PLAYWRIGHT_PORT=21337 npm run test:browser -- --config=playwright.mobile.config.ts
 ```
 
-The dedicated config selects 42 cases rather than the whole browser suite.
+The dedicated config selects 45 cases (15 per engine) rather than the whole browser suite.
 It builds once, starts one strict-port production preview, and uses one worker
 to keep audio sessions isolated and avoid the earlier TCP-port exhaustion.
 Do not run another app build or the content-moving boundary check concurrently.
@@ -30,9 +40,9 @@ server.
 
 | Project | Engine | Context | Result |
 | --- | --- | --- | --- |
-| `mobile-qa-chromium` | Chromium 149.0.7827.55 | Pixel 7 preset, initial 390×844 | 14 passed |
-| `mobile-qa-webkit` | WebKit 26.5 | iPhone 13 preset, initial 390×844 | 14 passed |
-| `mobile-qa-firefox` | Firefox 151.0 on Linux | Desktop Firefox with touch and 390×844 viewport | Initial CI: 9 passed, 5 recording-fixture failures; audio-environment repair pending CI |
+| `mobile-qa-chromium` | Chromium 149.0.7827.55 | Pixel 7 preset, initial 390×844 | 15 passed, including forced AAC fallback |
+| `mobile-qa-webkit` | WebKit 26.5 | iPhone 13 preset, initial 390×844 | 15 passed, including forced AAC fallback |
+| `mobile-qa-firefox` | Firefox 151.0 on Linux | Desktop Firefox with touch and 390×844 viewport | 15 passed, including AAC fallback and decoded-audio checks |
 
 Each context is resized through these CSS viewport sizes. Tablet rows exercise
 layout at tablet dimensions; the phone presets retain their original user
@@ -120,19 +130,57 @@ from an actual button click and requires a running clock within five seconds
 (browser launch is bounded to 30 seconds). That isolates CI audio output from
 app behavior and prevents another full matrix when the output clock is broken.
 There are no autoplay preference changes or browser sandbox overrides. Tests
-stop after the first failure while this diagnosis is pending. The environment
-repair still needs a successful CI run; neither 42/42 nor Firefox recording
-support is claimed yet.
+stop after the first failure to bound diagnosis. The subsequent runs below
+verify both the environment repair and the final complete matrix.
+
+The next Linux run, [43796864201](https://github.com/patrickchin/parrot-english/actions/runs/43796864201),
+tested `95adaf9321c5f219c9412d8ed50774bdb71575bd`. PulseAudio setup and the native
+audio preflight passed (`state: running`, clock 0.113 seconds, 44,100 Hz).
+The first guest-sharing test then recorded successfully and reached completion,
+confirming the earlier microphone-fixture stall was repaired. Preparing the MP4
+exposed an application limitation: the result shows “This browser cannot export
+MP4. Try a recent Safari or Chrome.” File-sharing controls never appear. The
+first-failure limit stopped the other 13 cases, which are unrun rather than
+skipped or passed. The exact snapshot is
+`/private/tmp/parrotbook-firefox-pulse-error-context.md`; the step log is
+`/private/tmp/parrotbook-firefox-pulse-failed.log`.
+
+The first export capability gate checks for AAC encoding. The implementation
+now retains native encoding when available and loads the official Mediabunny
+AAC software encoder when native AAC is unavailable. The expanded regression
+runs the full cached-video flow twice: with default capabilities, and with only
+native `AudioEncoder.isConfigSupported()` answers for `mp4a` forced false.
+Firefox without `AudioEncoder` naturally exercises the same fallback; the test
+does not invent a native encoder or stub encoded output.
+
+Both cases require real MP4 bytes, matching SHA-256 hashes for the native file
+and hosted upload, a video stream and 48 kHz AAC stream reported by FFprobe,
+and decoded PCM containing the synthetic learner's 660 Hz signal during the
+replaced line (amplitude above 0.05, at least 70% of the segment's energy).
+Consent, native cancellation/error/retry, publication retry, and creator-only
+removal checks remain unchanged. The expanded Chromium/WebKit run passed all
+30 cases in 1.6 minutes with zero skips
+(`/private/tmp/parrotbook-mobile-aac-expanded.log`). This is the final local
+matrix result; earlier passes and targeted reruns overlap with it and are not
+added together. The 15-case Linux Firefox run,
+[43797816610](https://github.com/patrickchin/parrot-english/actions/runs/43797816610),
+passed all 15 cases in 1.4 minutes on the exact AAC-fix commit
+`8e33027da584dd3cfa8b2ff1d6657274efad420c`, with zero skips. The native audio
+preflight, both real-export sharing flows, three recording-startup recovery
+cases, exact local-draft persistence, all layouts, owner controls, and shared
+playback all passed. The complete CI log is
+`/private/tmp/parrotbook-firefox-aac-success.log`. No codec failure is hidden by
+changing the media fixture or skipping Firefox's guest-sharing case.
 
 `.github/workflows/mobile-browser.yml` supplies the alternate Linux host. On
 pull requests to main (including PR #276), main pushes, or a manual run, it
 installs Node 24, dependencies from the lockfile, the pinned Playwright version's
-Firefox and native dependencies, FFmpeg, and PulseAudio. It runs only the 14 Firefox
+Firefox and native dependencies, FFmpeg, and PulseAudio. It runs only the 15 Firefox
 engine/scenario pairs using the same one-worker, one-production-server config.
 The workflow has only `contents: read`, uses no cloud credentials or repository
 secrets, and retains logs, failure traces, and screenshots for 14 days. It does
-not deploy. A successful CI run is still required before claiming Firefox
-coverage; adding the workflow is not a passing result.
+not deploy. The passing run above supplies Firefox engine evidence; it does not
+certify Firefox for Android or physical-device audio and sharing behavior.
 
 The run log is `/private/tmp/parrotbook-mobile-qa.log`; the bounded retry log is
 `/private/tmp/parrotbook-mobile-firefox-headed.log`. A one-second native startup
@@ -141,8 +189,8 @@ replace Playwright's `test-results/`, so those logs are the persistent failure
 record. Explicit screenshots are saved under
 `~/Pictures/Screenshots/Codex/parrot-english/` using names such as
 `mobile-qa-webkit-practice-phone-landscape.png` and
-`mobile-qa-webkit-owner-preview-tablet-portrait.png`. Firefox produced no app
-screenshots.
+`mobile-qa-webkit-owner-preview-tablet-portrait.png`. Locally blocked Firefox
+produced no app screenshots; Linux CI retains its own evidence artifact.
 
 Manual review found the unavailable-waveform recovery message clipped at
 320 CSS pixels: its wrapped text exceeds the fixed waveform lane. This is a
