@@ -153,6 +153,7 @@ export function createShareApi({ client, bucket = 'parrotbook-media-f6e09412', r
     }
     reject(404, 'Sharing API route not found.');
   }
+  // Native FC owns Access-Control-* response headers; application checks remain below.
   return async eventBuffer => {
     const headers = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex',
       'X-Content-Type-Options': 'nosniff', Vary: 'Origin' };
@@ -171,13 +172,11 @@ export function createShareApi({ client, bucket = 'parrotbook-media-f6e09412', r
       } catch (error) { if (error instanceof ApiError) throw error; reject(400, 'Malformed sharing request.'); }
       const origin = requestHeaders.origin;
       if (origin && !allowedOrigins.includes(origin)) reject(403, 'This origin cannot use the sharing API.');
-      if (origin) headers['Access-Control-Allow-Origin'] = origin;
       const method = event.requestContext.http.method;
       if (method === 'OPTIONS') {
         const requestedMethod = requestHeaders['access-control-request-method'];
         const requestedHeaders = String(requestHeaders['access-control-request-headers'] ?? '').split(',').map(value => value.trim().toLowerCase()).filter(Boolean);
         if (!origin || !['GET', 'POST', 'DELETE'].includes(requestedMethod) || requestedHeaders.some(value => !['authorization', 'content-type'].includes(value))) reject(403, 'Preflight request is not allowed.');
-        Object.assign(headers, { 'Access-Control-Allow-Methods': 'GET, POST, DELETE', 'Access-Control-Allow-Headers': 'Authorization, Content-Type', 'Access-Control-Max-Age': '600' });
         return { statusCode: 204, headers, body: '', isBase64Encoded: false };
       }
       const result = await route(method, event.rawPath, body, requestHeaders);
