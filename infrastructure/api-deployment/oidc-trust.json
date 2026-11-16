@@ -1,0 +1,17 @@
+{
+  "Version": "1",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": "sts:AssumeRole",
+    "Principal": {
+      "Federated": ["acs:ram::1263482499936169:oidc-provider/parrot-github-actions"]
+    },
+    "Condition": {
+      "StringEquals": {
+        "oidc:aud": "sts.aliyuncs.com",
+        "oidc:iss": "https://token.actions.githubusercontent.com",
+        "oidc:sub": "repo:patrickchin/parrot-english:ref:refs/heads/main"
+      }
+    }
+  }]
+}

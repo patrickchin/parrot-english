@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { routeShortScene } from './short-scene';
 import type { Scene } from '../../src/scene';
+import { mobileViewports, mobileScreenshot, touchControl } from './mobile-viewports';
 
 const shareId = 'shr_abcdefghijklmnopqrstuvwx';
 const creatorToken = 'cap_abcdefghijklmnopqrstuvwx';
@@ -40,6 +41,8 @@ test.beforeEach(async ({ page }) => {
     } } });
     Object.defineProperty(navigator, 'canShare', { configurable: true, value: (data: ShareData) => data.files?.every(file => file.type === 'video/mp4') });
     Object.defineProperty(navigator, 'share', { configurable: true, value: async (data: ShareData) => {
+      const failure = (window as unknown as { nativeShareFailure?: string }).nativeShareFailure;
+      if (failure) throw new DOMException('Simulated native share result', failure === 'cancel' ? 'AbortError' : 'NotAllowedError');
       const file = data.files![0];
       const hash = [...new Uint8Array(await crypto.subtle.digest('SHA-256', await file.arrayBuffer()))].map(value => value.toString(16).padStart(2, '0')).join('');
       Object.assign(window, { nativeSharedFile: { name: file.name, size: file.size, type: file.type, hash } });
@@ -111,8 +114,14 @@ test('a cached video shares as a native file or a consented expiring link with d
   });
   await prepareVideo(page);
   expect(creates).toBe(0); expect(puts).toBe(0);
-  for (const width of [360, 390, 768, 1440]) {
-    await page.setViewportSize({ width, height: width === 360 ? 640 : 900 });
+  const viewports = info.project.name.startsWith('mobile-qa-') ? mobileViewports : [360, 390, 768, 1440].map(width => ({ width, height: width === 360 ? 640 : 900, name: String(width) }));
+  for (const viewport of viewports) {
+    const { width } = viewport;
+    await page.setViewportSize(viewport);
+    if (info.project.name.startsWith('mobile-qa-')) {
+      await touchControl(page, page.getByRole('button', { name: 'Share video file', exact: true }));
+      await mobileScreenshot(page, info, 'share-controls', viewport.name);
+    }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await expect(page.getByRole('button', { name: 'Share video file', exact: true })).toBeVisible();
     if (info.project.name === 'chromium') {
@@ -121,6 +130,14 @@ test('a cached video shares as a native file or a consented expiring link with d
       await page.screenshot({ path: join(folder, `guest-share-controls-${width}.png`), fullPage: true });
     }
   }
+  await page.evaluate(() => Object.assign(window, { nativeShareFailure: 'cancel' }));
+  await page.getByRole('button', { name: 'Share video file', exact: true }).click();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await page.evaluate(() => Object.assign(window, { nativeShareFailure: 'error' }));
+  await page.getByRole('button', { name: 'Share video file', exact: true }).click();
+  await expect(page.getByRole('alert')).toHaveText('The video could not be shared. Try again or download it.');
+  expect(creates).toBe(0); expect(puts).toBe(0);
+  await page.evaluate(() => Object.assign(window, { nativeShareFailure: undefined }));
   await page.getByRole('button', { name: 'Share video file', exact: true }).click();
   await expect(page.getByText('Video sent to the share menu.', { exact: true })).toBeVisible();
   expect(creates).toBe(0);
@@ -132,6 +149,12 @@ test('a cached video shares as a native file or a consented expiring link with d
   expect(creates).toBe(0);
   await dialog.getByRole('button', { name: 'Upload and create link', exact: true }).click();
   await expect(dialog.getByRole('alert')).toContainText('The playback link could not be confirmed.');
+  if (info.project.name.startsWith('mobile-qa-')) for (const viewport of mobileViewports) {
+    await page.setViewportSize(viewport);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await touchControl(page, dialog.getByRole('button', { name: 'Retry sharing', exact: true }));
+    await mobileScreenshot(page, info, 'share-error', viewport.name);
+  }
   await dialog.getByRole('button', { name: 'Retry sharing', exact: true }).click();
   await expect(dialog.getByLabel('Playback link', { exact: true })).toHaveValue(new RegExp(`/en/s/${shareId}$`));
   expect(creates).toBe(1); expect(puts).toBe(1); expect(publishes).toBe(2);

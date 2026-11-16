@@ -1,0 +1,49 @@
+{
+  "Version": "1",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "fc:CreateFunction", "fc:UpdateFunction", "fc:GetFunction",
+        "fc:PutConcurrencyConfig", "fc:GetConcurrencyConfig",
+        "fc:GetFunctionAsyncInvokeConfig", "fc:GetProvisionConfig"
+      ],
+      "Resource": [
+        "acs:fc:cn-hongkong:1263482499936169:functions/parrotbook-owner-packs",
+        "acs:fc:cn-hongkong:1263482499936169:functions/parrotbook-guest-shares",
+        "acs:fc:cn-hongkong:1263482499936169:functions/parrotbook-owner-packs/LATEST",
+        "acs:fc:cn-hongkong:1263482499936169:functions/parrotbook-guest-shares/LATEST"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["fc:ListTriggers", "fc:GetTrigger"],
+      "Resource": [
+        "acs:fc:cn-hongkong:1263482499936169:functions/parrotbook-owner-packs/triggers/*",
+        "acs:fc:cn-hongkong:1263482499936169:functions/parrotbook-guest-shares/triggers/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["fc:CreateTrigger", "fc:UpdateTrigger"],
+      "Resource": ["acs:fc:cn-hongkong:1263482499936169:functions/parrotbook-guest-shares/triggers/guest-http"]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["fc:ListVpcBindings"],
+      "Resource": [
+        "acs:fc:cn-hongkong:1263482499936169:functions/parrotbook-owner-packs/vpc-bindings/*",
+        "acs:fc:cn-hongkong:1263482499936169:functions/parrotbook-guest-shares/vpc-bindings/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["ram:PassRole"],
+      "Resource": [
+        "acs:ram::1263482499936169:role/parrotbook-owner-packs-runtime",
+        "acs:ram::1263482499936169:role/parrotbook-guest-shares-runtime"
+      ],
+      "Condition": { "StringEquals": { "acs:Service": "fc.aliyuncs.com" } }
+    }
+  ]
+}

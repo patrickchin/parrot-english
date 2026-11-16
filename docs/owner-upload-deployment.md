@@ -4,14 +4,11 @@ Status: deployment preparation only. These files do not create a function,
 GitHub connection, trigger, domain, role, certificate, or upload key. A hosted
 owner API has not been verified by this runbook.
 
-2026-11-15 update: console sign-in is complete, but the repository import path
-requests GitHub `repo,repo:status,delete_repo`. No GitHub grant was accepted.
-Automatic approval review rejected creation of the missing default IAM role;
-no role was created. The [deployment decision](release/api-deployment-decision.md)
-proposes a narrower main-only GitHub Actions/OIDC path. It is **not approved**;
-the provider-pipeline instructions below remain the current deployment rule.
-The 21-pack catalogue prerequisite is now published; see the
-[publication record](release/pack-management-verification.md#catalogue-publication).
+2026-11-16: Patrick approved the scoped GitHub Actions alternative. The
+repository now permits API packages built from merged main by that workflow;
+local/manual packages and unmerged production code remain prohibited. The
+[decision record](release/api-deployment-decision.md) explains the access scope.
+The existing 21-pack catalogue is published independently.
 
 ## Storage and execution
 
@@ -37,89 +34,45 @@ runtime permits four fetch subrequests **per execution**, and its gateway waits
 only ten seconds for a response. Batch validation needs more storage calls.
 See [ESA limits](https://www.alibabacloud.com/help/en/edge-security-acceleration/esa/user-guide/what-is-functions-and-pages/).
 
-## Deployment source and provider pipeline
+## Deployment source and GitHub Actions
 
-Only provider builds of merged `patrickchin/parrot-english` **main** may deploy
-this API. Do not upload an agent-local code bundle or ZIP. The ESA player keeps
-its existing `release/player` deployment workflow.
+[Deploy APIs](../.github/workflows/deploy-api.yml) builds the selected merged
+`patrickchin/parrot-english` main revision on a GitHub-hosted Node 20 runner.
+It runs the compiled API tests and packages code/dependencies without media.
+The player retains its separate ESA Git-source deployment. Do not run API
+production deployment from a local checkout or feature branch.
 
-Use FC Serverless Application Center's **Import from repository**, connect the
-GitHub repository, and select **Push to specified branch: main**. Use the default
-managed execution environment. Its GitHub build workers run in Singapore; the
-function target remains Hong Kong. GitHub authorization may require the owner
-to complete the provider handshake. Creating an application can immediately
-start its initial deployment: prepare the role and pipeline inputs first.
+The workflow uses the existing `parrot-github-actions` OIDC provider with the
+separate `parrotbook-fc-github-main` role. Trust requires the exact GitHub issuer,
+`sts.aliyuncs.com` audience, and this repository's `refs/heads/main` subject.
+No static AccessKey or broad Alibaba-to-GitHub grant is used. Workflow variables
+are `API_OIDC_PROVIDER_ARN`, `API_DEPLOY_ROLE_ARN`,
+`OWNER_API_EXECUTION_ROLE_ARN`, and `SHARE_API_EXECUTION_ROLE_ARN`.
 
-Application Center manages the Git connection, trigger, pipeline definition,
-and pipeline environment variables in its console. Its **resource description
-YAML** selects the single repository-root [`s.yaml`](../s.yaml). This satisfies
-the documented repository-import requirement. It declares the private owner API
-and the separate guest sharing API described below.
-There is no second descriptor or repository pipeline scaffold.
+The workflow pins Serverless Devs 3.1.11 and FC3 0.1.27, verifies the descriptor
+matches only the two reviewed functions, and supplies temporary credentials to
+the native CLI through its documented child-process environment. It explicitly
+captures stdout/stderr so provider failures cannot print native trigger tokens.
+The deployment role can update only these functions and the guest trigger; it
+cannot modify the owner's native trigger or write OSS data.
 
-Configure one provider build/deploy task with the native `checkout`, `s-setup`,
-and `runtime-setup` plugins, selecting `nodejs20`. The checkout must be the
-triggering main commit. Run the following as **one script step** from the
-repository root so the exported revision reaches the native Serverless Devs
-deployment command:
+First deployment: dispatch `Deploy APIs` on main with `bootstrap=true`. This
+creates the functions with global reserved concurrency one and leaves the owner
+trigger absent for separate native Bearer setup. Bootstrap is resumable after a
+partial creation. Normal deployments require the protected owner trigger and
+quotas to exist already, compare its exact configuration before/after, and verify
+function settings, runtime roles, revision, and quotas by native readback.
 
-```sh
-node --version
-npm ci --prefix api
-npm --prefix api test
-npm --prefix api run package
-export OWNER_API_REVISION="$(git rev-parse HEAD)"
-s deploy --template s.yaml --assume-yes
-s cli fc3 concurrency get --region cn-hongkong --function-name parrotbook-owner-packs
-s cli fc3 concurrency get --region cn-hongkong --function-name parrotbook-guest-shares
-```
+Full `s deploy --template s.yaml --assume-yes` is intentional: `--function`
+skips concurrency configuration. The pinned native trigger reconciler updates
+only declared triggers and preserves the undeclared manual owner trigger.
+The deployment gate enforces that preservation in memory without logging its
+secret configuration. See [trigger reconciler](https://github.com/devsapp/fc3/blob/master/src/subCommands/deploy/impl/trigger.ts)
+and [selection behavior](https://github.com/devsapp/fc3/blob/master/src/subCommands/deploy/index.ts).
 
-This command runs inside the provider's Git pipeline, not on an agent's local
-checkout. Supply both execution-role ARNs through that pipeline's environment.
-Any configuration comparison must run after packaging and revision export;
-the default early comparison task cannot resolve an unset revision or inspect
-an `api/dist` directory that does not exist yet. Do not add a second deployment
-plugin after the script and accidentally deploy twice.
-
-The full deploy is intentional. In the inspected native FC3 implementation,
-trigger reconciliation iterates **only** `props.triggers`, defaulting to an
-empty array. There is no deletion of undeclared triggers: the owner resource
-therefore preserves its manually configured Bearer trigger, while the guest
-resource creates/updates only `guest-http`. An omitted custom-domain definition
-also performs no domain update. Conversely, `deploy --function` skips the
-function concurrency configuration, so it is not an equivalent replacement
-for this command. See the primary [trigger reconciler](https://github.com/devsapp/fc3/blob/master/src/subCommands/deploy/impl/trigger.ts),
-[deployment selection](https://github.com/devsapp/fc3/blob/master/src/subCommands/deploy/index.ts),
-and [custom-domain reconciler](https://github.com/devsapp/fc3/blob/master/src/subCommands/deploy/impl/custom_domain.ts).
-Record the resolved FC3 component version. After each deployment, verify both
-concurrency readbacks are 1 and read back the owner trigger without logging its
-token; require Bearer authentication to remain enabled. Repeat this check when
-upgrading the deployment component. Do not enable either endpoint after a
-failed quota or authentication check.
-
-Use the provider's documented `runtime-setup` plugin with `nodejs20`; confirm
-the actual Node version is **20.19 or later**. The standalone `api/package.json`
-and lockfile supply the API's build and production dependencies. API tests run
-against the compiled JavaScript. Packaging produces `api/dist/index.js` as
-CommonJS targeting Node 20 and includes the production dependencies in
-`api/dist`. The frontend keeps its separate Node 24 build; do not run the root
-application build in this FC pipeline. If the managed Node 20 image is older
-than 20.19, obtain a supported current builder before deployment. Record the
-actual build-tool versions and triggering commit.
-
-The script sets `OWNER_API_REVISION` from the checked-out Git commit. Configure
-`OWNER_API_EXECUTION_ROLE_ARN` with the actual dedicated execution role ARN.
-Neither value needs a fabricated account identifier in source. The revision
-is a deployment identity, not an owner secret. Keep deploy credentials supplied
-by the provider's deployment role; do not put AccessKeys into repository files.
-
-FC Application Center supports selecting a resource YAML file through
-`deployFile` / Serverless Devs `-t`; its pipeline definition can remain platform
-managed. No extra repository pipeline scaffold is required. Preserve the source
-branch restriction when editing pipeline settings. See [repository import](https://help.aliyun.com/zh/functioncompute/manage-applications),
-[existing-project CI/CD](https://help.aliyun.com/zh/functioncompute/use-serverless-application-center-to-implement-ci-cd-on-existing-projects),
-[pipeline configuration](https://help.aliyun.com/zh/functioncompute/manage-pipelines-1),
-and [documented build runtimes](https://help.aliyun.com/zh/functioncompute/use-the-runtime-setup-plug-in-to-initialize-the-runtime-environment-2).
+After bootstrap, configure native owner Bearer authentication and complete the
+hosted checks below before enabling either public API URL in ESA. A successful
+build alone does not certify authentication, CORS, uploads, expiry, or removal.
 
 ## Function and execution role
 
@@ -130,12 +83,10 @@ an Application Center deployment role do not. The existing project role is for
 ESA Git deployment and must not be repurposed. The bucket is unversioned, has
 GET/HEAD CORS only, and `GetBucketLifecycle` returns `NoSuchLifecycle`.
 
-The concrete setup sequence is: merge and publish the content-only release
-with uploader fields using the existing main CLI; then merge the descriptor/API
-and player source to main;
-create the two scoped execution roles and separate deployment role; import
-the main repository in Application Center and configure its provider pipeline;
-deploy and read back both function quotas; configure the private owner Bearer
+The catalogue prerequisite is complete. The two runtime roles and separate
+main-only deployment role were created and verified on 2026-11-16. Merge the
+reviewed source to main, dispatch the scoped API bootstrap workflow, and read
+back both function quotas; configure the private owner Bearer
 trigger; bind the two custom HTTPS domains; add the scoped OSS PUT CORS rule
 and guest lifecycle rules; then perform the hosted acceptance checks. Only
 after those pass should ESA expose the public endpoint URLs. The connected

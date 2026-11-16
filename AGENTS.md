@@ -16,7 +16,11 @@
   explicit `npm run content:publish`. Qualifying main changes fast-forward
   `release/player` to an already merged main commit. This ref is a deployment
   pointer, not a development branch; ESA builds and publishes its Git source.
-  Never publish unmerged feature code, local bundles, or ZIPs to production.
+  Never publish unmerged feature code or local bundles to production. The
+  owner-approved 2026-11-16 exception permits GitHub Actions to build API
+  packages from the exact merged main revision and deploy only the two
+  Parrotbook FC APIs through a separate scoped OIDC role. Other ZIP deployment
+  remains prohibited; ESA continues to build the player's Git source.
   Verify `/api/health` against the actual successful ESA build commit;
   content-only commits may leave that revision behind `main`.
 

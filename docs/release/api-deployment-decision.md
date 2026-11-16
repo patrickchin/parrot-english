@@ -1,7 +1,7 @@
-# API deployment decision — awaiting Patrick
+# API deployment decision — accepted 2026-11-16
 
 The owner upload API and anonymous sharing API are implemented and locally
-verified. Neither is hosted. Code remains on the unmerged application PR #276.
+verified. Neither is hosted at the start of this delivery cycle. Code remains on the unmerged application PR #276.
 The 21-pack catalogue is already published independently.
 
 ## Recommendation
@@ -11,7 +11,10 @@ main**, using the existing GitHub OIDC provider and a separate scoped FC role.
 The player retains its current ESA Git-source deployment. This requires an
 explicit exception to `AGENTS.md`'s prohibition on production ZIP deployment;
 it does not authorize local bundles, feature branches, or manual ZIP uploads.
-No workflow or policy change has been applied yet.
+Patrick approved moving forward with this recommendation on 2026-11-16.
+`AGENTS.md` now records the narrowly scoped deployment exception. The workflow
+and cloud setup are being implemented; approval does not establish that the
+APIs are deployed or that hosted acceptance has passed.
 
 The proposed job would check out the exact merged main SHA, install locked API
 dependencies, run the compiled API tests, package the code and production

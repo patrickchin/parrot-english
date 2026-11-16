@@ -5,6 +5,7 @@ import type { Pack } from '../../src/content-pack';
 import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir, homedir } from 'node:os';
 import { join } from 'node:path';
+import { mobileViewports, mobileScreenshot, touchControl } from './mobile-viewports';
 
 const ownerKey = 'test-only-owner-access-key';
 const uploadId = 'upl_ownerBrowserTest';
@@ -157,8 +158,14 @@ test('an owner publishes a native folder without franchise metadata and its pack
   await unlock(page);
   await page.getByLabel('Choose pack folder', { exact: true }).setInputFiles(packFolder);
   await expect(page.getByRole('heading', { level: 3, name: pack.title, exact: true })).toBeVisible();
-  for (const width of [320, 390, 768, 1440]) {
-    await page.setViewportSize({ width, height: 900 });
+  const viewports = info.project.name.startsWith('mobile-qa-') ? mobileViewports : [320, 390, 768, 1440].map(width => ({ width, height: 900, name: String(width) }));
+  for (const viewport of viewports) {
+    const { width } = viewport;
+    await page.setViewportSize(viewport);
+    if (info.project.name.startsWith('mobile-qa-')) {
+      await touchControl(page, page.getByRole('button', { name: 'Upload and publish', exact: true }));
+      await mobileScreenshot(page, info, 'owner-preview', viewport.name);
+    }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await expect(page.getByRole('button', { name: 'Upload and publish', exact: true })).toBeVisible();
     if (info.project.name === 'chromium') {
@@ -264,13 +271,18 @@ test('public pack search survives reload and recovers from an empty result', asy
   await expect(gallery.getByRole('link')).toHaveCount(packs.length);
 });
 
-test('owner management hides, restores and deletes packs through the owner API', async ({ page }) => {
+test('owner management hides, restores and deletes packs through the owner API', async ({ page }, info) => {
   await ownerService(page);
   await unlock(page);
   const title = packs[0].data.title;
   const management = page.getByRole('region', { name: 'Your packs', exact: true });
   const row = management.getByRole('listitem').filter({ has: page.getByRole('heading', { name: title, exact: true }) });
   await expect(row.getByText('Visible in Packs', { exact: true })).toBeVisible();
+  if (info.project.name.startsWith('mobile-qa-')) for (const viewport of mobileViewports) {
+    await page.setViewportSize(viewport);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    for (const action of ['Hide', 'Delete']) await touchControl(page, row.getByRole('button', { name: `${action} ${title}`, exact: true }));
+  }
   await row.getByRole('button', { name: `Hide ${title}`, exact: true }).click();
   await expect(row.getByText('Hidden from Packs', { exact: true })).toBeVisible();
   await row.getByRole('button', { name: `Show ${title}`, exact: true }).click();

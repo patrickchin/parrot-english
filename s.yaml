@@ -1,10 +1,10 @@
-# Provider Git build only; see docs/owner-upload-deployment.md.
+# GitHub Actions builds merged main only; see docs/owner-upload-deployment.md.
 # The owner trigger is manual: native Bearer setup/readback are prerequisites.
 edition: 3.0.0
 name: parrotbook-owner-packs
 resources:
   owner-api:
-    component: fc3
+    component: fc3@0.1.27
     props:
       region: cn-hongkong
       functionName: parrotbook-owner-packs
@@ -25,7 +25,7 @@ resources:
       concurrencyConfig:
         reservedConcurrency: 1
   guest-sharing-api:
-    component: fc3
+    component: fc3@0.1.27
     props:
       region: cn-hongkong
       functionName: parrotbook-guest-shares
