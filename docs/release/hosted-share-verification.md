@@ -82,7 +82,9 @@ held in the ephemeral browser/runner memory only.
 - Owner authenticated management methods and browser acceptance. Native Bearer
   setup/readback and apex/www unauthenticated OPTIONS checks passed separately;
   missing and invalid credentials return 403 before the handler.
-- OSS lifecycle rules for raw uploads, published clips, records, and quota
-  tickets; this browser check did not change lifecycle configuration.
+- Automatic OSS lifecycle cleanup is deliberately disabled by Patrick's
+  2026-11-16 decision. API access still expires after seven days, and creators
+  can remove shares; expired private objects remain stored and billed until
+  removed. Do not treat lifecycle setup as a pending approval or release gate.
 - Physical-phone and in-app-browser coverage remains separate from these
   desktop browser-engine checks.

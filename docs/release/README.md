@@ -26,11 +26,12 @@ automatic recording upload is part of this iteration.
 ## Current release
 
 The public player is live with **21 packs / 128 scenes**, all uploaded by Patrick.
-PRs #275, #276, #278, #279 and #280 are merged. The latest verified player source is
-`67485f08b978097531da8f6e2d6708bdff8f9f43`: deployment workflow
-[43801872227](https://github.com/patrickchin/parrot-english/actions/runs/43801872227)
-and native ESA build `189345373839488` succeeded; independent `/api/health`
-readback matched at 2026-11-16 04:08:24 UTC. Live 390px gallery/search/detail
+The pack/sharing implementation and deployment diagnostic follow-ups are merged.
+The latest verified player source is
+`a0804270f81afb50ea49a4668b73514b53c68de2`: deployment workflow
+[43805642341](https://github.com/patrickchin/parrot-english/actions/runs/43805642341)
+and native ESA build `189349906974860` succeeded; independent `/api/health`
+readback matched at 2026-11-16 04:50:39 UTC. Live 390px gallery/search/detail
 and 320/390px notices checks passed.
 
 The focused browser matrix passes **48/48 engine/scenario pairs, zero skips**:
@@ -48,7 +49,9 @@ trigger and concurrency one; missing/invalid token requests return 403 and
 apex/www preflights return 204. Real Chromium/WebKit guest UI upload, fresh-browser
 playback and creator removal also pass; both disposable uploads were removed.
 See [hosted share evidence](hosted-share-verification.md). The player endpoints
-remain disabled pending custom HTTPS/DNS, cleanup and owner CRUD acceptance. No hosted-upload
+remain disabled pending custom HTTPS and owner CRUD acceptance. Patrick chose
+to leave automatic cleanup disabled: seven-day link expiry and creator removal
+still apply; expired private objects remain stored until removed. No hosted-upload
 availability claim follows from the player release.
 
 ## Earlier released evidence
@@ -90,8 +93,8 @@ Nothing in this section implies the new API is hosted.
 | One Packs catalogue and Patrick attribution | Delivery + content + UI | Content PR #275 merged as e8f9878b and published at 2026-11-14T17:26:27Z: 21 packs / 128 scenes, all uploaded by Patrick. All 277 JSON objects and 513 media references verified. Flat Packs UI merged in PR #276 and deployed; live 390px gallery/search/detail smoke passed. |
 | Owner API + private management page | Backend + UI | Implemented and independently reviewed; local API/browser checks cover upload/retry, staging, publication, hide/show/delete. Native Bearer trigger saved/read back; missing/invalid-token rejection and apex/www preflight pass. Authenticated hosted CRUD acceptance remains. |
 | Owner CLI uses the same serialized API | Content/backend | Implemented: default merge preserves unrelated packs; explicit replacement is available. Publish the initial uploader-complete catalogue before enabling the new API. |
-| Guest file and link sharing | Backend + UI + delivery | Implemented and locally verified. Live API smoke confirms private raw/published media, signed ranged playback, wrong-token rejection and removal/revocation. Real Chromium/WebKit UI upload/playback/removal pass. Custom HTTPS and scoped cleanup remain before endpoint enablement. |
-| Hosted API setup | Operations + delivery | Scoped main-only CI deployment approved 2026-11-16. Separate runtime/deployment roles verified; functions and guest trigger created from merged 75cd550d, quotas one. API/OSS preflights verified for apex/www. CI owner-trigger readback still fails before further mutation; safe diagnostics merged in PR #280. Cloudflare DNS and new trusted API certificates remain. Connector strict mode blocked lifecycle cleanup; no lifecycle rule applied. [Decision](api-deployment-decision.md), [runbook](../owner-upload-deployment.md). |
+| Guest file and link sharing | Backend + UI + delivery | Implemented and locally verified. Live API smoke confirms private raw/published media, signed ranged playback, wrong-token rejection and removal/revocation. Real Chromium/WebKit UI upload/playback/removal pass. Custom HTTPS remains before endpoint enablement. Patrick explicitly left automatic cleanup disabled; no rule was applied. |
+| Hosted API setup | Operations + delivery | Functions and guest trigger exist from merged 75cd550d, separate scoped roles and quotas one verified. Owner Bearer saved. API/OSS apex/www preflights and real guest browser flows pass. CI owner-trigger readback fails with a native local JSON error; optional-field diagnostics and native GET retry are reviewed, without broadening IAM. Both API DNS-only CNAMEs saved/verified. The approved ¥0 order provisioned two free certificate instances; CA contact/location and issuance remain. Patrick chose to leave lifecycle cleanup disabled. [Decision](api-deployment-decision.md), [runbook](../owner-upload-deployment.md). |
 | Candidate verification/review | QA + independent reviewer | Earlier source 20479f33: TypeScript, app/content/boundary/API, player/API packaging, and 316 browser passes / 16 intentional skips. Physical phones and hosted provider behavior remain separate. |
 | New release and catalogue publication | Delivery | Player release and catalogue publication complete through 75cd550d. API bootstrap created the intended functions; terminal readback failure remains distinct from deployment. Hosted acceptance and endpoint enablement remain. |
 | Mobile browser verification | QA + engineering | 48/48 passes, zero skips: Chromium/WebKit/Firefox each 16 cases across five shapes. Fixed clipped recovery text, missing native AAC export and notice wrapping. [Evidence and real-phone sequence](mobile-browser-verification.md). |
