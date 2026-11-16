@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { readFileSync, existsSync, appendFileSync } from 'node:fs';
-import { account, region, functions, execute, shouldDeploy, apiChanged, verifySource, verifyConfig, verifyPackage, ownerSnapshot, deployApi } from './api-deployment.mjs';
+import { account, region, functions, execute, cloudGet, shouldDeploy, apiChanged, verifySource, verifyConfig, verifyPackage, ownerSnapshot, deployApi } from './api-deployment.mjs';
 
 const revision = 'a'.repeat(40);
 const event = 'b'.repeat(40);
@@ -254,4 +254,41 @@ fs.appendFileSync(process.env.TEST_TRACE, JSON.stringify({type:'native', publicT
       } else assert.equal(publicAt, -1);
     }
   } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+
+test('readback errors expose only known path, category, allowlisted stderr code and valid request ID', () => {
+  const path = '/functions/parrotbook-owner-packs/triggers';
+  const secret = 'private-trigger-token-sentinel';
+  const requestId = '01A1E276-6731-3D84-B9B6-428AA6C46BCC';
+  const run = error => () => { throw error; };
+  assert.throws(() => cloudGet(path, run({ status: 1, stderr: JSON.stringify({ Code: 'AccessDenied', RequestId: requestId, Message: secret, triggerConfig: { token: secret } }), stdout: secret })), error => {
+    assert.equal(error.message, `FC readback GET ${path} failed (child-exit; providerCode=AccessDenied; requestId=${requestId}).`);
+    return true;
+  });
+  assert.throws(() => cloudGet(path, run({ code: 'ETIMEDOUT', stderr: JSON.stringify({ error_code: 'InvalidArgument', request_id: '0123456789abcdef0123456789abcdef', error_message: secret }) })), /timeout; providerCode=InvalidArgument; requestId=0123456789abcdef0123456789abcdef/);
+  assert.throws(() => cloudGet(secret, run({ status: 1, stderr: JSON.stringify({ Code: secret, RequestId: secret }), stdout: JSON.stringify({ Code: 'AccessDenied', RequestId: requestId }) })), error => error.message === 'FC readback GET [unexpected path] failed (child-exit).');
+  assert.throws(() => cloudGet(path, () => secret), error => error.message === `FC readback GET ${path} failed (json-parse).`);
+  assert.equal(cloudGet(path, run({ stderr: '{"Code":"FunctionNotFound"}' })), null);
+  const nestedHex = 'abcdef0123456789abcdef0123456789';
+  assert.throws(() => cloudGet(path, run({ stderr: JSON.stringify({ Code: 'AccessDenied', triggerConfig: { RequestId: nestedHex, Code: 'FunctionNotFound' }, Message: 'FunctionNotFound' }), stdout: 'FunctionNotFound' })), error => error.message === `FC readback GET ${path} failed (child-exit; providerCode=AccessDenied).`);
+  assert.throws(() => cloudGet(path, run({ stderr: JSON.stringify({ Message: 'FunctionNotFound', token: 'FunctionNotFound', triggerConfig: { Code: 'FunctionNotFound', RequestId: nestedHex } }) })), error => error.message === `FC readback GET ${path} failed (child-exit).`);
+  assert.throws(() => cloudGet(path, run({ stderr: 'FunctionNotFound', stdout: '{"Code":"FunctionNotFound"}' })), error => error.message === `FC readback GET ${path} failed (child-exit).`);
+  assert.throws(() => cloudGet(path, run({ stderr: JSON.stringify([{ Code: 'AccessDenied', RequestId: nestedHex }]) })), error => error.message === `FC readback GET ${path} failed (child-exit).`);
+  assert.equal(cloudGet(path, run({ stderr: '{"error_code":"FunctionNotFound"}' })), null);
+  assert.deepEqual(cloudGet(path, () => '{"triggers":[]}'), { triggers: [] });
+});
+
+test('real readback subprocess failure cannot print private stdout, stderr or trigger fields', () => {
+  const wrapper = new URL('./api-deployment.mjs', import.meta.url).href;
+  const secret = 'private-readback-token-sentinel';
+  const provider = `process.stdout.write(${JSON.stringify(secret)}); process.stderr.write(${JSON.stringify(JSON.stringify({ Code: 'AccessDenied', RequestId: '01A1E276-6731-3D84-B9B6-428AA6C46BCC', Message: secret, triggerConfig: { token: secret } }))}); process.exit(9);`;
+  const child = `import { cloudGet, execute } from ${JSON.stringify(wrapper)};
+    try { cloudGet('/functions/parrotbook-owner-packs/triggers', () => execute(process.execPath, ['-e', ${JSON.stringify(provider)}], {stdio:'inherit'})); process.exitCode=8; }
+    catch(error) { console.error(error.message); }`;
+  const result = spawnSync(process.execPath, ['--input-type=module', '-e', child], { encoding: 'utf8', stdio: 'pipe' });
+  assert.equal(result.status, 0);
+  assert.equal(result.stdout, '');
+  assert.equal(result.stderr, 'FC readback GET /functions/parrotbook-owner-packs/triggers failed (child-exit; providerCode=AccessDenied; requestId=01A1E276-6731-3D84-B9B6-428AA6C46BCC).\n');
+  assert.ok(!result.stderr.includes(secret));
 });
