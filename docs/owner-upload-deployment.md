@@ -1,23 +1,35 @@
 # Owner upload API deployment
 
-Updated 2026-11-16. Both native FC APIs and the ESA player are deployed and
+Updated 2026-11-17. Both native FC APIs and the ESA player are deployed and
 verified from merged main revision
-`ee6fc7ab7322a98ddef302c89f8bc94cb7e21280`. API workflow
-[43809621870](https://github.com/patrickchin/parrot-english/actions/runs/43809621870)
+`8e40e5b2826892afa209e2d2409d114511938da3` (PR #288). API workflow
+[43935531075](https://github.com/patrickchin/parrot-english/actions/runs/43935531075)
 passed function, runtime-role, concurrency-one, revision, and unchanged owner
 authentication readbacks. Player workflow
-[43809621843](https://github.com/patrickchin/parrot-english/actions/runs/43809621843)
-and ESA build `189354688290940` succeeded; public `/api/health` matched at
-2026-11-16 05:24:47 UTC.
+[43935531177](https://github.com/patrickchin/parrot-english/actions/runs/43935531177)
+and ESA code build `189455969566840` succeeded. Native Git configuration build
+`189456526729324` then published that exact merged source with guest sharing
+enabled; independent public `/api/health` returned 200 with the matching revision.
 
 The sole owner HTTP trigger uses native Bearer authentication. Missing/invalid
 tokens return 403, and unauthenticated apex/www preflights return 204. Hosted
 guest API and Chromium/WebKit upload, playback, and removal checks passed.
-Custom HTTPS and authenticated hosted owner CRUD acceptance remain before
-endpoint enablement: `/api/owner-config` and `/api/share-config` intentionally
-return 503. Both API DNS-only CNAMEs exist; two free DigiCert instances have been
-ordered, but verified contact/location and certificate issuance are pending.
+The guest custom HTTPS domain and public sharing configuration are live.
+Native ESA Git build `189456526729324` published merged `8e40e5b2`
+source with production `SHARE_API_URL=https://share-api.parrotbook.com`;
+`/api/share-config` returns 200. Owner HTTPS creation and authenticated hosted
+owner CRUD acceptance remain; `OWNER_API_URL` is absent and `/api/owner-config`
+intentionally returns 503. Both DNS ownership checks passed and both approved
+free DigiCert certificates are issued; contact verification is complete.
 Automatic OSS lifecycle cleanup is deliberately disabled by Patrick's decision.
+
+The first custom-domain enablement failed actual browser reads because native
+FC and the functions both emitted CORS headers. Sharing was disabled by setting
+`SHARE_API_URL` to an empty string and publishing native Git build
+`189455219742828`; the variable was not deleted. PR #288 makes native FC the
+sole CORS header owner while preserving function origin/preflight rejection.
+Its 32 API tests, 22 deployment checks, package verification and PR/main Firefox
+QA passed. Post-deployment apex/www browser reads passed before re-enablement.
 
 The existing **21 packs / 128 scenes**, all uploaded by Patrick, are published
 independently. See the [release board](release/README.md),
@@ -87,9 +99,12 @@ The deployment gate enforces that preservation in memory without logging its
 secret configuration. See [trigger reconciler](https://github.com/devsapp/fc3/blob/master/src/subCommands/deploy/impl/trigger.ts)
 and [selection behavior](https://github.com/devsapp/fc3/blob/master/src/subCommands/deploy/index.ts).
 
-Native owner Bearer setup and guest hosted acceptance are complete. Finish
-custom HTTPS and owner acceptance below before enabling the public API URLs in
-ESA. A successful build alone does not certify every hosted behavior. Native
+Native owner trigger Bearer setup and provider-endpoint guest acceptance are
+complete. Guest HTTPS has passed its actual browser CORS and complete public
+sharing checks; owner HTTPS and authenticated management still need acceptance.
+Enable the two ESA endpoint
+variables independently after their respective checks. A successful build
+alone does not certify every hosted behavior. Native
 readbacks use pinned Alibaba CLI 3.5.3 with a 30-second read timeout, two retries
 for read-only GETs, and a 45-second total subprocess budget; the deployment
 history records the resolved provider-read timeout failure.
@@ -154,13 +169,15 @@ password/session store.
 Both exact player origins, `https://parrotbook.com` and
 `https://www.parrotbook.com`, pass unauthenticated owner OPTIONS with 204 through
 the native testing endpoint; missing/invalid Bearer tokens return 403. The owner
-handler provides exact-origin CORS via `OWNER_API_ORIGINS`, a JSON array
-defaulting to `["https://parrotbook.com","https://www.parrotbook.com"]`. It echoes
-only the matched origin with `Vary: Origin`, allows `GET`, `POST`, `PATCH`,
-`DELETE` and `Authorization, Content-Type`, and returns preflight without OSS
-access. Foreign origins or unexpected methods/headers are rejected. CORS does
-not authenticate mutations. Authenticated management and the custom-domain
-browser path still need acceptance.
+handler validates `OWNER_API_ORIGINS`, a JSON array defaulting to
+`["https://parrotbook.com","https://www.parrotbook.com"]`. It rejects foreign
+origins and unexpected preflight methods/headers before storage access and
+returns 204 for valid preflights with `Vary: Origin`. Native FC owns every
+`Access-Control-*` response header: adding function copies creates duplicate
+origin values that browsers reject. Verify actual GET responses with an Origin
+header and browser JSON consumption as well as OPTIONS. CORS does not
+authenticate mutations. Authenticated management and the custom-domain browser
+path still need acceptance.
 
 OSS already has a PUT CORS rule for both exact player origins and signed-upload
 headers, while preserving public GET/HEAD CORS. Native readback and hosted
@@ -169,24 +186,33 @@ Preserve `Content-Type` and `x-oss-object-acl` support (and `Content-MD5` if
 supplied). OSS handles browser OPTIONS through bucket CORS. Expose ETag if a
 client needs to read it.
 
-Custom HTTPS remains:
+Custom HTTPS progress, 2026-11-17:
 
-1. Complete the required verified CA contact and actual location, then issue
-   the two already ordered free DigiCert RSA2048 Basic certificates. Add their
-   DNS validation challenges and record the actual issued NotAfter dates.
-   Allocated certificate instances are not issued certificates.
-2. Create native FC custom domains `owner-api.parrotbook.com` and
-   `share-api.parrotbook.com`, installing the corresponding certificates and
-   routing `/*` to their respective existing functions. The two DNS-only CNAMEs
-   to `1263482499936169.cn-hongkong.fc.aliyuncs.com` are already saved and
-   independently resolved; Cloudflare remains authoritative. No FC custom
-   HTTPS domain has been created yet. The built-in `fcapp.run` domains remain
-   testing endpoints.
-3. Protect the owner custom domain with native Bearer authentication and allow
-   its five required methods. Keep the guest domain anonymous and separate.
-   Verify the actual domain authentication, routing, TLS, exact-origin browser
-   preflight, and authenticated methods; do not assume trigger authentication
-   automatically protects a custom domain.
+- The CA contact is saved with verified email/mobile and the actual location.
+  Both DNS ownership checks passed. The approved free RSA2048 Basic
+  certificates are issued: owner `28562858` (`cert-ida2s`), sharing `28562939`
+  (`cert-gx3rd`). Each covers its intended API hostname and the CA-added `www`
+  name. Both expire **2027-02-14 07:59:59 Asia/Shanghai**
+  (2027-02-13 23:59:59 UTC); automatic renewal/reissue is disabled.
+- Cloudflare remains authoritative. Both DNS-only API CNAMEs to
+  `1263482499936169.cn-hongkong.fc.aliyuncs.com` resolve, and the two
+  `_dnsauth` TXT challenges were saved and independently resolved.
+- `share-api.parrotbook.com` is created with its issued certificate,
+  HTTPS-only protocol, TLS 1.2–1.3, anonymous native authentication and
+  `/*` routing to `parrotbook-guest-shares`, `LATEST`. Trusted public TLS and
+  serial GET/preflight checks pass: removed share 410, apex/www OPTIONS 204,
+  foreign OPTIONS 403, no-store/noindex. The rejected foreign preflight echoes
+  its Origin header; it still returns 403. The console omits route methods;
+  the handler limits operations to GET/POST/DELETE/OPTIONS and unsupported
+  PUT `/shares` returns 404. A route-only gateway allowlist update failed and
+  was not retried; safe native readback confirms the route, auth type,
+  certificate name, HTTPS and TLS settings are unchanged.
+- The owner domain form is prepared for `/*` to `parrotbook-owner-packs`,
+  `LATEST`, its issued certificate and native Bearer authentication. Reuse the
+  saved owner key after Mac/Bitwarden unlock, then create and verify the domain. Trigger authentication
+  does not automatically protect a custom domain. Verify native rejection,
+  authenticated methods and exact-origin browser preflight before enabling
+  owner uploads. The built-in `fcapp.run` names remain testing endpoints.
 
 The bucket is public-read, so each staging upload must explicitly sign
 `x-oss-object-acl: private`. Release copies must explicitly use their intended
@@ -283,11 +309,13 @@ or write packs, the content catalog, or unrelated projects. See [OSS prefix and
 ACL policy conditions](https://www.alibabacloud.com/help/en/oss/user-guide/authorization-syntax-and-elements)
 and [directory-scoped listing](https://help.aliyun.com/zh/oss/user-guide/access-control-base-on-ram-policy).
 
-The function handles CORS for `SHARE_API_ORIGINS`, a JSON array defaulting to
-`["https://parrotbook.com","https://www.parrotbook.com"]`. Only the matched
-origin is echoed, with `Vary: Origin`. It allows `GET`, `POST`, `DELETE`, and unauthenticated
-`OPTIONS`. Bind and verify a dedicated custom HTTPS domain before connecting
-the player; keep the owner domain/trigger separate. API JSON responses use
+The function validates `SHARE_API_ORIGINS`, a JSON array defaulting to
+`["https://parrotbook.com","https://www.parrotbook.com"]`, plus preflight
+methods and headers. Native FC emits the CORS response headers; the function
+emits none and retains `Vary: Origin`. Operations are `GET`, `POST`, `DELETE`,
+and unauthenticated `OPTIONS`. Verify the dedicated custom HTTPS domain with
+real browser reads before connecting the player; keep the owner domain/trigger
+separate. API JSON responses use
 `Cache-Control: no-store` and `X-Robots-Tag: noindex`. There is no guest search,
 listing, account, voice analytics, or automatic recording upload. The player
 must obtain the learner's explicit upload consent first. Native file sharing
@@ -359,9 +387,19 @@ Hosted acceptance already completed against the provider testing endpoint:
   later operational check was not a rerun of the two-browser upload scenarios.
 
 See [the dated browser evidence](release/hosted-share-verification.md) for source
-revisions and limits. Custom HTTPS and its hosted verification remain before
-setting ESA's `SHARE_API_URL`; player endpoint configuration remains disabled
-alongside the pending owner acceptance.
+revisions and limits. Guest custom HTTPS and its read-only hosted checks are now
+verified, including actual apex/www browser reads after the CORS fix.
+Production `SHARE_API_URL` is now set to that endpoint; native Git
+build `189456526729324` succeeded from the existing `release/player` branch at
+`8e40e5b2826892afa209e2d2409d114511938da3` and published automatically. Both
+the Git/build settings and the absence of `OWNER_API_URL` were verified.
+The focused real-player check passed without interceptions in Chromium and
+WebKit: MP4 export/download, no upload before consent, create 201, OSS PUT 200,
+publish 200, fresh-context playback and ranged GET 206, creator DELETE 204,
+then GET 410. Each downloaded video matched the published video's SHA-256.
+Both disposable shares were removed, factual credits and the catalogue hash
+were preserved, and all browser contexts closed. Owner endpoint configuration
+remains disabled while its separate acceptance finishes.
 
 For full hosted regression coverage, still test simultaneous creations at the
 configured daily-limit boundary, oversized/mismatched signed uploads,

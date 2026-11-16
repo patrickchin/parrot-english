@@ -1,7 +1,71 @@
 # Hosted guest-sharing browser verification
 
-Completed 2026-11-16 at approximately 04:08 UTC against the live production
-player and real Hong Kong guest API. Chromium and WebKit both passed.
+Latest public custom-domain checks completed 2026-11-17, Asia/Shanghai.
+Earlier provider-endpoint evidence is retained separately below.
+
+## Public custom-domain verification, 2026-11-17
+
+Both the real production player and Hong Kong guest API used merged source
+`8e40e5b2826892afa209e2d2409d114511938da3` from
+[PR #288](https://github.com/patrickchin/parrot-english/pull/288).
+Native ESA Git build `189456526729324` published that source from
+`release/player`, with `SHARE_API_URL=https://share-api.parrotbook.com`.
+Public health and sharing config returned 200 with the expected revision/URL;
+owner config remained 503 and its variable was absent.
+
+The first custom-domain enablement exposed duplicate CORS headers on actual
+browser GET responses. Sharing was disabled by publishing an empty
+`SHARE_API_URL`; it was not deleted. PR #288 removed function-generated CORS
+headers so native FC emits them once, while preserving origin/preflight
+rejection before storage. After API workflow
+[43935531075](https://github.com/patrickchin/parrot-english/actions/runs/43935531075)
+and player workflow
+[43935531177](https://github.com/patrickchin/parrot-english/actions/runs/43935531177)
+succeeded, both apex/www actual GETs and OPTIONS had one exact origin value.
+Fresh Chromium pages at both origins read the API JSON successfully; foreign
+and malformed preflights still returned 403. Sharing was re-enabled only after
+these browser checks passed.
+
+Chromium and WebKit then each passed the full public flow at 390 × 844 with
+**no network interceptions**. Each used generated 660 Hz learner takes with the
+actual published `corn-corntastic-day` source footage and original audio outside
+replaced turns. No microphone or human recording was used.
+
+| Operation | Result in both browsers |
+| --- | --- |
+| Export and download actual MP4 | Valid MP4; SHA-256 matched the later published video |
+| Prepare video and open upload consent | No share created |
+| Confirm upload and create link | Create 201, OSS PUT 200, publish 200 |
+| Creator and fresh-context playback | Video time advanced; ranged GET 206, 1,024 bytes |
+| Fresh viewer permissions | No creator-removal control |
+| Remove through creator confirmation UI | DELETE 204 |
+| Fresh viewer and API after removal | 410 |
+
+Exactly two test shares were created and removed. Published source credits were
+preserved. The public catalogue SHA-256 remained
+`c69b801a2ce982b92a9043348a61b5c8bd549389b2f17761b2f7881a86660acf`.
+All contexts and browsers closed; the runner exited successfully. The browser
+run did not independently re-read OSS ACLs or enumerate deleted objects; earlier
+backend smoke evidence covers those checks. Native device sharing, physical
+microphones, backgrounding and in-app browsers remain untested here.
+
+Status/hash-only receipts and scratch runners:
+
+- `/private/tmp/parrotbook-hosted-acceptance/public-results.json`
+- `/private/tmp/parrotbook-hosted-acceptance/public-run.log`
+- `/private/tmp/parrotbook-hosted-acceptance/hosted-public.mjs`
+- `/private/tmp/parrotbook-hosted-acceptance/cors-public-results.log`
+
+The four `hosted-guest-{chromium,webkit}-{created,removed}.png` screenshots in
+`~/Pictures/Screenshots/Codex/parrot-english/` now show this latest public run,
+replacing the same filenames from the earlier provider-endpoint check.
+Creator capabilities and signed URLs stayed in ephemeral browser/runner memory;
+they were not written to the status receipts or screenshots.
+
+## Earlier provider-endpoint verification, 2026-11-16
+
+Completed at approximately 04:08 UTC against the live production player and
+real Hong Kong guest API. Chromium and WebKit both passed.
 
 ## Environment and boundaries
 
@@ -86,9 +150,10 @@ checks, not a rerun of the earlier two-browser upload scenarios.
 
 ## Remaining release gates
 
-- Dedicated API custom-domain DNS/TLS and hosted verification before enabling
-  endpoint configuration for general friend testing.
-- Owner authenticated management methods and browser acceptance. Native Bearer
+- Guest API custom-domain DNS/TLS and public browser sharing verification are
+  complete as recorded above.
+- Owner custom HTTPS, authenticated management methods and browser acceptance
+  remain. Native Bearer
   setup/readback and apex/www unauthenticated OPTIONS checks passed separately;
   missing and invalid credentials return 403 before the handler.
 - Automatic OSS lifecycle cleanup is deliberately disabled by Patrick's
