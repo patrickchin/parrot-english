@@ -70,7 +70,8 @@ Created and read back exactly one scoped custom policy on each role:
 
 The existing OIDC provider is reused. Non-secret GitHub workflow variables are
 configured; no static credentials were added. Existing OSS GET/HEAD CORS was
-preserved and a PUT rule added only for `https://parrotbook.com` and the signed
+preserved and a PUT rule added only for `https://parrotbook.com`,
+`https://www.parrotbook.com` and the signed
 upload headers. Readback confirmed the rules. The cloud connector refused
 `put-bucket-lifecycle` in strict-permission mode; the four proposed cleanup
 rules were not applied. Function deployment and hosted acceptance remain separate.
@@ -79,5 +80,32 @@ The reviewed bootstrap has two native phases: first create/update functions
 without a guest HTTP trigger and verify both global concurrency caps equal 1;
 then deploy the gated descriptor that adds the guest trigger. The owner trigger
 remains absent until native Bearer setup. Subsequent deployments preserve its
-configuration. Fourteen deployment checks include real subprocess tests for
+configuration. Sixteen deployment checks include real subprocess tests for
 this ordering, quota-failure blocking, generated-file cleanup, and private stderr.
+
+Bootstrap run [43799969432](https://github.com/patrickchin/parrot-english/actions/runs/43799969432)
+created both functions from merged `75cd550d` with the intended roles and quotas
+one, and created the guest HTTP trigger. Its terminal owner-trigger readback
+failed, so the workflow is not a successful deployment receipt. Native readback
+and hosted tests independently verify the created resources. The owner later
+saved its sole `owner-http` trigger with native `bearer` authentication, five
+required methods and an enabled token; no token was logged. Missing/invalid
+tokens return 403; unauthenticated browser preflights return 204 for apex/www.
+
+PR #280 added safe diagnostics, but run
+[43801872142](https://github.com/patrickchin/parrot-english/actions/runs/43801872142)
+still stops before deployment on the owner ListTriggers read. Exact pinned
+CLI 3.5.3 source establishes that remote SDK errors require `--cli-ai-mode` for
+the top-level JSON envelope; `--cli-output json` alone only formats local errors.
+The follow-up pins that per-command flag and tests its exact argv. Provider
+permission changes remain deferred until the actual failure is known.
+
+The default `fcapp.run` addresses are test endpoints, not the production URLs.
+Prepare two native FC custom HTTPS domains, `owner-api.parrotbook.com` with
+native Bearer authentication and `share-api.parrotbook.com` with anonymous guest
+access. Each routes `/*` to its respective existing function. Domain-level
+authentication makes a shared anonymous hostname unsuitable. Both DNS-only
+CNAMEs target `1263482499936169.cn-hongkong.fc.aliyuncs.com`. Cloudflare remains
+authoritative; no new API records, trusted matching CAS certificates or FC
+custom domains existed at the read-only check. Cloudflare sign-in is requested
+before preparing DNS/TLS. The production player endpoint variables remain unset.

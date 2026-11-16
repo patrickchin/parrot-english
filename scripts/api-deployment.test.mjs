@@ -276,7 +276,11 @@ test('readback errors expose only known path, category, allowlisted stderr code 
   assert.throws(() => cloudGet(path, run({ stderr: 'FunctionNotFound', stdout: '{"Code":"FunctionNotFound"}' })), error => error.message === `FC readback GET ${path} failed (child-exit).`);
   assert.throws(() => cloudGet(path, run({ stderr: JSON.stringify([{ Code: 'AccessDenied', RequestId: nestedHex }]) })), error => error.message === `FC readback GET ${path} failed (child-exit).`);
   assert.equal(cloudGet(path, run({ stderr: '{"error_code":"FunctionNotFound"}' })), null);
-  assert.deepEqual(cloudGet(path, () => '{"triggers":[]}'), { triggers: [] });
+  assert.deepEqual(cloudGet(path, (file, args) => {
+    assert.equal(file, 'aliyun');
+    assert.deepEqual(args, ['fc', 'GET', '/2023-03-30' + path, '--region', region, '--version', '2023-03-30', '--cli-ai-mode']);
+    return '{"triggers":[]}';
+  }), { triggers: [] });
 });
 
 test('real readback subprocess failure cannot print private stdout, stderr or trigger fields', () => {
