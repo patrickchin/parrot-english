@@ -28,10 +28,10 @@ automatic recording upload is part of this iteration.
 The public player is live with **21 packs / 128 scenes**, all uploaded by Patrick.
 The pack/sharing implementation and deployment diagnostic follow-ups are merged.
 The latest verified player source is
-`a0804270f81afb50ea49a4668b73514b53c68de2`: deployment workflow
-[43805642341](https://github.com/patrickchin/parrot-english/actions/runs/43805642341)
-and native ESA build `189349906974860` succeeded; independent `/api/health`
-readback matched at 2026-11-16 04:50:39 UTC. Live 390px gallery/search/detail
+`ee6fc7ab7322a98ddef302c89f8bc94cb7e21280`: deployment workflow
+[43809621843](https://github.com/patrickchin/parrot-english/actions/runs/43809621843)
+and native ESA build `189354688290940` succeeded; independent `/api/health`
+readback matched at 2026-11-16 05:24:47 UTC. Live 390px gallery/search/detail
 and 320/390px notices checks passed.
 
 The focused browser matrix passes **48/48 engine/scenario pairs, zero skips**:
@@ -40,8 +40,12 @@ This includes actual synthetic recording and MP4 encoding, with an AAC fallback
 when native encoding is unavailable. It does not establish physical-phone
 microphone, backgrounding, audio-route or native-share reliability.
 
-Both native APIs now exist with separate intended runtime roles and reserved
-concurrency one. A live synthetic guest-share smoke passed private signed upload,
+Both native APIs are deployed from the same merged `ee6fc7ab` source. API workflow
+[43809621870](https://github.com/patrickchin/parrot-english/actions/runs/43809621870)
+passed native role, concurrency-one, source-revision and unchanged owner-auth
+readbacks. The earlier failure was the CLI's 10-second read timeout against a
+successful 11.5-second provider request; its native read limit is now 30 seconds.
+A live synthetic guest-share smoke passed private signed upload,
 publication, ranged playback, wrong-token rejection and creator removal. Both
 apex/www API and OSS upload preflights pass; a foreign API origin returns 403.
 Native owner Bearer authentication is saved and read back, with one protected
@@ -94,9 +98,9 @@ Nothing in this section implies the new API is hosted.
 | Owner API + private management page | Backend + UI | Implemented and independently reviewed; local API/browser checks cover upload/retry, staging, publication, hide/show/delete. Native Bearer trigger saved/read back; missing/invalid-token rejection and apex/www preflight pass. Authenticated hosted CRUD acceptance remains. |
 | Owner CLI uses the same serialized API | Content/backend | Implemented: default merge preserves unrelated packs; explicit replacement is available. Publish the initial uploader-complete catalogue before enabling the new API. |
 | Guest file and link sharing | Backend + UI + delivery | Implemented and locally verified. Live API smoke confirms private raw/published media, signed ranged playback, wrong-token rejection and removal/revocation. Real Chromium/WebKit UI upload/playback/removal pass. Custom HTTPS remains before endpoint enablement. Patrick explicitly left automatic cleanup disabled; no rule was applied. |
-| Hosted API setup | Operations + delivery | Functions and guest trigger exist from merged 75cd550d, separate scoped roles and quotas one verified. Owner Bearer saved. API/OSS apex/www preflights and real guest browser flows pass. CI owner-trigger readback fails with a native local JSON error; optional-field diagnostics and native GET retry are reviewed, without broadening IAM. Both API DNS-only CNAMEs saved/verified. The approved ¥0 order provisioned two free certificate instances; CA contact/location and issuance remain. Patrick chose to leave lifecycle cleanup disabled. [Decision](api-deployment-decision.md), [runbook](../owner-upload-deployment.md). |
+| Hosted API setup | Operations + delivery | API workflow 43809621870 succeeded on merged ee6fc7ab, verifying source, scoped runtime roles, quotas one and unchanged owner Bearer authentication. Post-deploy missing/invalid tokens return 403, apex/www preflights 204, removed test share 410. Both API DNS-only CNAMEs are verified. The approved ¥0 order provisioned two free certificate instances; CA contact/location and issuance remain before custom HTTPS and endpoint enablement. Patrick chose to leave lifecycle cleanup disabled. [Decision](api-deployment-decision.md), [runbook](../owner-upload-deployment.md). |
 | Candidate verification/review | QA + independent reviewer | Earlier source 20479f33: TypeScript, app/content/boundary/API, player/API packaging, and 316 browser passes / 16 intentional skips. Physical phones and hosted provider behavior remain separate. |
-| New release and catalogue publication | Delivery | Player release and catalogue publication complete through 75cd550d. API bootstrap created the intended functions; terminal readback failure remains distinct from deployment. Hosted acceptance and endpoint enablement remain. |
+| New release and catalogue publication | Delivery | Catalogue publication complete: 21 packs / 128 scenes. Player and API releases both verified at ee6fc7ab. Custom HTTPS, authenticated owner CRUD and endpoint enablement remain. |
 | Mobile browser verification | QA + engineering | 48/48 passes, zero skips: Chromium/WebKit/Firefox each 16 cases across five shapes. Fixed clipped recovery text, missing native AAC export and notice wrapping. [Evidence and real-phone sequence](mobile-browser-verification.md). |
 | Physical-device friend test | Patrick + QA | Test complete recording/replay, sharing, resume/delete, mic deny/retry, app switching, audio routes, and network on actual phones. No device row has passed yet. |
 | WebKit timing investigation | Engineering + QA | Gather physical-device evidence before weakening guards or changing the audio model. Preserve diagnostics. |

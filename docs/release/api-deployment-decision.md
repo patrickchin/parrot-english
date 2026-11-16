@@ -148,3 +148,21 @@ The readback command now sets that 30-second native limit, retaining its
 the demonstrated timeout mismatch without changing IAM or retrying mutations.
 Sources: [CLI defaults](https://help.aliyun.com/zh/cli/environment-variables#76),
 [native timeout option](https://www.alibabacloud.com/help/en/cli/command-line-options).
+
+## Verified API release — 2026-11-16
+
+PR #285's timeout correction resolved the failure. Workflow
+[43809621870](https://github.com/patrickchin/parrot-english/actions/runs/43809621870)
+completed successfully at source
+`ee6fc7ab7322a98ddef302c89f8bc94cb7e21280`, verifying both native functions,
+scoped execution roles, reserved concurrency one and unchanged owner Bearer
+configuration. No IAM expansion was made. Its receipt is saved at
+`/private/tmp/parrotbook-api-release-ee6fc.log`.
+
+The matching player workflow
+[43809621843](https://github.com/patrickchin/parrot-english/actions/runs/43809621843)
+and native ESA build `189354688290940` succeeded for the same source. Public
+health independently matched at 05:24:47 UTC. Owner missing/invalid token
+requests return 403; apex/www browser preflights return 204; the removed
+synthetic share remains unavailable with 410. Player owner/share config routes
+still intentionally return 503 until custom HTTPS and owner acceptance finish.
