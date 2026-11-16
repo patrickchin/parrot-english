@@ -43,11 +43,11 @@ export function createShareApi({ client, bucket = 'parrotbook-media-f6e09412', r
   now = Date.now, newId = prefix => `${prefix}_${randomBytes(18).toString('base64url')}`, config = {} }) {
   const maxBytes = config.maxBytes ?? maximumBytes;
   const dailyLimit = config.dailyLimit ?? 100;
-  const allowedOrigins = config.allowedOrigins ?? ['https://parrotbook.com'];
+  const allowedOrigins = config.allowedOrigins === undefined ? ['https://parrotbook.com', 'https://www.parrotbook.com'] : config.allowedOrigins;
   if (!Number.isSafeInteger(maxBytes) || maxBytes < 16 || maxBytes > maximumBytes ||
       !Number.isSafeInteger(dailyLimit) || dailyLimit < 1 || dailyLimit > 100 ||
       !Array.isArray(allowedOrigins) || !allowedOrigins.length || allowedOrigins.some(origin => {
-        try { return new URL(origin).origin !== origin || !/^https?:$/.test(new URL(origin).protocol); }
+        try { return typeof origin !== 'string' || new URL(origin).origin !== origin || !/^https?:$/.test(new URL(origin).protocol); }
         catch { return true; }
       })) throw new TypeError('Invalid guest sharing configuration.');
 
@@ -202,7 +202,7 @@ export async function handler(event, context) {
   const client = new OSS({ bucket, region, accessKeyId: credentials.accessKeyId, accessKeySecret: credentials.accessKeySecret,
     stsToken: credentials.securityToken, authorizationV4: true, secure: true });
   return createShareApi({ client, bucket, region, config: {
-    allowedOrigins: [process.env.SHARE_API_ORIGIN ?? 'https://parrotbook.com'],
+    allowedOrigins: JSON.parse(process.env.SHARE_API_ORIGINS ?? '["https://parrotbook.com","https://www.parrotbook.com"]'),
     dailyLimit: process.env.SHARE_API_DAILY_LIMIT ? Number(process.env.SHARE_API_DAILY_LIMIT) : 100,
   } })(event);
 }

@@ -5,9 +5,11 @@ phone support claim. It runs a freshly built production player locally, with
 one worker and one preview server. It does not deploy code or write to cloud
 storage.
 
-Final focused matrix: **45/45 passed, zero skips** — 15 Chromium and 15 WebKit
+Core focused matrix: **45/45 passed, zero skips** — 15 Chromium and 15 WebKit
 cases locally, plus 15 Firefox cases on Linux CI. Both default encoding and
 forced native-AAC-unavailable cases produce a real MP4 with verified audio.
+An added notices-page regression passed separately in Chromium and WebKit;
+its Firefox counterpart awaits the next CI run.
 
 ## Source and reproduction
 
@@ -29,7 +31,8 @@ forced native-AAC-unavailable cases produce a real MP4 with verified audio.
 PLAYWRIGHT_PORT=21337 npm run test:browser -- --config=playwright.mobile.config.ts
 ```
 
-The dedicated config selects 45 cases (15 per engine) rather than the whole browser suite.
+The dedicated config now selects 48 cases (16 per engine) rather than the whole
+browser suite: the verified 45 core cases plus three notices-page cases.
 It builds once, starts one strict-port production preview, and uses one worker
 to keep audio sessions isolated and avoid the earlier TCP-port exhaustion.
 Do not run another app build or the content-moving boundary check concurrently.
@@ -40,9 +43,9 @@ server.
 
 | Project | Engine | Context | Result |
 | --- | --- | --- | --- |
-| `mobile-qa-chromium` | Chromium 149.0.7827.55 | Pixel 7 preset, initial 390×844 | 15 passed, including forced AAC fallback |
-| `mobile-qa-webkit` | WebKit 26.5 | iPhone 13 preset, initial 390×844 | 15 passed, including forced AAC fallback |
-| `mobile-qa-firefox` | Firefox 151.0 on Linux | Desktop Firefox with touch and 390×844 viewport | 15 passed, including AAC fallback and decoded-audio checks |
+| `mobile-qa-chromium` | Chromium 149.0.7827.55 | Pixel 7 preset, initial 390×844 | 15 core passed; 1 additional notices case passed |
+| `mobile-qa-webkit` | WebKit 26.5 | iPhone 13 preset, initial 390×844 | 15 core passed; 1 additional notices case passed |
+| `mobile-qa-firefox` | Firefox 151.0 on Linux | Desktop Firefox with touch and 390×844 viewport | 15 core passed; notices case pending CI |
 
 Each context is resized through these CSS viewport sizes. Tablet rows exercise
 layout at tablet dimensions; the phone presets retain their original user
@@ -175,7 +178,7 @@ changing the media fixture or skipping Firefox's guest-sharing case.
 `.github/workflows/mobile-browser.yml` supplies the alternate Linux host. On
 pull requests to main (including PR #276), main pushes, or a manual run, it
 installs Node 24, dependencies from the lockfile, the pinned Playwright version's
-Firefox and native dependencies, FFmpeg, and PulseAudio. It runs only the 15 Firefox
+Firefox and native dependencies, FFmpeg, and PulseAudio. It now selects 16 Firefox
 engine/scenario pairs using the same one-worker, one-production-server config.
 The workflow has only `contents: read`, uses no cloud credentials or repository
 secrets, and retains logs, failure traces, and screenshots for 14 days. It does
@@ -220,6 +223,42 @@ Representative reviewed files in the screenshot directory:
 - `mobile-qa-chromium-share-error-phone-portrait.png`: consent, error, and retry.
 - `mobile-qa-webkit-owner-preview-tablet-portrait.png`: folder preview and owner
   management controls.
+
+## Live rollout and notices follow-up
+
+The merged player rollout was verified independently against native ESA build
+records in the deployment workflow and the public health endpoint:
+
+| Merged revision | Workflow | Actual successful ESA build | Live health |
+| --- | --- | --- | --- |
+| `c962e745bab6a3ceed10822d84b5af77c4b58b0d` | [43798284785](https://github.com/patrickchin/parrot-english/actions/runs/43798284785) | `189340752406660`, succeeded 03:29:05 UTC | Exact match 03:29:50 UTC |
+| `77c20ec2da822a2f80ec853621ecfb54e2479c9a` | [43798648236](https://github.com/patrickchin/parrot-english/actions/runs/43798648236) | `189341217558660`, succeeded 03:32:54 UTC | Exact match 03:33:01 UTC |
+
+Both workflows completed successfully. Read-only logs are saved as
+`/private/tmp/parrotbook-player-release-c962.log` and
+`/private/tmp/parrotbook-player-release-77c20.log`.
+
+A real-content production smoke check at 390×844 confirmed one Packs h1,
+21 franchise packs, a decoded cover, no horizontal overflow, visible Patrick
+uploader attribution and privacy guidance, franchise search narrowing to
+SpongeBob, and its actual five-scene detail. The unmocked notices page returned
+200 with MPL/LGPL texts and source links. No uploads or API mutations were
+performed. Screenshot: `production-c962-packs-390.png` in the screenshot folder.
+The isolated Playwright CLI browser was closed after the check.
+
+The notices page exposed a minor 14-pixel horizontal overflow at 390 CSS pixels:
+its long FFmpeg source hash could not wrap. The shared static page now allows
+code text to wrap. A new rendered regression loads that actual asset, checks
+one h1 and complete source-hash text bounds at all five viewport shapes, then
+expands both native license disclosures and checks for horizontal overflow
+again. The new Chromium and WebKit cases passed separately, 2/2 in 11.5 seconds
+(`/private/tmp/parrotbook-mobile-notices-fix.log`), without rerunning the 45 core
+cases. The updated 390-pixel screenshot
+`mobile-qa-webkit-software-notices-phone-portrait.png` shows the complete hash
+wrapping within the page. That source fix and its additional Firefox case await
+the next merged rollout and CI run, respectively.
+
+## Physical-device limits
 
 Catalog JSON is routed from repository fixtures. The short licensed Sintel video
 fixture exercises decoding, capture, replay, and export; other available media

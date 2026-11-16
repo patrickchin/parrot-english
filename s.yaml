@@ -4,7 +4,7 @@ edition: 3.0.0
 name: parrotbook-owner-packs
 resources:
   owner-api:
-    component: fc3@0.1.27
+    component: fc3@0.1.26
     props:
       region: cn-hongkong
       functionName: parrotbook-owner-packs
@@ -18,14 +18,14 @@ resources:
       environmentVariables:
         OWNER_API_BUCKET: parrotbook-media-f6e09412
         OWNER_API_REGION: oss-cn-hongkong
-        OWNER_API_ORIGIN: https://parrotbook.com
+        OWNER_API_ORIGINS: '["https://parrotbook.com","https://www.parrotbook.com"]'
         OWNER_API_REVISION: ${env('OWNER_API_REVISION')}
       # Native Node processes one request per instance. This caps the function.
       # ponytail: one global writer; revisit storage transactions before scaling.
       concurrencyConfig:
         reservedConcurrency: 1
   guest-sharing-api:
-    component: fc3@0.1.27
+    component: fc3@0.1.26
     props:
       region: cn-hongkong
       functionName: parrotbook-guest-shares
@@ -39,7 +39,7 @@ resources:
       environmentVariables:
         SHARE_API_BUCKET: parrotbook-media-f6e09412
         SHARE_API_REGION: oss-cn-hongkong
-        SHARE_API_ORIGIN: https://parrotbook.com
+        SHARE_API_ORIGINS: '["https://parrotbook.com","https://www.parrotbook.com"]'
         SHARE_API_DAILY_LIMIT: '100'
       # The OSS ticket count is correct only with a single global invocation.
       concurrencyConfig:

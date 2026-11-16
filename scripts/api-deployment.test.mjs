@@ -20,12 +20,12 @@ const env = {
 };
 const source = args => args[0] === 'rev-parse' ? revision + '\n' : '';
 const template = () => ({ edition: '3.0.0', name: 'parrotbook-owner-packs', resources: Object.fromEntries(functions.map(fn => [fn.resource, {
-  component: 'fc3@0.1.27', props: {
+  component: 'fc3@0.1.26', props: {
     region, functionName: fn.name, runtime: 'nodejs20', handler: fn.handler, code: './api/dist', memorySize: 512, timeout: fn.timeout,
     internetAccess: true, role: `\${env('${fn.roleEnv}')}`, concurrencyConfig: { reservedConcurrency: 1 },
     environmentVariables: fn.resource === 'owner-api' ? {
-      OWNER_API_BUCKET: 'parrotbook-media-f6e09412', OWNER_API_REGION: 'oss-cn-hongkong', OWNER_API_ORIGIN: 'https://parrotbook.com', OWNER_API_REVISION: "${env('OWNER_API_REVISION')}",
-    } : { SHARE_API_BUCKET: 'parrotbook-media-f6e09412', SHARE_API_REGION: 'oss-cn-hongkong', SHARE_API_ORIGIN: 'https://parrotbook.com', SHARE_API_DAILY_LIMIT: '100' },
+      OWNER_API_BUCKET: 'parrotbook-media-f6e09412', OWNER_API_REGION: 'oss-cn-hongkong', OWNER_API_ORIGINS: '["https://parrotbook.com","https://www.parrotbook.com"]', OWNER_API_REVISION: "${env('OWNER_API_REVISION')}",
+    } : { SHARE_API_BUCKET: 'parrotbook-media-f6e09412', SHARE_API_REGION: 'oss-cn-hongkong', SHARE_API_ORIGINS: '["https://parrotbook.com","https://www.parrotbook.com"]', SHARE_API_DAILY_LIMIT: '100' },
     ...(fn.resource === 'guest-sharing-api' ? { triggers: [{ triggerName: 'guest-http', triggerType: 'http', triggerConfig: { authType: 'anonymous', methods: ['GET', 'POST', 'DELETE', 'OPTIONS'] } }] } : {}),
   },
 }])) });
@@ -50,7 +50,7 @@ function cloud({ bootstrap = false, quota = 1, mutateOwner = false } = {}) {
         }
         return { triggers: template().resources['guest-sharing-api'].props.triggers };
       }
-      return { functionName: fn.name, runtime: 'nodejs20', handler: fn.handler, memorySize: 512, timeout: fn.timeout, role: roleArn(fn.role), environmentVariables: { OWNER_API_REVISION: revision } };
+      return { functionName: fn.name, runtime: 'nodejs20', handler: fn.handler, memorySize: 512, timeout: fn.timeout, role: roleArn(fn.role), environmentVariables: { OWNER_API_REVISION: revision, OWNER_API_ORIGINS: '["https://parrotbook.com","https://www.parrotbook.com"]', SHARE_API_ORIGINS: '["https://parrotbook.com","https://www.parrotbook.com"]' } };
     },
     native(file, args, options) {
       const staged = args[2] !== 's.yaml';
@@ -147,7 +147,7 @@ test('bootstrap requires explicit manual input and leaves owner trigger absent',
   for (const fn of functions) assert.ok(fake.calls.slice(stagedAt + 1, publicAt).includes(`/functions/${fn.name}/concurrency`));
   await assert.rejects(deployApi(options({ ...cloud({ bootstrap: true }), env: { ...env, API_BOOTSTRAP: 'true' } })), /bootstrap=true/);
   const partial = cloud({ bootstrap: true });
-  const getPartial = path => path === '/functions/parrotbook-owner-packs' ? { functionName: 'parrotbook-owner-packs', runtime: 'nodejs20', handler: 'index.handler', memorySize: 512, timeout: 120, role: roleArn(functions[0].role), environmentVariables: { OWNER_API_REVISION: revision } } : path === '/functions/parrotbook-owner-packs/triggers' ? { triggers: [] } : partial.get(path);
+  const getPartial = path => path === '/functions/parrotbook-owner-packs' ? { functionName: 'parrotbook-owner-packs', runtime: 'nodejs20', handler: 'index.handler', memorySize: 512, timeout: 120, role: roleArn(functions[0].role), environmentVariables: { OWNER_API_REVISION: revision, OWNER_API_ORIGINS: '["https://parrotbook.com","https://www.parrotbook.com"]', SHARE_API_ORIGINS: '["https://parrotbook.com","https://www.parrotbook.com"]' } } : path === '/functions/parrotbook-owner-packs/triggers' ? { triggers: [] } : partial.get(path);
   assert.deepEqual(await deployApi(options({ ...partial, get: getPartial, env: { ...env, GITHUB_EVENT_NAME: 'workflow_dispatch', API_BOOTSTRAP: 'true' } })), { revision, ownerConfigured: false });
 });
 
@@ -166,6 +166,8 @@ test('post-deploy quota, function and owner-auth drift fail closed', async () =>
   await assert.rejects(deployApi(options(cloud({ mutateOwner: true }))), /authentication|methods/);
   const fake = cloud();
   await assert.rejects(deployApi(options({ ...fake, get(path) { const value = fake.get(path); return path.endsWith('/parrotbook-guest-shares') ? { ...value, role: roleArn('other') } : value; } })), /readback mismatch/);
+  const origins = cloud();
+  await assert.rejects(deployApi(options({ ...origins, get(path) { const value = origins.get(path); return path.endsWith('/parrotbook-owner-packs') ? { ...value, environmentVariables: { ...value.environmentVariables, OWNER_API_ORIGINS: '["https://parrotbook.com"]' } } : value; } })), /browser origins/);
   const quota = cloud();
   let deployed = false;
   await assert.rejects(deployApi(options({ ...quota, native(...args) { quota.native(...args); deployed = true; }, get(path) { return deployed && path.endsWith('/concurrency') ? { reservedConcurrency: 2 } : quota.get(path); } })), /concurrency is not one/);

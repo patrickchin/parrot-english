@@ -195,11 +195,20 @@ test('revocation commits before deletion, retries cleanup safely, and cannot be 
 
 test('public native trigger CORS preflight grants no storage access and rejects other origins', async () => {
   const { storage, call } = setup();
-  const response = await call('OPTIONS', '/shares', undefined, undefined, { Origin: 'https://parrotbook.com',
-    'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'authorization, content-type' });
-  assert.equal(response.statusCode, 204); assert.equal(response.headers['Access-Control-Allow-Origin'], 'https://parrotbook.com');
-  assert.equal((await call('OPTIONS', '/shares', undefined, undefined, { Origin: 'https://other.example', 'Access-Control-Request-Method': 'POST' })).statusCode, 403);
-  assert.equal((await call('POST', '/shares', { title: 'X', size: 80 }, undefined, { Origin: 'https://other.example' })).statusCode, 403);
+  for (const Origin of ['https://parrotbook.com', 'https://www.parrotbook.com']) {
+    const response = await call('OPTIONS', '/shares', undefined, undefined, { Origin,
+      'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'authorization, content-type' });
+    assert.equal(response.statusCode, 204);
+    assert.equal(response.headers['Access-Control-Allow-Origin'], Origin);
+    assert.equal(response.headers.Vary, 'Origin');
+  }
+  for (const Origin of ['https://other.example', 'https://www.parrotbook.com.evil.example', 'null']) {
+    for (const method of ['OPTIONS', 'POST']) {
+      const response = await call(method, '/shares', method === 'POST' ? { title: 'X', size: 80 } : undefined, undefined, { Origin, 'Access-Control-Request-Method': 'POST' });
+      assert.equal(response.statusCode, 403);
+      assert.equal(response.headers['Access-Control-Allow-Origin'], undefined);
+    }
+  }
   assert.equal(storage.calls.length, 0);
   assert.equal((await handler(Buffer.from('{}'), {})).statusCode, 503);
 });
@@ -217,4 +226,13 @@ test('real OSS SDK signs Content-Length and preserves private destination copy h
   assert.equal(request.headers['x-oss-copy-source-if-match'], 'etag');
   assert.equal(request.headers['x-oss-object-acl'], 'private');
   assert.equal(request.headers['x-oss-metadata-directive'], 'REPLACE');
+});
+
+
+test('guest origin configuration rejects malformed allowlists before any storage access', () => {
+  const client = new Storage();
+  for (const allowedOrigins of [null, [], 'https://parrotbook.com', ['*'], ['https://parrotbook.com/'], ['https://parrotbook.com/path'], ['null'], [123]]) {
+    assert.throws(() => createShareApi({ client, config: { allowedOrigins } }), TypeError);
+  }
+  assert.deepEqual(client.calls, []);
 });

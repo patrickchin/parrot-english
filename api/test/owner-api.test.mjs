@@ -406,17 +406,33 @@ test('a mixed replacement cannot resurrect a previously hidden or deleted comple
 });
 
 
-test('owner preflight covers management methods without touching storage and only admits its exact browser origin', async () => {
+test('owner preflight admits both exact player origins for management without touching storage', async () => {
   const { api, storage } = setup();
   const request = (method, headers) => api(Buffer.from(JSON.stringify({ rawPath: '/packs/pack_alpha', requestContext: { http: { method } }, headers })));
-  for (const method of ['GET', 'POST', 'PATCH', 'DELETE']) {
-    const response = await request('OPTIONS', { origin: 'https://parrotbook.com', 'access-control-request-method': method, 'access-control-request-headers': 'authorization,content-type' });
+  for (const origin of ['https://parrotbook.com', 'https://www.parrotbook.com']) for (const method of ['GET', 'POST', 'PATCH', 'DELETE']) {
+    const response = await request('OPTIONS', { origin, 'access-control-request-method': method, 'access-control-request-headers': 'authorization,content-type' });
     assert.equal(response.statusCode, 204);
-    assert.equal(response.headers['Access-Control-Allow-Origin'], 'https://parrotbook.com');
+    assert.equal(response.headers['Access-Control-Allow-Origin'], origin);
+    assert.equal(response.headers.Vary, 'Origin');
     assert.match(response.headers['Access-Control-Allow-Methods'], new RegExp(method));
   }
   assert.deepEqual(storage.calls, []);
-  assert.equal((await request('OPTIONS', { origin: 'https://untrusted.example', 'access-control-request-method': 'DELETE' })).statusCode, 403);
-  assert.equal((await request('GET', { origin: 'https://untrusted.example' })).statusCode, 403);
+  for (const origin of ['https://untrusted.example', 'https://www.parrotbook.com.evil.example', 'null']) {
+    for (const method of ['OPTIONS', 'GET']) {
+      const response = await request(method, { origin, 'access-control-request-method': 'DELETE' });
+      assert.equal(response.statusCode, 403);
+      assert.equal(response.headers['Access-Control-Allow-Origin'], undefined);
+    }
+  }
   assert.equal((await request('OPTIONS', { origin: 'https://parrotbook.com', 'access-control-request-method': 'DELETE', 'access-control-request-headers': 'cookie' })).statusCode, 403);
+  assert.deepEqual(storage.calls, []);
+});
+
+
+test('owner origin configuration rejects malformed allowlists before any storage access', () => {
+  const client = new Storage();
+  for (const allowedOrigins of [null, [], 'https://parrotbook.com', ['*'], ['https://parrotbook.com/'], ['https://parrotbook.com/path'], ['null'], [123]]) {
+    assert.throws(() => createOwnerApi({ client, allowedOrigins }), TypeError);
+  }
+  assert.deepEqual(client.calls, []);
 });
