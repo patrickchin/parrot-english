@@ -137,3 +137,14 @@ Native `--retry-count 2` is verified to make at most three read-only GET attempt
 recovering after two synthetic connection resets. The per-readback timeout is
 45 seconds; all mutation/source/quota/auth-preservation gates are unchanged.
 No IAM denial or need for broader permissions is established by these failures.
+
+The original failed read's provider log later established HTTP 200 with a
+**11,471 ms** request duration. CLI 3.5.3 defaults to a **10-second read timeout**,
+while FC3's Node deployment component defaults to 60 seconds. Exact-binary
+loopback reproduction with a 12-second response fails after 10.11 seconds by
+default and succeeds after 12.07 seconds with only `--read-timeout 30` added.
+The readback command now sets that 30-second native limit, retaining its
+45-second total subprocess budget and at-most-three GET attempts. This corrects
+the demonstrated timeout mismatch without changing IAM or retrying mutations.
+Sources: [CLI defaults](https://help.aliyun.com/zh/cli/environment-variables#76),
+[native timeout option](https://www.alibabacloud.com/help/en/cli/command-line-options).
