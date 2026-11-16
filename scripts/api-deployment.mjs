@@ -97,18 +97,25 @@ export async function verifyPackage(directory = 'api/dist') {
 
 const readbackPaths = new Set(functions.flatMap(fn => ['', '/concurrency', '/triggers'].map(suffix => `/functions/${fn.name}${suffix}`)));
 const providerCodes = new Set(['AccessDenied', 'Forbidden', 'Unauthorized', 'FunctionNotFound', 'TriggerNotFound',
-  'InvalidArgument', 'InvalidParameter', 'MissingParameter', 'Throttling', 'Throttling.User', 'InternalError',
+  'InvalidArgument', 'InvalidParameter', 'MissingParameter', 'Throttling', 'InternalError',
   'ServiceUnavailable', 'InvalidAccessKeyId', 'InvalidSecurityToken', 'ExpiredSecurityToken', 'SecurityTokenExpired', 'SignatureDoesNotMatch']);
 function providerDiagnostic(stderr) {
   // Only native CLI error envelopes count. Never search messages or nested data.
   let envelope;
   try { envelope = JSON.parse(stderr); } catch { return {}; }
   if (!envelope || typeof envelope !== 'object' || Array.isArray(envelope)) return {};
-  const code = envelope.error_code ?? envelope.Code ?? envelope.ErrorCode;
-  if (!providerCodes.has(code)) return {};
+  const rawCode = envelope.error_code ?? envelope.Code ?? envelope.ErrorCode;
+  if (typeof rawCode !== 'string' || !rawCode) return {};
+  const status = envelope.status_code;
+  const nativeRemote = envelope.schemaVersion === 'v1' && Number.isInteger(status) && status >= 400 && status <= 599;
+  if ((envelope.schemaVersion !== undefined || status !== undefined) && !nativeRemote) return {};
+  const family = rawCode.split('.', 1)[0];
+  const known = providerCodes.has(family);
+  if (!known && !nativeRemote) return {};
   const id = envelope.request_id ?? envelope.RequestId;
   const validId = typeof id === 'string' && /^(?:[a-f0-9]{16,64}|[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/i.test(id);
-  return { code, ...(validId ? { requestId: id } : {}) };
+  return { code: known ? family : 'unrecognized', notFound: rawCode === 'FunctionNotFound',
+    ...(validId ? { requestId: id } : {}), ...(nativeRemote ? { httpStatus: status } : {}) };
 }
 export function cloudGet(path, run = execute) {
   const label = readbackPaths.has(path) ? `GET ${path}` : 'GET [unexpected path]';
@@ -119,9 +126,9 @@ export function cloudGet(path, run = execute) {
     // Native HTTP trigger output can contain owner tokens. Treat only a parsed
     // provider code as not-found; messages, stdout and config are never metadata.
     const diagnostic = providerDiagnostic(String(error.stderr ?? ''));
-    if (diagnostic.code === 'FunctionNotFound') return null;
+    if (diagnostic.notFound) return null;
     const category = error.code === 'ETIMEDOUT' ? 'timeout' : 'child-exit';
-    const details = [category, diagnostic.code ? `providerCode=${diagnostic.code}` : '', diagnostic.requestId ? `requestId=${diagnostic.requestId}` : ''].filter(Boolean);
+    const details = [category, diagnostic.code ? `providerCode=${diagnostic.code}` : '', diagnostic.requestId ? `requestId=${diagnostic.requestId}` : '', diagnostic.httpStatus ? `httpStatus=${diagnostic.httpStatus}` : ''].filter(Boolean);
     fail(`FC readback ${label} failed (${details.join('; ')}).`);
   }
   try { return JSON.parse(output); }
