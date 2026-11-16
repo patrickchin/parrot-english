@@ -1,8 +1,9 @@
 import { test, expect, routeContent } from './fixtures';
-import { readFile, mkdir } from 'node:fs/promises';
-import { homedir } from 'node:os';
+import { readFile, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { routeShortScene } from './short-scene';
 import type { Scene } from '../../src/scene';
 import { mobileViewports, mobileScreenshot, touchControl } from './mobile-viewports';
@@ -63,7 +64,20 @@ async function prepareVideo(page: import('@playwright/test').Page, language: 'en
   await expect(page.getByRole('button', { name: labels.file, exact: true })).toBeVisible({ timeout: 15000 });
 }
 
-test('a cached video shares as a native file or a consented expiring link with device removal', async ({ page, context, browser }, info) => {
+for (const forceAacFallback of [false, true]) test(`a cached video shares as a native file or a consented expiring link with device removal (${forceAacFallback ? 'native AAC unavailable' : 'default AAC'})`, async ({ page, context, browser }, info) => {
+  if (forceAacFallback) await page.addInitScript(() => {
+    type Configuration = { codec: string; [key: string]: unknown };
+    const encoder = (window as unknown as { AudioEncoder?: { isConfigSupported(config: Configuration): Promise<{ supported?: boolean; config?: Configuration }> } }).AudioEncoder;
+    const audit = { nativeAvailable: !!encoder, rejected: 0 };
+    Object.assign(window, { aacCapabilityAudit: audit });
+    if (!encoder) return; // Firefox already needs the fallback without a stub.
+    const supports = encoder.isConfigSupported.bind(encoder);
+    Object.defineProperty(encoder, 'isConfigSupported', { configurable: true, value: async (config: Configuration) => {
+      if (config.codec.startsWith('mp4a')) { audit.rejected++; return { supported: false, config }; }
+      return supports(config);
+    } });
+  });
+  const evidenceSuffix = forceAacFallback ? '-aac-fallback' : '';
   let creates = 0, puts = 0, publishes = 0, removed = false, failPublication = true;
   let bytes: Buffer | undefined;
   const expiresAt = new Date(Date.now() + 7 * 86400000).toISOString();
@@ -113,6 +127,10 @@ test('a cached video shares as a native file or a consented expiring link with d
     return route.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*' } });
   });
   await prepareVideo(page);
+  if (forceAacFallback) {
+    const audit = await page.evaluate(() => (window as unknown as { aacCapabilityAudit: { nativeAvailable: boolean; rejected: number } }).aacCapabilityAudit);
+    if (audit.nativeAvailable) expect(audit.rejected).toBeGreaterThan(0);
+  }
   expect(creates).toBe(0); expect(puts).toBe(0);
   const viewports = info.project.name.startsWith('mobile-qa-') ? mobileViewports : [360, 390, 768, 1440].map(width => ({ width, height: width === 360 ? 640 : 900, name: String(width) }));
   for (const viewport of viewports) {
@@ -120,7 +138,7 @@ test('a cached video shares as a native file or a consented expiring link with d
     await page.setViewportSize(viewport);
     if (info.project.name.startsWith('mobile-qa-')) {
       await touchControl(page, page.getByRole('button', { name: 'Share video file', exact: true }));
-      await mobileScreenshot(page, info, 'share-controls', viewport.name);
+      await mobileScreenshot(page, info, `share-controls${evidenceSuffix}`, viewport.name);
     }
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await expect(page.getByRole('button', { name: 'Share video file', exact: true })).toBeVisible();
@@ -153,7 +171,7 @@ test('a cached video shares as a native file or a consented expiring link with d
     await page.setViewportSize(viewport);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await touchControl(page, dialog.getByRole('button', { name: 'Retry sharing', exact: true }));
-    await mobileScreenshot(page, info, 'share-error', viewport.name);
+    await mobileScreenshot(page, info, `share-error${evidenceSuffix}`, viewport.name);
   }
   await dialog.getByRole('button', { name: 'Retry sharing', exact: true }).click();
   await expect(dialog.getByLabel('Playback link', { exact: true })).toHaveValue(new RegExp(`/en/s/${shareId}$`));
@@ -169,6 +187,28 @@ test('a cached video shares as a native file or a consented expiring link with d
     }
   }
   expect(createHash('sha256').update(bytes!).digest('hex')).toBe(native.hash);
+  const auditFolder = await mkdtemp(join(tmpdir(), 'parrotbook-share-audio-'));
+  try {
+    // A seekable file also avoids EPIPE when FFprobe finishes before reading a
+    // complete stdin upload. These are the exact bytes captured above.
+    const file = join(auditFolder, 'shared.mp4'); await writeFile(file, bytes!);
+    const probe = JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-show_entries', 'stream=codec_type,codec_name,sample_rate', '-of', 'json', file]).toString());
+    expect(probe.streams).toEqual(expect.arrayContaining([expect.objectContaining({ codec_type: 'video' }), expect.objectContaining({ codec_type: 'audio', codec_name: 'aac', sample_rate: '48000' })]));
+    // Decode the actual MP4: its learner signal must survive AAC encoding.
+    const pcm = execFileSync('ffmpeg', ['-v', 'error', '-i', file, '-map', '0:a:0', '-ss', '0.4', '-t', '0.4', '-ac', '1', '-ar', '48000', '-f', 'f32le', 'pipe:1']);
+    expect(pcm.length).toBeGreaterThan(48000 * 0.3 * 4);
+    let energy = 0, real = 0, imaginary = 0;
+    const samples = pcm.length / 4;
+    for (let index = 0; index < samples; index++) {
+      const value = pcm.readFloatLE(index * 4), phase = 2 * Math.PI * 660 * index / 48000;
+      energy += value ** 2; real += value * Math.cos(phase); imaginary += value * Math.sin(phase);
+    }
+    const amplitude = 2 * Math.hypot(real, imaginary) / samples;
+    expect(amplitude).toBeGreaterThan(0.05);
+    expect(amplitude ** 2 / 2 / (energy / samples)).toBeGreaterThan(0.7);
+  } finally {
+    await rm(auditFolder, { recursive: true, force: true });
+  }
   const link = await dialog.getByLabel('Playback link', { exact: true }).inputValue();
   expect(link).not.toContain(creatorToken);
   expect(await page.evaluate(() => JSON.stringify({ ...localStorage }))).not.toContain(creatorToken);
