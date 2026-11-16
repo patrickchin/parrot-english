@@ -50,8 +50,8 @@ See [engineering evidence](engineering-readiness.md).
 
 ## Active increment
 
-Source is isolated on `codex/franchise-pack-uploads`, based on the released
-commit above. Other sessions' edits in the shared checkout remain untouched.
+Source is isolated on `codex/franchise-pack-uploads`; released recording recovery
+from main `edcbc125` was integrated as `860cfcfb` before the mobile checks. Other sessions' edits in the shared checkout remain untouched.
 Review steps: [content PR #275](https://github.com/patrickchin/parrot-english/pull/275)
 and [implementation PR #276](https://github.com/patrickchin/parrot-english/pull/276).
 New source, content, cloud setup, and publication are separate milestones.
@@ -63,9 +63,10 @@ Nothing in this section implies the new API is hosted.
 | Owner API + private management page | Backend + UI | Implemented and independently reviewed; local API/browser checks cover upload/retry, staging, publication, hide/show/delete. Hosted setup remains. |
 | Owner CLI uses the same serialized API | Content/backend | Implemented: default merge preserves unrelated packs; explicit replacement is available. Publish the initial uploader-complete catalogue before enabling the new API. |
 | Guest file and link sharing | Backend + UI + delivery | Implemented and locally verified: native file share/download, explicit upload, playback, expiry, and creator removal. Hosted API acceptance remains. |
-| Hosted API setup | Operations + delivery | Alibaba sign-in verified; no FC functions or project roles created. Native Git import requests broad GitHub access including delete_repo; creating its default IAM role was rejected by automatic approval review. Recommend main-only GitHub Actions with a separate scoped OIDC role; requires the owner's deployment-policy exception. [Decision](api-deployment-decision.md), [runbook](../owner-upload-deployment.md). |
-| Candidate verification/review | QA + independent reviewer | Verified source 20479f33: TypeScript, app/content/boundary/API, player/API packaging, and 316 browser passes / 16 intentional skips. Physical phones and hosted provider behavior remain separate. |
-| New release and catalogue publication | Delivery | Catalogue prerequisite is complete. Application PR #276 remains unmerged; API hosting and hosted acceptance are pending. Player still serves c527d8cf. |
+| Hosted API setup | Operations + delivery | Scoped main-only CI deployment approved 2026-11-16. Separate owner/guest runtime roles and FC deployment role created/read back with only their intended policies; workflow variables configured. Exact-origin OSS PUT CORS added with existing GET/HEAD preserved. FC bootstrap and hosted acceptance remain. Connector strict mode blocked lifecycle cleanup; no lifecycle rule applied. [Decision](api-deployment-decision.md), [runbook](../owner-upload-deployment.md). |
+| Candidate verification/review | QA + independent reviewer | Earlier source 20479f33: TypeScript, app/content/boundary/API, player/API packaging, and 316 browser passes / 16 intentional skips. Physical phones and hosted provider behavior remain separate. |
+| New release and catalogue publication | Delivery | Catalogue prerequisite is complete. Application PR #276 remains unmerged; API hosting and hosted acceptance are pending. Baseline live player serves edcbc125 (recording-recovery release). |
+| Mobile browser verification | QA + engineering | Chromium/WebKit: 28 focused cases pass across five shapes; clipped 320px recovery text fixed and rechecked. Linux Firefox launches: nine pass, five recording-related failures under investigation. [Evidence](mobile-browser-verification.md). |
 | Physical-device friend test | Patrick + QA | Test complete recording/replay, sharing, resume/delete, mic deny/retry, app switching, audio routes, and network on actual phones. No device row has passed yet. |
 | WebKit timing investigation | Engineering + QA | Gather physical-device evidence before weakening guards or changing the audio model. Preserve diagnostics. |
 | ESA continuation | Patrick + operations | Site plan expires **2026-11-29 00:00 Asia/Shanghai**, renewal normal / duration 0. Confirm continuation and cost before that date; no purchase or billing change authorized or made. |

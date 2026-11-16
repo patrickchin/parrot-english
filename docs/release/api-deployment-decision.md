@@ -24,7 +24,7 @@ the source revision, and require quota/authentication readbacks before enabling
 the endpoint URLs. Media and structured content remain in OSS.
 
 Use the same pinned official `aliyun/configure-aliyun-credentials-action` as the
-existing player workflow, with a new `FC_DEPLOY_ROLE_ARN`. Its trust conditions
+existing player workflow, with a new `API_DEPLOY_ROLE_ARN`. Its trust conditions
 must match issuer `https://token.actions.githubusercontent.com`, audience
 `sts.aliyuncs.com`, and subject
 `repo:patrickchin/parrot-english:ref:refs/heads/main`. Credentials are temporary;
@@ -59,3 +59,25 @@ this UI bootstrap or remove its GitHub OAuth request.
 The [legacy overview](https://help.aliyun.com/zh/functioncompute/overview-of-serverless-application-center)
 supports custom roles. A public legacy CreateApplication API was not verified;
 do not substitute another service's application API or invent an endpoint.
+
+## Setup record — 2026-11-16
+
+Created and read back exactly one scoped custom policy on each role:
+
+- `parrotbook-owner-packs-runtime`: `ParrotbookOwnerPacksRuntime`.
+- `parrotbook-guest-shares-runtime`: `ParrotbookGuestSharesRuntime`.
+- `parrotbook-fc-github-main`: `ParrotbookFcMainDeploy`.
+
+The existing OIDC provider is reused. Non-secret GitHub workflow variables are
+configured; no static credentials were added. Existing OSS GET/HEAD CORS was
+preserved and a PUT rule added only for `https://parrotbook.com` and the signed
+upload headers. Readback confirmed the rules. The cloud connector refused
+`put-bucket-lifecycle` in strict-permission mode; the four proposed cleanup
+rules were not applied. Function deployment and hosted acceptance remain separate.
+
+The reviewed bootstrap has two native phases: first create/update functions
+without a guest HTTP trigger and verify both global concurrency caps equal 1;
+then deploy the gated descriptor that adds the guest trigger. The owner trigger
+remains absent until native Bearer setup. Subsequent deployments preserve its
+configuration. Fourteen deployment checks include real subprocess tests for
+this ordering, quota-failure blocking, generated-file cleanup, and private stderr.

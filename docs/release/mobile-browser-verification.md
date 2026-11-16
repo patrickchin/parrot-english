@@ -32,7 +32,7 @@ server.
 | --- | --- | --- | --- |
 | `mobile-qa-chromium` | Chromium 149.0.7827.55 | Pixel 7 preset, initial 390×844 | 14 passed |
 | `mobile-qa-webkit` | WebKit 26.5 | iPhone 13 preset, initial 390×844 | 14 passed |
-| `mobile-qa-firefox` | Installed Firefox 151.0; no browser handshake | Desktop Firefox with touch and 390×844 viewport | Blocked before loading the app |
+| `mobile-qa-firefox` | Firefox 151.0 on Linux | Desktop Firefox with touch and 390×844 viewport | Initial CI: 9 passed, 5 recording-fixture failures; audio-environment repair pending CI |
 
 Each context is resized through these CSS viewport sizes. Tablet rows exercise
 layout at tablet dimensions; the phone presets retain their original user
@@ -97,10 +97,37 @@ installed native binary identifies as Firefox 151.0 (15126.6.11). No browser
 sandbox or operating-system setting was bypassed. Firefox app behavior remains
 unverified locally.
 
+The first Linux run, [43795845129](https://github.com/patrickchin/parrot-english/actions/runs/43795845129),
+tested `267612c07dc5928174a9c101a6af2cf63dd4d672` with Firefox 151.0:
+9 cases passed and 5 recording-dependent cases failed. Gallery/layout,
+owner authentication/folder publication/management, and shared-link playback
+and recovery all passed. The failures were cached-video sharing, three capture
+startup/retry cases, and partial-draft persistence.
+
+All five traces remain in the preparing state before a microphone stream is
+returned to the app. The synthetic fixture awaits its native generator's
+`AudioContext.resume()`; the app never reaches worklet creation (`captures=0`).
+The blocked-video and stuck-application-context scenarios therefore never reach
+their intended test stages. No application defect is established by those five
+failures. Trace recovery files are under
+`/private/tmp/parrotbook-firefox-partial/`; the failed step log is
+`/private/tmp/parrotbook-firefox-ci-failed.log`.
+
+The workflow now installs and starts a user PulseAudio daemon with a native
+null output sink, selects it as default, and prints `pactl info`. Before the app
+tests, a standalone Firefox page creates and resumes a native `AudioContext`
+from an actual button click and requires a running clock within five seconds
+(browser launch is bounded to 30 seconds). That isolates CI audio output from
+app behavior and prevents another full matrix when the output clock is broken.
+There are no autoplay preference changes or browser sandbox overrides. Tests
+stop after the first failure while this diagnosis is pending. The environment
+repair still needs a successful CI run; neither 42/42 nor Firefox recording
+support is claimed yet.
+
 `.github/workflows/mobile-browser.yml` supplies the alternate Linux host. On
 pull requests to main (including PR #276), main pushes, or a manual run, it
 installs Node 24, dependencies from the lockfile, the pinned Playwright version's
-Firefox and native dependencies, and FFmpeg. It runs only the 14 Firefox
+Firefox and native dependencies, FFmpeg, and PulseAudio. It runs only the 14 Firefox
 engine/scenario pairs using the same one-worker, one-production-server config.
 The workflow has only `contents: read`, uses no cloud credentials or repository
 secrets, and retains logs, failure traces, and screenshots for 14 days. It does
