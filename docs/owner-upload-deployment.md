@@ -314,7 +314,9 @@ keys without transactional quota coordination.
 
 Recommend lifecycle rules scoped only to these prefixes: raw uploads after
 one day, quota tickets after one day, and published videos/records after eight
-days. These are proposed rules, **not applied cloud changes**. Verify the
+days. Patrick explicitly selected **leave cleanup disabled** on 2026-11-16;
+do not apply these proposed rules or block friend testing on their approval.
+These are proposed rules, **not applied cloud changes**. Verify the
 provider's day-boundary behavior preserves all tickets throughout their UTC
 quota day, and handle noncurrent versions if bucket versioning is enabled.
 Seven-day access expiration is enforced by the API regardless of cleanup.

@@ -285,9 +285,10 @@ test('readback errors expose only known path, category, allowlisted stderr code 
   assert.throws(() => cloudGet(path, run({ stderr: 'FunctionNotFound', stdout: '{"Code":"FunctionNotFound"}' })), redactedFallback(path, 'text'));
   assert.throws(() => cloudGet(path, run({ stderr: JSON.stringify([{ Code: 'AccessDenied', RequestId: nestedHex }]) })), redactedFallback(path));
   assert.equal(cloudGet(path, run({ stderr: '{"error_code":"FunctionNotFound"}' })), null);
-  assert.deepEqual(cloudGet(path, (file, args) => {
+  assert.deepEqual(cloudGet(path, (file, args, options) => {
     assert.equal(file, 'aliyun');
-    assert.deepEqual(args, ['fc', 'GET', '/2023-03-30' + path, '--region', region, '--version', '2023-03-30', '--cli-ai-mode']);
+    assert.deepEqual(args, ['fc', 'GET', '/2023-03-30' + path, '--region', region, '--version', '2023-03-30', '--cli-ai-mode', '--retry-count', '2']);
+    assert.deepEqual(options, { timeout: 45000 });
     return '{"triggers":[]}';
   }), { triggers: [] });
 });
@@ -310,22 +311,22 @@ test('real readback subprocess failure cannot print private stdout, stderr or tr
 test('native dotted error codes expose only known families and exact not-found remains distinct', () => {
   const path = '/functions/parrotbook-owner-packs/triggers';
   const requestId = '01A1E276-6731-3D84-B9B6-428AA6C46BCC';
-  const run = error_code => () => { throw { stderr: JSON.stringify({ schemaVersion: 'v1', error_code, status_code: 404, request_id: requestId, error_message: 'private-message-sentinel' }) }; };
-  assert.throws(() => cloudGet(path, run('InvalidAccessKeyId.NotFound')), error => error.message === `FC readback GET ${path} failed (child-exit; providerCode=InvalidAccessKeyId; requestId=${requestId}; httpStatus=404).`);
-  assert.throws(() => cloudGet(path, run('FunctionNotFound.private-suffix-sentinel')), error => error.message === `FC readback GET ${path} failed (child-exit; providerCode=FunctionNotFound; requestId=${requestId}; httpStatus=404).`);
+  const run = error_code => () => { throw { stderr: JSON.stringify({ schemaVersion: 'v1', error_code, status_code: 404, request_id: requestId, message: 'private-message-sentinel', recovery: { action: 'diagnose_error_code', hint: 'private-hint-sentinel', command: 'private-command-sentinel' } }) }; };
+  assert.throws(() => cloudGet(path, run('InvalidAccessKeyId.NotFound')), error => error.message === `FC readback GET ${path} failed (child-exit; providerCode=InvalidAccessKeyId; requestId=${requestId}; httpStatus=404; cliType=remote; cliAction=diagnose_error_code).`);
+  assert.throws(() => cloudGet(path, run('FunctionNotFound.private-suffix-sentinel')), error => error.message === `FC readback GET ${path} failed (child-exit; providerCode=FunctionNotFound; requestId=${requestId}; httpStatus=404; cliType=remote; cliAction=diagnose_error_code).`);
   assert.equal(cloudGet(path, run('FunctionNotFound')), null);
 });
 
 test('unknown codes gain only constant metadata from a validated native remote envelope', () => {
   const path = '/functions/parrotbook-owner-packs/triggers';
   const requestId = '0123456789abcdef0123456789abcdef';
-  const envelope = { schemaVersion: 'v1', error_code: 'private-code-sentinel', request_id: requestId, status_code: 403, error_message: 'private-message-sentinel', triggerConfig: { request_id: 'abcdef0123456789abcdef0123456789' } };
+  const envelope = { schemaVersion: 'v1', error_code: 'private-code-sentinel', request_id: requestId, status_code: 403, message: 'private-message-sentinel', recovery: { action: 'diagnose_error_code', hint: 'private-hint-sentinel' }, triggerConfig: { request_id: 'abcdef0123456789abcdef0123456789' } };
   const run = value => () => { throw { stderr: JSON.stringify(value) }; };
-  assert.throws(() => cloudGet(path, run(envelope)), error => error.message === `FC readback GET ${path} failed (child-exit; providerCode=unrecognized; requestId=${requestId}; httpStatus=403).`);
-  for (const change of [{ schemaVersion: 'v2' }, { schemaVersion: null }, { status_code: '403' }, { status_code: 403.5 }, { status_code: 399 }, { status_code: 600 }, { error_code: null }]) {
+  assert.throws(() => cloudGet(path, run(envelope)), error => error.message === `FC readback GET ${path} failed (child-exit; providerCode=unrecognized; requestId=${requestId}; httpStatus=403; cliType=remote; cliAction=diagnose_error_code).`);
+  for (const change of [{ schemaVersion: 'v2' }, { schemaVersion: null }, { status_code: '403' }, { status_code: 403.5 }, { status_code: 99 }, { status_code: 600 }, { error_code: null }]) {
     assert.throws(() => cloudGet(path, run({ ...envelope, ...change })), redactedFallback(path));
   }
-  assert.throws(() => cloudGet(path, run({ ...envelope, request_id: 'private-non-id-sentinel' })), error => error.message === `FC readback GET ${path} failed (child-exit; providerCode=unrecognized; httpStatus=403).`);
+  assert.throws(() => cloudGet(path, run({ ...envelope, request_id: 'private-non-id-sentinel' })), error => error.message === `FC readback GET ${path} failed (child-exit; providerCode=unrecognized; httpStatus=403; cliType=remote; cliAction=diagnose_error_code).`);
   assert.throws(() => cloudGet(path, run({ ...envelope, schemaVersion: undefined, status_code: undefined })), redactedFallback(path));
 });
 
@@ -355,5 +356,45 @@ test('real non-JSON readback subprocess failure exposes no private stderr or std
   assert.equal(result.status, 0);
   assert.equal(result.stdout, '');
   assert.equal(result.stderr, `FC readback GET /functions/parrotbook-owner-packs/triggers failed (child-exit; exitStatus=7; stderrBytes=${Buffer.byteLength(secret)}; stderrFormat=text).\n`);
+  assert.ok(!result.stderr.includes(secret));
+});
+
+
+test('native local envelopes classify fixed actions before optional remote facts and keep all content private', () => {
+  const path = '/functions/parrotbook-owner-packs/triggers';
+  const secret = 'private-native-envelope-sentinel';
+  // Exact pinned CLI transport envelope shape: remote facts are omitted.
+  const envelope = { schemaVersion: 'v1', message: 'request to fcv3.cn-hongkong.aliyuncs.com failed: read tcp 127.0.0.1:50000->127.0.0.1:50001: read: connection reset by peer', recovery: {
+    action: 'retry_or_fix_endpoint', command: secret, hint: secret,
+  } };
+  const run = value => () => { throw { status: 2, stderr: JSON.stringify(value), stdout: secret }; };
+  for (const error_code of [undefined, '']) assert.throws(() => cloudGet(path, run({ ...envelope, error_code })), error => error.message === `FC readback GET ${path} failed (child-exit; cliType=transport; cliAction=retry_or_fix_endpoint).`);
+  for (const [action, type] of [['fix_endpoint_or_region', 'endpoint'], ['inspect_request_help', 'usage'], ['check_configuration', 'configuration'], ['reauthenticate', 'authentication'], ['inspect_action_help', 'help']]) {
+    assert.throws(() => cloudGet(path, run({ ...envelope, recovery: { ...envelope.recovery, action } })), error => error.message === `FC readback GET ${path} failed (child-exit; cliType=${type}; cliAction=${action}).`);
+  }
+  assert.throws(() => cloudGet(path, run({ ...envelope, recovery: { ...envelope.recovery, action: secret } })), error => error.message === `FC readback GET ${path} failed (child-exit; cliType=unrecognized).`);
+  for (const change of [{ message: null }, { message: '' }, { schemaVersion: 'v2' }, { recovery: [] }, { recovery: { action: 'retry_or_fix_endpoint', hint: 123 } }, { recovery: { action: 123, hint: secret } }]) {
+    assert.throws(() => cloudGet(path, run({ ...envelope, ...change })), error => {
+      assert.match(error.message, /^FC readback GET \/functions\/parrotbook-owner-packs\/triggers failed \(child-exit; exitStatus=2; stderrBytes=\d+; stderrFormat=json\)\.$/);
+      return true;
+    });
+  }
+  const requestId = '1-01234567-0123456789abcdef01234567';
+  assert.throws(() => cloudGet(path, run({ ...envelope, status_code: 200, request_id: requestId })), error => error.message === `FC readback GET ${path} failed (child-exit; requestId=${requestId}; httpStatus=200; cliType=transport; cliAction=retry_or_fix_endpoint).`);
+  assert.throws(() => cloudGet(path, run({ ...envelope, status_code: 599, request_id: requestId + secret })), error => error.message === `FC readback GET ${path} failed (child-exit; httpStatus=599; cliType=transport; cliAction=retry_or_fix_endpoint).`);
+});
+
+test('real reset-envelope subprocess logs only fixed native action and type labels', () => {
+  const wrapper = new URL('./api-deployment.mjs', import.meta.url).href;
+  const secret = 'private-reset-envelope-sentinel';
+  const envelope = { schemaVersion: 'v1', message: secret, recovery: { action: 'retry_or_fix_endpoint', command: 'https://example.invalid/?token=' + secret, hint: secret }, triggerConfig: { token: secret } };
+  const provider = `process.stdout.write(${JSON.stringify(secret)}); process.stderr.write(${JSON.stringify(JSON.stringify(envelope))}); process.exit(2);`;
+  const child = `import { cloudGet, execute } from ${JSON.stringify(wrapper)};
+    try { cloudGet('/functions/parrotbook-owner-packs/triggers', () => execute(process.execPath, ['-e', ${JSON.stringify(provider)}], {stdio:'inherit'})); process.exitCode=8; }
+    catch(error) { console.error(error.message); }`;
+  const result = spawnSync(process.execPath, ['--input-type=module', '-e', child], { encoding: 'utf8', stdio: 'pipe' });
+  assert.equal(result.status, 0);
+  assert.equal(result.stdout, '');
+  assert.equal(result.stderr, 'FC readback GET /functions/parrotbook-owner-packs/triggers failed (child-exit; cliType=transport; cliAction=retry_or_fix_endpoint).\n');
   assert.ok(!result.stderr.includes(secret));
 });

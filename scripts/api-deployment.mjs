@@ -99,23 +99,37 @@ const readbackPaths = new Set(functions.flatMap(fn => ['', '/concurrency', '/tri
 const providerCodes = new Set(['AccessDenied', 'Forbidden', 'Unauthorized', 'FunctionNotFound', 'TriggerNotFound',
   'InvalidArgument', 'InvalidParameter', 'MissingParameter', 'Throttling', 'InternalError',
   'ServiceUnavailable', 'InvalidAccessKeyId', 'InvalidSecurityToken', 'ExpiredSecurityToken', 'SecurityTokenExpired', 'SignatureDoesNotMatch']);
+const cliActionTypes = new Map([
+  ['retry_or_fix_endpoint', 'transport'], ['fix_endpoint_or_region', 'endpoint'],
+  ['inspect_request_help', 'usage'], ['inspect_parameter_help', 'usage'], ['inspect_command_help', 'usage'],
+  ['inspect_product_help', 'usage'], ['inspect_root_help', 'usage'], ['fix_option_combination', 'usage'],
+  ['fix_help_options', 'usage'], ['fix_cli_query', 'usage'], ['check_configuration', 'configuration'],
+  ['reauthenticate', 'authentication'], ['diagnose_error_code', 'remote'], ['inspect_action_help', 'help'],
+]);
 function providerDiagnostic(stderr) {
-  // Only native CLI error envelopes count. Never search messages or nested data.
+  // Native local envelopes omit remote error fields. Validate their shape first;
+  // message, recovery command/hint, nested values and unknown actions stay private.
   let envelope;
   try { envelope = JSON.parse(stderr); } catch { return {}; }
   if (!envelope || typeof envelope !== 'object' || Array.isArray(envelope)) return {};
-  const rawCode = envelope.error_code ?? envelope.Code ?? envelope.ErrorCode;
-  if (typeof rawCode !== 'string' || !rawCode) return {};
+  const recovery = envelope.recovery;
+  const native = envelope.schemaVersion === 'v1' && typeof envelope.message === 'string' && envelope.message.trim() &&
+    recovery && !Array.isArray(recovery) && typeof recovery === 'object' &&
+    typeof recovery.action === 'string' && recovery.action.trim() && typeof recovery.hint === 'string' && recovery.hint.trim();
+  if (envelope.schemaVersion !== undefined && !native) return {};
+  const rawCode = envelope.error_code !== undefined ? envelope.error_code : envelope.Code !== undefined ? envelope.Code : envelope.ErrorCode;
+  if (rawCode !== undefined && typeof rawCode !== 'string') return {};
   const status = envelope.status_code;
-  const nativeRemote = envelope.schemaVersion === 'v1' && Number.isInteger(status) && status >= 400 && status <= 599;
-  if ((envelope.schemaVersion !== undefined || status !== undefined) && !nativeRemote) return {};
-  const family = rawCode.split('.', 1)[0];
+  if (status !== undefined && (!native || !Number.isInteger(status) || status < 100 || status > 599)) return {};
+  const family = rawCode?.split('.', 1)[0];
   const known = providerCodes.has(family);
-  if (!known && !nativeRemote) return {};
+  if (!known && !native) return {};
+  const actionType = native ? cliActionTypes.get(recovery.action) : undefined;
   const id = envelope.request_id ?? envelope.RequestId;
-  const validId = typeof id === 'string' && /^(?:[a-f0-9]{16,64}|[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/i.test(id);
-  return { code: known ? family : 'unrecognized', notFound: rawCode === 'FunctionNotFound',
-    ...(validId ? { requestId: id } : {}), ...(nativeRemote ? { httpStatus: status } : {}) };
+  const validId = typeof id === 'string' && /^(?:[a-f0-9]{16,64}|[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}|1-[a-f0-9]{8}-[a-f0-9]{24})$/i.test(id);
+  return { ...(known ? { code: family } : rawCode ? { code: 'unrecognized' } : {}), notFound: rawCode === 'FunctionNotFound',
+    ...(native ? { cliType: actionType ?? 'unrecognized', ...(actionType ? { cliAction: recovery.action } : {}) } : {}),
+    ...(validId ? { requestId: id } : {}), ...(status !== undefined ? { httpStatus: status } : {}) };
 }
 const executionCodes = new Set(['ETIMEDOUT', 'ENOBUFS', 'ENOENT', 'ECONNRESET']);
 const executionSignals = new Set(['SIGTERM', 'SIGKILL', 'SIGABRT', 'SIGSEGV', 'SIGINT', 'SIGHUP', 'SIGPIPE', 'SIGILL', 'SIGBUS', 'SIGFPE', 'SIGTRAP', 'SIGQUIT']);
@@ -132,7 +146,8 @@ export function cloudGet(path, run = execute) {
   const label = readbackPaths.has(path) ? `GET ${path}` : 'GET [unexpected path]';
   let output;
   // Pinned CLI 3.5.3 emits remote provider errors as JSON only in this mode.
-  try { output = run('aliyun', ['fc', 'GET', '/2023-03-30' + path, '--region', region, '--version', '2023-03-30', '--cli-ai-mode']); }
+  // CLI 3.5.3 maps retry-count to its SDK's native retry limit. Only GETs use it.
+  try { output = run('aliyun', ['fc', 'GET', '/2023-03-30' + path, '--region', region, '--version', '2023-03-30', '--cli-ai-mode', '--retry-count', '2'], { timeout: 45000 }); }
   catch (error) {
     // Native HTTP trigger output can contain owner tokens. Treat only a parsed
     // provider code as not-found; messages, stdout and config are never metadata.
@@ -140,7 +155,7 @@ export function cloudGet(path, run = execute) {
     const diagnostic = providerDiagnostic(stderr);
     if (diagnostic.notFound) return null;
     const category = error.code === 'ETIMEDOUT' ? 'timeout' : 'child-exit';
-    const details = [category, diagnostic.code ? `providerCode=${diagnostic.code}` : '', diagnostic.requestId ? `requestId=${diagnostic.requestId}` : '', diagnostic.httpStatus ? `httpStatus=${diagnostic.httpStatus}` : '', ...(!diagnostic.code ? executionDiagnostic(error, stderr) : [])].filter(Boolean);
+    const details = [category, diagnostic.code ? `providerCode=${diagnostic.code}` : '', diagnostic.requestId ? `requestId=${diagnostic.requestId}` : '', diagnostic.httpStatus ? `httpStatus=${diagnostic.httpStatus}` : '', diagnostic.cliType ? `cliType=${diagnostic.cliType}` : '', diagnostic.cliAction ? `cliAction=${diagnostic.cliAction}` : '', ...(!diagnostic.code && !diagnostic.cliType ? executionDiagnostic(error, stderr) : [])].filter(Boolean);
     fail(`FC readback ${label} failed (${details.join('; ')}).`);
   }
   try { return JSON.parse(output); }

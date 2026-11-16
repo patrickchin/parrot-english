@@ -75,12 +75,16 @@ preserved and a PUT rule added only for `https://parrotbook.com`,
 upload headers. Readback confirmed the rules. The cloud connector refused
 `put-bucket-lifecycle` in strict-permission mode; the four proposed cleanup
 rules were not applied. Function deployment and hosted acceptance remain separate.
+Patrick subsequently selected **leave cleanup disabled** on 2026-11-16.
+This closes the proposed lifecycle work: do not seek approval again or treat
+it as a friend-test release gate. Seven-day access expiry and creator removal
+remain; expired private objects remain stored and billed until removed.
 
 The reviewed bootstrap has two native phases: first create/update functions
 without a guest HTTP trigger and verify both global concurrency caps equal 1;
 then deploy the gated descriptor that adds the guest trigger. The owner trigger
 remains absent until native Bearer setup. Subsequent deployments preserve its
-configuration. Sixteen deployment checks include real subprocess tests for
+configuration. Twenty-two deployment checks include real subprocess tests for
 this ordering, quota-failure blocking, generated-file cleanup, and private stderr.
 
 Bootstrap run [43799969432](https://github.com/patrickchin/parrot-english/actions/runs/43799969432)
@@ -106,6 +110,30 @@ native Bearer authentication and `share-api.parrotbook.com` with anonymous guest
 access. Each routes `/*` to its respective existing function. Domain-level
 authentication makes a shared anonymous hostname unsuitable. Both DNS-only
 CNAMEs target `1263482499936169.cn-hongkong.fc.aliyuncs.com`. Cloudflare remains
-authoritative; no new API records, trusted matching CAS certificates or FC
-custom domains existed at the read-only check. Cloudflare sign-in is requested
-before preparing DNS/TLS. The production player endpoint variables remain unset.
+authoritative. Both DNS-only records were saved and independently resolved on
+2026-11-16. After explicit approval of the agreements and ¥0 total, order
+`2008479803250297` completed at ¥0 and provisioned two DigiCert RSA2048 Basic
+personal-test instances: `cas_dv-cn-25x51rl4401l` and
+`cas_dv-cn-25x51rl4401m`. These are allocated, not issued certificates. The owner
+application is prepared for `owner-api.parrotbook.com`; the required verified
+contact and actual location are pending owner input. Then issue both certificates,
+add their DNS challenges and install them on the two FC custom domains. Record
+the actual certificate NotAfter dates after issuance; the subscription end date
+is not that evidence. The production player endpoint variables remain unset.
+
+Cloudflare public TLS plus Origin CA was assessed after the owner questioned
+the checkout complexity. It is a valid alternative, but adds a new proxy/data
+path, origin-certificate integration and timeout/network checks. For this friend
+test retain the existing direct Hong Kong FC path and finish the already approved
+free order. No Cloudflare proxy, Origin CA credential or paid certificate was created.
+
+Further CLI evidence distinguishes transport from authorization: run
+[43805642385](https://github.com/patrickchin/parrot-english/actions/runs/43805642385)
+reported exit 2 and a 484-byte JSON stderr document. Exact pinned-binary loopback
+probes reproduce native local transport envelopes with only schemaVersion,
+message and recovery; remote code/status/request ID are optional. Diagnostics
+now validate native local envelopes first and emit only fixed action/type labels.
+Native `--retry-count 2` is verified to make at most three read-only GET attempts,
+recovering after two synthetic connection resets. The per-readback timeout is
+45 seconds; all mutation/source/quota/auth-preservation gates are unchanged.
+No IAM denial or need for broader permissions is established by these failures.
