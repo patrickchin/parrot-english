@@ -1,4 +1,10 @@
-# Owner content packaging
+# Historical owner content packaging
+
+This is the evidence for the four-pack release deployed in PR #274. Current
+owner API, private page, and 21-pack instructions are in
+[content packs](../content-packs.md) and the
+[deployment runbook](../owner-upload-deployment.md). Do not run the historical
+direct-OSS publisher alongside the serialized owner API.
 
 Verified 2026-11-14 against source commit
 `cc7deb2d1ac27c9cb0b3ed63501cfac0e157b3d7` for owner-directed testing with

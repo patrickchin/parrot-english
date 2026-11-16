@@ -1,0 +1,87 @@
+name: Deploy APIs
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      bootstrap:
+        description: Create the initial functions without an owner trigger; native Bearer setup and hosted smoke tests follow separately.
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    if: github.ref == 'refs/heads/main' && github.event.deleted != true
+    runs-on: ubuntu-latest
+    outputs:
+      api_changed: ${{ steps.changes.outputs.api_changed }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+      - name: Check the full changed path list
+        id: changes
+        env:
+          BEFORE_COMMIT: ${{ github.event.before }}
+        run: node scripts/api-deployment.mjs changes
+
+  deploy:
+    needs: changes
+    if: github.ref == 'refs/heads/main' && needs.changes.outputs.api_changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      id-token: write
+    # ponytail: one deployment writer; do not cancel a running function update.
+    concurrency:
+      group: parrotbook-production-apis
+      cancel-in-progress: false
+    env:
+      ALIBABA_CLOUD_REGION_ID: cn-hongkong
+      API_BOOTSTRAP: ${{ inputs.bootstrap == true && 'true' || 'false' }}
+      API_OIDC_PROVIDER_ARN: ${{ vars.API_OIDC_PROVIDER_ARN }}
+      API_DEPLOY_ROLE_ARN: ${{ vars.API_DEPLOY_ROLE_ARN }}
+      OWNER_API_EXECUTION_ROLE_ARN: ${{ vars.OWNER_API_EXECUTION_ROLE_ARN }}
+      SHARE_API_EXECUTION_ROLE_ARN: ${{ vars.SHARE_API_EXECUTION_ROLE_ARN }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+      - name: Select and verify merged-main source
+        run: node scripts/api-deployment.mjs source
+      - name: Test the deployment gates
+        run: node --test scripts/api-deployment.test.mjs
+      - name: Install API build dependencies
+        run: npm ci --prefix api
+      - name: Test the native Node API build
+        run: npm --prefix api test
+      - name: Package API code and production dependencies
+        run: npm --prefix api run package
+      - name: Install pinned provider deployment tools
+        run: npm install --global @serverless-devs/s@3.1.11 js-yaml@4.1.1
+      - name: Verify the exact deployment descriptor
+        run: node scripts/api-deployment.mjs check-config
+      - uses: aliyun/setup-aliyun-cli-action@09a5f86915bb556e27bf050e9a5e339aeb073df5
+        with:
+          version: '3.5.3'
+      - uses: aliyun/configure-aliyun-credentials-action@1e5248c8d5d93a8781ac344a68e19a43341e79e6 # v1.1.0
+        with:
+          oidc-provider-arn: ${{ vars.API_OIDC_PROVIDER_ARN }}
+          role-to-assume: ${{ vars.API_DEPLOY_ROLE_ARN }}
+          role-session-name: parrotbook-api-${{ github.run_id }}
+          role-session-expiration: 1800
+          audience: sts.aliyuncs.com
+      - name: Deploy selected source and verify roles, quotas, and owner trigger preservation
+        run: node scripts/api-deployment.mjs deploy

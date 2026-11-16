@@ -11,10 +11,10 @@ export default defineConfig({
     { command: `npm run build && npm run preview -- --port ${port + 2} --strictPort`, url: productionURL, reuseExistingServer: false },
   ],
   projects: [
-    { name: 'chromium', testIgnore: '**/production.spec.ts', use: { ...devices['Desktop Chrome'], permissions: ['microphone'], launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] } } },
-    { name: 'mobile', testIgnore: '**/production.spec.ts', use: { ...devices['Pixel 7'], permissions: ['microphone'], launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] } } },
+    { name: 'chromium', testIgnore: ['**/production.spec.ts', '**/mobile-matrix.spec.ts'], use: { ...devices['Desktop Chrome'], permissions: ['microphone'], launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] } } },
+    { name: 'mobile', testIgnore: ['**/production.spec.ts', '**/mobile-matrix.spec.ts'], use: { ...devices['Pixel 7'], permissions: ['microphone'], launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] } } },
     // Native WebKit audio sessions must not compete across browser workers.
-    { name: 'webkit', workers: 1, testIgnore: '**/production.spec.ts', use: { ...devices['iPhone 13'] } },
+    { name: 'webkit', workers: 1, testIgnore: ['**/production.spec.ts', '**/mobile-matrix.spec.ts'], use: { ...devices['iPhone 13'] } },
     { name: 'production', testMatch: '**/production.spec.ts', use: { ...devices['Desktop Chrome'], baseURL: productionURL } },
     { name: 'production-media', testMatch: '**/media-*.spec.ts', use: { ...devices['Desktop Chrome'], baseURL: productionURL } },
   ],

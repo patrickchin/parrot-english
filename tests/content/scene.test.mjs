@@ -1,11 +1,12 @@
-import { clips, sceneFile } from '../content-fixtures.ts';
+import { clips, packs, sceneFile } from '../content-fixtures.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { validateScene } from '../../src/scene.ts';
+import { franchiseGroup } from '../../src/franchises.ts';
 
-test('all 128 internal-test scenes have valid scenes, timed words, waveforms and separate audience folders', async () => {
+test('all 128 internal-test scenes retain their media and audience metadata in franchise packs', async () => {
   const scenes = clips;
   const { validateWaveform } = await import('../../src/waveform.ts');
   assert.equal(scenes.length, 128);
@@ -14,6 +15,13 @@ test('all 128 internal-test scenes have valid scenes, timed words, waveforms and
   assert.equal(scenes.filter(s => s.cohort === 'older-children').length, 15);
   assert.equal(scenes.filter(s => s.cohort === 'teens').length, 14);
   assert.equal(new Set(scenes.map(s => s.slug)).size, 128);
+  assert.equal(packs.length, 21);
+  assert.equal(new Set(packs.map(pack => pack.data.franchise)).size, packs.length);
+  for (const pack of packs) {
+    assert.ok(pack.data.franchise.trim());
+    assert.ok(pack.data.scenes.length);
+    assert.ok(pack.data.scenes.every(scene => franchiseGroup(scene) === pack.data.franchise));
+  }
   assert.equal(new Set(scenes.map(s => s.routeSlug ?? s.slug)).size, scenes.length, 'public scene names must be unique');
   const ids = new Set();
   for (const entry of scenes) {

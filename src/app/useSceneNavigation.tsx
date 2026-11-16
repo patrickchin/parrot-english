@@ -9,7 +9,7 @@ function languageOnly(previous: Page, next: Page) {
   return previous.language !== next.language && !!next.slug && next.slug === previous.slug && !next.draftId && !!previous.draftId;
 }
 function samePage(previous: Page, next: Page) {
-  return next.page === previous.page && next.slug === previous.slug && next.folder === previous.folder && next.packId === previous.packId &&
+  return next.page === previous.page && next.slug === previous.slug && next.folder === previous.folder && next.packId === previous.packId && next.shareId === previous.shareId &&
     (next.draftId === previous.draftId || languageOnly(previous, next));
 }
 

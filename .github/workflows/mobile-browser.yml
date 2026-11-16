@@ -1,0 +1,83 @@
+name: Mobile browser QA
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-browser-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  firefox:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - name: Install Firefox and native browser dependencies
+        run: npx playwright install --with-deps firefox
+      - name: Install the media fixture tools
+        run: sudo apt-get install --no-install-recommends --yes ffmpeg pulseaudio
+      - name: Start a native audio output for the headless runner
+        shell: bash
+        run: |
+          pulseaudio --start --exit-idle-time=-1
+          pactl load-module module-null-sink sink_name=parrotbook_ci
+          pactl set-default-sink parrotbook_ci
+          pactl info
+      - name: Verify Firefox's native audio clock after a real click
+        shell: bash
+        run: |
+          node --input-type=module <<'JS' 2>&1 | tee mobile-audio-preflight.log
+          import { firefox } from '@playwright/test';
+          const browser = await firefox.launch({ timeout: 30000 });
+          try {
+            const page = await browser.newPage();
+            await page.setContent('<button>Check native audio</button>');
+            const button = page.getByRole('button', { name: 'Check native audio', exact: true });
+            await button.evaluate(element => element.addEventListener('click', () => {
+              const context = new AudioContext();
+              const oscillator = context.createOscillator(), gain = context.createGain();
+              gain.gain.value = 0.01;
+              oscillator.connect(gain).connect(context.destination); oscillator.start();
+              window.qaAudio = context;
+              void context.resume();
+            }));
+            await button.click();
+            try {
+              await page.waitForFunction(() => window.qaAudio?.state === 'running' && window.qaAudio.currentTime > 0.1, undefined, { timeout: 5000 });
+            } finally {
+              console.log(await page.evaluate(() => ({ state: window.qaAudio?.state, time: window.qaAudio?.currentTime, sampleRate: window.qaAudio?.sampleRate })));
+            }
+          } finally {
+            await browser.close();
+          }
+          JS
+      - name: Check Firefox touch viewports, capture, drafts, sharing, and owner controls
+        shell: bash
+        env:
+          PLAYWRIGHT_PORT: '21337'
+        run: npm run test:browser -- --config=playwright.mobile.config.ts --project=mobile-qa-firefox --max-failures=1 2>&1 | tee mobile-browser.log
+      - name: Retain browser evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: mobile-firefox-${{ github.run_id }}-${{ github.run_attempt }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            mobile-browser.log
+            mobile-audio-preflight.log
+            test-results/
+            ~/Pictures/Screenshots/Codex/parrot-english/mobile-qa-firefox-*.png

@@ -48,7 +48,16 @@ export async function exportDub(scene: Scene, takes: Takes, source: string, sign
   const { Input, BufferSource, MP4, QTFF, WEBM, Output, BufferTarget, Mp4OutputFormat,
     EncodedPacketSink, EncodedVideoPacketSource, VideoSampleSink, VideoSampleSource,
     AudioBufferSource, Quality, canEncodeAudio } = await import('mediabunny');
-  if (!await canEncodeAudio('aac', { numberOfChannels: 2, sampleRate: 48000 })) throw new Error(unsupported);
+  const aac = { numberOfChannels: 2, sampleRate: 48000 };
+  if (!await canEncodeAudio('aac', aac)) {
+    signal.throwIfAborted();
+    // Official software codec, loaded only when native AAC encoding is absent.
+    // Source and license notices: /software-notices.html.
+    const { registerAacEncoder } = await import('@mediabunny/aac-encoder');
+    signal.throwIfAborted();
+    registerAacEncoder();
+    if (!await canEncodeAudio('aac', aac)) throw new Error(unsupported);
+  }
   signal.throwIfAborted();
   let input: import('mediabunny').Input | undefined;
   let output: import('mediabunny').Output | undefined;

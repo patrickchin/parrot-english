@@ -6,7 +6,7 @@ const scenes = JSON.parse(await readFile('content/extra-scenes.json', 'utf8'));
 const id = prefix => prefix + '_' + randomBytes(6).toString('base64url');
 const selected = process.argv.slice(2);
 for (const entry of scenes.filter(s => !selected.length || selected.includes(s.slug))) {
-  const folder = sceneFolder(entry.slug);
+  const folder = sceneFolder(entry.slug, entry.franchise ?? entry.film, entry.tags);
   await mkdir(folder, { recursive: true });
   let previous;
   try { previous = JSON.parse(await readFile(`${folder}/scene.json`, 'utf8')); } catch (error) { if (error.code !== 'ENOENT') throw error; }

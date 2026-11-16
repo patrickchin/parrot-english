@@ -64,7 +64,7 @@ export async function setLanguage(page: Page, language: Language) {
   // Loading shells replace their header when the destination mounts.
   await expect(page.getByRole('main')).toBeVisible();
   await expect(page.getByRole('main')).not.toHaveAttribute('aria-busy', 'true');
-  await page.getByRole('combobox').click();
+  await page.getByRole('banner').getByRole('combobox').click();
   await page.getByRole('option', { name: languages.find(item => item.value === language)!.label, exact: true }).click();
 }
 

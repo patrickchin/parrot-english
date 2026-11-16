@@ -1,8 +1,8 @@
 import { test, expect, setLanguage } from './fixtures';
 import { clips } from '../content-fixtures';
 
-test('scene search finds tags and full dialogue while preserving audience folders', async ({ page }) => {
-  await page.goto('/library/older-audience');
+test('scene search finds tags and full dialogue and remains scoped to a selected pack', async ({ page }) => {
+  await page.goto('/library/all');
   const search = page.getByRole('searchbox', { name: '查找片段', exact: true });
   const results = page.getByRole('listitem');
   for (const query of ['  SPONGEBOB  ', 'sponge bob', '海绵宝宝', 'Spongebb']) {
@@ -21,8 +21,8 @@ test('scene search finds tags and full dialogue while preserving audience folder
   await expect(page.getByRole('status')).toHaveText('没有找到片段。');
   await page.getByRole('button', { name: '清除搜索', exact: true }).click();
   await expect(search).toBeFocused();
-  await expect(results).toHaveCount(clips.filter(clip => clip.cohort === 'older-audience').length);
-  await page.getByRole('link', { name: '浏览标签', exact: true }).click();
+  await expect(results).toHaveCount(clips.length);
+  await page.getByRole('link', { name: '全部内容包', exact: true }).click();
   await page.getByRole('link', { name: 'English Singsing', exact: true }).click();
   await expect(results).toHaveCount(clips.filter(clip => clip.note === 'English Singsing').length);
   await search.fill('SpongeBob');
@@ -34,15 +34,19 @@ test('scene search finds tags and full dialogue while preserving audience folder
 });
 
 test('tag and title results rank above scenes that only mention the query in dialogue', async ({ page }) => {
-  await page.goto('/library/older-audience');
+  await page.goto('/library/all');
   await setLanguage(page, 'en');
   await page.getByRole('searchbox', { name: 'Find a scene' }).fill('food');
   const results = page.getByRole('listitem');
-  // All five food-tagged scenes must precede Fish Friends, which says it only in dialogue.
-  await expect(results).toContainText(['Chocolate?!', 'Ogres are like onions', 'Anyone can cook', 'upset', 'mayonnaise']);
-  await expect(results.first().getByRole('button')).toHaveAccessibleName('Choose scene: Chocolate?!');
+  // Metadata matches precede a scene that mentions food only in dialogue,
+  // independently of source pack ordering or other newly published matches.
+  await expect(page.getByRole('button', { name: 'Choose scene: Fish are friends!', exact: true })).toBeVisible();
   const names = await results.getByRole('button').evaluateAll(buttons => buttons.map(button => button.getAttribute('aria-label')));
-  expect(names.indexOf('Choose scene: Fish are friends!')).toBeGreaterThan(4);
+  const dialogue = names.indexOf('Choose scene: Fish are friends!');
+  for (const title of ['Chocolate?!', 'Ogres are like onions', 'Anyone can cook!', "I'm not upset!", 'Is mayonnaise an instrument?']) {
+    const index = names.indexOf('Choose scene: ' + title);
+    expect(index).toBeGreaterThanOrEqual(0); expect(index).toBeLessThan(dialogue);
+  }
   await page.getByRole('searchbox').fill('i’m READY');
   await expect(results.first().getByRole('button')).toHaveAccessibleName('Choose scene: I’m ready!');
 });

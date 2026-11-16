@@ -1,8 +1,8 @@
 import { test, expect, setLanguage, headerDestination } from './fixtures';
-import { clips } from '../content-fixtures';
+import { clips, packs } from '../content-fixtures';
 
 test('the readable Toy Story URL keeps its name through saving, reload and resume', async ({ page }) => {
-  await page.goto('/library/older-audience');
+  await page.goto('/library/all');
   await page.getByRole('button', { name: '选择片段：飞向宇宙！', exact: true }).click();
   await expect(page).toHaveURL(/\/scenes\/toy-story-infinity$/);
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
@@ -24,13 +24,13 @@ test('the readable Toy Story URL keeps its name through saving, reload and resum
   await expect(page.getByRole('button', { name: 'Record', exact: true })).toBeEnabled();
 });
 
-test('tag paths follow directory selection, reload, Back and Forward', async ({ page }) => {
+test('pack paths follow selection, reload, Back and Forward', async ({ page }) => {
   await page.goto('/en/');
   await page.getByRole('link', { name: 'Shrek', exact: true }).click();
-  await expect(page).toHaveURL(/\/library\/all\?show=Shrek$/);
-  await page.getByRole('link', { name: 'Browse tags', exact: true }).click();
+  await expect(page).toHaveURL(new RegExp('/packs/' + packs.find(pack => pack.data.title === 'Shrek')!.entry.id + '$'));
+  await page.getByRole('link', { name: 'All packs', exact: true }).click();
   await page.getByRole('link', { name: 'Friends', exact: true }).click();
-  await expect(page).toHaveURL(/\/library\/all\?show=Friends$/);
+  await expect(page).toHaveURL(new RegExp('/packs/' + packs.find(pack => pack.data.title === 'Friends')!.entry.id + '$'));
   await page.getByRole('searchbox').fill('not-a-scene');
   await page.goBack();
   await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(0);
@@ -38,7 +38,7 @@ test('tag paths follow directory selection, reload, Back and Forward', async ({ 
   await expect(page.getByRole('searchbox')).toHaveValue('');
   await page.reload();
   await setLanguage(page, 'zh-CN');
-  await expect(page.getByRole('heading', { level: 2, name: 'Friends', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Friends', exact: true })).toBeVisible();
 });
 
 test('scene paths open directly, reload and return to their audience folder', async ({ page }) => {
@@ -50,14 +50,14 @@ test('scene paths open directly, reload and return to their audience folder', as
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   await page.getByRole('button', { name: '返回片段', exact: true }).click();
   await expect(page).toHaveURL(/\/library\/all$/);
-  await expect(page.getByRole('heading', { level: 2, name: '全部片段', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: '全部片段', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '选择片段：早上好！你好吗？', exact: true }).click();
   await expect(page).toHaveURL(/\/scenes\/first-english-good-morning$/);
   await expect(start).toBeEnabled();
 });
 
 test('unsaved progress remains protected when leaving a scene path', async ({ page }) => {
-  await page.goto('/library/older-audience');
+  await page.goto('/library/all');
   await page.evaluate(() => { IDBObjectStore.prototype.put = () => { throw new DOMException('Storage disabled', 'SecurityError'); }; });
   await page.getByRole('button', { name: '选择片段：不，这是派大星！', exact: true }).click();
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
@@ -77,7 +77,7 @@ test('unsaved progress remains protected when leaving a scene path', async ({ pa
 
 
 test('My dubs is a separate page with direct links, history, language and an empty state', async ({ page }) => {
-  await page.goto('/library/all?show=Shrek');
+  await page.goto('/zh/packs/' + packs.find(pack => pack.data.title === 'Shrek')!.entry.id);
   await expect(page.getByRole('region', { name: '我的配音', exact: true })).toHaveCount(0);
   const dubsLink = await headerDestination(page, '我的配音');
   await expect(dubsLink).toHaveAttribute('href', '/zh/dubs');
@@ -89,7 +89,7 @@ test('My dubs is a separate page with direct links, history, language and an emp
   await expect(page.getByRole('searchbox')).toHaveCount(0);
   await expect(page.getByRole('heading', { name: '还没有配音', exact: true })).toBeVisible();
   await page.goBack();
-  await expect(page).toHaveURL(/\/library\/all\?show=Shrek$/);
+  await expect(page).toHaveURL(new RegExp('/packs/' + packs.find(pack => pack.data.title === 'Shrek')!.entry.id + '$'));
   await expect(page.getByRole('searchbox')).toBeVisible();
   await page.goForward();
   await expect(page.getByRole('heading', { name: '还没有配音', exact: true })).toBeVisible();
@@ -108,7 +108,7 @@ test('My dubs is a separate page with direct links, history, language and an emp
   }
   await page.getByRole('button', { name: 'Browse scenes', exact: true }).click();
   await expect(page.getByRole('searchbox')).toBeVisible();
-  await expect(await headerDestination(page, 'Scene library')).toHaveAttribute('aria-current', 'page');
+  await expect(await headerDestination(page, 'Packs')).toHaveAttribute('aria-current', 'page');
   await page.keyboard.press('Escape');
   await page.goto('/dubs/');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('My dubs');
@@ -117,7 +117,7 @@ test('My dubs is a separate page with direct links, history, language and an emp
 test('My dubs shows storage read failures and retries without an empty-state claim', async ({ page }) => {
   await page.goto('/dubs');
   await expect(page.getByRole('heading', { name: '还没有配音', exact: true })).toBeVisible();
-  await (await headerDestination(page, '片段库')).click();
+  await (await headerDestination(page, '内容包')).click();
   await page.evaluate(() => {
     const open = indexedDB.open.bind(indexedDB);
     (window as Window & { restoreStorage?: () => void }).restoreStorage = () => { indexedDB.open = open; };
@@ -134,7 +134,7 @@ test('My dubs shows storage read failures and retries without an empty-state cla
 
 
 test('navigation shares the language-selector row and its compact menu supports the keyboard', async ({ page }) => {
-  for (const path of ['/library/older-audience', '/dubs', '/packs']) {
+  for (const path of ['/library/all', '/dubs', '/packs']) {
     await page.goto(path);
     await setLanguage(page, 'en');
     for (const width of [320, 390, 768, 1440]) {
@@ -149,7 +149,7 @@ test('navigation shares the language-selector row and its compact menu supports 
       expect(Math.abs(navigationBox.y + navigationBox.height / 2 - languageBox.y - languageBox.height / 2)).toBeLessThan(1);
       expect(navigationBox.x + navigationBox.width).toBeLessThanOrEqual(languageBox.x + 1);
       const brand = (await page.getByRole('link', { name: 'Parrotbook home', exact: true }).boundingBox())!;
-      const firstNavigation = compact ? navigationBox : (await page.getByRole('link', { name: 'Scene library', exact: true }).boundingBox())!;
+      const firstNavigation = compact ? navigationBox : (await page.getByRole('link', { name: 'Packs', exact: true }).boundingBox())!;
       expect(brand.x + brand.width).toBeLessThanOrEqual(firstNavigation.x + 1);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       if (compact) {

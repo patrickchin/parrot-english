@@ -13,7 +13,7 @@ test('an explicit language URL takes priority over the remembered preference', a
   const url = page.url();
   await page.getByRole('button', { name: 'Switch to dark mode', exact: true }).click();
   await expect(page).toHaveURL(url);
-  await page.goto('/zh/library/teens');
+  await page.goto('/zh/library/all');
   await expect(page.getByRole('searchbox', { name: '查找片段', exact: true })).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-CN');
   await expect(page.getByRole('link', { name: 'Parrotbook 首页', exact: true })).toHaveAttribute('href', '/zh/');
@@ -21,14 +21,14 @@ test('an explicit language URL takes priority over the remembered preference', a
 
 test('an unprefixed entry uses the saved preference without adding a Back entry', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('parrotbook-ui-language', 'en'));
-  await page.goto('/library/teens');
-  await expect(page).toHaveURL(/\/en\/library\/teens$/);
+  await page.goto('/library/all');
+  await expect(page).toHaveURL(/\/en\/library\/all$/);
   await expect(page.getByRole('searchbox', { name: 'Find a scene', exact: true })).toBeVisible();
   await page.getByRole('button', { name: /Choose scene:/ }).first().click();
   await expect(page.getByRole('button', { name: 'Start dubbing', exact: true })).toBeEnabled();
   await expect(page).toHaveURL(/\/en\/scenes\//);
   await page.goBack();
-  await expect(page).toHaveURL(/\/en\/library\/teens$/);
+  await expect(page).toHaveURL(/\/en\/library\/all$/);
   await expect(page.getByRole('searchbox', { name: 'Find a scene', exact: true })).toBeVisible();
 });
 
@@ -108,8 +108,8 @@ test('the default is Chinese and explicit URLs keep working when storage is unav
   await setLanguage(page, 'en');
   await expect(page).toHaveURL(/\/en\/$/);
   await page.reload();
-  await expect(page.getByRole('searchbox', { name: 'Find a franchise or tag', exact: true })).toBeVisible();
+  await expect(page.getByRole('searchbox', { name: 'Find a pack', exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Parrotbook home', exact: true }).click();
   await expect(page).toHaveURL(/\/en\/$/);
-  await expect(page.getByRole('searchbox', { name: 'Find a franchise or tag', exact: true })).toBeVisible();
+  await expect(page.getByRole('searchbox', { name: 'Find a pack', exact: true })).toBeVisible();
 });

@@ -9,7 +9,7 @@ export const scenes = ['hello', 'goodbye'].map(name => ({
     licence: 'Creator permission', licenceUrl: 'https://example.com/licence', changes: 'Marked for dubbing.' },
 }));
 export const pack = {
-  version: 1, id: 'pack_fixture', title: 'Greetings', description: 'Contract fixture.', author: 'Sam',
+  version: 1, id: 'pack_fixture', title: 'Greetings', franchise: 'Original', description: 'Contract fixture.', author: 'Sam',
   scenes: scenes.map(scene => ({
     id: scene.id, slug: scene.title, title: scene.title, english: 'Hello, Sam.', note: 'Original',
     source: scene.credit.source, cohort: 'younger-age-5', poster: `scenes/${scene.title}/poster.jpg`,
@@ -21,7 +21,7 @@ export const pack = {
     roles: Object.fromEntries(scenes.map(scene => [scene.roles[0].id, { name: 'Sam', hint: 'One line' }])),
   } },
 };
-export const catalog = { version: 1, packs: [{ id: pack.id, manifest: 'packs/pack_fixture/pack.json' }] };
+export const catalog = { version: 1, packs: [{ id: pack.id, manifest: 'packs/pack_fixture/pack.json', uploader: 'Patrick' }] };
 export const documents = new Map([
   [contentBase + 'catalog.json', catalog],
   [contentBase + catalog.packs[0].manifest, pack],

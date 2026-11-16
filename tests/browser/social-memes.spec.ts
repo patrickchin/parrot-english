@@ -1,5 +1,5 @@
 import { test, expect } from './fixtures';
-import { readScene, clips } from '../content-fixtures';
+import { readScene, clips, packs } from '../content-fixtures';
 import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -10,9 +10,9 @@ for (const slug of ['corn-corntastic-day', 'apparently-get-dizzy', 'emotional-da
     const clip = clips.find(clip => clip.slug === slug)!;
     const title = clip.english;
     await page.goto('/en/');
-    await page.getByRole('navigation', { name: 'Browse tags', exact: true }).getByRole('link', { name: 'Memes', exact: true }).click();
-    await expect(page).toHaveURL(/\/en\/library\/all\?show=Memes$/);
-    await expect(page.getByRole('heading', { level: 2, name: 'Memes', exact: true })).toBeVisible();
+    await page.getByRole('navigation', { name: 'Packs', exact: true }).getByRole('link', { name: 'Memes', exact: true }).click();
+    await expect(page).toHaveURL(new RegExp('/en/packs/' + packs.find(pack => pack.data.title === 'Memes')!.entry.id + '$'));
+    await expect(page.getByRole('heading', { level: 1, name: 'Memes', exact: true })).toBeVisible();
     await page.getByRole('searchbox').fill(title);
     await page.getByRole('button', { name: `Choose scene: ${title}`, exact: true }).click();
     await expect(page.getByRole('heading', { level: 1, name: title, exact: true })).toBeVisible();

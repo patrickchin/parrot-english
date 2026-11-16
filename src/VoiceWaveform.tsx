@@ -95,9 +95,9 @@ export function VoiceWaveform({ scene, start, end, target, timeline, recordings,
         <div aria-hidden="true" className="absolute inset-x-0 top-3/4 h-px bg-brand/10" />
         <canvas ref={originalCanvas} role="img" aria-label={t('waveform.originalAudioWaveform')} hidden={!reference} className="absolute inset-x-0 top-0 h-1/2 w-full text-brand" />
         <canvas ref={recordedCanvas} role="img" aria-label={t('waveform.yourVoiceWaveform')} hidden={!recording && !recordings.some(r => r.peaks.length > 0)} className="absolute inset-x-0 bottom-0 h-1/2 w-full text-coral" />
-        {!reference && <p role="status" className="absolute inset-x-0 top-0 flex h-1/2 items-center justify-center px-3 text-center text-xs text-muted-foreground">{error ? t(error, { defaultValue: t('errors.unexpected') }) : t('waveform.loadingTheOriginalWaveform')}</p>}
         <div ref={playhead} role="progressbar" aria-label={t('waveform.dubbingPlayhead')} aria-valuemin={0} aria-valuemax={Number((end - start).toFixed(3))} aria-valuenow={0} className="voice-playhead pointer-events-none absolute inset-y-0 left-0 w-px bg-ink/80"><span className="absolute -left-1 top-0 h-2.5 w-2.5 rotate-45 bg-ink" /></div>
       </div>
     </div>
+    {!reference && <p role="status" className="mt-2 px-3 text-center text-xs text-muted-foreground">{error ? t(error, { defaultValue: t('errors.unexpected') }) : t('waveform.loadingTheOriginalWaveform')}</p>}
   </section>;
 }

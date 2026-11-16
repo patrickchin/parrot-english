@@ -113,7 +113,7 @@ test('cancel and failed export preserve takes and allow retry', async ({ page })
 });
 
 test('local mix keeps backing, skipped dialogue, and the retained take offset at exact line boundaries', async ({ page }) => {
-  await page.goto('/library/older-audience');
+  await page.goto('/library/all');
   const levels = await page.evaluate(async () => {
     const mixerPath = '/src/export-dub.ts', wavPath = '/src/pcm-recording.ts';
     const { mixDubAudio } = await import(mixerPath);

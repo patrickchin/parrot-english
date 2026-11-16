@@ -1,0 +1,34 @@
+{
+  "Version": "1",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["oss:GetObject"],
+      "Resource": [
+        "acs:oss:*:*:parrotbook-media-f6e09412/guest-shares/records/*",
+        "acs:oss:*:*:parrotbook-media-f6e09412/guest-shares/uploads/*",
+        "acs:oss:*:*:parrotbook-media-f6e09412/guest-shares/published/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["oss:PutObject"],
+      "Resource": ["acs:oss:*:*:parrotbook-media-f6e09412/guest-shares/*"],
+      "Condition": { "StringEquals": { "oss:x-oss-object-acl": ["private"] } }
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["oss:DeleteObject"],
+      "Resource": [
+        "acs:oss:*:*:parrotbook-media-f6e09412/guest-shares/uploads/*",
+        "acs:oss:*:*:parrotbook-media-f6e09412/guest-shares/published/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["oss:ListObjects"],
+      "Resource": ["acs:oss:*:*:parrotbook-media-f6e09412"],
+      "Condition": { "StringLike": { "oss:Prefix": ["guest-shares/tickets/*"] } }
+    }
+  ]
+}

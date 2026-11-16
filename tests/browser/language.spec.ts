@@ -42,9 +42,9 @@ test('the styled language popup supports keyboard selection, Escape and phone-si
 });
 
 test('UI language persists across navigation and reload while English dialogue and Chinese hints stay independent', async ({ page }, info) => {
-  await page.goto('/library/older-audience');
+  await page.goto('/library/all');
   await setLanguage(page, 'en');
-  await expect(page.getByRole('heading', { level: 1, name: 'The scene is set. Your voice is next.' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'All scenes' })).toBeVisible();
   await expect(page.locator('html')).toHaveAttribute('lang', 'en');
   await page.getByRole('button', { name: 'Choose scene: Who are you looking for?', exact: true }).click();
   await page.getByRole('button', { name: 'Start dubbing', exact: true }).click();
@@ -59,7 +59,7 @@ test('UI language persists across navigation and reload while English dialogue a
   for (const viewport of [{ width: 320, height: 640 }, { width: 360, height: 640 }, { width: 375, height: 667 }, { width: 768, height: 1024 }, { width: 1024, height: 600 }, { width: 1280, height: 720 }]) {
     await page.setViewportSize(viewport);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    if (viewport.width >= 360) expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
+    if (viewport.width >= 360) expect(await page.evaluate(() => document.documentElement.scrollHeight), `Practice content at ${viewport.width}×${viewport.height}`).toBeLessThanOrEqual(viewport.height + 1);
     for (const control of [selector(page), page.getByRole('button', { name: 'How to dub', exact: true }), page.getByRole('button', { name: 'Back to scenes', exact: true })]) {
       const box = await control.boundingBox();
       expect(box!.width).toBeGreaterThanOrEqual(44);
@@ -76,7 +76,7 @@ test('UI language persists across navigation and reload while English dialogue a
   await page.getByRole('button', { name: 'Back to scenes', exact: true }).click();
   await page.reload();
   await expect(selector(page)).toContainText('English');
-  await expect(page.getByRole('heading', { level: 1, name: 'The scene is set. Your voice is next.' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'All scenes' })).toBeVisible();
 });
 
 test('switching language during recording keeps the take, waveform and replay', async ({ page, browserName }) => {

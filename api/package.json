@@ -1,0 +1,14 @@
+{
+  "name": "parrotbook-pack-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "engines": { "node": ">=20.19.0" },
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "package": "npm run build && node package.mjs"
+  },
+  "dependencies": { "ali-oss": "6.23.0" },
+  "devDependencies": { "vite": "8.2.1" }
+}

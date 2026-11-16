@@ -7,13 +7,14 @@ const background = (page: import('@playwright/test').Page) => page.evaluate(() =
 
 test('Pop Studio defaults to light even on a dark device and remembers an explicit theme across routes and reload', async ({ page }, info) => {
   await page.emulateMedia({ colorScheme: 'dark' });
-  await page.goto('/library/older-audience');
+  await page.goto('/packs');
   await expect.poll(() => background(page)).toBe('rgb(241, 247, 237)');
-  const featured = page.getByRole('region', { name: '不，这是派大星！', exact: true });
-  await expect(featured.getByRole('heading', { level: 2 })).toBeVisible();
+  const pack = page.getByRole('navigation', { name: '内容包', exact: true }).getByRole('link', { name: 'SpongeBob SquarePants', exact: true });
+  await expect(pack).toBeVisible();
   await page.getByRole('button', { name: '切换到深色模式', exact: true }).click();
   await expect.poll(() => background(page)).toBe('rgb(20, 37, 29)');
-  await featured.getByRole('button', { name: '开始配音', exact: true }).click();
+  await pack.click();
+  await page.getByRole('button', { name: '选择片段：不，这是派大星！', exact: true }).click();
   await expect(page.getByRole('button', { name: '开始配音', exact: true })).toBeEnabled();
   await expect.poll(() => background(page)).toBe('rgb(20, 37, 29)');
   await page.reload();
@@ -53,8 +54,9 @@ test('appearance switching still works across scene navigation without browser s
   await page.addInitScript(() => {
     Object.defineProperty(window, 'localStorage', { get() { throw new DOMException('Unavailable', 'SecurityError'); } });
   });
-  await page.goto('/library/older-audience');
+  await page.goto('/packs');
   await page.getByRole('button', { name: '切换到深色模式', exact: true }).click();
+  await page.getByRole('link', { name: 'Toy Story', exact: true }).click();
   await page.getByRole('button', { name: '选择片段：飞向宇宙！', exact: true }).click();
   await expect(page.getByRole('region', { name: '选择角色', exact: true })).toBeVisible();
   await expect.poll(() => background(page)).toBe('rgb(20, 37, 29)');

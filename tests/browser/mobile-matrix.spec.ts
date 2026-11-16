@@ -1,0 +1,73 @@
+import { test, expect } from './fixtures';
+import { packs } from '../content-fixtures';
+import { prepareMediaTest } from './media-fixture';
+import { mobileScreenshot, mobileViewports, touchControl } from './mobile-viewports';
+
+test.use({ sampleScene: true });
+
+test('phone and tablet layouts retain Packs navigation, practice controls and completion through rotation', async ({ page, browser }, info) => {
+  console.log(`Mobile QA engine: ${info.project.name} ${browser.version()}`);
+  const lines = await prepareMediaTest(page);
+  await page.goto('/en/packs');
+  const gallery = page.getByRole('navigation', { name: 'Packs', exact: true });
+  await expect(gallery.getByRole('link')).toHaveCount(packs.length);
+  // Full-page screenshots do not themselves load offscreen lazy covers.
+  for (const card of await gallery.getByRole('link').all()) {
+    await card.scrollIntoViewIfNeeded();
+    const cover = card.locator('img');
+    await expect.poll(() => cover.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
+    await cover.evaluate((image: HTMLImageElement) => image.decode());
+  }
+  for (const viewport of mobileViewports) {
+    await page.setViewportSize(viewport);
+    await expect(page.getByRole('heading', { level: 1, name: 'Packs', exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await touchControl(page, page.getByRole('searchbox', { name: 'Find a pack', exact: true }));
+    const [first, second] = await Promise.all([gallery.getByRole('link').nth(0).boundingBox(), gallery.getByRole('link').nth(1).boundingBox()]);
+    if (viewport.width >= 640) {
+      expect(Math.abs(first!.y - second!.y)).toBeLessThan(1);
+      expect(second!.x).toBeGreaterThan(first!.x + first!.width);
+    } else expect(second!.y).toBeGreaterThanOrEqual(first!.y + first!.height);
+    await page.evaluate(() => scrollTo(0, 0));
+    await mobileScreenshot(page, info, 'packs', viewport.name);
+  }
+  await page.getByRole('searchbox', { name: 'Find a pack', exact: true }).fill('SpongeBob');
+  await expect(gallery.getByRole('link')).toHaveCount(1);
+  await gallery.getByRole('link', { name: 'SpongeBob SquarePants', exact: true }).tap();
+  await page.getByRole('button', { name: 'Choose scene: Who are you looking for?', exact: true }).tap();
+  await expect(page.getByRole('button', { name: 'Start dubbing', exact: true })).toBeEnabled();
+  await page.getByRole('button', { name: 'Start dubbing', exact: true }).tap();
+  for (const viewport of mobileViewports) {
+    await page.setViewportSize(viewport);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+    const waveformStatus = page.getByRole('region', { name: 'Voice waveform comparison', exact: true }).getByRole('status');
+    await expect(waveformStatus).toHaveText('The original waveform is unavailable. You can still listen and record.');
+    expect(await waveformStatus.evaluate(element => {
+      const range = document.createRange(); range.selectNodeContents(element);
+      const text = [...range.getClientRects()];
+      for (let ancestor: Element | null = element; ancestor; ancestor = ancestor.parentElement) {
+        const style = getComputedStyle(ancestor), box = ancestor.getBoundingClientRect();
+        if (['hidden', 'clip'].includes(style.overflowY) && text.some(rect => rect.top < box.top - 1 || rect.bottom > box.bottom + 1)) return false;
+        if (['hidden', 'clip'].includes(style.overflowX) && text.some(rect => rect.left < box.left - 1 || rect.right > box.right + 1)) return false;
+      }
+      return true;
+    }), 'The complete waveform recovery message must remain readable').toBe(true);
+    for (const name of ['Record', 'Listen to the original line', 'Next', 'Back to scenes', 'How to dub']) {
+      const control = page.getByRole('button', { name, exact: true });
+      await touchControl(page, control); await control.click({ trial: true });
+    }
+    await expect(page.getByRole('button', { name: 'Line 1: Thank you.', exact: true })).toHaveAttribute('aria-current', 'step');
+    await touchControl(page, page.getByRole('button', { name: 'Record', exact: true }));
+    await mobileScreenshot(page, info, 'practice', viewport.name);
+  }
+  for (const _ of lines) await page.getByRole('button', { name: 'Next', exact: true }).tap();
+  for (const viewport of mobileViewports) {
+    await page.setViewportSize(viewport);
+    await expect(page.getByRole('heading', { level: 1, name: 'Your dub is ready!', exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    for (const name of ['Prepare to share', 'Download video', 'Back to scenes']) await touchControl(page, page.getByRole('button', { name, exact: true }));
+    await touchControl(page, page.getByRole('button', { name: 'Prepare to share', exact: true }));
+    await mobileScreenshot(page, info, 'result', viewport.name);
+  }
+});

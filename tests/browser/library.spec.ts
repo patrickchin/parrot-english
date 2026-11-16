@@ -1,14 +1,14 @@
 import { scenePath } from './scene-path';
 import { test, expect, setLanguage } from './fixtures';
-import { clips } from '../content-fixtures';
+import { clips, packs } from '../content-fixtures';
 import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-const filmCount = clips.filter(clip => clip.cohort === 'older-audience').length;
+const filmCount = clips.length;
 
 test('hovering the scene title highlights the whole scene and keyboard focus does too', async ({ page }, info) => {
-  await page.goto('/en/library/older-audience');
+  await page.goto('/en/library/all');
   const scene = page.getByRole('button', { name: 'Choose scene: No, this is Patrick!', exact: true });
   const title = scene.getByRole('heading');
   await expect(title).toBeVisible();
@@ -34,14 +34,14 @@ test('hovering the scene title highlights the whole scene and keyboard focus doe
 });
 
 test('the simplified shelf keeps scenes, privacy and source details accessible without a Help button', async ({ page }, info) => {
-  await page.goto('/library/older-audience');
-  await expect(page.getByRole('heading', { level: 1, name: '片段已就位。 轮到你发声。' })).toBeVisible();
+  await page.goto('/library/all');
+  await expect(page.getByRole('heading', { level: 1, name: '全部片段' })).toBeVisible();
   await expect(page.getByRole('button', { name: /Sintel/ })).toHaveCount(0);
-  for (const clip of clips.filter(clip => clip.cohort === 'older-audience')) {
+  for (const clip of clips) {
     await expect(page.getByRole('button', { name: `选择片段：${clip.title}`, exact: true })).toBeVisible();
-    await expect(page.getByRole('heading', { level: 4, name: clip.title, exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 3, name: clip.title, exact: true })).toBeVisible();
   }
-  await expect(page.getByText('成人原型测试 · 配音保存在此浏览器，不会上传。影视梗片段尚未确认再分发许可。', { exact: true })).toBeVisible();
+  for (const notice of new Set(packs.map(pack => pack.data.locales['zh-CN'].notices?.library).filter(Boolean))) await expect(page.getByText(notice as string, { exact: true })).toBeVisible();
   for (const width of [375, 1280]) {
     await page.setViewportSize({ width, height: 812 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
@@ -59,7 +59,7 @@ test('the simplified shelf keeps scenes, privacy and source details accessible w
   await expect(page.getByRole('dialog').getByRole('link', { name: '观看原片' })).toBeVisible();
   await page.getByRole('dialog').getByRole('button', { name: '关闭', exact: true }).click();
   await page.getByRole('button', { name: '返回片段', exact: true }).click();
-  await expect(page.getByRole('heading', { level: 1, name: '片段已就位。 轮到你发声。' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: '全部片段' })).toBeVisible();
 });
 
 for (const clip of [...clips.slice(0, 4), ...clips.filter(c => ['infinity', 'mayonnaise'].includes(c.slug))]) test(`hosted clip ${clip.slug} can play and record a turn`, async ({ page, browserName }) => {
@@ -76,7 +76,7 @@ for (const clip of [...clips.slice(0, 4), ...clips.filter(c => ['infinity', 'may
 
 
 test('the expanded shelf finds scenes by Chinese, English, and film, and opens a new scene', async ({ page }) => {
-  await page.goto('/library/older-audience');
+  await page.goto('/library/all');
   const search = page.getByRole('searchbox');
   await search.fill('Toy Story');
   await expect(page.getByRole('button', { name: /^选择片段：/ })).toHaveCount(5);
@@ -105,12 +105,12 @@ test('the expanded shelf finds scenes by Chinese, English, and film, and opens a
 
 
 test('the scene shelf stays a keyboard-accessible grid', async ({ page }) => {
-  await page.goto('/library/older-audience');
+  await page.goto('/library/all');
   await expect(page.getByRole('listitem')).toHaveCount(filmCount);
   await expect(page.getByRole('button', { name: '列表视图', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: '网格视图', exact: true })).toHaveCount(0);
-  const first = page.getByRole('button', { name: '选择片段：不，这是派大星！', exact: true });
-  const second = page.getByRole('button', { name: '选择片段：巧克力？！', exact: true });
+  const first = page.getByRole('button', { name: /^选择片段：/ }).nth(0);
+  const second = page.getByRole('button', { name: /^选择片段：/ }).nth(1);
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -125,11 +125,11 @@ test('the scene shelf stays a keyboard-accessible grid', async ({ page }) => {
   await expect(back).toHaveText('');
   await back.click();
   await expect(page).toHaveURL(/\/zh\/library\/all$/);
-  await expect(page.getByRole('heading', { level: 2, name: '全部片段', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: '全部片段', exact: true })).toBeVisible();
   await expect(page.getByRole('listitem')).toHaveCount(clips.length);
   await page.reload();
   await expect(page).toHaveURL(/\/zh\/library\/all$/);
-  await expect(page.getByRole('heading', { level: 2, name: '全部片段', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: '全部片段', exact: true })).toBeVisible();
   await expect(page.getByRole('listitem')).toHaveCount(clips.length);
 });
 
@@ -150,7 +150,7 @@ test('help restores focus without requesting the microphone', async ({ page }) =
       getUserMedia: async () => { (window as unknown as { micRequests: number }).micRequests++; throw new DOMException('Denied', 'NotAllowedError'); },
     } });
   });
-  await page.goto('/library/older-audience');
+  await page.goto('/library/all');
   await page.getByRole('button', { name: '选择片段：不，这是派大星！', exact: true }).click();
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   const help = page.getByRole('button', { name: '怎么配音？', exact: true });
@@ -176,7 +176,7 @@ test('record requests the microphone directly across scenes, retries and session
     } });
   });
   const requests = () => page.evaluate(() => (window as unknown as { micRequests: number }).micRequests);
-  await page.goto('/library/older-audience');
+  await page.goto('/library/all');
   let count = 0;
   for (const clip of [clips[0], clips[1], clips[0]]) {
     await page.getByRole('button', { name: `选择片段：${clip.title}`, exact: true }).click();

@@ -1,0 +1,23 @@
+{
+  "Version": "1",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": ["oss:GetObject"],
+      "Resource": [
+        "acs:oss:*:*:parrotbook-media-f6e09412/content/*",
+        "acs:oss:*:*:parrotbook-media-f6e09412/clips/*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["oss:PutObject"],
+      "Resource": [
+        "acs:oss:*:*:parrotbook-media-f6e09412/content/uploads/*",
+        "acs:oss:*:*:parrotbook-media-f6e09412/content/releases/*",
+        "acs:oss:*:*:parrotbook-media-f6e09412/content/catalog.json",
+        "acs:oss:*:*:parrotbook-media-f6e09412/content/owner-packs.json"
+      ]
+    }
+  ]
+}
