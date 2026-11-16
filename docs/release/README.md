@@ -1,6 +1,6 @@
 # Parrotbook release board
 
-Updated 2026-11-16, Asia/Shanghai. Codex leads implementation, specialist agents,
+Updated 2026-11-17, Asia/Shanghai. Codex leads implementation, specialist agents,
 integration, and verification in this chat. Patrick owns participant contact and
 business decisions. [Product plan](../product-plan.md) owns the broader scope.
 
@@ -26,37 +26,57 @@ automatic recording upload is part of this iteration.
 ## Current release
 
 The public player is live with **21 packs / 128 scenes**, all uploaded by Patrick.
-The pack/sharing implementation and deployment diagnostic follow-ups are merged.
-The latest verified player source is
-`ee6fc7ab7322a98ddef302c89f8bc94cb7e21280`: deployment workflow
-[43809621843](https://github.com/patrickchin/parrot-english/actions/runs/43809621843)
-and native ESA build `189354688290940` succeeded; independent `/api/health`
-readback matched at 2026-11-16 05:24:47 UTC. Live 390px gallery/search/detail
-and 320/390px notices checks passed.
+The latest verified player and API source is
+`8e40e5b2826892afa209e2d2409d114511938da3`, merged in
+[PR #288](https://github.com/patrickchin/parrot-english/pull/288).
+Player workflow
+[43935531177](https://github.com/patrickchin/parrot-english/actions/runs/43935531177)
+and native ESA code build `189455969566840` succeeded. Subsequent native Git
+build `189456526729324` published the same source with guest sharing enabled;
+independent public `/api/health` returned 200 with that exact revision.
 
-The focused browser matrix passes **48/48 engine/scenario pairs, zero skips**:
+The earlier focused browser matrix passed **48/48 engine/scenario pairs, zero skips**:
 16 each in Chromium, WebKit and Firefox, across phone/tablet viewport shapes.
 This includes actual synthetic recording and MP4 encoding, with an AAC fallback
 when native encoding is unavailable. It does not establish physical-phone
 microphone, backgrounding, audio-route or native-share reliability.
 
-Both native APIs are deployed from the same merged `ee6fc7ab` source. API workflow
-[43809621870](https://github.com/patrickchin/parrot-english/actions/runs/43809621870)
+Both native APIs are deployed from the same merged `8e40e5b2` source. API workflow
+[43935531075](https://github.com/patrickchin/parrot-english/actions/runs/43935531075)
 passed native role, concurrency-one, source-revision and unchanged owner-auth
-readbacks. The earlier failure was the CLI's 10-second read timeout against a
-successful 11.5-second provider request; its native read limit is now 30 seconds.
-A live synthetic guest-share smoke passed private signed upload,
-publication, ranged playback, wrong-token rejection and creator removal. Both
-apex/www API and OSS upload preflights pass; a foreign API origin returns 403.
-Native owner Bearer authentication is saved and read back, with one protected
-trigger and concurrency one; missing/invalid token requests return 403 and
-apex/www preflights return 204. Real Chromium/WebKit guest UI upload, fresh-browser
-playback and creator removal also pass; both disposable uploads were removed.
-See [hosted share evidence](hosted-share-verification.md). The player endpoints
-remain disabled pending custom HTTPS and owner CRUD acceptance. Patrick chose
-to leave automatic cleanup disabled: seven-day link expiry and creator removal
-still apply; expired private objects remain stored until removed. No hosted-upload
-availability claim follows from the player release.
+readbacks. The CORS fix passed 32 API tests, 22 deployment checks, package
+verification and PR/main Firefox QA. Native FC now owns CORS response headers;
+functions retain origin and preflight validation. Actual browser reads from
+both apex and www passed with one exact Access-Control-Allow-Origin value;
+foreign and malformed preflights return 403. The earlier custom-domain release
+was rolled back after a browser check exposed duplicate CORS headers; plain
+OPTIONS success had not detected the broken GET responses.
+
+On 2026-11-17, the certificate contact and both domain-ownership checks passed.
+Both approved free certificates are issued: owner `28562858`, sharing `28562939`.
+They cover their respective API hostnames and expire **2027-02-14 07:59:59
+Asia/Shanghai** (2027-02-13 23:59:59 UTC). The guest custom domain
+`share-api.parrotbook.com` now routes to the existing guest function over trusted
+HTTPS with TLS 1.2–1.3. Serial public checks passed: removed share 410, apex/www
+preflight 204 with the exact origin, foreign preflight 403, and no-store/noindex
+responses. The owner HTTPS form is prepared with native Bearer authentication;
+its existing key is awaiting Mac/Bitwarden unlock before creation and hosted
+CRUD acceptance. Guest-only endpoint enablement is complete: native ESA Git build
+`189456526729324` published merged `8e40e5b2` with production
+`SHARE_API_URL=https://share-api.parrotbook.com`. Fresh health and sharing-config
+reads return 200 with the expected revision/URL; owner config remains 503 and
+`OWNER_API_URL` is absent. The existing Git/build configuration is unchanged.
+The real public player passed the complete sharing flow in Chromium and WebKit
+at 390 × 844: MP4 download, consent, create/upload/publish, fresh-context playback,
+and creator removal. Downloaded and published video hashes matched in each
+engine. Both disposable shares were removed and the catalogue hash was unchanged.
+
+Earlier provider-endpoint API and Chromium/WebKit UI checks passed private
+upload, publication, fresh-browser playback and creator removal. See the
+[dated hosted share evidence](hosted-share-verification.md) for the exact source,
+transport and limits of each check. Patrick chose to leave automatic cleanup
+disabled: seven-day link expiry and creator removal still apply; expired
+private objects remain stored until removed.
 
 ## Earlier released evidence
 
@@ -90,21 +110,22 @@ from main `edcbc125` was integrated as `860cfcfb` before the mobile checks. Othe
 Review steps: [content PR #275](https://github.com/patrickchin/parrot-english/pull/275)
 and [implementation PR #276](https://github.com/patrickchin/parrot-english/pull/276).
 New source, content, cloud setup, and publication are separate milestones.
-Nothing in this section implies the new API is hosted.
+Hosted owner CRUD acceptance remains separate from the completed API deployment.
 
 | Work | Owner | State / next action |
 | --- | --- | --- |
 | One Packs catalogue and Patrick attribution | Delivery + content + UI | Content PR #275 merged as e8f9878b and published at 2026-11-14T17:26:27Z: 21 packs / 128 scenes, all uploaded by Patrick. All 277 JSON objects and 513 media references verified. Flat Packs UI merged in PR #276 and deployed; live 390px gallery/search/detail smoke passed. |
 | Owner API + private management page | Backend + UI | Implemented and independently reviewed; local API/browser checks cover upload/retry, staging, publication, hide/show/delete. Native Bearer trigger saved/read back; missing/invalid-token rejection and apex/www preflight pass. Authenticated hosted CRUD acceptance remains. |
-| Owner CLI uses the same serialized API | Content/backend | Implemented: default merge preserves unrelated packs; explicit replacement is available. Publish the initial uploader-complete catalogue before enabling the new API. |
-| Guest file and link sharing | Backend + UI + delivery | Implemented and locally verified. Live API smoke confirms private raw/published media, signed ranged playback, wrong-token rejection and removal/revocation. Real Chromium/WebKit UI upload/playback/removal pass. Custom HTTPS remains before endpoint enablement. Patrick explicitly left automatic cleanup disabled; no rule was applied. |
-| Hosted API setup | Operations + delivery | API workflow 43809621870 succeeded on merged ee6fc7ab, verifying source, scoped runtime roles, quotas one and unchanged owner Bearer authentication. Post-deploy missing/invalid tokens return 403, apex/www preflights 204, removed test share 410. Both API DNS-only CNAMEs are verified. The approved ¥0 order provisioned two free certificate instances; CA contact/location and issuance remain before custom HTTPS and endpoint enablement. Patrick chose to leave lifecycle cleanup disabled. [Decision](api-deployment-decision.md), [runbook](../owner-upload-deployment.md). |
+| Owner CLI uses the same serialized API | Content/backend | Implemented: default merge preserves unrelated packs; explicit replacement is available. The initial uploader-complete catalogue was published on 2026-11-14. Authenticated hosted CLI acceptance remains. |
+| Guest file and link sharing | Backend + UI + delivery | Complete: native Git build 189456526729324 enabled the public config at 8e40e5b2 after PR #288 fixed duplicate CORS. Real public Chromium/WebKit export, download, consent, upload, fresh-context playback and removal passed without interceptions. Two test shares removed; catalogue unchanged. Automatic cleanup remains disabled. |
+| Hosted API setup | Operations + delivery | Both APIs verified at 8e40e5b2 with scoped roles and concurrency one. Contact, DNS and both free certificates are complete. Guest custom HTTPS and public config are live. The owner HTTPS form awaits its saved key after Mac/Bitwarden unlock, then native auth and hosted CRUD acceptance; owner config remains disabled. [Decision](api-deployment-decision.md), [runbook](../owner-upload-deployment.md). |
 | Candidate verification/review | QA + independent reviewer | Earlier source 20479f33: TypeScript, app/content/boundary/API, player/API packaging, and 316 browser passes / 16 intentional skips. Physical phones and hosted provider behavior remain separate. |
-| New release and catalogue publication | Delivery | Catalogue publication complete: 21 packs / 128 scenes. Player and API releases both verified at ee6fc7ab. Custom HTTPS, authenticated owner CRUD and endpoint enablement remain. |
+| New release and catalogue publication | Delivery | Catalogue publication complete: 21 packs / 128 scenes. Both code releases verified at 8e40e5b2. Native ESA build 189456526729324 enabled guest link sharing; owner HTTPS/CRUD acceptance and its separate endpoint enablement remain. |
 | Mobile browser verification | QA + engineering | 48/48 passes, zero skips: Chromium/WebKit/Firefox each 16 cases across five shapes. Fixed clipped recovery text, missing native AAC export and notice wrapping. [Evidence and real-phone sequence](mobile-browser-verification.md). |
 | Physical-device friend test | Patrick + QA | Test complete recording/replay, sharing, resume/delete, mic deny/retry, app switching, audio routes, and network on actual phones. No device row has passed yet. |
 | WebKit timing investigation | Engineering + QA | Gather physical-device evidence before weakening guards or changing the audio model. Preserve diagnostics. |
 | ESA continuation | Patrick + operations | Site plan expires **2026-11-29 00:00 Asia/Shanghai**, renewal normal / duration 0. Confirm continuation and cost before that date; no purchase or billing change authorized or made. |
+| API certificate renewal | Delivery + Patrick | Both certificates expire **2027-02-14 07:59:59 Asia/Shanghai**. Automatic reissue/renewal is disabled; arrange renewal before expiry. No paid renewal or new subscription is authorized by this record. |
 
 Architecture: ESA serves the player and private owner UI; dedicated native Node
 FC APIs handle serialized pack publication and guest sharing; OSS stores media,
@@ -114,7 +135,7 @@ bundles. Owner and anonymous guest APIs have separate triggers and execution
 roles. The dedicated APIs address ESA's four-fetch execution limit and ten-second
 gateway response wait; they do not introduce a database or learner accounts.
 
-Latest [candidate verification](pack-management-verification.md): TypeScript,
+Earlier [candidate verification](pack-management-verification.md): TypeScript,
 39 app / 17 content / 1 boundary / 30 API tests pass. Focused browser coverage
 resolves to 316 passes / 16 intentional skips after targeted reruns and the final
 23 built-player / 30 visual checks. Network exhaustion cleared before the new
