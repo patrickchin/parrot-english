@@ -5,11 +5,11 @@ phone support claim. It runs a freshly built production player locally, with
 one worker and one preview server. It does not deploy code or write to cloud
 storage.
 
-Core focused matrix: **45/45 passed, zero skips** — 15 Chromium and 15 WebKit
-cases locally, plus 15 Firefox cases on Linux CI. Both default encoding and
-forced native-AAC-unavailable cases produce a real MP4 with verified audio.
-An added notices-page regression passed separately in Chromium and WebKit;
-its Firefox counterpart awaits the next CI run.
+Focused matrix: **48/48 passed, zero skips** — 16 Chromium and 16 WebKit
+cases locally (30 core plus two focused notices cases), and 16 Firefox cases
+on Linux CI. Both default encoding and forced native-AAC-unavailable cases
+produce a real MP4 with verified audio. These are engine/scenario pairs, not
+48 phones; repeated runs are not added to this count.
 
 ## Source and reproduction
 
@@ -23,7 +23,9 @@ its Firefox counterpart awaits the next CI run.
   regression patch committed unchanged as
   `8e33027da584dd3cfa8b2ff1d6657274efad420c`. The preview was built before that
   commit, so its embedded revision remains `95adaf93`; the tested source code
-  includes the complete AAC fix. Linux CI tests the exact `8e33027d` commit.
+  includes the complete AAC fix. Initial Linux AAC proof tested the exact
+  `8e33027d` commit; the final 16-case Firefox run tests merged main
+  `75cd550d2f778033816f2262d14398f95082e2f3`.
 - Runner: Node 24.19.0, macOS ARM64; Playwright 1.61.1.
 - Command:
 
@@ -45,7 +47,7 @@ server.
 | --- | --- | --- | --- |
 | `mobile-qa-chromium` | Chromium 149.0.7827.55 | Pixel 7 preset, initial 390×844 | 15 core passed; 1 additional notices case passed |
 | `mobile-qa-webkit` | WebKit 26.5 | iPhone 13 preset, initial 390×844 | 15 core passed; 1 additional notices case passed |
-| `mobile-qa-firefox` | Firefox 151.0 on Linux | Desktop Firefox with touch and 390×844 viewport | 15 core passed; notices case pending CI |
+| `mobile-qa-firefox` | Firefox 151.0 on Linux | Desktop Firefox with touch and 390×844 viewport | All 16 passed on merged main, including notices |
 
 Each context is resized through these CSS viewport sizes. Tablet rows exercise
 layout at tablet dimensions; the phone presets retain their original user
@@ -175,6 +177,15 @@ playback all passed. The complete CI log is
 `/private/tmp/parrotbook-firefox-aac-success.log`. No codec failure is hidden by
 changing the media fixture or skipping Firefox's guest-sharing case.
 
+The final 16-case Firefox run on merged main,
+[43799961595](https://github.com/patrickchin/parrot-english/actions/runs/43799961595),
+passed all 16 in 1.3 minutes on
+`75cd550d2f778033816f2262d14398f95082e2f3`, with zero skips. This includes the
+additional notices regression. Its saved log is
+`/private/tmp/parrotbook-firefox-75cd-success.log`. Combined with the local
+30-case core run and two focused notices cases, this establishes the 48 unique
+passing engine/scenario pairs without summing repeated CI runs.
+
 `.github/workflows/mobile-browser.yml` supplies the alternate Linux host. On
 pull requests to main (including PR #276), main pushes, or a manual run, it
 installs Node 24, dependencies from the lockfile, the pinned Playwright version's
@@ -233,10 +244,12 @@ records in the deployment workflow and the public health endpoint:
 | --- | --- | --- | --- |
 | `c962e745bab6a3ceed10822d84b5af77c4b58b0d` | [43798284785](https://github.com/patrickchin/parrot-english/actions/runs/43798284785) | `189340752406660`, succeeded 03:29:05 UTC | Exact match 03:29:50 UTC |
 | `77c20ec2da822a2f80ec853621ecfb54e2479c9a` | [43798648236](https://github.com/patrickchin/parrot-english/actions/runs/43798648236) | `189341217558660`, succeeded 03:32:54 UTC | Exact match 03:33:01 UTC |
+| `75cd550d2f778033816f2262d14398f95082e2f3` | [43799961611](https://github.com/patrickchin/parrot-english/actions/runs/43799961611) | `189342884767888`, succeeded 03:46:27 UTC | Exact match 03:46:40 UTC |
 
-Both workflows completed successfully. Read-only logs are saved as
+All three workflows completed successfully. Read-only logs are saved as
 `/private/tmp/parrotbook-player-release-c962.log` and
-`/private/tmp/parrotbook-player-release-77c20.log`.
+`/private/tmp/parrotbook-player-release-77c20.log`, and
+`/private/tmp/parrotbook-player-release-75cd.log`.
 
 A real-content production smoke check at 390×844 confirmed one Packs h1,
 21 franchise packs, a decoded cover, no horizontal overflow, visible Patrick
@@ -255,8 +268,34 @@ again. The new Chromium and WebKit cases passed separately, 2/2 in 11.5 seconds
 (`/private/tmp/parrotbook-mobile-notices-fix.log`), without rerunning the 45 core
 cases. The updated 390-pixel screenshot
 `mobile-qa-webkit-software-notices-phone-portrait.png` shows the complete hash
-wrapping within the page. That source fix and its additional Firefox case await
-the next merged rollout and CI run, respectively.
+wrapping within the page. Its Firefox case subsequently passed in the final
+16-case CI run above. After the merged `75cd550d` rollout, a read-only production
+check at both 320 and 390 CSS pixels confirmed document width exactly matched
+viewport width, one Software notices h1, and the complete source hash's rendered
+text within the viewport. Screenshots are
+`production-75cd-software-notices-320.png` and
+`production-75cd-software-notices-390.png`; the 320-pixel result was visually
+reviewed. The isolated browser was closed afterward.
+
+## Short real-phone friend test
+
+Start with iPhone Safari and Android Chrome, then Android Firefox. Treat
+WeChat's embedded browser separately; these real-phone checks go beyond emulation.
+
+1. Open [Parrotbook](https://parrotbook.com/) directly. Search Packs, choose a
+   scene, rotate, and check the keyboard and buttons.
+2. Deny mic once; enable it in browser settings and retry. Record/replay two
+   lines; check timing and that the phone's mic indicator turns off afterward.
+3. Reopen an unfinished dub through My dubs after reloading; check saved voice
+   and progress. Switch apps or lock, return, and record again.
+4. Finish and prepare. Cancel/retry the native share sheet; save/share the MP4.
+   Play it on your phone and a friend's; confirm your recorded voice is audible.
+5. Once hosted links are enabled, confirm upload; play on another device,
+   remove on the creator's device, and check playback stops.
+6. Repeat recording/export inside WeChat; report separately. If blocked, try
+   “Open in browser” and compare.
+7. Report model, OS/browser version, Wi-Fi/mobile network, failing step/error,
+   and screenshot. Mark untested steps.
 
 ## Physical-device limits
 

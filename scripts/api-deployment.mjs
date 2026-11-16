@@ -113,7 +113,8 @@ function providerDiagnostic(stderr) {
 export function cloudGet(path, run = execute) {
   const label = readbackPaths.has(path) ? `GET ${path}` : 'GET [unexpected path]';
   let output;
-  try { output = run('aliyun', ['fc', 'GET', '/2023-03-30' + path, '--region', region, '--version', '2023-03-30']); }
+  // Pinned CLI 3.5.3 emits remote provider errors as JSON only in this mode.
+  try { output = run('aliyun', ['fc', 'GET', '/2023-03-30' + path, '--region', region, '--version', '2023-03-30', '--cli-ai-mode']); }
   catch (error) {
     // Native HTTP trigger output can contain owner tokens. Treat only a parsed
     // provider code as not-found; messages, stdout and config are never metadata.
