@@ -44,7 +44,11 @@ function fileList(files) {
 // HTTP bearer verification belongs to the native FC trigger. The function
 // has one globally reserved invocation, making it the sole catalog writer.
 export function createOwnerApi({ client, bucket = ownerBucket, region = ownerRegion, revision = null,
-  displayName = 'Patrick', allowedOrigin = 'https://parrotbook.com', now = Date.now, newId = () => 'upl_' + randomBytes(12).toString('base64url') }) {
+  displayName = 'Patrick', allowedOrigins = ['https://parrotbook.com', 'https://www.parrotbook.com'], now = Date.now, newId = () => 'upl_' + randomBytes(12).toString('base64url') }) {
+  if (!Array.isArray(allowedOrigins) || !allowedOrigins.length || allowedOrigins.some(origin => {
+    try { return typeof origin !== 'string' || new URL(origin).origin !== origin || !/^https?:$/.test(new URL(origin).protocol); }
+    catch { return true; }
+  })) throw new TypeError('Invalid owner API origins.');
   const origin = `https://${bucket}.${region}.aliyuncs.com`;
   const base = origin + '/' + contentRoot;
   let active = 0; const waiting = [];
@@ -332,7 +336,7 @@ export function createOwnerApi({ client, bucket = ownerBucket, region = ownerReg
     reject(404, 'Owner API route not found.');
   }
   return async eventBuffer => {
-    const headers = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' };
+    const headers = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', Vary: 'Origin' };
     try {
       let event, body;
       try {
@@ -346,11 +350,11 @@ export function createOwnerApi({ client, bucket = ownerBucket, region = ownerReg
         }
       } catch (error) { if (error instanceof ApiError) throw error; reject(400, 'Malformed owner API request.'); }
       const requestHeaders = lowerHeaders(event.headers);
-      if (requestHeaders.origin && requestHeaders.origin !== allowedOrigin) reject(403, 'This origin cannot use the owner API.');
-      if (requestHeaders.origin) { headers['Access-Control-Allow-Origin'] = allowedOrigin; headers.Vary = 'Origin'; }
+      if (requestHeaders.origin && !allowedOrigins.includes(requestHeaders.origin)) reject(403, 'This origin cannot use the owner API.');
+      if (requestHeaders.origin) headers['Access-Control-Allow-Origin'] = requestHeaders.origin;
       if (event.requestContext.http.method === 'OPTIONS') {
         const requested = String(requestHeaders['access-control-request-headers'] ?? '').split(',').map(value => value.trim().toLowerCase()).filter(Boolean);
-        if (requestHeaders.origin !== allowedOrigin || !['GET', 'POST', 'PATCH', 'DELETE'].includes(requestHeaders['access-control-request-method']) || requested.some(value => !['authorization', 'content-type'].includes(value))) reject(403, 'Preflight request is not allowed.');
+        if (!requestHeaders.origin || !['GET', 'POST', 'PATCH', 'DELETE'].includes(requestHeaders['access-control-request-method']) || requested.some(value => !['authorization', 'content-type'].includes(value))) reject(403, 'Preflight request is not allowed.');
         Object.assign(headers, { 'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE', 'Access-Control-Allow-Headers': 'Authorization, Content-Type', 'Access-Control-Max-Age': '600' });
         return { statusCode: 204, headers, body: '', isBase64Encoded: false };
       }
@@ -377,5 +381,5 @@ export async function handler(event, context) {
   const { default: OSS } = await import('ali-oss');
   const client = new OSS({ bucket, region, accessKeyId: credentials.accessKeyId, accessKeySecret: credentials.accessKeySecret,
     stsToken: credentials.securityToken, authorizationV4: true, secure: true });
-  return createOwnerApi({ client, bucket, region, displayName: process.env.OWNER_DISPLAY_NAME ?? 'Patrick', allowedOrigin: process.env.OWNER_API_ORIGIN ?? 'https://parrotbook.com', revision: process.env.OWNER_API_REVISION ?? null })(event);
+  return createOwnerApi({ client, bucket, region, displayName: process.env.OWNER_DISPLAY_NAME ?? 'Patrick', allowedOrigins: JSON.parse(process.env.OWNER_API_ORIGINS ?? '["https://parrotbook.com","https://www.parrotbook.com"]'), revision: process.env.OWNER_API_REVISION ?? null })(event);
 }

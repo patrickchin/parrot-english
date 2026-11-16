@@ -53,10 +53,10 @@ export function verifyConfig(template) {
       region, functionName: fn.name, runtime: 'nodejs20', handler: fn.handler, code: './api/dist', memorySize: 512,
       timeout: fn.timeout, internetAccess: true, role: `\${env('${fn.roleEnv}')}`, concurrencyConfig: { reservedConcurrency: 1 },
       environmentVariables: fn.resource === 'owner-api' ? {
-        OWNER_API_BUCKET: 'parrotbook-media-f6e09412', OWNER_API_REGION: 'oss-cn-hongkong', OWNER_API_ORIGIN: 'https://parrotbook.com',
+        OWNER_API_BUCKET: 'parrotbook-media-f6e09412', OWNER_API_REGION: 'oss-cn-hongkong', OWNER_API_ORIGINS: '["https://parrotbook.com","https://www.parrotbook.com"]',
         OWNER_API_REVISION: "${env('OWNER_API_REVISION')}",
       } : {
-        SHARE_API_BUCKET: 'parrotbook-media-f6e09412', SHARE_API_REGION: 'oss-cn-hongkong', SHARE_API_ORIGIN: 'https://parrotbook.com', SHARE_API_DAILY_LIMIT: '100',
+        SHARE_API_BUCKET: 'parrotbook-media-f6e09412', SHARE_API_REGION: 'oss-cn-hongkong', SHARE_API_ORIGINS: '["https://parrotbook.com","https://www.parrotbook.com"]', SHARE_API_DAILY_LIMIT: '100',
       },
     };
     if (fn.resource === 'guest-sharing-api') expected.triggers = [{ triggerName: 'guest-http', triggerType: 'http', triggerConfig: { authType: 'anonymous', methods: ['GET', 'POST', 'DELETE', 'OPTIONS'] } }];
@@ -171,6 +171,8 @@ export async function deployApi({ env = process.env, run = git, get = cloudGet, 
     const actual = get(`/functions/${fn.name}`);
     for (const [key, value] of Object.entries({ functionName: fn.name, runtime: 'nodejs20', handler: fn.handler, memorySize: 512, timeout: fn.timeout, role: roleArn(fn.role) })) same(actual?.[key], value, `FC readback mismatch: ${fn.name} ${key}.`);
     same(get(`/functions/${fn.name}/concurrency`)?.reservedConcurrency, 1, `Global concurrency is not one for ${fn.name}.`);
+    const originKey = fn.resource === 'owner-api' ? 'OWNER_API_ORIGINS' : 'SHARE_API_ORIGINS';
+    same(actual.environmentVariables?.[originKey], '["https://parrotbook.com","https://www.parrotbook.com"]', `FC readback mismatch: ${fn.name} browser origins.`);
     if (fn.resource === 'owner-api') same(actual.environmentVariables?.OWNER_API_REVISION, revision, 'Owner revision did not match selected main source.');
   }
   const ownerAfter = get(`/functions/${functions[0].name}/triggers`);

@@ -152,14 +152,16 @@ After the function exists:
    domain with the same native Bearer authentication and route methods `GET`,
    `POST`, `PATCH`, `DELETE`, and `OPTIONS`: verify its actual route, rather than
    assuming trigger authentication automatically covers it.
-4. Configure and test CORS for the exact player origin `https://parrotbook.com`
-   (and `https://www.parrotbook.com` only if the player actually uses it).
+4. Configure and test CORS for both existing player origins, `https://parrotbook.com`
+   and `https://www.parrotbook.com`.
    Allow `GET`, `POST`, `PATCH`, `DELETE`, and `Authorization, Content-Type`. Cross-origin
    preflight carries no Bearer token and must succeed without permitting an
    unauthenticated mutation. The newer gateway `corsConfig` feature requires
    invited-test activation; do not assume the account has it. The owner handler
    provides an exact-origin OPTIONS/CORS fallback, configured by
-   `OWNER_API_ORIGIN` (default `https://parrotbook.com`). Valid preflight returns
+   `OWNER_API_ORIGINS`, a JSON array defaulting to
+   `["https://parrotbook.com","https://www.parrotbook.com"]`. Only the matched
+   request origin is echoed, with `Vary: Origin`. Valid preflight returns
    204 without accessing OSS; foreign origins or unexpected methods/headers
    are rejected. This does not implement or bypass authentication. Native
    Bearer must still let unauthenticated OPTIONS reach that fallback; the
@@ -168,7 +170,7 @@ After the function exists:
    browser. Keep the endpoint disabled until a supported provider configuration
    and any required fallback are verified; never make mutations anonymous to
    solve preflight.
-5. Add an OSS CORS rule for the same exact origin, `PUT`, and the headers
+5. Add an OSS CORS rule for both exact player origins, `PUT`, and the headers
    returned with signed uploads, including `Content-Type` and
    `x-oss-object-acl` (and `Content-MD5` if supplied). Preserve the existing
    public GET/HEAD rule. Expose ETag if the client reads it. OSS handles the
@@ -258,8 +260,9 @@ or write packs, the content catalog, or unrelated projects. See [OSS prefix and
 ACL policy conditions](https://www.alibabacloud.com/help/en/oss/user-guide/authorization-syntax-and-elements)
 and [directory-scoped listing](https://help.aliyun.com/zh/oss/user-guide/access-control-base-on-ram-policy).
 
-The function handles CORS for `SHARE_API_ORIGIN` (default
-`https://parrotbook.com`) with `GET`, `POST`, `DELETE`, and unauthenticated
+The function handles CORS for `SHARE_API_ORIGINS`, a JSON array defaulting to
+`["https://parrotbook.com","https://www.parrotbook.com"]`. Only the matched
+origin is echoed, with `Vary: Origin`. It allows `GET`, `POST`, `DELETE`, and unauthenticated
 `OPTIONS`. Bind and verify a dedicated custom HTTPS domain before connecting
 the player; keep the owner domain/trigger separate. API JSON responses use
 `Cache-Control: no-store` and `X-Robots-Tag: noindex`. There is no guest search,
