@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type RefObject } from 'react';
 import { asset, type Scene, type Line } from './scene';
 import { waveformStep, type WaveformTimeline } from './waveform';
 import { encodePcmWav } from './pcm-recording';
-import { audibleContextTime, decodeTake, waitForAudioClock } from './audio-timing';
+import { audibleContextTime, decodeTake, sustainedDrift, waitForAudioClock } from './audio-timing';
 import { idleMedia, transitionMedia, type Activity, type MediaEvent } from './media-state';
 import { waitForVideo } from './video-events';
 import { lineWindow } from './line-window';
@@ -21,6 +21,12 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
   }
   const phase = state.phase;
   const error = state.phase === 'idle' ? state.error : '';
+  const [buffering, setBuffering] = useState(false);
+  const bufferingTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  function clearBuffering() {
+    clearTimeout(bufferingTimeout.current); bufferingTimeout.current = undefined;
+    setBuffering(false);
+  }
   const [time, setTime] = useState(0);
   const timeline = useRef<WaveformTimeline>({ time: 0, capture: null });
   const playbackProgress = useRef<HTMLProgressElement>(null);
@@ -50,6 +56,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
   const captureCleanup = useRef<(() => void) | null>(null);
 
   function release() {
+    clearBuffering();
     operation.current++;
     cancellation.current.abort(); cancellation.current = new AbortController();
     replayClock.current = null;
@@ -119,15 +126,26 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
   useEffect(() => {
     const hidden = () => { if (document.hidden) stop(); };
     const el = video.current;
+    const waiting = () => {
+      if (!['preview', 'recording', 'replay', 'listening'].includes(machine.current.phase)) return;
+      setBuffering(true);
+      bufferingTimeout.current ??= setTimeout(() => stop('errors.videoBuffering'), 8000);
+    };
     // Reset/completion can seek a paused video without starting a frame loop.
     const seeked = () => {
       if (el && machine.current.phase === 'idle') updateTime(el.currentTime, true);
     };
     document.addEventListener('visibilitychange', hidden);
     el?.addEventListener('seeked', seeked);
+    el?.addEventListener('waiting', waiting);
+    el?.addEventListener('playing', clearBuffering);
+    el?.addEventListener('canplay', clearBuffering);
     return () => {
       document.removeEventListener('visibilitychange', hidden);
       el?.removeEventListener('seeked', seeked);
+      el?.removeEventListener('waiting', waiting);
+      el?.removeEventListener('playing', clearBuffering);
+      el?.removeEventListener('canplay', clearBuffering);
       stop();
       void context.current?.close();
       context.current = null; waveformModule.current = null;
@@ -160,10 +178,11 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
   }
 
   function watch(id: number, end: number, takes?: Takes) {
+    const drifted = sustainedDrift();
     const tick = () => {
       const el = video.current;
       if (id !== operation.current || !el) return;
-      if (!el.ended && el.currentTime < end && (el.paused || el.seeking || el.readyState < HTMLMediaElement.HAVE_FUTURE_DATA || el.playbackRate !== 1)) {
+      if (!el.ended && el.currentTime < end && (el.paused || el.seeking || el.playbackRate !== 1)) {
         stop("errors.mediaInterrupted"); return;
       }
       const clock = replayClock.current;
@@ -171,7 +190,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
         const audible = clock.start + audibleContextTime(clock.context) - clock.startAt;
         // Stop rather than silently accepting a shifted dub after an output
         // device change or a picture startup/stall outside the sync tolerance.
-        if (clock.context.state !== 'running' || Math.abs(audible - el.currentTime) > 0.12) {
+        if (clock.context.state !== 'running' || drifted(audible - el.currentTime)) {
           stop("errors.mediaInterrupted"); return;
         }
       }
@@ -296,12 +315,13 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
         saveTimeout = setTimeout(() => { if (id === operation.current) stop("errors.recordingInterrupted"); }, 8000);
         detail.port.postMessage('stop');
       };
+      const drifted = sustainedDrift();
       const meter = () => {
         if (id !== operation.current || machine.current.phase !== 'recording') return;
         updateTime(el.currentTime);
         if (el.ended || el.currentTime >= window.end) { finishRecording.current?.(); return; }
         const captureTime = captureStart + ctx.currentTime - captureContextStart;
-        if (ctx.state !== 'running' || Math.abs(captureTime - el.currentTime) > 0.12 || el.paused || el.seeking || el.readyState < HTMLMediaElement.HAVE_FUTURE_DATA || el.playbackRate !== 1) {
+        if (ctx.state !== 'running' || drifted(captureTime - el.currentTime) || el.paused || el.seeking || el.playbackRate !== 1) {
           stop("errors.mediaInterrupted"); return;
         }
         el.muted = el.currentTime >= line.start && el.currentTime < line.end;
@@ -393,7 +413,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
     } catch (e) { fail(id, e); }
   }
 
-  return { phase, time, timeline, playbackProgress, error, setError, prepareVideo, stop: () => stop(), preview, record, replay, listen, finish: () => finishRecording.current?.() };
+  return { phase, buffering, time, timeline, playbackProgress, error, setError, prepareVideo, stop: () => stop(), preview, record, replay, listen, finish: () => finishRecording.current?.() };
 }
 
 function microphoneMessage(error: unknown): string {

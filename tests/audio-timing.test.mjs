@@ -47,3 +47,15 @@ test('decoded takes share pending work by Blob, replacements decode independentl
   await decodeTake(cache, context, broken);
   assert.equal(decodes, 4);
 });
+
+test('sync monitoring ignores isolated timing jitter but rejects persistent drift', async () => {
+  const { sustainedDrift } = await import('../src/audio-timing.ts');
+  const drifted = sustainedDrift();
+  assert.equal(drifted(0.25, 0), false);
+  assert.equal(drifted(0.25, 80), false);
+  assert.equal(drifted(0.01, 100), false);
+  assert.equal(drifted(-0.25, 200), false);
+  assert.equal(drifted(-0.25, 399), false);
+  assert.equal(drifted(-0.25, 400), true);
+  assert.equal(drifted(NaN, 410), true);
+});

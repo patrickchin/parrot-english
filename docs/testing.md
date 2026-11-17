@@ -153,3 +153,24 @@ Emulation does not prove physical iPhone/Android, Bluetooth output, microphone
 permissions, audio routing, backgrounding, WeChat, or mainland network behavior.
 Those still need checks on the intended devices. Randomized sequences increase
 coverage; they do not establish that all possible orders have been tested.
+
+## Intermittent recording/replay interruptions
+
+The shared runtime previously aborted recording or replay on a single low
+`readyState` sample, a `waiting` event, or one clock discrepancy over 120 ms.
+`transient-media.spec.ts` reproduces false failures with an 80 ms readiness dip
+while the real decoded picture continues moving. It also checks brief waiting
+events and audio-clock anomalies. These cases run in the mobile CI matrix.
+
+The player now shows preparation status for buffering instead of immediately
+discarding the operation. Original playback has a bounded eight-second buffering
+timeout. Synchronized recording/replay retain the 120 ms sync limit, with
+200 ms confirmation for clock drift; pause, seeking, speed changes, and audio
+suspension still stop immediately. Persistent drift and buffering are tested,
+and cancellation clears the buffering deadline.
+
+The full audio regression uses generated microphone input through the real
+AudioWorklet, encoder, draft storage, reload, and recorded replay. An analyser
+in the actual replay output path must observe a non-silent rendered signal.
+This verifies more than UI state or successful `play()`, but does not substitute
+for a physical Samsung/Brave or iOS spoken-microphone test.
