@@ -101,7 +101,7 @@ button:disabled { cursor: not-allowed; }
 .player-workspace { flex: none; min-width: 0; }
 /* Captions share the picture's grid cell. Only unusually long cues grow the
    mobile viewing area, keeping both languages readable inside the video. */
-.video-subtitles { position: relative; grid-area: 1 / 1; align-self: end; width: 92%; margin: 8px auto; container-type: inline-size; pointer-events: none; text-align: center; color: #fff; font-weight: 500; }
+.video-subtitles { position: relative; grid-area: 1 / 1; align-self: end; width: 92%; margin: 48px auto 8px; container-type: inline-size; pointer-events: none; text-align: center; color: #fff; font-weight: 500; }
 .video-subtitles > div { width: fit-content; max-width: 100%; margin-inline: auto; padding: 4px 8px; border-radius: 4px; background: #000b; }
 .video-subtitles p { text-wrap: balance; overflow-wrap: anywhere; }
 .video-subtitles [lang=en] { font-size: clamp(16px, 3.8cqw, 26px); line-height: 1.25; }
