@@ -14,7 +14,6 @@ import { OwnerPacks } from './OwnerPacks';
 import { SavedDubs } from './app/SavedDubs';
 import { dubsPath, packsPath } from './app/routes';
 import { VoiceWaveform } from './VoiceWaveform';
-import { PreviewSubtitles } from './PreviewSubtitles';
 import { lineWindow } from './line-window';
 import { useContent } from './app/ContentProvider';
 import { createLesson, lessonTakes, transitionLesson, type LessonEvent, type LessonState } from './lesson-state';
@@ -111,7 +110,7 @@ function Player({ scene, slug, notice, initial, rememberDraft, onBack, leaving, 
   const currentTake = takes[line.id];
   const nextCaption = scene.lines.findIndex(l => l.start > media.time);
   const currentCaption = scene.lines[nextCaption < 0 ? scene.lines.length - 1 : Math.max(0, nextCaption - 1)];
-  const captionId = step === 'result' ? currentCaption?.id : line.id;
+  const caption = step === 'practice' ? line : currentCaption;
   const allDone = completed === rolesLines.length;
   useEffect(() => { onDirtyChange(capturing || autosave.dirty); }, [capturing, autosave.dirty, onDirtyChange]);
   useEffect(() => { if (autosave.status === 'saved' && !autosave.dirty && step !== 'choose' && !leaving) rememberDraft(autosave.id); }, [autosave.status, autosave.dirty, autosave.id, step, leaving, rememberDraft]);
@@ -168,6 +167,9 @@ function Player({ scene, slug, notice, initial, rememberDraft, onBack, leaving, 
             {!source ? <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-4 text-center text-white"><p className="text-sm font-bold">{t("player.loadTheVideoFromYourDevice")}</p><label className="cursor-pointer rounded-xl bg-paper px-5 py-3 text-sm font-bold text-ink">{t("player.chooseALocalVideo")}<input aria-label={t("player.chooseALocalVideo")} type="file" accept="video/mp4,video/webm,video/quicktime" className="sr-only" onChange={e => openFile(e.target.files?.[0])} /></label><p className="text-xs text-white/80">{scene.video}{t("player.fileStaysOnYourDevice")}</p></div>
               : !busy && <button onClick={() => step === 'result' ? void media.replay(takes) : void media.preview(step === 'practice' ? line : undefined)} disabled={!videoReady || exporting} aria-label={step === 'result' ? t("player.playMyDub") : t("player.playOriginalScene")} className="absolute inset-0 flex items-center justify-center text-white focus-visible:outline-4 focus-visible:-outline-offset-4 focus-visible:outline-lemon disabled:opacity-40"><span className="flex h-14 w-14 items-center justify-center rounded-full bg-brand/75 text-primary-foreground sm:h-17 sm:w-17"><Icon name="play" className="h-7 w-7" /></span></button>}
             {media.phase === 'recording' && <span className="absolute top-3 right-3 flex items-center gap-2 rounded-full bg-danger px-3 py-1.5 text-xs font-bold text-destructive-foreground"><span className="h-2 w-2 rounded-full bg-current motion-safe:animate-pulse" />{t("player.recording")}</span>}
+            {source && <div className="video-subtitles" role="group" aria-label={t("player.dialogue")}>
+              {caption && <div><p lang="en">{caption.text}</p>{caption.hint && <p lang="zh-CN">{caption.hint}</p>}</div>}
+            </div>}
             {media.phase === 'loading' && <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-sm font-bold text-white" role="status">{t("player.gettingReady")}</div>}
           </div>
           <div className="player-transport flex items-center gap-2 bg-neutral-900 px-2 text-white sm:px-4">
@@ -175,7 +177,6 @@ function Player({ scene, slug, notice, initial, rememberDraft, onBack, leaving, 
             <progress ref={media.playbackProgress} aria-label={t("player.scenePlaybackProgress")} max={scene.duration} value={0} className="h-1.5 flex-1 appearance-none overflow-hidden rounded-full [&::-webkit-progress-bar]:bg-white/30 [&::-webkit-progress-value]:bg-coral [&::-moz-progress-bar]:bg-coral" /><span className="shrink-0 font-mono text-xs">{clock(media.time)} / {clock(scene.duration)}</span>
           </div>
         </div>
-        {step === 'choose' && <PreviewSubtitles scene={scene} time={media.time} />}
       </section>
       <section aria-label={step === 'choose' ? t("player.chooseARole") : step === 'result' ? t("player.dubComplete") : t("player.recordYourLines")} className="player-workspace">
         {step === 'choose' && <div className="player-choose text-center">
@@ -197,9 +198,6 @@ function Player({ scene, slug, notice, initial, rememberDraft, onBack, leaving, 
             </div>
             <VoiceWaveform scene={scene} start={step === 'result' ? 0 : window.start} end={step === 'result' ? scene.duration : window.end} target={step === 'result' ? undefined : line} timeline={media.timeline} recordings={graphRecordings} recording={capturing} active={busy} idleTime={busy ? undefined : media.time} />
             <p className="sr-only">{t("recording.lineNumber", { number: lineIndex + 1, total: rolesLines.length })}</p>
-            <div className="practice-caption text-center" role="group" aria-label={t("player.dialogue")}>
-              {scene.lines.map(l => <div key={l.id} aria-hidden={l.id !== captionId} className={l.id === captionId ? undefined : 'invisible'}><p className="text-balance font-medium" lang="en">{l.text}</p><p lang="zh-CN" className="mt-1 text-base text-muted-foreground">{l.hint}</p></div>)}
-            </div>
             <p className="sr-only" role="status">{media.phase === 'recording' ? t("recording.speakingGuidance") : media.phase === 'saving' ? t("player.preparingYourRecording") : currentTake ? t("recording.takeReady") : t("recording.listenFirst")}</p>
           </div>
           <div className="player-controls">

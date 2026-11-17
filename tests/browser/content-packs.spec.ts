@@ -42,7 +42,7 @@ test('publishing and withdrawing a pack updates discovery, search, playback and 
   await page.getByRole('button', { name: 'Choose scene: Community hello', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Community hello', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Sam', exact: true })).toBeVisible();
-  await expect(page.getByRole('region', { name: 'Preview subtitles', exact: true }).getByRole('listitem').getByText('Hello from our community.', { exact: true })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Dialogue', exact: true }).getByText('Hello from our community.', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Scene credits', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await expect(page.getByRole('dialog')).not.toContainText(packs[0].data.locales.en.notices.scene);

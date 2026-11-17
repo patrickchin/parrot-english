@@ -5,6 +5,7 @@ import { readScene } from '../content-fixtures';
 import { test, expect } from './fixtures';
 import { scenePath } from './scene-path';
 import { mobileScreenshot } from './mobile-viewports';
+import { expectPictureSubtitles } from './picture-subtitles';
 
 const phones = [
   { width: 375, height: 667 },
@@ -83,10 +84,11 @@ for (const [language, translations] of [['en', en], ['zh-CN', zh]] as const) {
             await fullyVisible(banner.getByRole('combobox'), page);
             await expect(page.getByText(ui.chooseALine, { exact: true })).toHaveCount(0);
             if (captionLine) {
-              const caption = workspace.getByRole('group', { name: ui.dialogue, exact: true });
+              const caption = movie.getByRole('group', { name: ui.dialogue, exact: true });
               await fullyVisible(caption.getByText(captionLine.text, { exact: true }), page);
               if (captionLine.hint) await fullyVisible(caption.getByText(captionLine.hint, { exact: true }), page);
             }
+            await expectPictureSubtitles(page, ui.movieScene, ui.dialogue);
             if (step.startsWith('practice')) {
               const guidance = workspace.getByRole('status').filter({ hasText: translations.recording.listenFirst });
               await expect(guidance).toHaveText(translations.recording.listenFirst);
@@ -110,11 +112,11 @@ for (const [language, translations] of [['en', en], ['zh-CN', zh]] as const) {
 
       const choose = page.getByRole('region', { name: ui.chooseARole, exact: true });
       await expect(choose.getByRole('button')).toHaveCount(roles.length + 2);
-      await check('choose', [choose.getByRole('button', { name: ui.startDubbing, exact: true }), page.getByRole('button', { name: ui.sceneCredits, exact: true })]);
+      await check('choose', [choose.getByRole('button', { name: ui.startDubbing, exact: true }), page.getByRole('button', { name: ui.sceneCredits, exact: true })], scene.lines[0]);
       await choose.getByRole('button', { name: ui.startDubbing, exact: true }).click();
       const practice = page.getByRole('region', { name: ui.recordYourLines, exact: true });
       for (const [index, line] of lines.entries()) {
-        await expect(practice.getByRole('group', { name: ui.dialogue, exact: true }).getByText(line.text, { exact: true })).toBeVisible();
+        await expect(movie.getByRole('group', { name: ui.dialogue, exact: true }).getByText(line.text, { exact: true })).toBeVisible();
         await check(`practice line ${index + 1}`, [
           ...[ui.listenToTheOriginalLine, ui.record, ui.myRecording, ui.previousLine, ui.next, ui.startOver, ui.sceneCredits]
             .map(name => practice.getByRole('button', { name, exact: true })),

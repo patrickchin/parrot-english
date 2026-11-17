@@ -16,7 +16,7 @@ for (const slug of ['corn-corntastic-day', 'apparently-get-dizzy', 'emotional-da
     await page.getByRole('searchbox').fill(title);
     await page.getByRole('button', { name: `Choose scene: ${title}`, exact: true }).click();
     await expect(page.getByRole('heading', { level: 1, name: title, exact: true })).toBeVisible();
-    await expect(page.getByRole('region', { name: 'Preview subtitles', exact: true }).getByRole('listitem')).toHaveCount(scene.lines.length);
+    await expect(page.getByRole('group', { name: 'Dialogue', exact: true }).getByText(scene.lines[0].text, { exact: true })).toBeVisible();
     for (const role of scene.roles) {
       const button = page.getByRole('button', { name: role.name, exact: true });
       if (role.selectable === false) {

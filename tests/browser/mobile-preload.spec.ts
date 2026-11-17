@@ -121,6 +121,8 @@ test('a missing local video and a file with the wrong duration keep media action
   const play = page.getByRole('button', { name: 'Play reference scene', exact: true });
   await expect(start).toBeDisabled();
   await expect(play).toBeDisabled();
+  await expect(page.getByText('Choose a local video', { exact: true })).toBeVisible();
+  await expect(page.getByRole('group', { name: 'Dialogue', exact: true })).toHaveCount(0);
   await page.getByLabel('Choose a local video', { exact: true }).setInputFiles(resolve('content/media/sintel/search-v1.mp4'));
   await expect(page.getByRole('alert')).toContainText('Choose the prepared scene file with the same duration');
   await expect(start).toBeDisabled();

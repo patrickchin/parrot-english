@@ -38,10 +38,37 @@ shelves keep their established behavior. Posters use their 16:9 frame.
 
 The player keeps its space-efficient desktop action rail and phone action grid,
 video fitting, timed captions, role choices, and real waveforms. Use a white or
-dark working panel for role selection and dialogue. Yellow marks the next
+dark working panel for role selection and waveform feedback. Yellow marks the next
 primary action, pink starts recording, and recording/stop/error states remain
 explicit. On narrow player headers, the parrot mark carries the home link while
 language, appearance, Help, and Back retain full touch targets.
+
+### On-video subtitles, 2026-11-17
+
+English dialogue and its Chinese hint sit at the bottom of the video viewing
+area, above the separate transport bar. Use white text on a dark backing in
+both themes. One accessible bilingual group replaces the scrolling preview
+transcript and the caption block below the waveform, freeing their space for
+the practice controls. Captions let taps reach the picture's playback control.
+
+Practice retains the selected line while the learner listens or records.
+Preview and completed-dub playback follow the existing last-started cue,
+including the hold between turns. Keep the original media, audio timing,
+recordings and exports intact. HTML captions support the bilingual practice
+prompt; they are part of this inline player rather than a native text track.
+
+Caption type scales to the viewing area's width, including beside portrait
+footage. An unusually long bilingual cue can grow the mobile viewing area
+instead of clipping text or reducing readability. Source video remains fitted
+without cropping. Show the local-video picker without a caption overlay until
+a source has been selected.
+
+Validation: 57 application/content/boundary checks pass. The final four subtitle
+scenarios pass in desktop Chromium, touch Chromium and WebKit (12/12). Broader
+WebKit player checks pass 22 cases with one existing hardware-dependent case
+skipped. Production inspection at 1440, 768 and 390px reports zero failures;
+the existing interactive portrait/play controls are retained. Physical-phone
+microphone and system sharing checks remain separate.
 
 My dubs uses the same shell and flat surfaces. The empty state uses mint and a
 yellow browse action; existing saved attempts keep continue/delete controls,

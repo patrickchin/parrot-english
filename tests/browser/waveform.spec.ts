@@ -1,5 +1,6 @@
 import { readScene } from '../content-fixtures';
 import { scenePath } from './scene-path';
+import { expectPictureSubtitles } from './picture-subtitles';
 import { test, expect, documentBoxes } from './fixtures';
 import type { Line } from '../../src/scene';
 import { mkdir } from 'node:fs/promises';
@@ -127,9 +128,7 @@ test('scene, caption, waveforms and every main action remain reachable across th
         await expect(action).toBeInViewport();
       }
       const waveform = await page.getByRole('region', { name: '声音波形对比' }).boundingBox();
-      const words = await page.getByRole('group', { name: '台词', exact: true }).boundingBox();
-      expect(words!.y).toBeGreaterThanOrEqual(waveform!.y + waveform!.height);
-      expect(words!.y - waveform!.y - waveform!.height).toBeLessThanOrEqual(10);
+      await expectPictureSubtitles(page, '电影片段', '台词');
       const movie = page.getByRole('region', { name: '电影片段' });
       const picture = movie.getByLabel(/对话片段$/);
       await expect(picture).toBeVisible();
@@ -152,7 +151,7 @@ test('scene, caption, waveforms and every main action remain reachable across th
 });
 
 
-test('line choices keep the picture and waveform anchored, and playback keeps the selected dialogue steady', async ({ page }, info) => {
+test('line choices keep the picture, waveform and controls anchored with selected subtitles on the video', async ({ page }, info) => {
   for (const slug of ['onions', 'patrick', 'wumbo', 'infinity']) {
     await page.goto(scenePath(slug));
     const scene = readScene(slug);
@@ -166,32 +165,27 @@ test('line choices keep the picture and waveform anchored, and playback keeps th
       const graph = page.getByRole('region', { name: '声音波形对比' });
       const caption = page.getByRole('group', { name: '台词', exact: true });
       const actions = page.getByRole('group', { name: '配音操作' });
-      const before = await documentBoxes(page, [entry, graph, caption, actions]);
+      const before = await documentBoxes(page, [entry, graph, actions]);
       for (const [i, line] of lines.entries()) {
         await page.getByRole('button', { name: `第 ${i + 1} 句：${line.text}`, exact: true }).click();
         await expect(caption.getByText(line.text, { exact: true })).toBeVisible();
         await expect(caption.getByText(line.hint, { exact: true })).toBeVisible();
-        const after = await documentBoxes(page, [entry, graph, caption, actions]);
+        const after = await documentBoxes(page, [entry, graph, actions]);
         for (const [index, box] of after.entries()) {
-          // Phone captions fit the selected line, so a deliberate line change
-          // may move the controls. Picture/waveform anchors remain unchanged.
-          const dimensions = viewport.width >= 900 ? ['x', 'y', 'width', 'height'] as const
-            : index < 2 ? ['x', 'y', 'width'] as const : ['x', 'width'] as const;
-          for (const dimension of dimensions) {
-            expect(Math.abs(box![dimension] - before[index]![dimension]), `${slug} line ${i + 1}, ${viewport.width}px ${dimension}`).toBeLessThan(1);
+          for (const dimension of ['x', 'y', 'width', 'height'] as const) {
+            expect(Math.abs(box![dimension] - before[index]![dimension]), `${slug} line ${i + 1}, ${viewport.width}px region ${index} ${dimension}`).toBeLessThan(1);
           }
         }
-        if (viewport.width < 900) {
-          expect(after[2]!.y).toBeGreaterThanOrEqual(after[1]!.y + after[1]!.height);
-          expect(after[3]!.y).toBeGreaterThanOrEqual(after[2]!.y + after[2]!.height);
-        }
+        await expectPictureSubtitles(page, '电影片段', '台词');
         if (i === 0) {
           await page.getByRole('button', { name: '听这一句原声', exact: true }).click();
           await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
-          const playing = await documentBoxes(page, [entry, graph, caption, actions]);
+          const playing = await documentBoxes(page, [entry, graph, actions]);
           for (const [index, box] of playing.entries()) for (const dimension of ['x', 'y', 'width', 'height'] as const) {
             expect(Math.abs(box![dimension] - after[index]![dimension]), `${slug} playback, ${viewport.width}px region ${index} ${dimension}; before ${JSON.stringify(after[index])}, after ${JSON.stringify(box)}`).toBeLessThan(1);
           }
+          await expect(caption.getByText(line.text, { exact: true })).toBeVisible();
+          await expectPictureSubtitles(page, '电影片段', '台词');
           await page.getByRole('button', { name: '停止播放', exact: true }).click();
         }
         const restart = await page.getByRole('button', { name: '重新开始', exact: true }).boundingBox();
