@@ -8,7 +8,7 @@ import { join } from 'node:path';
 // Continuous trace snapshots distort the very frame times this test measures.
 test.use({ trace: 'off' });
 
-test('live canvas stays behind its cursor, appends incrementally, and keeps both lanes aligned after resizing', async ({ page, browserName }, info) => {
+test('live canvas stays behind its cursor, appends incrementally, and keeps both overlaid traces aligned after resizing', async ({ page, browserName }, info) => {
   test.skip(browserName !== 'chromium', 'The synthetic microphone uses Chromium.');
   await page.addInitScript(() => {
     const audit = { commits: 0, referenceColumns: 0, voiceColumns: 0, voiceRight: 0 };
@@ -104,10 +104,8 @@ test('live canvas stays behind its cursor, appends incrementally, and keeps both
   const folder = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english');
   for (const width of [1440, 768, 390]) {
     await page.setViewportSize({ width, height: width === 1440 ? 900 : 844 });
-    const top = await original.boundingBox(), bottom = await recorded.boundingBox();
-    expect(Math.abs(top!.x - bottom!.x)).toBeLessThan(1);
-    expect(Math.abs(top!.width - bottom!.width)).toBeLessThan(1);
-    expect(top!.y + top!.height).toBeLessThanOrEqual(bottom!.y + 1);
+    const referenceBounds = (await original.boundingBox())!, recordedBounds = (await recorded.boundingBox())!;
+    for (const dimension of ['x', 'y', 'width', 'height'] as const) expect(Math.abs(referenceBounds[dimension] - recordedBounds[dimension])).toBeLessThan(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await expect.poll(() => recorded.evaluate((canvas: HTMLCanvasElement) => Math.abs(canvas.width / devicePixelRatio - canvas.getBoundingClientRect().width))).toBeLessThan(1);
     expect(await waveformImage(recorded)).not.toBe('data:,');
@@ -116,6 +114,9 @@ test('live canvas stays behind its cursor, appends incrementally, and keeps both
       await page.screenshot({ path: join(folder, `canvas-waveform-${width}.png`), fullPage: true });
     }
   }
+  await page.setViewportSize({ width: 390, height: 664 });
+  expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
+  if (info.project.name === 'chromium') await page.screenshot({ path: join(folder, 'waveform-overlay-phone-390.png') });
   const light = await waveformImage(recorded);
   await page.getByRole('button', { name: '切换到深色模式', exact: true }).click();
   await expect.poll(() => waveformImage(recorded)).not.toBe(light);

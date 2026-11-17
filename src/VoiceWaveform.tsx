@@ -4,10 +4,11 @@ import type { LoadState } from './load-state';
 import type { Scene } from './scene';
 import { drawWaveform, validateWaveform, waveformStep, type ReferenceWaveform, type WaveformRecording, type WaveformTimeline } from './waveform';
 
-export function VoiceWaveform({ scene, start, end, target, timeline, recordings, recording, active }: {
+export function VoiceWaveform({ scene, start, end, target, timeline, recordings, recording, active, idleTime }: {
   scene: Scene; start: number; end: number; timeline: RefObject<WaveformTimeline>;
   target?: { start: number; end: number };
   recordings: WaveformRecording[]; recording: boolean; active: boolean;
+  idleTime?: number;
 }) {
   const { t } = useTranslation();
   const [load, setLoad] = useState<LoadState<ReferenceWaveform>>({ status: 'loading' });
@@ -60,7 +61,7 @@ export function VoiceWaveform({ scene, start, end, target, timeline, recordings,
     const resize = () => {
       const box = plot.current!.getBoundingClientRect();
       if (!box.width || !box.height) return;
-      width = box.width; height = box.height / 2;
+      width = box.width; height = box.height;
       const ratio = window.devicePixelRatio || 1;
       for (const [canvas, context] of [[original, originalContext], [recorded, recordedContext]] as const) {
         canvas.width = Math.max(1, Math.round(width * ratio)); canvas.height = Math.max(1, Math.round(height * ratio));
@@ -81,20 +82,18 @@ export function VoiceWaveform({ scene, start, end, target, timeline, recordings,
     resize();
     if (active) frame = requestAnimationFrame(tick);
     return () => { observer.disconnect(); theme.disconnect(); cancelAnimationFrame(frame); };
-  }, [reference, recordings, start, end, recording, active, timeline, t]);
+  }, [reference, recordings, start, end, recording, active, idleTime, timeline, t]);
   return <section aria-label={t("waveform.voiceWaveformComparison")} className="mx-auto min-w-0 w-full max-w-4xl">
     <div className="voice-comparison">
-      <div className="voice-lane-labels text-xs text-muted-foreground">
-        <span>{t('player.original')}</span>
-        <span className="flex items-center gap-1.5">{t('waveform.yourVoice')}<span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-danger" style={{ visibility: recording ? 'visible' : 'hidden' }} />{recording && <span className="sr-only">{t('player.recording')}</span>}</span>
+      <div className="voice-waveform-legend text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="h-0.5 w-4 bg-muted-foreground/80" />{t('player.original')}</span>
+        <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="h-0.5 w-4 bg-coral" />{t('waveform.yourVoice')}<span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-danger" style={{ visibility: recording ? 'visible' : 'hidden' }} />{recording && <span className="sr-only">{t('player.recording')}</span>}</span>
       </div>
       <div ref={plot} className="voice-waveform relative overflow-hidden rounded-xl bg-brand/4">
-        <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-1/2 bg-brand/4" />
         {target && <div role="img" aria-label={t("waveform.targetLineTiming")} className="pointer-events-none absolute inset-y-0 border-x border-brand/30 bg-brand/8" style={{ left: `${(target.start - start) / (end - start) * 100}%`, width: `${(target.end - target.start) / (end - start) * 100}%` }} />}
-        <div aria-hidden="true" className="absolute inset-x-0 top-1/4 h-px bg-brand/10" />
-        <div aria-hidden="true" className="absolute inset-x-0 top-3/4 h-px bg-brand/10" />
-        <canvas ref={originalCanvas} role="img" aria-label={t('waveform.originalAudioWaveform')} hidden={!reference} className="absolute inset-x-0 top-0 h-1/2 w-full text-brand" />
-        <canvas ref={recordedCanvas} role="img" aria-label={t('waveform.yourVoiceWaveform')} hidden={!recording && !recordings.some(r => r.peaks.length > 0)} className="absolute inset-x-0 bottom-0 h-1/2 w-full text-coral" />
+        <div aria-hidden="true" className="absolute inset-x-0 top-1/2 h-px bg-brand/10" />
+        <canvas ref={originalCanvas} role="img" aria-label={t('waveform.originalAudioWaveform')} hidden={!reference} className="absolute inset-0 h-full w-full text-muted-foreground opacity-80" />
+        <canvas ref={recordedCanvas} role="img" aria-label={t('waveform.yourVoiceWaveform')} hidden={!recording && !recordings.some(r => r.peaks.length > 0)} className="absolute inset-0 h-full w-full text-coral opacity-90" />
         <div ref={playhead} role="progressbar" aria-label={t('waveform.dubbingPlayhead')} aria-valuemin={0} aria-valuemax={Number((end - start).toFixed(3))} aria-valuenow={0} className="voice-playhead pointer-events-none absolute inset-y-0 left-0 w-px bg-ink/80"><span className="absolute -left-1 top-0 h-2.5 w-2.5 rotate-45 bg-ink" /></div>
       </div>
     </div>

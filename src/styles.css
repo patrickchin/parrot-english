@@ -126,18 +126,18 @@ button:disabled { cursor: not-allowed; }
 .preview-subtitles [lang=en] { max-width: 38ch; margin-inline: auto; font-size: clamp(18px, 1.8vw, 22px); line-height: 1.35; font-weight: 500; text-wrap: balance; }
 .preview-subtitles [lang=zh-CN] { margin-top: 4px; font-size: 14px; line-height: 20px; color: var(--muted-foreground); }
 .practice-meta { min-height: 44px; }
-@media (max-width: 639px) {
-  .practice-meta { flex-wrap: nowrap; align-items: flex-start; }
-  .line-picker { max-width: 65%; row-gap: 0; }
-  .line-picker-label { flex-basis: 100%; font-size: 12px; line-height: 16px; }
-}
 .practice-caption { display: grid; align-items: start; padding-block: 8px 6px; }
 /* Reserve every scene line so practice and full-scene playback share a frame. */
 .practice-caption > div { grid-area: 1 / 1; }
 .practice-caption [lang=en] { font-size: clamp(18px, 1.8vw, 22px); line-height: 1.35; }
 .voice-waveform { height: 64px; }
-.voice-comparison { display: grid; grid-template-columns: minmax(0, max-content) minmax(0, 1fr); gap: 10px; }
-.voice-lane-labels { display: grid; grid-template-rows: 1fr 1fr; align-items: center; max-width: 112px; line-height: 14px; }
+.voice-comparison { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
+.voice-waveform-legend { display: flex; align-items: center; gap: 16px; line-height: 14px; }
+.line-choice { display: grid; place-items: center; width: 44px; height: 44px; flex: none; border-radius: 8px; }
+.line-choice:focus-visible { outline: 3px solid var(--ring); }
+.line-choice:disabled { opacity: .5; }
+.line-number { position: relative; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--secondary); font-size: 13px; }
+.line-choice[aria-current=step] .line-number { background: var(--primary); color: var(--primary-foreground); font-weight: 700; }
 .voice-playhead { will-change: transform; }
 .player-controls { display: grid; margin-top: 12px; }
 .player-controls > div { grid-area: 1 / 1; min-width: 0; }
@@ -148,6 +148,8 @@ button:disabled { cursor: not-allowed; }
 .practice-secondary { grid-column: 1 / -1; display: flex; gap: 10px; height: 44px; margin-bottom: max(4px, env(safe-area-inset-bottom)); }
 .practice-secondary > button { flex: 1; min-height: 44px; padding: 8px; font-size: 16px; }
 .player-choose { padding: 16px; border-radius: var(--radius); background: var(--card); }
+.choose-actions { display: grid; gap: 8px; }
+.choose-actions > button:last-child { min-height: 44px; font-size: 14px; }
 .player-result { display: flex; flex-direction: column; justify-content: center; gap: 2px; }
 .result-summary { line-height: 16px; }
 .result-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: auto; }
@@ -158,18 +160,7 @@ button:disabled { cursor: not-allowed; }
 .dub-share-note, .dub-share-link > p { color: var(--muted-foreground); font-size: 13px; line-height: 1.6; }
 .dub-share-link > label { font-size: 14px; font-weight: 600; }
 .player-result .practice-secondary { margin-top: 4px; }
-.player-footer { flex: none; width: 100%; max-width: 1280px; margin-inline: auto; padding: 2px 16px max(2px, env(safe-area-inset-bottom)); display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0 12px; }
 .player-error { margin-top: 10px; }
-@media (max-width: 899px) and (max-height: 700px) {
-  .player-shell > header { padding-block: 6px; }
-  .player-main { padding-block: 0 8px; grid-template-rows: minmax(120px, 1fr) auto; gap: 8px; }
-  .player-video { min-height: 120px; }
-  .player-controls { margin-top: 8px; }
-  .practice-caption { padding-block: 6px 4px; }
-  .voice-waveform { height: 48px; }
-  .practice-caption [lang=en] { font-size: 18px; line-height: 1.2; }
-  .practice-caption [lang=zh-CN] { font-size: 14px; line-height: 20px; }
-}
 @media (min-width: 900px) {
   .player-shell { min-height: 560px; }
   .player-shell > header { max-width: 1280px; padding: 16px 32px; }
@@ -189,7 +180,6 @@ button:disabled { cursor: not-allowed; }
   .result-actions { grid-template-columns: minmax(0, 1fr); margin-top: 4px; }
   .result-actions > button { min-height: 56px; font-size: 18px; }
   .voice-waveform { height: 80px; }
-  .player-footer { padding-inline: 32px; }
   .player-error { grid-column: 1 / -1; margin: 0; }
 }
 @media (min-width: 900px) and (max-height: 700px) {
@@ -198,6 +188,97 @@ button:disabled { cursor: not-allowed; }
 }
 
 .practice-content { min-width: 0; padding: 12px 16px 8px; border-radius: var(--radius); background: var(--card); }
+@media (max-width: 899px) {
+  /* Size the picture from its width, rather than the height left by the controls. */
+  .player-shell { height: auto; min-height: 100svh; }
+  .player-shell > header { padding-block: 2px; }
+  /* Natural flow avoids WebKit retaining an old grid-row height after resize. */
+  .player-main { display: flex; flex: none; flex-direction: column; padding: 0; gap: 8px; }
+  .player-video { flex: none; container-type: normal; min-height: 0; justify-content: flex-start; }
+  .player-workspace { padding: 0 12px max(8px, env(safe-area-inset-bottom)); }
+  /* Keep portrait sources complete inside a 4:3 viewing area. */
+  .player-screen, .player-main[data-step=choose] .player-screen { container-type: normal; height: auto; aspect-ratio: max(var(--video-aspect), 1.333333); }
+  .player-picture { width: auto; height: 100%; max-width: 100%; }
+  .player-main[data-step=choose] .player-video { min-height: 0; gap: 8px; }
+  /* One complete subtitle stays visible; neighbouring turns need no extra rows. */
+  .preview-subtitles { padding: 0 8px; mask-image: none; }
+  .preview-subtitle-speaker { margin-bottom: 2px; font-size: 12px; line-height: 16px; }
+  .preview-subtitles [lang=en] { max-width: none; font-size: 16px; line-height: 1.2; }
+  .preview-subtitles [lang=zh-CN] { margin-top: 2px; line-height: 18px; }
+  .preview-subtitle-track > li { visibility: hidden; }
+  .preview-subtitle-track > li[aria-current=true] { visibility: visible; }
+  .player-choose { padding: 0; border-radius: 0; background: transparent; }
+  .player-choose h1 { font-size: 20px; line-height: 24px; }
+  .player-choose h2 { margin-top: 4px; font-size: 14px; line-height: 20px; }
+  .role-options { margin-top: 8px; gap: 8px; }
+  .role-options > button { flex-basis: 0; min-width: 0; min-height: 60px; padding: 8px; gap: 8px; font-size: 14px; }
+  .role-options > button > span:first-child { width: 40px; height: 40px; }
+  .role-options > button > span:nth-child(2) { min-width: 0; overflow-wrap: anywhere; }
+  .role-options > button > svg { width: 16px; }
+  .role-options:has(> button:nth-child(3)) > button { position: relative; flex-direction: column; gap: 4px; padding: 6px 4px; }
+  .role-options:has(> button:nth-child(3)) > button > span:first-child { width: 32px; height: 32px; }
+  .role-options:has(> button:nth-child(3)) > button > span:nth-child(2) { flex: none; overflow-wrap: anywhere; }
+  .role-options:has(> button:nth-child(3)) > button > svg { position: absolute; top: 2px; right: 2px; width: 12px; height: 12px; }
+  .choose-actions { grid-template-columns: minmax(0, 1fr) auto; margin-top: 8px; }
+  .choose-actions > button { min-height: 44px; padding: 8px; font-size: 16px; }
+  .practice-content { padding: 0; border-radius: 0; background: transparent; }
+  .practice-meta { flex-wrap: wrap; align-items: center; gap: 4px; }
+  .line-picker { max-width: 100%; flex-wrap: wrap; gap: 2px; }
+  .practice-meta:has(.line-picker > button:nth-of-type(5)) > span:first-child { display: flex; align-items: baseline; gap: 8px; }
+  .line-picker:has(> button:nth-of-type(5)) { width: 100%; gap: 0; }
+  .voice-waveform { height: 40px; }
+  .practice-caption { padding-block: 8px 4px; }
+  .player-main[data-step=practice] .practice-caption > [aria-hidden=true] { display: none; }
+  .practice-caption [lang=en] { font-size: 16px; line-height: 1.2; }
+  .practice-caption [lang=zh-CN] { margin-top: 2px; font-size: 14px; line-height: 18px; }
+  .player-controls { margin-top: 8px; }
+  .player-controls > [aria-hidden=true] { display: none; }
+  /* Three primary actions, then navigation and secondary actions: two 44px rows. */
+  .practice-actions { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+  .practice-actions > button { grid-column: span 2; }
+  .practice-actions > button, .practice-navigation > button, .practice-secondary > button,
+  .result-actions > button, .dub-download > button, .dub-download > a, .dub-share-actions > button {
+    height: auto; min-height: 44px; padding: 4px; font-size: 14px; line-height: 20px; gap: 4px; white-space: normal;
+  }
+  .practice-actions > button { min-height: 56px; flex-direction: column; gap: 4px; }
+  .practice-secondary > button { font-size: 13px; line-height: 18px; }
+  .practice-secondary > button > svg,
+  .result-actions > button > svg, .dub-download > button > svg, .dub-download > a > svg { display: none; }
+  .practice-navigation, .practice-actions > .practice-secondary { grid-column: span 3; gap: 4px; }
+  .practice-actions > .practice-secondary { margin-bottom: 0; }
+  .practice-secondary { height: auto; gap: 4px; }
+  .player-main[data-step=result] .practice-meta { min-height: 0; margin-bottom: 8px; }
+  .player-main[data-step=result] .practice-meta > span:first-child { display: flex; align-items: baseline; gap: 8px; }
+  .player-main[data-step=result] .line-picker { display: none; }
+  .player-result { grid-template-columns: repeat(3, minmax(0, 1fr)); display: grid; gap: 4px 8px; }
+  .player-result h1, .player-result > .result-summary { grid-column: 1 / -1; }
+  .player-result h1 { font-size: 16px; line-height: 20px; }
+  .player-result .result-actions, .player-result .dub-download, .player-result .practice-secondary { display: contents; }
+  .player-result .result-actions { margin: 0; }
+  .dub-share-actions { grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 8px; }
+  .dub-share-note { grid-column: 1 / -1; }
+}
+@media (max-width: 899px) and (max-height: 700px) {
+  .player-main { gap: 4px; }
+  .player-workspace { padding-bottom: max(4px, env(safe-area-inset-bottom)); }
+  .player-controls { margin-top: 4px; }
+  .player-main[data-step=result] .practice-meta { margin-bottom: 4px; }
+  .player-main[data-step=result] .player-controls { margin-top: 0; }
+  .voice-waveform { height: 32px; }
+  .practice-caption { padding-block: 0; }
+}
+@media (min-width: 600px) and (max-width: 899px) and (max-height: 500px) {
+  /* Landscape phones use a viewing column beside the controls. */
+  .player-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto; align-items: start; }
+  .player-main[data-step=choose] .player-video { grid-column: 1; }
+  .player-main[data-step=choose] .player-workspace { grid-column: 2; }
+  .player-screen { max-height: calc(100svh - 100px); }
+  .player-main[data-step=choose] { grid-template-rows: auto auto; }
+  .player-main[data-step=choose] .player-video { display: contents; }
+  .player-main[data-step=choose] .player-frame { grid-column: 1; grid-row: 1 / 3; }
+  .player-main[data-step=choose] .player-workspace { grid-row: 1; align-self: end; }
+  .player-main[data-step=choose] .preview-subtitles { grid-column: 2; grid-row: 2; align-self: start; }
+}
 /* 1100px shelf = four 263px scene columns + three 16px gutters. */
 .library-shell .app-header { max-width: 1164px; }
 .library-main { max-width: 1164px; margin-inline: auto; padding: 16px 32px 40px; }

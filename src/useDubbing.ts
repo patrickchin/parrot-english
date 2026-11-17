@@ -108,6 +108,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
   function playVideo(el: HTMLVideoElement, id: number, options: Parameters<typeof waitForVideo>[3] = {}) {
     if (id !== operation.current) throw new DOMException('Cancelled', 'AbortError');
     return waitForVideo(el, 'playing', cancellation.current.signal, {
+      progress: true, timeoutMessage: "errors.videoPlayback",
       start: () => el.play().catch(error => {
         if (error instanceof DOMException && error.name === 'NotAllowedError') throw new Error("errors.videoPlayback");
         throw error;
@@ -117,14 +118,28 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
 
   useEffect(() => {
     const hidden = () => { if (document.hidden) stop(); };
+    const el = video.current;
+    // Reset/completion can seek a paused video without starting a frame loop.
+    const seeked = () => {
+      if (el && machine.current.phase === 'idle') updateTime(el.currentTime, true);
+    };
     document.addEventListener('visibilitychange', hidden);
+    el?.addEventListener('seeked', seeked);
     return () => {
       document.removeEventListener('visibilitychange', hidden);
+      el?.removeEventListener('seeked', seeked);
       stop();
       void context.current?.close();
       context.current = null; waveformModule.current = null;
     };
   }, []);
+
+  function prepareVideo() {
+    const el = video.current;
+    // iOS may preload metadata only. Request the remaining media while this
+    // user's tap is still active, before waiting for canplay or microphone access.
+    if (el && !el.error && el.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) el.load();
+  }
 
   async function readyVideo(start: number, muted: boolean) {
     const el = video.current;
@@ -172,6 +187,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
     const id = begin('preview');
     updateTime(line?.start ?? 0, true);
     try {
+      prepareVideo();
       const el = await readyVideo(line?.start ?? 0, false);
       await playVideo(el, id);
       if (id !== operation.current) return;
@@ -191,6 +207,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
     }
     updateTime(window.start, true);
     try {
+      prepareVideo();
       context.current ??= new AudioContext();
       const ctx = context.current;
       // Safari can keep a context suspended until microphone permission resolves.
@@ -301,6 +318,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
     const end = window?.end ?? scene.duration;
     updateTime(start, true);
     try {
+      prepareVideo();
       if (!scene.lines.some(line => takes[line.id])) {
         advance('USE_ORIGINAL', id);
         const el = await readyVideo(start, false);
@@ -375,7 +393,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
     } catch (e) { fail(id, e); }
   }
 
-  return { phase, time, timeline, playbackProgress, error, setError, stop: () => stop(), preview, record, replay, listen, finish: () => finishRecording.current?.() };
+  return { phase, time, timeline, playbackProgress, error, setError, prepareVideo, stop: () => stop(), preview, record, replay, listen, finish: () => finishRecording.current?.() };
 }
 
 function microphoneMessage(error: unknown): string {

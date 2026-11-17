@@ -30,6 +30,24 @@ test('reference, live take, and saved take share a moving timeline; cancelling k
   await expect.poll(async () => Number(await cursor.getAttribute('aria-valuenow'))).toBeGreaterThan(0.2);
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled({ timeout: 12000 });
   await expect.poll(() => graph.getByRole('img', { name: '你的声音波形', exact: true }).evaluate((canvas: HTMLCanvasElement) => canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data.some(value => value > 0))).toBe(true);
+  const originalBounds = (await graph.getByRole('img', { name: '原声波形', exact: true }).boundingBox())!;
+  const recordedBounds = (await graph.getByRole('img', { name: '你的声音波形', exact: true }).boundingBox())!;
+  for (const dimension of ['x', 'y', 'width', 'height'] as const) expect(recordedBounds[dimension]).toBeCloseTo(originalBounds[dimension], 1);
+  await expect(graph.getByRole('progressbar', { name: '配音时间指针' })).toHaveCount(1);
+  // Real green and coral samples occupy the same centerline/time coordinates.
+  await expect.poll(() => graph.evaluate(region => {
+    const [original, recorded] = region.querySelectorAll('canvas');
+    if (original.width !== recorded.width || original.height !== recorded.height) return 0;
+    const row = Math.floor(original.height / 2);
+    const reference = original.getContext('2d')!.getImageData(0, row, original.width, 1).data;
+    const voice = recorded.getContext('2d')!.getImageData(0, row, recorded.width, 1).data;
+    let overlapping = 0;
+    for (let x = 0; x < original.width; x++) {
+      const pixel = x * 4;
+      if (reference[pixel + 3] && voice[pixel + 3] && reference.slice(pixel, pixel + 3).some((value, channel) => value !== voice[pixel + channel])) overlapping++;
+    }
+    return overlapping;
+  })).toBeGreaterThan(10);
   if (info.project.name === 'chromium') {
     const folder = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english');
     await mkdir(folder, { recursive: true });
@@ -43,12 +61,13 @@ test('reference, live take, and saved take share a moving timeline; cancelling k
     expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
     for (const name of ['听我的录音', '下一步']) {
       const bounds = await page.getByRole('button', { name, exact: true }).boundingBox();
-      expect(bounds!.height).toBeGreaterThanOrEqual(56);
+      expect(bounds!.height).toBeGreaterThanOrEqual(name === '下一步' ? 44 : 56);
       expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(667);
     }
     const mobileRecord = await page.getByRole('button', { name: '重新录这一句', exact: true }).boundingBox();
-    expect(mobileRecord!.y + mobileRecord!.height).toBeLessThanOrEqual(812);
-    await page.screenshot({ path: join(folder, 'warm-waveform-mobile.png'), fullPage: true });
+    expect(mobileRecord!.height).toBeGreaterThanOrEqual(56);
+    expect(mobileRecord!.y + mobileRecord!.height).toBeLessThanOrEqual(667);
+    await page.screenshot({ path: join(folder, 'waveform-overlay-phone-375.png'), fullPage: true });
   }
   await page.getByRole('button', { name: '听我的录音', exact: true }).click();
   await expect(page.locator('video')).toHaveJSProperty('paused', false);
@@ -103,7 +122,7 @@ test('scene, caption, waveforms and every main action remain reachable across th
       for (const name of ['听这一句原声', '开始录音', '听我的录音', '下一步']) {
         const action = page.getByRole('group', { name: '配音操作' }).getByRole('button', { name, exact: true });
         const bounds = await action.boundingBox();
-        expect(bounds!.height).toBeGreaterThanOrEqual(56);
+        expect(bounds!.height).toBeGreaterThanOrEqual(viewport.width < 900 && name === '下一步' ? 44 : 56);
         await action.scrollIntoViewIfNeeded();
         await expect(action).toBeInViewport();
       }
@@ -133,12 +152,14 @@ test('scene, caption, waveforms and every main action remain reachable across th
 });
 
 
-test('plain dialogue and controls stay fixed when switching lines and skipping to the result', async ({ page }, info) => {
+test('line choices keep the picture and waveform anchored, and playback keeps the selected dialogue steady', async ({ page }, info) => {
   for (const slug of ['onions', 'patrick', 'wumbo', 'infinity']) {
     await page.goto(scenePath(slug));
     const scene = readScene(slug);
     const lines: Line[] = scene.lines.filter((line: Line) => line.roleId === scene.roles[0].id);
     await page.getByRole('button', { name: '开始配音', exact: true }).click();
+    await expect.poll(() => page.getByRole('region', { name: '电影片段', exact: true }).getByLabel(/对话片段$/).evaluate((el: HTMLVideoElement) => el.videoWidth)).toBeGreaterThan(0);
+    await expect(page.getByRole('region', { name: '声音波形对比' }).getByText('正在准备原声波形…', { exact: true })).toHaveCount(0);
     for (const viewport of [{ width: 360, height: 640 }, { width: 768, height: 1024 }, { width: 1280, height: 720 }]) {
       await page.setViewportSize(viewport);
       const entry = page.getByRole('region', { name: '电影片段' });
@@ -152,9 +173,26 @@ test('plain dialogue and controls stay fixed when switching lines and skipping t
         await expect(caption.getByText(line.hint, { exact: true })).toBeVisible();
         const after = await documentBoxes(page, [entry, graph, caption, actions]);
         for (const [index, box] of after.entries()) {
-          for (const dimension of ['x', 'y', 'width', 'height'] as const) {
+          // Phone captions fit the selected line, so a deliberate line change
+          // may move the controls. Picture/waveform anchors remain unchanged.
+          const dimensions = viewport.width >= 900 ? ['x', 'y', 'width', 'height'] as const
+            : index < 2 ? ['x', 'y', 'width'] as const : ['x', 'width'] as const;
+          for (const dimension of dimensions) {
             expect(Math.abs(box![dimension] - before[index]![dimension]), `${slug} line ${i + 1}, ${viewport.width}px ${dimension}`).toBeLessThan(1);
           }
+        }
+        if (viewport.width < 900) {
+          expect(after[2]!.y).toBeGreaterThanOrEqual(after[1]!.y + after[1]!.height);
+          expect(after[3]!.y).toBeGreaterThanOrEqual(after[2]!.y + after[2]!.height);
+        }
+        if (i === 0) {
+          await page.getByRole('button', { name: '听这一句原声', exact: true }).click();
+          await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
+          const playing = await documentBoxes(page, [entry, graph, caption, actions]);
+          for (const [index, box] of playing.entries()) for (const dimension of ['x', 'y', 'width', 'height'] as const) {
+            expect(Math.abs(box![dimension] - after[index]![dimension]), `${slug} playback, ${viewport.width}px region ${index} ${dimension}; before ${JSON.stringify(after[index])}, after ${JSON.stringify(box)}`).toBeLessThan(1);
+          }
+          await page.getByRole('button', { name: '停止播放', exact: true }).click();
         }
         const restart = await page.getByRole('button', { name: '重新开始', exact: true }).boundingBox();
         expect(restart!.height).toBeGreaterThanOrEqual(44);

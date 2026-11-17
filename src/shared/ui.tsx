@@ -9,6 +9,6 @@ export function Icon({ name, className }: { name: keyof typeof icons; className?
   return <Component className={cn('size-5 shrink-0', className)} strokeWidth={1.8} aria-hidden="true" />;
 }
 
-export function Button({ tone = 'primary', className, ...props }: ComponentProps<'button'> & { tone?: 'primary' | 'quiet' | 'record' | 'danger' }) {
-  return <ShadcnButton variant={tone === 'primary' ? 'highlight' : tone === 'quiet' ? 'outline' : tone === 'record' ? 'record' : 'danger'} size="lg" className={cn('h-auto min-h-13 gap-3 px-5 py-3 text-lg font-semibold', className)} {...props} />;
+export function Button({ tone = 'primary', className, ...props }: ComponentProps<'button'> & { tone?: 'primary' | 'quiet' | 'plain' | 'record' | 'danger' }) {
+  return <ShadcnButton variant={tone === 'primary' ? 'highlight' : tone === 'quiet' ? 'outline' : tone === 'plain' ? 'ghost' : tone === 'record' ? 'record' : 'danger'} size="lg" className={cn('h-auto min-h-13 gap-3 px-5 py-3 text-lg font-semibold', className)} {...props} />;
 }
