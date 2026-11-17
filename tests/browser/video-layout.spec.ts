@@ -1,5 +1,6 @@
 import { readScene } from '../content-fixtures';
 import { test, expect, documentBoxes } from './fixtures';
+import { expectPictureSubtitles } from './picture-subtitles';
 import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -25,22 +26,17 @@ test('the picture follows the source proportions through role choice, practice a
         await expect(async () => {
           const bounds = (await picture.boundingBox())!;
           const sceneBounds = (await movie.boundingBox())!;
-          const frame = await picture.evaluate(el => {
-            const bounds = el.parentElement!.parentElement!.getBoundingClientRect();
-            return { y: bounds.y, height: bounds.height };
-          });
-          const groupEnd = step === 'choose'
-            ? (await page.getByRole('region', { name: '原片字幕', exact: true }).boundingBox())!
-            : { y: frame.y, height: frame.height };
+          const overlay = (await movie.getByRole('button', { name: step === 'result' ? '播放我的配音' : '播放原片', exact: true }).boundingBox())!;
+          const transport = (await movie.getByRole('button', { name: step === 'result' ? '播放配音' : '播放参考片段', exact: true }).boundingBox())!;
           if (viewport.width >= 900) {
-            expect(Math.abs((frame.y + groupEnd.y + groupEnd.height) / 2 - sceneBounds.y - sceneBounds.height / 2), 'video and captions remain vertically centered on desktop').toBeLessThan(1);
+            expect(Math.abs((overlay.y + transport.y + transport.height) / 2 - sceneBounds.y - sceneBounds.height / 2), 'picture and transport remain vertically centered on desktop').toBeLessThan(1);
           }
           if (step === 'choose' && viewport.width >= 900) {
             const roles = (await page.getByRole('region', { name: '选择角色', exact: true }).boundingBox())!;
-            expect(Math.abs(roles.y - frame.y), 'role choices share the top of the video').toBeLessThan(1);
+            expect(Math.abs(roles.y - overlay.y), 'role choices share the top of the viewing area').toBeLessThan(1);
           }
+          await expectPictureSubtitles(page, '电影片段', '台词');
           expect(Math.abs(bounds.width - bounds.height * aspect), `${slug} ${step} at ${viewport.width}`).toBeLessThan(1);
-          const overlay = (await movie.getByRole('button', { name: step === 'result' ? '播放我的配音' : '播放原片', exact: true }).boundingBox())!;
           expect(overlay.width).toBeGreaterThanOrEqual(bounds.width - 1);
           expect(overlay.height).toBeGreaterThanOrEqual(bounds.height - 1);
           expect(Math.abs(overlay.x + overlay.width / 2 - bounds.x - bounds.width / 2), 'picture is centered within the black viewing area').toBeLessThan(1);
@@ -92,15 +88,12 @@ test('completion keeps the picture anchored and replay keeps its waveform and su
     const movie = page.getByRole('region', { name: '电影片段', exact: true });
     const graph = page.getByRole('region', { name: '声音波形对比', exact: true });
     const caption = page.getByRole('group', { name: '台词', exact: true });
-    const regions = [movie, graph, caption];
+    const regions = [movie, graph];
     const recording = await documentBoxes(page, regions);
-    const type = await caption.getByText(lines[0].text, { exact: true }).evaluate(el => ({ size: parseFloat(getComputedStyle(el).fontSize), weight: Number(getComputedStyle(el).fontWeight) }));
-    expect(type.size).toBeLessThanOrEqual(22);
-    expect(type.weight).toBeLessThanOrEqual(500);
     const expectLayout = async (result?: typeof recording) => {
       const positions = await documentBoxes(page, regions);
-      // Mobile captions and controls use their natural height between steps.
-      // Within result/replay, every region remains stable. Desktop stays fixed.
+      // The subtitle overlay has no reserved height outside the viewing area.
+      // Preserve existing picture and waveform stability through completion.
       const expected = viewport.width >= 900 ? recording : result ?? recording;
       const stableRegions = viewport.width >= 900 || result ? positions : positions.slice(0, 1);
       for (const [i, box] of stableRegions.entries()) {
@@ -110,7 +103,7 @@ test('completion keeps the picture anchored and replay keeps its waveform and su
       }
       await expect(graph).toBeVisible();
       await expect(caption).toBeVisible();
-      expect(positions[2]!.y, 'subtitles follow the waveform').toBeGreaterThanOrEqual(positions[1]!.y + positions[1]!.height - 1);
+      await expectPictureSubtitles(page, '电影片段', '台词');
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       const credits = page.getByRole('button', { name: '片段与来源', exact: true });
       if (viewport.width < 375) await credits.scrollIntoViewIfNeeded();
