@@ -80,7 +80,6 @@ function Player({ scene, slug, notice, initial, rememberDraft, onBack, leaving, 
     else { if (leaving) onCancelLeave(); send({ type: 'CLOSE_OVERLAY' }); }
   }
   const [videoStatus, setVideoStatus] = useState<'loading' | 'ready' | 'error'>('loading');
-  const videoReady = videoStatus === 'ready';
   const [videoAspect, setVideoAspect] = useState(16 / 9);
   const [localVideo, setLocalVideo] = useState<string>();
   const [localSource, setLocalSource] = useState<Blob | undefined>(initial?.source);
@@ -91,6 +90,7 @@ function Player({ scene, slug, notice, initial, rememberDraft, onBack, leaving, 
   }, [localSource]);
   const autosave = useDubAutosave(scene, slug, lesson, initial, localSource);
   const source = scene.mode === 'local' ? localVideo : asset(scene, scene.video);
+  const videoReady = !!source && videoStatus !== 'error' && (scene.mode !== 'local' || videoStatus === 'ready');
   const video = useRef<HTMLVideoElement>(null);
   const rolesLines = scene.lines.filter(line => line.roleId === roleId);
   const line = rolesLines[lineIndex];
@@ -109,7 +109,8 @@ function Player({ scene, slug, notice, initial, rememberDraft, onBack, leaving, 
   const completed = rolesLines.filter(l => takes[l.id] || skipped.has(l.id)).length;
   const recorded = rolesLines.filter(l => takes[l.id]).length;
   const currentTake = takes[line.id];
-  const currentCaption = busy && !capturing ? scene.lines.find(l => media.time >= l.start && media.time < l.end) : undefined;
+  const nextCaption = scene.lines.findIndex(l => l.start > media.time);
+  const currentCaption = scene.lines[nextCaption < 0 ? scene.lines.length - 1 : Math.max(0, nextCaption - 1)];
   const captionId = step === 'result' ? currentCaption?.id : line.id;
   const allDone = completed === rolesLines.length;
   useEffect(() => { onDirtyChange(capturing || autosave.dirty); }, [capturing, autosave.dirty, onDirtyChange]);
@@ -140,7 +141,7 @@ function Player({ scene, slug, notice, initial, rememberDraft, onBack, leaving, 
     send({ type: 'NEXT' });
     if (lineIndex === rolesLines.length - 1 && video.current) video.current.currentTime = 0;
   }
-  function startPractice() { media.stop(); media.setError(''); onDirtyChange(true); send({ type: 'START' }); }
+  function startPractice() { media.stop(); media.setError(''); media.prepareVideo(); onDirtyChange(true); send({ type: 'START' }); }
 
   const graphRecordings = useMemo(() => step === 'result'
     ? scene.lines.flatMap(l => takes[l.id] ? [{ start: takes[l.id].start, peaks: takes[l.id].peaks }] : [])
@@ -152,12 +153,16 @@ function Player({ scene, slug, notice, initial, rememberDraft, onBack, leaving, 
     <main className="player-main" data-step={step}>
       {step === 'practice' && <h1 className="sr-only">{t(`content:scenes.${scene.id}.title`, { defaultValue: scene.title })}</h1>}
       <section aria-label={t("player.movieScene")} className="player-video" style={{ '--video-aspect': videoAspect } as CSSProperties}>
-        <div className="player-frame overflow-hidden rounded-xl">
+        <div className="player-frame overflow-hidden">
           <div className="player-screen relative">
             <video ref={video} src={source} poster={scene.poster ? asset(scene, scene.poster) : undefined} crossOrigin="anonymous" playsInline preload="auto" aria-label={t("player.dialogueScene", { title: scene.credit.title })}
               className="player-picture"
-              onLoadedMetadata={e => { const el = e.currentTarget; if (el.videoWidth && el.videoHeight) setVideoAspect(el.videoWidth / el.videoHeight); }}
-              onCanPlay={() => { const duration = video.current?.duration ?? 0; if (scene.mode === 'local' && Math.abs(duration - scene.duration) > 0.7) { setVideoStatus('error'); media.setError("errors.videoDuration"); } else setVideoStatus('ready'); }}
+              onLoadedMetadata={e => {
+                const el = e.currentTarget;
+                if (el.videoWidth && el.videoHeight) setVideoAspect(el.videoWidth / el.videoHeight);
+                if (scene.mode === 'local' && Math.abs(el.duration - scene.duration) > 0.7) { setVideoStatus('error'); media.setError("errors.videoDuration"); }
+                else setVideoStatus('ready');
+              }}
               onWaiting={() => { if (media.phase === 'preview' || media.phase === 'replay' || media.phase === 'listening' || media.phase === 'recording') media.setError("errors.videoBuffering"); }}
               onError={() => { setVideoStatus('error'); media.setError("errors.videoLoad"); }} />
             {!source ? <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-4 text-center text-white"><p className="text-sm font-bold">{t("player.loadTheVideoFromYourDevice")}</p><label className="cursor-pointer rounded-xl bg-paper px-5 py-3 text-sm font-bold text-ink">{t("player.chooseALocalVideo")}<input aria-label={t("player.chooseALocalVideo")} type="file" accept="video/mp4,video/webm,video/quicktime" className="sr-only" onChange={e => openFile(e.target.files?.[0])} /></label><p className="text-xs text-white/80">{scene.video}{t("player.fileStaysOnYourDevice")}</p></div>
@@ -176,19 +181,21 @@ function Player({ scene, slug, notice, initial, rememberDraft, onBack, leaving, 
         {step === 'choose' && <div className="player-choose text-center">
           <h1 className="font-display text-2xl font-bold">{t(`content:scenes.${scene.id}.title`, { defaultValue: scene.title })}</h1>
           <h2 className="mt-3 text-base font-semibold text-muted-foreground">{t("player.chooseRolePrompt")}</h2>
-          <div className="mx-auto mt-5 flex max-w-2xl flex-wrap justify-center gap-3">{practiceRoles.map(r => <ControlButton variant="outline" key={r.id} onClick={() => send({ type: 'SELECT_ROLE', roleId: r.id })} aria-pressed={roleId === r.id} className="group h-auto min-h-17 flex-1 basis-50 justify-start gap-3 whitespace-normal px-4 py-3 text-left aria-pressed:border-primary aria-pressed:bg-accent"><RolePortrait scene={scene} role={r} /><span className="flex-1 font-bold">{t(`content:roles.${r.id}.name`, { defaultValue: r.name })}</span><Icon name="check" className="invisible group-aria-pressed:visible" /></ControlButton>)}</div>
-          <Button className="mt-5 w-full" disabled={!videoReady || busy} onClick={startPractice}>{t("player.startDubbing")}<Icon name="arrow" /></Button>
+          <div className="role-options mx-auto mt-5 flex max-w-2xl flex-wrap justify-center gap-3">{practiceRoles.map(r => <ControlButton variant="outline" key={r.id} onClick={() => send({ type: 'SELECT_ROLE', roleId: r.id })} aria-pressed={roleId === r.id} className="group h-auto min-h-17 flex-1 basis-50 justify-start gap-3 whitespace-normal px-4 py-3 text-left aria-pressed:border-primary aria-pressed:bg-accent"><RolePortrait scene={scene} role={r} /><span className="flex-1 font-bold">{t(`content:roles.${r.id}.name`, { defaultValue: r.name })}</span><Icon name="check" className="invisible group-aria-pressed:visible" /></ControlButton>)}</div>
+          <div className="choose-actions mt-5">
+            <Button disabled={!videoReady || busy} onClick={startPractice}>{t("player.startDubbing")}<Icon name="arrow" /></Button>
+            <Button tone="quiet" onClick={() => { media.stop(); setModal('details'); }}>{t("player.sceneCredits")}</Button>
+          </div>
         </div>}
         {step !== 'choose' && <>
           <div className="practice-content">
             <div className="practice-meta flex flex-wrap items-center justify-between gap-2 text-sm">
               <span><span className="block font-display font-bold">{t(`content:roles.${role.id}.name`, { defaultValue: role.name })}</span><span role="status" className="block text-xs text-muted-foreground">{t(autosave.status === 'saved' ? "player.savedOnThisDevice" : autosave.status === 'saving' ? "player.saving" : autosave.status === 'error' ? "player.notSavedYet" : "player.savedOnThisDeviceOnly")}</span></span><span className="sr-only">{t("recording.completedLines", { completed, total: rolesLines.length })}</span>
               <nav aria-label={t("player.yourLines")} className="line-picker flex flex-wrap items-center gap-1">
-                <span className="line-picker-label mr-1 font-semibold">{t("player.chooseALine")}</span>
-                {rolesLines.map((l, i) => <button key={l.id} disabled={busy} onClick={() => chooseLine(i)} aria-label={t("recording.lineLabel", { number: i + 1, text: l.text })} aria-current={i === lineIndex ? 'step' : undefined} className="relative flex h-11 min-w-11 items-center justify-center rounded-full bg-secondary text-sm text-ink aria-[current=step]:bg-brand/10 aria-[current=step]:font-extrabold aria-[current=step]:ring-2 aria-[current=step]:ring-brand focus-visible:outline-3 focus-visible:outline-brand disabled:opacity-50">{i + 1}{takes[l.id] && <Icon name="check" className="absolute right-0 bottom-0 size-3 rounded-full bg-card" />}{skipped.has(l.id) && <span className="sr-only">{t("player.original")}</span>}</button>)}
+                {rolesLines.map((l, i) => <button key={l.id} disabled={busy} onClick={() => chooseLine(i)} aria-label={t("recording.lineLabel", { number: i + 1, text: l.text })} aria-current={i === lineIndex ? 'step' : undefined} className="line-choice"><span className="line-number">{i + 1}{takes[l.id] && <Icon name="check" className="absolute -right-0.5 -bottom-0.5 size-3 rounded-full bg-card text-brand" />}</span>{skipped.has(l.id) && <span className="sr-only">{t("player.original")}</span>}</button>)}
               </nav>
             </div>
-            <VoiceWaveform scene={scene} start={step === 'result' ? 0 : window.start} end={step === 'result' ? scene.duration : window.end} target={step === 'result' ? undefined : line} timeline={media.timeline} recordings={graphRecordings} recording={capturing} active={busy} />
+            <VoiceWaveform scene={scene} start={step === 'result' ? 0 : window.start} end={step === 'result' ? scene.duration : window.end} target={step === 'result' ? undefined : line} timeline={media.timeline} recordings={graphRecordings} recording={capturing} active={busy} idleTime={busy ? undefined : media.time} />
             <p className="sr-only">{t("recording.lineNumber", { number: lineIndex + 1, total: rolesLines.length })}</p>
             <div className="practice-caption text-center" role="group" aria-label={t("player.dialogue")}>
               {scene.lines.map(l => <div key={l.id} aria-hidden={l.id !== captionId} className={l.id === captionId ? undefined : 'invisible'}><p className="text-balance font-medium" lang="en">{l.text}</p><p lang="zh-CN" className="mt-1 text-base text-muted-foreground">{l.hint}</p></div>)}
@@ -197,17 +204,17 @@ function Player({ scene, slug, notice, initial, rememberDraft, onBack, leaving, 
           </div>
           <div className="player-controls">
             <div className={`practice-actions ${step !== 'practice' ? 'invisible' : ''}`} inert={step !== 'practice'} aria-hidden={step !== 'practice'} role="group" aria-label={t("player.dubbingControls")}>
-              <Button tone="quiet" aria-label={t("player.listenToTheOriginalLine")} disabled={busy || !videoReady} onClick={() => void media.preview(line)}><Icon name="sound" />{t("recording.listenOriginal")}</Button>
+              <Button tone="plain" aria-label={t("player.listenToTheOriginalLine")} disabled={busy || !videoReady} onClick={() => void media.preview(line)}><Icon name="sound" />{t("recording.listenOriginal")}</Button>
               {/* Keep each action's DOM identity: a Stop pointer gesture must not become Record after an asynchronous stop. */}
               {media.phase === 'recording' ? <Button key="finish-recording" ref={mediaActionRef} tone="danger" onClick={media.finish}><Icon name="stop" />{t("player.stopRecording")}</Button> : busy ? <Button key="stop-media" ref={mediaActionRef} tone="quiet" onClick={media.stop}><Icon name="stop" />{capturing || media.phase === 'loading' ? t("player.cancel") : t("player.stopPlayback")}</Button> : <Button key="start-recording" ref={mediaActionRef} tone={currentTake ? 'quiet' : 'record'} aria-label={currentTake ? t("player.recordThisLineAgain") : t("player.record")} disabled={!videoReady} onClick={() => void media.record(line)}><Icon name="mic" />{currentTake ? t("player.recordAgain") : t("player.record")}</Button>}
-              <Button tone={currentTake ? 'primary' : 'quiet'} aria-label={t("player.myRecording")} disabled={busy || !currentTake} onClick={() => { if (currentTake) void media.listen(currentTake, line); }}><Icon name="play" />{t("player.myRecording")}</Button>
+              <Button tone={currentTake ? 'primary' : 'plain'} aria-label={t("player.myRecording")} disabled={busy || !currentTake} onClick={() => { if (currentTake) void media.listen(currentTake, line); }}><Icon name="play" />{t("player.myRecording")}</Button>
               <div className="practice-navigation">
                 <Button tone="quiet" aria-label={t("player.previousLine")} title={t("player.previousLine")} disabled={busy || lineIndex === 0} onClick={() => chooseLine(lineIndex - 1)}><Icon name="back" /></Button>
                 <Button tone={currentTake || skipped.has(line.id) ? 'primary' : 'quiet'} disabled={busy} onClick={nextLine}>{lineIndex === rolesLines.length - 1 && allDone ? t("player.watchMyDub") : t("player.next")}<Icon name="arrow" /></Button>
               </div>
               <div className="practice-secondary">
-                <Button tone="quiet" onClick={() => { media.stop(); setModal('reset'); }}><Icon name="repeat" />{t("player.startOver")}</Button>
-                {media.phase === 'recording' ? <Button tone="quiet" onClick={media.stop}>{t("player.cancel")}</Button> : <Button tone="quiet" onClick={() => { media.stop(); setModal('details'); }}>{t("player.sceneCredits")}</Button>}
+                <Button tone="plain" onClick={() => { media.stop(); setModal('reset'); }}><Icon name="repeat" />{t("player.startOver")}</Button>
+                {media.phase === 'recording' ? <Button tone="plain" onClick={media.stop}>{t("player.cancel")}</Button> : <Button tone="plain" onClick={() => { media.stop(); setModal('details'); }}>{t("player.sceneCredits")}</Button>}
               </div>
             </div>
             <div className={`player-result text-center ${step !== 'result' ? 'invisible' : ''}`} inert={step !== 'result'} aria-hidden={step !== 'result'}>
@@ -219,8 +226,8 @@ function Player({ scene, slug, notice, initial, rememberDraft, onBack, leaving, 
               </div>
               <DubDownload scene={scene} takes={takes} source={source} active={step === 'result' && !leaving} disabled={busy || !videoReady || !recorded || autosave.status === 'saving'} onExportingChange={setExporting} />
               <div className="practice-secondary">
-                <Button tone="quiet" onClick={() => { media.stop(); setModal('reset'); }}><Icon name="repeat" />{t("player.startOver")}</Button>
-                <Button tone="quiet" onClick={() => { media.stop(); setModal('details'); }}>{t("player.sceneCredits")}</Button>
+                <Button tone="plain" onClick={() => { media.stop(); setModal('reset'); }}><Icon name="repeat" />{t("player.startOver")}</Button>
+                <Button tone="plain" onClick={() => { media.stop(); setModal('details'); }}>{t("player.sceneCredits")}</Button>
               </div>
             </div>
           </div>
@@ -229,10 +236,6 @@ function Player({ scene, slug, notice, initial, rememberDraft, onBack, leaving, 
         {autosave.status === 'error' && <div className="player-error rounded-xl bg-destructive/10 p-3 text-sm"><p role="alert">{t(autosave.error!, { defaultValue: t('errors.unexpected') })}</p><div className="mt-2 flex flex-wrap items-center gap-3"><Button tone="quiet" onClick={autosave.retry}>{t("player.retrySaving")}</Button><a href={dubsPath(language)} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center rounded-lg px-2 underline">{t("player.manageSavedDubsInANewTab")}</a></div></div>}
       </section>
     </main>
-    {step === 'choose' && <footer className="player-footer text-xs text-muted-foreground">
-      <button onClick={() => { media.stop(); setModal('details'); }} className="min-h-11 rounded-lg focus-visible:outline-3 focus-visible:outline-brand">{t("player.sceneCredits")}</button>
-    </footer>}
-
     <Dialog open={modal !== null} onOpenChange={open => { if (!open) setModal(null); }}>
       <DialogContent showCloseButton={false} className="block max-h-[90dvh] overflow-y-auto p-6 sm:max-w-md">
       {modal === 'help' && <><DialogTitle className="font-display text-2xl leading-tight font-bold">{t("help.title")}</DialogTitle><ol className="mt-5 space-y-4 text-sm leading-7 text-muted-foreground"><li><strong className="text-ink">{t("help.chooseRoleTitle")}</strong>{t("help.chooseRoleDescription")}</li><li><strong className="text-ink">{t("help.recordTitle")}</strong>{t("help.recordDescription")}</li><li><strong className="text-ink">{t("help.watchTitle")}</strong>{t("help.watchDescription")}</li></ol><p className="mt-5 text-xs leading-6 text-muted-foreground">{t("help.recordingAdvice")}</p><p className="mt-3 text-xs leading-6 text-muted-foreground">{t("help.guardianConsent")}</p><Button className="mt-6 w-full" onClick={() => setModal(null)}>{t("player.gotIt")}</Button></>}

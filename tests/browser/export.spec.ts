@@ -64,7 +64,31 @@ test('downloads a real local H.264/AAC MP4 with the recorded voice and original 
   }
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: '下载配音视频', exact: true }).click();
-  await expect(page.getByRole('link', { name: '再次下载视频', exact: true })).toBeVisible({ timeout: 12000 });
+  const downloadAgain = page.getByRole('link', { name: '再次下载视频', exact: true });
+  await expect(downloadAgain).toBeVisible({ timeout: 12000 });
+  await page.setViewportSize({ width: 375, height: 667 });
+  const label = await downloadAgain.evaluate(link => {
+    const bounds = link.getBoundingClientRect();
+    const text = document.createTreeWalker(link, NodeFilter.SHOW_TEXT);
+    const rects = [];
+    while (text.nextNode()) {
+      if (!text.currentNode.textContent?.trim()) continue;
+      const range = document.createRange(); range.selectNodeContents(text.currentNode);
+      rects.push(...[...range.getClientRects()].filter(rect => rect.width && rect.height).map(rect => ({
+        left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom,
+      })));
+    }
+    return { height: bounds.height, left: bounds.left, top: bounds.top, right: bounds.right, bottom: bounds.bottom, rects };
+  });
+  expect(label.height).toBeGreaterThanOrEqual(44);
+  expect(label.rects.length).toBeGreaterThan(0);
+  for (const rect of label.rects) {
+    expect(rect.left).toBeGreaterThanOrEqual(label.left - 1);
+    expect(rect.top).toBeGreaterThanOrEqual(label.top - 1);
+    expect(rect.right).toBeLessThanOrEqual(label.right + 1);
+    expect(rect.bottom).toBeLessThanOrEqual(label.bottom + 1);
+  }
+  expect(await page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) <= innerWidth + 1)).toBe(true);
   const file = await download;
   expect(file.suggestedFilename()).toMatch(/^parrotbook-scene_.*\.mp4$/);
   const path = info.outputPath('dub.mp4'); await file.saveAs(path);

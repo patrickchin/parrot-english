@@ -70,7 +70,7 @@ test('stalled original playback leaves loading with a retryable error', async ({
   });
   const original = page.getByRole('button', { name: '听这一句原声', exact: true });
   await original.click();
-  await expect(page.getByRole('alert')).toContainText('视频定位较慢', { timeout: 12000 });
+  await expect(page.getByRole('alert')).toContainText('视频暂时无法播放', { timeout: 12000 });
   await expect(original).toBeEnabled();
   await page.evaluate(() => (window as Window & { restorePlay?: () => void }).restorePlay!());
   await original.click();

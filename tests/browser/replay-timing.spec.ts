@@ -85,8 +85,19 @@ test('replay reuses decoded takes and aligns a rendered audio transient with the
       const output = context.createMediaStreamDestination();
       oscillator.connect(gain).connect(output);
       gain.gain.value = 0;
-      gain.gain.setValueAtTime(0.2, context.currentTime + 0.6);
       oscillator.start();
+      const video = document.querySelector('video')!;
+      video.addEventListener('playing', () => {
+        const start = video.currentTime;
+        const learnerVoice = () => {
+          if (context.state === 'closed') return;
+          // Cold media preparation can outlast a wall-clock delay from mic
+          // creation. Speak 600 ms after the picture actually begins moving.
+          if (video.currentTime <= start) { requestAnimationFrame(learnerVoice); return; }
+          gain.gain.setValueAtTime(0.2, context.currentTime + 0.6);
+        };
+        learnerVoice();
+      }, { once: true });
       setTimeout(() => { void context.close(); }, 15000);
       return output.stream;
     } } });

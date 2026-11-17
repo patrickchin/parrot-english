@@ -32,12 +32,21 @@ test('capture is ready before the picture and preserves the opening sound throug
       // Put the voice only on the right channel; native mono downmix must retain it.
       const stereo = context.createChannelMerger(2);
       gain.gain.value = 0; signal.connect(gain); gain.connect(stereo, 0, 1); stereo.connect(output); signal.start();
-      document.querySelector('video')!.addEventListener('playing', () => {
+      const video = document.querySelector('video')!;
+      video.addEventListener('playing', () => {
         state.captureAtPlay = state.captureReady;
-        state.clipOrigin = document.querySelector('video')!.currentTime - (state.context!.currentTime - state.sampleZero!);
-        // Only the opening 90 ms contains sound. A late recorder loses it entirely.
-        gain.gain.setValueAtTime(0.2, context.currentTime);
-        gain.gain.setValueAtTime(0, context.currentTime + 0.09);
+        const start = video.currentTime;
+        const openingSound = () => {
+          if (context.state === 'closed') return;
+          // `playing` can precede the moving picture on WebKit. The synthetic
+          // learner responds to the picture, after capture is already ready.
+          if (video.currentTime <= start) { requestAnimationFrame(openingSound); return; }
+          state.clipOrigin = video.currentTime - (state.context!.currentTime - state.sampleZero!);
+          // Only the opening 90 ms contains sound. A late recorder loses it entirely.
+          gain.gain.setValueAtTime(0.2, context.currentTime);
+          gain.gain.setValueAtTime(0, context.currentTime + 0.09);
+        };
+        openingSound();
       }, { once: true });
       const track = output.stream.getAudioTracks()[0];
       const nativeStop = track.stop.bind(track);
