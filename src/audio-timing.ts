@@ -1,5 +1,17 @@
 type OutputClock = Pick<AudioContext, 'currentTime' | 'baseLatency' | 'outputLatency' | 'getOutputTimestamp'>;
 
+// One output-timestamp sample can jump when a mobile audio device updates.
+// Keep the 120 ms sync limit, but require it to persist for 200 ms.
+export function sustainedDrift() {
+  let since: number | undefined;
+  return (offset: number, now = performance.now()) => {
+    if (!Number.isFinite(offset)) return true;
+    if (Math.abs(offset) <= 0.12) { since = undefined; return false; }
+    since ??= now;
+    return now - since >= 200;
+  };
+}
+
 // A context may report running before its render thread has actually started.
 // Wait for two native render quanta before relating it to the picture clock.
 export function waitForAudioClock(context: Pick<AudioContext, 'currentTime' | 'sampleRate' | 'state'>, signal: AbortSignal) {

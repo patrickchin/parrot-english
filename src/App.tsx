@@ -162,7 +162,6 @@ function Player({ scene, slug, notice, initial, rememberDraft, onBack, leaving, 
                 if (scene.mode === 'local' && Math.abs(el.duration - scene.duration) > 0.7) { setVideoStatus('error'); media.setError("errors.videoDuration"); }
                 else setVideoStatus('ready');
               }}
-              onWaiting={() => { if (media.phase === 'preview' || media.phase === 'replay' || media.phase === 'listening' || media.phase === 'recording') media.setError("errors.videoBuffering"); }}
               onError={() => { setVideoStatus('error'); media.setError("errors.videoLoad"); }} />
             {!source ? <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-4 text-center text-white"><p className="text-sm font-bold">{t("player.loadTheVideoFromYourDevice")}</p><label className="cursor-pointer rounded-xl bg-paper px-5 py-3 text-sm font-bold text-ink">{t("player.chooseALocalVideo")}<input aria-label={t("player.chooseALocalVideo")} type="file" accept="video/mp4,video/webm,video/quicktime" className="sr-only" onChange={e => openFile(e.target.files?.[0])} /></label><p className="text-xs text-white/80">{scene.video}{t("player.fileStaysOnYourDevice")}</p></div>
               : !busy && <button onClick={() => step === 'result' ? void media.replay(takes) : void media.preview(step === 'practice' ? line : undefined)} disabled={!videoReady || exporting} aria-label={step === 'result' ? t("player.playMyDub") : t("player.playOriginalScene")} className="absolute inset-0 flex items-center justify-center text-white focus-visible:outline-4 focus-visible:-outline-offset-4 focus-visible:outline-lemon disabled:opacity-40"><span className="flex h-14 w-14 items-center justify-center rounded-full bg-brand/75 text-primary-foreground sm:h-17 sm:w-17"><Icon name="play" className="h-7 w-7" /></span></button>}
@@ -170,7 +169,7 @@ function Player({ scene, slug, notice, initial, rememberDraft, onBack, leaving, 
             {source && <div className="video-subtitles" role="group" aria-label={t("player.dialogue")}>
               {caption && <div><p lang="en">{caption.text}</p>{caption.hint && <p lang="zh-CN">{caption.hint}</p>}</div>}
             </div>}
-            {media.phase === 'loading' && <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-sm font-bold text-white" role="status">{t("player.gettingReady")}</div>}
+            {(media.phase === 'loading' || media.buffering) && <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-sm font-bold text-white" role="status">{t("player.gettingReady")}</div>}
           </div>
           <div className="player-transport flex items-center gap-2 bg-neutral-900 px-2 text-white sm:px-4">
             <button onClick={() => busy ? media.stop() : step === 'result' ? void media.replay(takes) : void media.preview(step === 'practice' ? line : undefined)} disabled={!videoReady || exporting} aria-label={busy ? t("player.stopPlaybackOrRecording") : step === 'result' ? t("player.playDub") : t("player.playReferenceScene")} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-white disabled:opacity-40"><Icon name={busy ? 'stop' : 'play'} /></button>
