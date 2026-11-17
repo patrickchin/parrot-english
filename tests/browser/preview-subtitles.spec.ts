@@ -70,8 +70,15 @@ test('preview follows actual dialogue timing, holds the previous cue through gap
   await page.mouse.click(caption.x + caption.width / 2, caption.y + caption.height / 2);
   await expect(picture).toHaveJSProperty('paused', false);
   await expect(subtitles.getByText('Onions have layers.', { exact: true })).toBeVisible();
-  await expect.poll(() => picture.evaluate((video: HTMLVideoElement) => video.currentTime)).toBeGreaterThan(0.9);
-  await expect(subtitles.getByText('Onions have layers.', { exact: true })).toBeVisible();
+  const gap = await picture.evaluate((video: HTMLVideoElement) => new Promise<{ time: number; text?: string | null }>(resolve => {
+    const check = () => {
+      if (video.currentTime > 0.9) resolve({ time: video.currentTime, text: video.parentElement!.querySelector('[lang="en"]')?.textContent });
+      else requestAnimationFrame(check);
+    };
+    check();
+  }));
+  expect(gap.time).toBeLessThan(1.8);
+  expect(gap.text).toBe('Onions have layers.');
   for (const cue of [
     { text: 'Ogres have layers.', hint: '怪物也有层次。' },
     { text: 'You get it?', hint: '你明白了吗？' },

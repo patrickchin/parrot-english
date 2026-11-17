@@ -22,6 +22,7 @@ export async function expectPictureSubtitles(page: Page, movieName: string, dial
     expect(box.y + box.height).toBeLessThanOrEqual(image.y + image.height + 1);
   };
   await assertInside(subtitles);
+  expect((await subtitles.boundingBox())!.y, 'subtitles leave the recording indicator clear').toBeGreaterThanOrEqual(image.y + 48 - 1);
   for (const text of await subtitles.locator('[lang="en"], [lang="zh-CN"]').all()) await assertInside(text);
   const progress = (await movie.getByRole('progressbar').boundingBox())!;
   const caption = (await subtitles.boundingBox())!;

@@ -59,9 +59,10 @@ prompt; they are part of this inline player rather than a native text track.
 
 Caption type scales to the viewing area's width, including beside portrait
 footage. An unusually long bilingual cue can grow the mobile viewing area
-instead of clipping text or reducing readability. Source video remains fitted
-without cropping. Show the local-video picker without a caption overlay until
-a source has been selected.
+instead of clipping text or reducing readability. Reserve the top 48px for
+the recording indicator so long captions cannot cover its status. Source video
+remains fitted without cropping. Show the local-video picker without a caption
+overlay until a source has been selected.
 
 Validation: 57 application/content/boundary checks pass. The final four subtitle
 scenarios pass in desktop Chromium, touch Chromium and WebKit (12/12). Broader
