@@ -169,6 +169,18 @@ timeout. Synchronized recording/replay retain the 120 ms sync limit, with
 suspension still stop immediately. Persistent drift and buffering are tested,
 and cancellation clears the buffering deadline.
 
+Recorded replay also covers a speaker output requiring 250–500 ms of lead time,
+on both first and later lines. The test delays the actual rendered signal as
+well as the output timestamp, then measures its opening against the moving
+picture. Previously this healthy device latency hit an immediate 120 ms startup
+rejection. Replay now warms the picture, rewinds when more lead time is needed,
+queues the complete voice, and starts the picture at the audible deadline.
+Repeat playback and cancellation during that lead-in are checked; ongoing sync
+monitoring uses the scheduled voice clock, including on this delayed path.
+Capture also waits for its native clock to advance after the worklet's initial
+acknowledgement; the parked-clock regression keeps the picture paused during
+that startup interval, then requires an accepted recording.
+
 The full audio regression uses generated microphone input through the real
 AudioWorklet, encoder, draft storage, reload, and recorded replay. An analyser
 in the actual replay output path must observe a non-silent rendered signal.
