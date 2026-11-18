@@ -26,8 +26,12 @@ class Storage {
     try { await new Promise(resolve => setImmediate(resolve)); return await work(); }
     finally { this.active--; }
   }
-  head(key) { return this.operation('head', key, () => ({ res: { headers: { ...this.object(key).headers } } })); }
+  head(key, options) {
+    assert.equal(options?.headers?.['Accept-Encoding'], 'identity');
+    return this.operation('head', key, () => ({ res: { headers: { ...this.object(key).headers } } }));
+  }
   get(key, options) {
+    assert.equal(options?.headers?.['Accept-Encoding'], 'identity');
     return this.operation('get', key, () => {
       const object = this.object(key), range = options?.headers?.Range?.match(/^bytes=0-(\d+)$/);
       return { content: range ? object.bytes.subarray(0, Number(range[1]) + 1) : object.bytes, res: { headers: { ...object.headers } } };
@@ -109,6 +113,21 @@ function published(storage, files, release = 'known') {
   return entry;
 }
 
+function assertDiscovery(storage, expectedIds) {
+  const snapshot = storage.json('content/catalog.json');
+  assert.deepEqual(snapshot.packs.map(entry => entry.id), expectedIds);
+  assert.deepEqual(Object.keys(snapshot.packData).sort(), [...expectedIds].sort());
+  for (const entry of snapshot.packs) {
+    assert.deepEqual(snapshot.packData[entry.id], storage.json('content/' + entry.manifest));
+    assert.deepEqual(Object.keys(entry).sort(), ['id', 'manifest', 'uploader']);
+  }
+  assert.equal(storage.object('content/catalog.json').headers['cache-control'], 'no-store');
+  assert.equal(storage.object('content/catalog.json').headers['x-oss-object-acl'], 'public-read');
+  assert.equal(storage.object('content/catalog.json').headers['content-type'], 'application/json');
+  if (storage.objects.has('content/owner-packs.json')) assert.equal('packData' in storage.json('content/owner-packs.json'), false);
+  return snapshot;
+}
+
 test('native role configuration is required and FC event bodies use the documented shape', async () => {
   const unavailable = await handler(Buffer.from('{}'), {});
   assert.equal(unavailable.statusCode, 503);
@@ -146,6 +165,7 @@ test('publication copies referenced files server-side and activates catalog last
   assert.equal(response.statusCode, 200, response.body);
   assert.deepEqual(response.value, { id: 'pack_new', title: 'new scenes', franchise: 'Sam stories', uploader: 'Patrick', manifest: `releases/${id}/packs/pack_new/pack.json`, sceneCount: 1 });
   assert.deepEqual(state.storage.json('content/catalog.json').packs, [original, { id: response.value.id, manifest: response.value.manifest, uploader: 'Patrick' }]);
+  assertDiscovery(state.storage, ['pack_original', 'pack_new']);
   const activation = state.storage.calls.findIndex(call => call.method === 'put' && call.key === 'content/catalog.json');
   assert.ok(activation > state.storage.calls.findLastIndex(call => call.method === 'copy'));
   assert.equal(state.storage.calls.filter(call => call.method === 'copy').length, 5);
@@ -226,6 +246,7 @@ test('batch activation is atomic and explicit replacement avoids reading withdra
   const result = await state.call('POST', '/publish', { uploads: [first, second] });
   assert.equal(result.statusCode, 200, result.body); assert.equal(result.value.packs.length, 2);
   assert.deepEqual(state.storage.json('content/catalog.json').packs.map(pack => pack.id), ['pack_original', 'pack_first', 'pack_second']);
+  assertDiscovery(state.storage, ['pack_original', 'pack_first', 'pack_second']);
 
   const bootstrap = setup(), old = published(bootstrap.storage, packageFiles('old'));
   bootstrap.storage.seed('content/' + old.manifest, Buffer.from('{invalid JSON'));
@@ -233,6 +254,7 @@ test('batch activation is atomic and explicit replacement avoids reading withdra
   bootstrap.storage.calls = [];
   assert.equal((await bootstrap.call('POST', '/publish', { uploads: [id], replaceCatalog: true })).statusCode, 200);
   assert.deepEqual(bootstrap.storage.json('content/catalog.json').packs.map(pack => pack.id), ['pack_replacement']);
+  assertDiscovery(bootstrap.storage, ['pack_replacement']);
   assert.ok(!bootstrap.storage.calls.some(call => call.method === 'get' && call.key === 'content/' + old.manifest));
 });
 
@@ -244,6 +266,7 @@ test('deletion removes management and discovery while retaining immutable pack a
   assert.equal(result.statusCode, 200);
   assert.equal((await state.call('DELETE', '/packs/pack_alpha')).statusCode, 200);
   assert.deepEqual(state.storage.json('content/catalog.json').packs, []);
+  assertDiscovery(state.storage, []);
   assert.deepEqual((await state.call('GET', '/packs')).value.packs, []);
   assert.deepEqual([...state.storage.objects.keys()].sort(), before);
   assert.ok(state.storage.objects.has('content/' + published.value.manifest));
@@ -265,10 +288,123 @@ test('owner list unions visible packs with the private index and hide/show prese
   assert.equal((await state.call('PATCH', '/packs/pack_alpha', { visible: 'no' })).statusCode, 400);
   assert.equal((await state.call('PATCH', '/packs/pack_alpha', { visible: false })).statusCode, 200);
   assert.deepEqual(state.storage.json('content/catalog.json').packs, []);
+  assertDiscovery(state.storage, []);
   list = await state.call('GET', '/packs');
   assert.equal(list.value.packs[0].visible, false);
   assert.equal((await state.call('PATCH', '/packs/pack_alpha', { visible: true })).statusCode, 200);
+  assertDiscovery(state.storage, ['pack_alpha']);
   assert.equal((await state.call('GET', '/packs')).value.packs[0].visible, true);
+});
+
+test('hide, show and delete activate complete snapshots and retain prior discovery when activation fails', async () => {
+  const state = setup();
+  const first = await upload(state, packageFiles('first')), second = await upload(state, packageFiles('second'));
+  assert.equal((await state.call('POST', '/publish', { uploads: [first, second] })).statusCode, 200);
+  assertDiscovery(state.storage, ['pack_first', 'pack_second']);
+  async function manage(method, path, body) {
+    const previous = state.storage.object('content/catalog.json').bytes;
+    state.storage.beforePutFailure = key => key === 'content/catalog.json';
+    assert.equal((await state.call(method, path, body)).statusCode, 503);
+    assert.deepEqual(state.storage.object('content/catalog.json').bytes, previous);
+    state.storage.beforePutFailure = undefined;
+    assert.equal((await state.call(method, path, body)).statusCode, 200);
+  }
+  await manage('PATCH', '/packs/pack_first', { visible: false });
+  assertDiscovery(state.storage, ['pack_second']);
+  await manage('PATCH', '/packs/pack_first', { visible: true });
+  assertDiscovery(state.storage, ['pack_second', 'pack_first']);
+  await manage('DELETE', '/packs/pack_second');
+  assertDiscovery(state.storage, ['pack_first']);
+});
+
+test('catalog refresh builds one full snapshot from current immutable packs and preserves private management', async () => {
+  const state = setup(), files = packageFiles();
+  const pack = JSON.parse(files.get('pack.json'));
+  pack.locales = { en: { scenes: { scene_alpha: { title: 'Say hello', licence: 'Test', changes: '' } },
+    roles: { role_alpha: { name: 'Sam', hint: 'One line' } }, notices: { library: 'A notice', scene: 'Practice carefully' } } };
+  files.set('pack.json', encode(pack));
+  const first = published(state.storage, files), second = published(state.storage, packageFiles('second'));
+  state.storage.seed('content/owner-packs.json', encode({ version: 1, packs: [first, second,
+    { id: 'pack_hidden', manifest: 'releases/hidden/pack.json', uploader: 'Patrick' },
+  ] }));
+  const privateIndex = state.storage.object('content/owner-packs.json').bytes;
+  state.storage.calls = [];
+  const response = await state.call('POST', '/catalog/refresh', {});
+  assert.equal(response.statusCode, 200, response.body);
+  assert.deepEqual(response.value, { packCount: 2, sceneCount: 2 });
+  assertDiscovery(state.storage, ['pack_alpha', 'pack_second']);
+  assert.deepEqual(state.storage.object('content/owner-packs.json').bytes, privateIndex);
+  assert.deepEqual(state.storage.calls.filter(call => call.method === 'put'), [{ method: 'put', key: 'content/catalog.json' }]);
+  for (const entry of [first, second]) {
+    assert.equal(state.storage.calls.filter(call => call.method === 'get' && call.key === 'content/' + entry.manifest).length, 1);
+  }
+
+  const stale = state.storage.json('content/catalog.json');
+  stale.packData.pack_alpha.title = 'Stale snapshot';
+  stale.packData.pack_hidden = pack;
+  state.storage.seed('content/catalog.json', encode(stale));
+  assert.equal((await state.call('POST', '/catalog/refresh')).statusCode, 200);
+  assertDiscovery(state.storage, ['pack_alpha', 'pack_second']);
+});
+
+test('catalog refresh rejects request fields and creates a complete empty snapshot when no packs are visible', async () => {
+  const state = setup();
+  for (const body of [null, [], 1, 'refresh', { packs: [] }]) {
+    assert.equal((await state.call('POST', '/catalog/refresh', body)).statusCode, 400);
+  }
+  assert.deepEqual(state.storage.calls, []);
+  const response = await state.call('POST', '/catalog/refresh');
+  assert.equal(response.statusCode, 200, response.body);
+  assert.deepEqual(response.value, { packCount: 0, sceneCount: 0 });
+  assertDiscovery(state.storage, []);
+});
+
+test('invalid canonical packs, collisions and failed refresh activation retain the previous complete snapshot', async () => {
+  const state = setup();
+  published(state.storage, packageFiles());
+  const second = published(state.storage, packageFiles('second'));
+  assert.equal((await state.call('POST', '/catalog/refresh')).statusCode, 200);
+  const previous = state.storage.object('content/catalog.json').bytes;
+  const pack = state.storage.json('content/' + second.manifest);
+  state.storage.seed('content/' + second.manifest, encode({ ...pack, title: ' ' }));
+  assert.equal((await state.call('POST', '/catalog/refresh')).statusCode, 400);
+  assert.deepEqual(state.storage.object('content/catalog.json').bytes, previous);
+  const duplicate = structuredClone(pack); duplicate.scenes[0].slug = 'alpha';
+  state.storage.seed('content/' + second.manifest, encode(duplicate));
+  assert.equal((await state.call('POST', '/catalog/refresh')).statusCode, 409);
+  assert.deepEqual(state.storage.object('content/catalog.json').bytes, previous);
+  state.storage.seed('content/' + second.manifest, encode(pack));
+  state.storage.beforePutFailure = key => key === 'content/catalog.json';
+  assert.equal((await state.call('POST', '/catalog/refresh')).statusCode, 503);
+  assert.deepEqual(state.storage.object('content/catalog.json').bytes, previous);
+});
+
+test('aggregate discovery size is bounded before activation while individual packs remain valid', async () => {
+  function largePack(name) {
+    const files = new Map(), scenes = [];
+    let pack;
+    for (let index = 0; index < 30; index++) {
+      const source = packageFiles(name + index);
+      pack = JSON.parse(source.get('pack.json'));
+      pack.scenes[0].quotes = Array(120).fill('q'.repeat(300));
+      scenes.push(pack.scenes[0]);
+      for (const [path, bytes] of source) if (path !== 'pack.json') files.set(path, bytes);
+    }
+    files.set('pack.json', encode({ ...pack, id: 'pack_' + name, scenes }));
+    return files;
+  }
+  const state = setup(), first = await upload(state, largePack('largea'));
+  const initial = await state.call('POST', `/uploads/${first}/publish`);
+  assert.equal(initial.statusCode, 200, initial.body);
+  const previous = state.storage.object('content/catalog.json').bytes;
+  assert.ok(previous.length > 1024 * 1024);
+  const activations = state.storage.calls.filter(call => call.method === 'put' && call.key === 'content/catalog.json').length;
+  const second = await upload(state, largePack('largeb'));
+  const oversized = await state.call('POST', `/uploads/${second}/publish`);
+  assert.equal(oversized.statusCode, 413, oversized.body);
+  assert.deepEqual(state.storage.object('content/catalog.json').bytes, previous);
+  assert.equal(state.storage.calls.filter(call => call.method === 'put' && call.key === 'content/catalog.json').length, activations);
+  assertDiscovery(state.storage, ['pack_largea']);
 });
 
 test('hide writes its private record first and showing a hidden pack checks current global collisions', async () => {
