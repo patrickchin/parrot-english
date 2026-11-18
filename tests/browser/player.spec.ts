@@ -11,7 +11,7 @@ test('previous line sits beside Next and the labelled numbers select lines at ev
   const previous = page.getByRole('button', { name: 'Previous line', exact: true });
   const next = page.getByRole('button', { name: 'Next', exact: true });
   const lines = page.getByRole('navigation', { name: 'Your lines', exact: true });
-  await expect(lines.getByText('Choose a line', { exact: true })).toBeVisible();
+  await expect(lines.getByText('Choose a line', { exact: true })).toHaveCount(0);
   await expect(previous).toBeDisabled();
   await next.click();
   await expect(lines.getByRole('button', { name: /^Line 2:/ })).toHaveAttribute('aria-current', 'step');

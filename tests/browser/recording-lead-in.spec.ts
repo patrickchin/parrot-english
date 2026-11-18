@@ -31,7 +31,7 @@ test('a short Joey line has moving video context and retains early and late voic
       tone.connect(gain).connect(output); gain.gain.value = 0; tone.start();
       const video = document.querySelector('video')!;
       video.addEventListener('playing', () => {
-        probe.videoStart = video.currentTime; probe.leadInAudible = !video.muted;
+        probe.videoStart = video.currentTime; probe.leadInAudible = ((window as unknown as { originalOutputGain?: GainNode }).originalOutputGain?.gain.value ?? (video.muted ? 0 : 1)) > 0;
         // Voice begins 200 ms before the target and finishes 350 ms after it.
         const origin = context.currentTime - video.currentTime;
         gain.gain.setValueAtTime(0.2, origin + 9.765);
