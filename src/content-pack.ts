@@ -99,11 +99,14 @@ async function readJson(url: string, signal?: AbortSignal, max = 2 * 1024 * 1024
 }
 export async function loadContent(url: string, signal?: AbortSignal): Promise<ContentCatalog> {
   const catalogUrl = storageUrl(url, url, 'json');
-  const catalog = validateCatalog(await readJson(catalogUrl, signal, 2 * 1024 * 1024, 'no-store'));
-  const packs = await Promise.all(catalog.packs.map(async entry => {
+  const value = await readJson(catalogUrl, signal, 2 * 1024 * 1024, 'no-store');
+  const catalog = validateCatalog(value);
+  if (!record(value) || !record(value.packData) || Object.keys(value.packData).length !== catalog.packs.length) throw invalid();
+  const packData = value.packData;
+  const packs = catalog.packs.map(entry => {
     const manifest = storageUrl(entry.manifest, catalogUrl, 'json');
-    return { pack: validatePack(await readJson(manifest, signal), entry.id), manifest, uploader: entry.uploader };
-  }));
+    return { pack: validatePack(packData[entry.id], entry.id), manifest, uploader: entry.uploader };
+  });
   const clips: Clip[] = [], publishedPacks: PublishedPack[] = [], locales: PackLocales = {};
   const ids = new Set(), slugs = new Set(), routes = new Set();
   for (const { pack, manifest, uploader } of packs) {

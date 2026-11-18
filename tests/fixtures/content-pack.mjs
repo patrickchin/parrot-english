@@ -21,7 +21,7 @@ export const pack = {
     roles: Object.fromEntries(scenes.map(scene => [scene.roles[0].id, { name: 'Sam', hint: 'One line' }])),
   } },
 };
-export const catalog = { version: 1, packs: [{ id: pack.id, manifest: 'packs/pack_fixture/pack.json', uploader: 'Patrick' }] };
+export const catalog = { version: 1, packs: [{ id: pack.id, manifest: 'packs/pack_fixture/pack.json', uploader: 'Patrick' }], packData: { [pack.id]: pack } };
 export const documents = new Map([
   [contentBase + 'catalog.json', catalog],
   [contentBase + catalog.packs[0].manifest, pack],

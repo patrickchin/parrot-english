@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { validateCatalog, validatePack, loadContent, loadScene } from '../src/content-pack.ts';
 import { catalog, pack, documents, contentBase } from './fixtures/content-pack.mjs';
 
-test('runtime discovery validates hosted packs and never fetches scene media before selection', async t => {
+test('runtime discovery validates one published index without fetching pack or scene files before selection', async t => {
   const original = globalThis.fetch;
   t.after(() => { globalThis.fetch = original; });
   const requests = [];
@@ -14,12 +14,13 @@ test('runtime discovery validates hosted packs and never fetches scene media bef
   };
   const loaded = await loadContent(contentBase + 'catalog.json');
   assert.equal(loaded.clips.length, 2);
-  assert.equal(requests.length, 2);
+  assert.deepEqual(requests, [contentBase + 'catalog.json']);
   assert.equal(new Set(loaded.clips.map(clip => clip.packId)).size, 1);
   assert.deepEqual(loaded.packs, [{ id: pack.id, title: pack.title, franchise: pack.franchise, uploader: 'Patrick', description: pack.description,
     author: pack.author, sceneCount: pack.scenes.length, poster: loaded.clips[0].poster }]);
   const clip = loaded.clips[0];
   const scene = await loadScene(clip);
+  assert.deepEqual(requests, [contentBase + 'catalog.json', clip.manifest]);
   assert.equal(scene.id, clip.id);
   assert.ok(scene.base.startsWith(contentBase));
   assert.equal(loaded.locales.en.scenes[scene.id].title, scene.title);
@@ -41,11 +42,12 @@ test('refresh reads the current catalog so withdrawn or updated releases cannot 
     return Response.json(documents.get(url));
   };
   assert.equal((await loadContent(contentBase + 'catalog.json')).packs.length, 1);
-  current = { version: 1, packs: [] };
+  current = { version: 1, packs: [], packData: {} };
   requests.length = 0;
   assert.deepEqual(await loadContent(contentBase + 'catalog.json'), { clips: [], packs: [], locales: {} });
   assert.deepEqual(requests, [contentBase + 'catalog.json']);
-  current = { version: 1, packs: [{ ...catalog.packs[0], manifest: 'releases/upl_new/packs/pack_fixture/pack.json' }] };
+  current = { version: 1, packs: [{ ...catalog.packs[0], manifest: 'releases/upl_new/packs/pack_fixture/pack.json' }], packData: { [pack.id]: pack } };
+  requests.length = 0;
   globalThis.fetch = async (url, options) => {
     requests.push(url);
     if (url.endsWith('/catalog.json')) { assert.equal(options.cache, 'no-store'); return Response.json(current); }
@@ -53,6 +55,7 @@ test('refresh reads the current catalog so withdrawn or updated releases cannot 
   };
   const updated = await loadContent(contentBase + 'catalog.json');
   assert.ok(updated.clips.every(clip => clip.manifest.startsWith(contentBase + 'releases/upl_new/')));
+  assert.deepEqual(requests, [contentBase + 'catalog.json']);
 });
 
 test('pack trust boundaries reject traversal, unsupported versions, collisions and oversized responses', async t => {
@@ -70,6 +73,23 @@ test('pack trust boundaries reject traversal, unsupported versions, collisions a
   t.after(() => { globalThis.fetch = original; });
   globalThis.fetch = async () => new Response(' '.repeat(2 * 1024 * 1024 + 1));
   await assert.rejects(loadContent(contentBase + 'catalog.json'), /contentLoad/);
-  globalThis.fetch = async url => Response.json(url.endsWith('catalog.json') ? catalog : { ...pack, scenes: [{ ...pack.scenes[0], poster: 'https://tracker.example/pixel.jpg' }] });
+  globalThis.fetch = async () => Response.json({ ...catalog, packData: { [pack.id]: { ...pack, scenes: [{ ...pack.scenes[0], poster: 'https://tracker.example/pixel.jpg' }] } } });
   await assert.rejects(loadContent(contentBase + 'catalog.json'), /contentLoad/);
+});
+
+test('discovery rejects incomplete snapshots and cross-pack collisions without a manifest fallback', async t => {
+  const original = globalThis.fetch;
+  t.after(() => { globalThis.fetch = original; });
+  const other = { ...pack, id: 'pack_other' };
+  for (const value of [
+    { version: 1, packs: catalog.packs },
+    { ...catalog, packData: {} },
+    { ...catalog, packData: { ...catalog.packData, pack_orphan: other } },
+    { version: 1, packs: [...catalog.packs, { id: other.id, manifest: 'packs/pack_other/pack.json', uploader: 'Patrick' }], packData: { [pack.id]: pack, [other.id]: other } },
+  ]) {
+    const requests = [];
+    globalThis.fetch = async url => { requests.push(url); return Response.json(value); };
+    await assert.rejects(loadContent(contentBase + 'catalog.json'), /contentLoad/);
+    assert.deepEqual(requests, [contentBase + 'catalog.json']);
+  }
 });

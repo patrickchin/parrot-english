@@ -3,21 +3,22 @@ import { test as base, expect, type Page, type Locator } from '@playwright/test'
 import { readFile } from 'node:fs/promises';
 import { extname } from 'node:path';
 import { existsSync } from 'node:fs';
-import { contentRoot } from '../content-fixtures';
+import { contentRoot, publishedCatalog } from '../content-fixtures';
+import type { Pack } from '../../src/content-pack';
 
 export const catalogUrl = 'https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/content/catalog.json';
 export async function routeContent(page: Page, sampleScene = false) {
   await page.route('https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/content/**', async route => {
     const relative = new URL(route.request().url()).pathname.slice('/content/'.length);
     if (!/^[A-Za-z0-9_/-]+\.json$/.test(relative)) return route.abort();
-    const data = JSON.parse(await readFile(new URL(relative, contentRoot), 'utf8'));
-    if (sampleScene && relative.endsWith('/pack.json')) {
-      const clip = data.scenes.find((clip: { slug: string }) => clip.slug === 'patrick');
+    const data = relative === 'catalog.json' ? structuredClone(publishedCatalog) : JSON.parse(await readFile(new URL(relative, contentRoot), 'utf8'));
+    for (const pack of sampleScene && relative === 'catalog.json' ? Object.values(data.packData) as Pack[] : []) {
+      const clip = pack.scenes.find((clip: { slug: string }) => clip.slug === 'patrick');
       if (clip) {
         const sample = JSON.parse(await readFile('tests/fixtures/sintel/scene.json', 'utf8'));
         const previousId = clip.id; clip.id = sample.id;
         const titles: Record<string, string> = { en: 'Who are you looking for?', 'zh-CN': sample.title, es: '¿A quién buscas?', ja: '誰を探しているの？', ko: '누구를 찾고 있나요?' };
-        for (const [language, locale] of Object.entries(data.locales) as [string, { scenes: Record<string, unknown>; roles: Record<string, unknown> }][]) {
+        for (const [language, locale] of Object.entries(pack.locales!) as [string, { scenes: Record<string, unknown>; roles: Record<string, unknown> }][]) {
           delete locale.scenes[previousId];
           locale.scenes[sample.id] = { title: titles[language], licence: sample.credit.licence, changes: sample.credit.changes };
           for (const role of sample.roles) locale.roles[role.id] = { name: role.name, hint: role.hint };
