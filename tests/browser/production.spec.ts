@@ -18,7 +18,23 @@ test('the production build browses published packs and reloads the selected pack
   await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(pack.data.scenes.length);
 });
 
-test('production loads player and owner JavaScript only when those screens are opened', async ({ page }) => {
+test('a production scene link downloads player code while its catalog is still loading', async ({ page }) => {
+  let playerRequested = false;
+  page.on('request', request => { if (/\/assets\/Player-[^/]+\.js$/.test(new URL(request.url()).pathname)) playerRequested = true; });
+  let release!: () => void;
+  const held = new Promise<void>(resolve => { release = resolve; });
+  await page.route('**/content/catalog.json', async route => { await held; await route.fallback(); });
+  try {
+    await page.goto('/en/scenes/patrick');
+    await expect.poll(() => playerRequested).toBe(true);
+    // Current catalog membership still decides whether the scene can open.
+    await expect(page.getByRole('button', { name: 'Start dubbing', exact: true })).toHaveCount(0);
+    await expect(page.locator('video')).toHaveCount(0);
+  } finally { release(); }
+  await expect(page.getByRole('button', { name: 'Start dubbing', exact: true })).toBeEnabled();
+});
+
+test('production prepares player code from a scene list and defers owner JavaScript', async ({ page }) => {
   const scripts = new Set<string>();
   let catalogs = 0;
   page.on('request', request => {
@@ -43,6 +59,10 @@ test('production loads player and owner JavaScript only when those screens are o
   const pack = packs.find(pack => pack.entry.id === clip.packId)!;
   await gallery.getByRole('link', { name: pack.data.title, exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: pack.data.title, exact: true })).toBeVisible();
+  // Warm only code while the learner chooses a scene, without fetching video.
+  await expect.poll(() => requested('Player')).toBe(true);
+  await expect(page.locator('video')).toHaveCount(0);
+  expect(codecsRequested()).toBe(false);
   const title = pack.data.locales.en.scenes[clip.id].title;
   await page.getByRole('button', { name: `Choose scene: ${title}`, exact: true }).click();
   await expect(page.getByRole('button', { name: 'Start dubbing', exact: true })).toBeEnabled();
@@ -60,14 +80,16 @@ test('production loads player and owner JavaScript only when those screens are o
   expect(catalogs).toBe(0);
 });
 
-test('a failed route chunk keeps a localized error and recovers with Reload', async ({ page }) => {
-  await page.route('**/assets/OwnerPacks-*.js', route => route.abort());
-  await page.goto('/en/owner/packs');
+for (const screen of ['owner', 'player']) test(`a failed route chunk keeps a localized error and recovers with Reload (${screen})`, async ({ page }) => {
+  const chunk = screen === 'owner' ? '**/assets/OwnerPacks-*.js' : '**/assets/Player-*.js';
+  await page.route(chunk, route => route.abort());
+  await page.goto(screen === 'owner' ? '/en/owner/packs' : '/en/scenes/patrick');
   await expect(page.getByRole('alert')).toHaveText('Something went wrong. Please try again.');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Parrotbook');
-  await page.unroute('**/assets/OwnerPacks-*.js');
+  await page.unroute(chunk);
   await page.getByRole('button', { name: 'Reload', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Manage packs', exact: true })).toBeVisible();
+  if (screen === 'owner') await expect(page.getByRole('heading', { name: 'Manage packs', exact: true })).toBeVisible();
+  else await expect(page.getByRole('button', { name: 'Start dubbing', exact: true })).toBeEnabled();
 });
 
 for (const clip of clips) test(`hosted ${clip.slug} opens and plays without a device file`, async ({ page }) => {
