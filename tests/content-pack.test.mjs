@@ -68,7 +68,7 @@ test('pack trust boundaries reject traversal, unsupported versions, collisions a
   ]) { const bad = structuredClone(pack); change(bad); assert.throws(() => validatePack(bad, pack.id)); }
   const original = globalThis.fetch;
   t.after(() => { globalThis.fetch = original; });
-  globalThis.fetch = async () => new Response(' '.repeat(64 * 1024 + 1));
+  globalThis.fetch = async () => new Response(' '.repeat(2 * 1024 * 1024 + 1));
   await assert.rejects(loadContent(contentBase + 'catalog.json'), /contentLoad/);
   globalThis.fetch = async url => Response.json(url.endsWith('catalog.json') ? catalog : { ...pack, scenes: [{ ...pack.scenes[0], poster: 'https://tracker.example/pixel.jpg' }] });
   await assert.rejects(loadContent(contentBase + 'catalog.json'), /contentLoad/);
