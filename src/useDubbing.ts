@@ -52,7 +52,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
   const finishRecording = useRef<(() => void) | null>(null);
   const backing = useRef<AudioBuffer | null>(null);
   const decodedTakes = useRef(new WeakMap<Blob, Promise<AudioBuffer>>());
-  const replayClock = useRef<{ context: AudioContext; start: number; startAt: number } | null>(null);
+  const replayClock = useRef<{ context: AudioContext; base: number } | null>(null);
   const captureCleanup = useRef<(() => void) | null>(null);
 
   function release() {
@@ -187,7 +187,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
       }
       const clock = replayClock.current;
       if (clock && !el.ended && el.currentTime < end) {
-        const audible = clock.start + audibleContextTime(clock.context) - clock.startAt;
+        const audible = audibleContextTime(clock.context) - clock.base;
         // Stop rather than silently accepting a shifted dub after an output
         // device change or a picture startup/stall outside the sync tolerance.
         if (clock.context.state !== 'running' || drifted(audible - el.currentTime)) {
@@ -301,6 +301,11 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
         detail.port.postMessage('start');
       });
       if (id !== operation.current) return;
+      // A started worklet can acknowledge its first quantum before the native
+      // audio clock parks during device startup. Keep the picture paused until
+      // capture is advancing, just as replay waits for its output clock.
+      await waitForAudioClock(ctx, cancellation.current.signal);
+      if (id !== operation.current) return;
       advance('CAPTURE_READY', id);
       await playVideo(el, id, { onReady: () => {
         // Both the WAV and live peaks start at this exact audio-context frame.
@@ -377,37 +382,46 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
       // Wait for real picture startup before scheduling any voice. A healthy
       // native play() can take hundreds of milliseconds after canplay; starting
       // Web Audio first made that delay audible and imposed a brittle 120 ms limit.
-      await playVideo(el, id, { timeoutMessage: "errors.videoPlayback", onReady: () => {
-        const base = audibleContextTime(ctx) - el.currentTime;
-        if (buffers.length && backing.current) {
-          const music = ctx.createBufferSource(); music.buffer = backing.current;
-          const gain = ctx.createGain(); gain.gain.setValueAtTime(0, ctx.currentTime);
-          for (const { line } of buffers) {
-            gain.gain.setValueAtTime(0, Math.max(0, base + line.start));
-            gain.gain.linearRampToValueAtTime(1, Math.max(0, base + line.start + 0.015));
-            gain.gain.setValueAtTime(1, Math.max(0, base + line.end - 0.015));
-            gain.gain.linearRampToValueAtTime(0, Math.max(0, base + line.end));
-          }
-          const musicStart = Math.max(ctx.currentTime, base + start);
-          music.connect(gain).connect(ctx.destination); music.start(musicStart, musicStart - base);
-          music.onended = () => gain.disconnect(); sources.current.push(music);
+      await playVideo(el, id);
+      if (id !== operation.current) return;
+      let base = audibleContextTime(ctx) - el.currentTime;
+      const firstVoice = Math.min(...buffers.map(({ line }) => Math.max(start, lineWindow(scene, line).voiceStart, takes[line.id].start)));
+      const needsLeadIn = ctx.currentTime - (base + firstVoice) > 0.12;
+      if (needsLeadIn) {
+        // The picture is warm now, but this output device cannot render the
+        // opening voice in time. Rewind and queue its full opening ahead of the
+        // speaker, then start the picture when those samples reach the output.
+        el.pause();
+        await readyVideo(start, scene.lines.some(l => takes[l.id] && start >= l.start && start < l.end));
+        if (id !== operation.current) return;
+        base = ctx.currentTime + 0.06 - start;
+      }
+      if (buffers.length && backing.current) {
+        const music = ctx.createBufferSource(); music.buffer = backing.current;
+        const gain = ctx.createGain(); gain.gain.setValueAtTime(0, ctx.currentTime);
+        for (const { line } of buffers) {
+          gain.gain.setValueAtTime(0, Math.max(0, base + line.start));
+          gain.gain.linearRampToValueAtTime(1, Math.max(0, base + line.start + 0.015));
+          gain.gain.setValueAtTime(1, Math.max(0, base + line.end - 0.015));
+          gain.gain.linearRampToValueAtTime(0, Math.max(0, base + line.end));
         }
-        for (const { line, buffer } of buffers) {
-          const takeStart = takes[line.id].start;
-          const window = lineWindow(scene, line);
-          const voiceStart = Math.max(start, window.voiceStart, takeStart);
-          const offset = voiceStart - takeStart;
-          const duration = Math.min(buffer.duration, window.voiceEnd - takeStart) - offset;
-          if (duration <= 0) continue;
-          const source = ctx.createBufferSource(); source.buffer = buffer; source.connect(ctx.destination);
-          // Native output latency can put the very first voice inside the render
-          // horizon. Retain its opening samples; reject a material sync error.
-          if (ctx.currentTime - (base + voiceStart) > 0.12) throw new Error("errors.mediaInterrupted");
-          source.start(Math.max(0, base + voiceStart), offset, duration);
-          source.onended = () => source.disconnect(); sources.current.push(source);
-        }
-        replayClock.current = { context: ctx, start: el.currentTime, startAt: audibleContextTime(ctx) };
-      } });
+        const musicStart = Math.max(ctx.currentTime, base + start);
+        music.connect(gain).connect(ctx.destination); music.start(musicStart, musicStart - base);
+        music.onended = () => gain.disconnect(); sources.current.push(music);
+      }
+      for (const { line, buffer } of buffers) {
+        const takeStart = takes[line.id].start;
+        const window = lineWindow(scene, line);
+        const voiceStart = Math.max(start, window.voiceStart, takeStart);
+        const offset = voiceStart - takeStart;
+        const duration = Math.min(buffer.duration, window.voiceEnd - takeStart) - offset;
+        if (duration <= 0) continue;
+        const source = ctx.createBufferSource(); source.buffer = buffer; source.connect(ctx.destination);
+        source.start(Math.max(0, base + voiceStart), offset, duration);
+        source.onended = () => source.disconnect(); sources.current.push(source);
+      }
+      replayClock.current = { context: ctx, base };
+      if (needsLeadIn) await playVideo(el, id, { delay: Math.max(0, (base + start - audibleContextTime(ctx)) * 1000) });
       if (id !== operation.current) return;
       advance('PLAYING', id); watch(id, end, takes);
     } catch (e) { fail(id, e); }
