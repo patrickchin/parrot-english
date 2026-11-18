@@ -56,6 +56,11 @@
     "keepDub": "더빙 보관"
   },
   "player": {
+    "errorDetails": "오류 세부 정보",
+    "diagnosticDescription": "이 보고서에는 브라우저와 재생 상태가 포함됩니다. 직접 공유하기 전까지 이 기기에만 보관됩니다.",
+    "diagnosticReport": "진단 보고서",
+    "copyDiagnostic": "진단 보고서 복사",
+    "diagnosticCopied": "보고서가 복사되었습니다",
     "loading": "장면을 준비하는 중…",
     "reload": "다시 불러오기",
     "startANewDub": "새 더빙 시작",

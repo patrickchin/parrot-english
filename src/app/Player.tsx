@@ -48,6 +48,12 @@ export function Player({ scene, slug, notice, initial, rememberDraft, onBack, le
   const window = lineWindow(scene, line);
   const role = scene.roles.find(r => r.id === roleId)!;
   const media = useDubbing(video, scene, saveTake);
+  const diagnosticField = useRef<HTMLTextAreaElement>(null);
+  const [copiedDiagnostic, setCopiedDiagnostic] = useState('');
+  async function copyDiagnostic() {
+    try { await navigator.clipboard.writeText(media.diagnostic); setCopiedDiagnostic(media.diagnostic); }
+    catch { diagnosticField.current?.focus(); diagnosticField.current?.select(); }
+  }
   const restoreActionFocus = useRef(false);
   const mediaActionRef = useCallback((node: HTMLButtonElement | null) => {
     if (!node) return;
@@ -106,7 +112,7 @@ export function Player({ scene, slug, notice, initial, rememberDraft, onBack, le
       <section aria-label={t("player.movieScene")} className="player-video" style={{ '--video-aspect': videoAspect } as CSSProperties}>
         <div className="player-frame overflow-hidden">
           <div className="player-screen relative">
-            <video ref={video} src={source} poster={scene.poster ? asset(scene, scene.poster) : undefined} crossOrigin="anonymous" playsInline preload="auto" aria-label={t("player.dialogueScene", { title: scene.credit.title })}
+            <video key={media.videoKey} ref={video} src={source} poster={scene.poster ? asset(scene, scene.poster) : undefined} crossOrigin="anonymous" playsInline preload="auto" aria-label={t("player.dialogueScene", { title: scene.credit.title })}
               className="player-picture"
               onLoadedMetadata={e => {
                 const el = e.currentTarget;
@@ -181,7 +187,14 @@ export function Player({ scene, slug, notice, initial, rememberDraft, onBack, le
             </div>
           </div>
         </>}
-        {media.error && <div role="alert" className="player-error rounded-xl border border-danger/25 bg-destructive/10 p-3 text-sm leading-6 text-destructive"><p>{t(media.error, { defaultValue: t('errors.unexpected') })}</p>{!videoReady && <button onClick={() => { media.setError(''); setVideoStatus('loading'); video.current?.load(); }} className="mt-2 min-h-11 rounded-lg px-2 font-bold underline">{t("player.reloadVideo")}</button>}</div>}
+        {media.error && <div className="player-error rounded-xl border border-danger/25 bg-destructive/10 p-3 text-sm leading-6 text-destructive"><p role="alert">{t(media.error, { defaultValue: t('errors.unexpected') })}</p>{!videoReady && <button onClick={() => { media.setError(''); setVideoStatus('loading'); video.current?.load(); }} className="mt-2 min-h-11 rounded-lg px-2 font-bold underline">{t("player.reloadVideo")}</button>}
+          {media.diagnostic && <details className="mt-2">
+            <summary className="min-h-11 cursor-pointer content-center font-bold underline">{t('player.errorDetails')}</summary>
+            <p>{t('player.diagnosticDescription')}</p>
+            <textarea ref={diagnosticField} readOnly aria-label={t('player.diagnosticReport')} value={media.diagnostic} onFocus={event => event.target.select()} className="mt-2 block h-32 w-full rounded border border-current bg-paper p-2 font-mono text-xs text-ink" />
+            <Button tone="quiet" onClick={() => void copyDiagnostic()}>{t(copiedDiagnostic === media.diagnostic ? 'player.diagnosticCopied' : 'player.copyDiagnostic')}</Button>
+          </details>}
+        </div>}
         {autosave.status === 'error' && <div className="player-error rounded-xl bg-destructive/10 p-3 text-sm"><p role="alert">{t(autosave.error!, { defaultValue: t('errors.unexpected') })}</p><div className="mt-2 flex flex-wrap items-center gap-3"><Button tone="quiet" onClick={autosave.retry}>{t("player.retrySaving")}</Button><a href={dubsPath(language)} target="_blank" rel="noreferrer" className="inline-flex min-h-11 items-center rounded-lg px-2 underline">{t("player.manageSavedDubsInANewTab")}</a></div></div>}
       </section>
     </main>

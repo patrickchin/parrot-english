@@ -56,6 +56,11 @@
     "keepDub": "Conservar doblaje"
   },
   "player": {
+    "errorDetails": "Detalles del error",
+    "diagnosticDescription": "Este informe contiene el estado del navegador y de reproducción. Permanece en este dispositivo hasta que decidas compartirlo.",
+    "diagnosticReport": "Informe de diagnóstico",
+    "copyDiagnostic": "Copiar informe de diagnóstico",
+    "diagnosticCopied": "Informe copiado",
     "loading": "Preparando tu escena…",
     "reload": "Volver a cargar",
     "startANewDub": "Empezar otro doblaje",

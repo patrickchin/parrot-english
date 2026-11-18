@@ -1,6 +1,7 @@
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
+import { execFileSync } from 'node:child_process';
 
 // Public service endpoints only. Owner authentication stays in the private page.
 function apiConfiguration(): Plugin {
@@ -19,4 +20,4 @@ function apiConfiguration(): Plugin {
   };
   return { name: 'public-api-configuration', configureServer(server) { server.middlewares.use(middleware); }, configurePreviewServer(server) { server.middlewares.use(middleware); } };
 }
-export default defineConfig({ plugins: [react(), apiConfiguration()], resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } } });
+export default defineConfig({ define: { __APP_REVISION__: JSON.stringify(execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()) }, plugins: [react(), apiConfiguration()], resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } } });

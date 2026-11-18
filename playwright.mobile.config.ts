@@ -8,8 +8,8 @@ const baseURL = `http://127.0.0.1:${port}`;
 export default defineConfig({
   testDir: './tests/browser', timeout: 60000, expect: { timeout: 10000 },
   workers: 1, reporter: 'list', use: { baseURL, trace: 'retain-on-failure' },
-  testMatch: /(?:mobile-matrix|mobile-recording|transient-media|saved-dubs|guest-sharing|owner-packs|shared-dub)\.spec\.ts/,
-  grep: /capture waits for a parked|slow speaker output|tolerates transient|a captured take survives|persistent clock discrepancy|bounded buffering failure|phone and tablet layouts|blocked video start|pending audio resume|partial dubs survive|a cached video|owner access protects|an owner publishes|owner management hides|account-free playback|shared video .*recovery state/,
+  testMatch: /(?:mobile-matrix|mobile-recording|media-diagnostics|media-recovery|transient-media|saved-dubs|guest-sharing|owner-packs|shared-dub)\.spec\.ts/,
+  grep: /a failed audio session|recorded replay diagnostics|capture waits for a parked|slow speaker output|tolerates transient|a captured take survives|persistent clock discrepancy|bounded buffering failure|phone and tablet layouts|blocked video start|pending audio resume|partial dubs survive|a cached video|owner access protects|an owner publishes|owner management hides|account-free playback|shared video .*recovery state/,
   webServer: { command: `npm run build && npm run preview -- --port ${port} --strictPort`, url: baseURL, reuseExistingServer: false },
   projects: [
     { name: 'mobile-qa-chromium', use: { ...devices['Pixel 7'], viewport: { width: 390, height: 844 } } },

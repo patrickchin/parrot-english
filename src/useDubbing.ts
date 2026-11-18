@@ -6,11 +6,15 @@ import { audibleContextTime, decodeTake, sustainedDrift, waitForAudioClock } fro
 import { idleMedia, transitionMedia, type Activity, type MediaEvent } from './media-state';
 import { waitForVideo } from './video-events';
 import { lineWindow } from './line-window';
+import { mediaSnapshot } from './media-diagnostics';
 
 export type Take = { blob: Blob; duration: number; start: number; peaks: number[] };
 export type Takes = Record<string, Take>;
 
 export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Scene, onTake: (id: string, take: Take) => void) {
+  // WebKit's MediaElementAudioSourceNode misreports the media element clock
+  // (WebKit #204228). Keep its native output; Chromium shares one audio graph.
+  const sharedOutput = /(?:Chrome|Chromium)\//.test(navigator.userAgent);
   // Worklet callbacks and rendering share one machine, including before React
   // commits a render. This prevents a second capture lifecycle drifting from it.
   const machine = useRef(idleMedia);
@@ -21,6 +25,8 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
   }
   const phase = state.phase;
   const error = state.phase === 'idle' ? state.error : '';
+  const [diagnostic, setDiagnostic] = useState('');
+  const [videoKey, setVideoKey] = useState(0);
   const [buffering, setBuffering] = useState(false);
   const bufferingTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   function clearBuffering() {
@@ -47,6 +53,13 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
   const frame = useRef(0);
   const stream = useRef<MediaStream | null>(null);
   const context = useRef<AudioContext | null>(null);
+  const videoAudio = useRef<MediaElementAudioSourceNode | null>(null);
+  const originalGain = useRef<GainNode | null>(null);
+  const resetVideo = useRef(false);
+  function muteOriginal(muted: boolean) {
+    if (originalGain.current) originalGain.current.gain.value = muted ? 0 : 1;
+    else if (video.current) video.current.muted = muted;
+  }
   const waveformModule = useRef<Promise<void> | null>(null);
   const sources = useRef<AudioBufferSourceNode[]>([]);
   const finishRecording = useRef<(() => void) | null>(null);
@@ -54,6 +67,11 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
   const decodedTakes = useRef(new WeakMap<Blob, Promise<AudioBuffer>>());
   const replayClock = useRef<{ context: AudioContext; base: number } | null>(null);
   const captureCleanup = useRef<(() => void) | null>(null);
+  const trace = useRef<(ReturnType<typeof mediaSnapshot> & { event: string; details: Record<string, unknown> })[]>([]);
+  function log(event: string, details: Record<string, unknown> = {}) {
+    trace.current.push({ ...mediaSnapshot(video.current, context.current), event, details: { ...details, originalGain: originalGain.current?.gain.value } });
+    if (trace.current.length > 24) trace.current.shift();
+  }
 
   function release() {
     clearBuffering();
@@ -68,11 +86,25 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
     finishRecording.current = null;
     for (const source of sources.current) { try { source.stop(); } catch { /* Already ended. */ } }
     sources.current = [];
-    if (video.current) { video.current.pause(); video.current.muted = false; updateTime(video.current.currentTime, true); }
+    muteOriginal(false);
+    if (video.current) { video.current.pause(); updateTime(video.current.currentTime, true); }
   }
 
-  function stop(error?: string) {
+  function stop(error?: string, reason = error, details: Record<string, unknown> = {}) {
+    if (error) {
+      log(reason ?? 'error', details);
+      const report = JSON.stringify({ revision: __APP_REVISION__, when: new Date().toISOString(),
+        browser: navigator.userAgent, output: sharedOutput ? 'shared' : 'native', visibility: document.visibilityState, phase: machine.current.phase,
+        preparation: machine.current.phase === 'loading' ? { activity: machine.current.activity, stage: machine.current.stage } : undefined,
+        error: /^errors\.[A-Za-z]+$/.test(error) ? error : 'unexpected', events: trace.current }, null, 2);
+      setDiagnostic(report);
+      console.warn('Parrotbook media failure', report);
+    }
     release();
+    if (resetVideo.current) {
+      resetVideo.current = false;
+      setVideoKey(key => key + 1);
+    }
     dispatch({ type: 'STOP', error });
   }
 
@@ -81,26 +113,34 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
   }
   function begin(activity: Activity) {
     stop();
+    trace.current = []; setDiagnostic(''); log('start', { activity });
     const id = operation.current;
     dispatch({ type: 'START', operation: id, activity });
     return id;
   }
   function advance(type: Exclude<MediaEvent['type'], 'START' | 'STOP' | 'CLEAR_ERROR'>, id: number) {
+    if (id === operation.current) log(type);
     dispatch({ type, operation: id });
   }
   function fail(id: number, error: unknown) {
-    if (id === operation.current) stop(error instanceof Error ? error.message : "errors.mediaInterrupted");
+    if (id === operation.current) stop(error instanceof Error ? error.message : "errors.mediaInterrupted",
+      error instanceof Error && typeof error.cause === 'string' ? error.cause : 'exception',
+      { exception: error instanceof Error ? error.name : typeof error });
   }
   function readyAudio(ctx: AudioContext) {
     const signal = cancellation.current.signal;
     signal.throwIfAborted();
     return new Promise<void>((resolve, reject) => {
       let settled = false;
-      const deadline = setTimeout(() => finish(new Error("errors.mediaInterrupted")), 8000);
+      const deadline = setTimeout(() => finish(new Error("errors.mediaInterrupted", { cause: 'audio-resume-timeout' })), 8000);
       const finish = (error?: unknown) => {
         if (settled) return;
         settled = true; clearTimeout(deadline); signal.removeEventListener('abort', cancelled);
         if (error) {
+          log('audio-resume-failed');
+          // A media element can belong to only one AudioContext. Replace it
+          // together with a failed context so the next tap can retry cleanly.
+          if (videoAudio.current?.context === ctx) { videoAudio.current = null; originalGain.current = null; resetVideo.current = true; }
           // A stuck mobile audio session must not be reused by the next attempt.
           if (context.current === ctx) { context.current = null; waveformModule.current = null; }
           void ctx.close().catch(() => {});
@@ -109,7 +149,19 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
       };
       const cancelled = () => finish(new DOMException('Cancelled', 'AbortError'));
       signal.addEventListener('abort', cancelled, { once: true });
-      ctx.resume().then(() => finish(ctx.state === 'running' ? undefined : new Error("errors.mediaInterrupted")), finish);
+      ctx.resume().then(() => {
+        if (settled) return;
+        if (ctx.state !== 'running') throw new Error("errors.mediaInterrupted", { cause: 'audio-resume-state' });
+        if (sharedOutput && !videoAudio.current) {
+          // One output for the picture, original voices, and recorded voices.
+          // Independent Android media sinks change clocks when the original is
+          // muted, making otherwise healthy capture/replay appear out of sync.
+          const source = ctx.createMediaElementSource(video.current!);
+          const gain = ctx.createGain();
+          source.connect(gain).connect(ctx.destination); videoAudio.current = source; originalGain.current = gain;
+        }
+        finish();
+      }).catch(finish);
     });
   }
   function playVideo(el: HTMLVideoElement, id: number, options: Parameters<typeof waitForVideo>[3] = {}) {
@@ -126,6 +178,9 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
   useEffect(() => {
     const hidden = () => { if (document.hidden) stop(); };
     const el = video.current;
+    const events = ['play', 'playing', 'pause', 'waiting', 'stalled', 'seeking', 'seeked', 'error', 'ended'];
+    const observed = (event: Event) => log('video.' + event.type);
+    events.forEach(event => el?.addEventListener(event, observed));
     const waiting = () => {
       if (!['preview', 'recording', 'replay', 'listening'].includes(machine.current.phase)) return;
       setBuffering(true);
@@ -142,6 +197,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
     el?.addEventListener('canplay', clearBuffering);
     return () => {
       document.removeEventListener('visibilitychange', hidden);
+      events.forEach(event => el?.removeEventListener(event, observed));
       el?.removeEventListener('seeked', seeked);
       el?.removeEventListener('waiting', waiting);
       el?.removeEventListener('playing', clearBuffering);
@@ -150,7 +206,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
       void context.current?.close();
       context.current = null; waveformModule.current = null;
     };
-  }, []);
+  }, [videoKey]);
 
   function prepareVideo() {
     const el = video.current;
@@ -163,7 +219,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
     const el = video.current;
     if (!el || el.error) throw new Error("errors.videoPlayback");
     const id = operation.current, signal = cancellation.current.signal;
-    el.muted = muted;
+    muteOriginal(muted);
     if (Math.abs(el.currentTime - start) > 0.025) {
       await waitForVideo(el, 'seeked', signal, { start: () => { el.currentTime = start; } });
     } else if (el.seeking) {
@@ -183,7 +239,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
       const el = video.current;
       if (id !== operation.current || !el) return;
       if (!el.ended && el.currentTime < end && (el.paused || el.seeking || el.playbackRate !== 1)) {
-        stop("errors.mediaInterrupted"); return;
+        stop("errors.mediaInterrupted", el.paused ? 'video-paused' : el.seeking ? 'video-seeking' : 'video-rate'); return;
       }
       const clock = replayClock.current;
       if (clock && !el.ended && el.currentTime < end) {
@@ -191,10 +247,10 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
         // Stop rather than silently accepting a shifted dub after an output
         // device change or a picture startup/stall outside the sync tolerance.
         if (clock.context.state !== 'running' || drifted(audible - el.currentTime)) {
-          stop("errors.mediaInterrupted"); return;
+          stop("errors.mediaInterrupted", clock.context.state !== 'running' ? 'audio-state' : 'replay-drift', { drift: audible - el.currentTime }); return;
         }
       }
-      if (takes) el.muted = scene.lines.some(line => takes[line.id] && el.currentTime >= line.start && el.currentTime < line.end);
+      if (takes) muteOriginal(scene.lines.some(line => takes[line.id] && el.currentTime >= line.start && el.currentTime < line.end));
       updateTime(el.currentTime);
       if (el.ended || el.currentTime >= end) { stop(); return; }
       frame.current = requestAnimationFrame(tick);
@@ -207,6 +263,8 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
     updateTime(line?.start ?? 0, true);
     try {
       prepareVideo();
+      if (sharedOutput) { context.current ??= new AudioContext(); await readyAudio(context.current); }
+      if (id !== operation.current) return;
       const el = await readyVideo(line?.start ?? 0, false);
       await playVideo(el, id);
       if (id !== operation.current) return;
@@ -311,6 +369,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
         // Both the WAV and live peaks start at this exact audio-context frame.
         captureStart = el.currentTime - (ctx.currentTime - captureContextStart);
         live.start = captureStart;
+        log('capture-started', { captureStart, captureContextStart });
       } });
       if (id !== operation.current) return;
       advance('PLAYING', id);
@@ -327,9 +386,9 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
         if (el.ended || el.currentTime >= window.end) { finishRecording.current?.(); return; }
         const captureTime = captureStart + ctx.currentTime - captureContextStart;
         if (ctx.state !== 'running' || drifted(captureTime - el.currentTime) || el.paused || el.seeking || el.playbackRate !== 1) {
-          stop("errors.mediaInterrupted"); return;
+          stop("errors.mediaInterrupted", ctx.state !== 'running' ? 'audio-state' : el.paused ? 'video-paused' : el.seeking ? 'video-seeking' : el.playbackRate !== 1 ? 'video-rate' : 'capture-drift', { drift: captureTime - el.currentTime }); return;
         }
-        el.muted = el.currentTime >= line.start && el.currentTime < line.end;
+        muteOriginal(el.currentTime >= line.start && el.currentTime < line.end);
         frame.current = requestAnimationFrame(meter);
       };
       frame.current = requestAnimationFrame(meter);
@@ -344,6 +403,10 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
     updateTime(start, true);
     try {
       prepareVideo();
+      context.current ??= new AudioContext();
+      const ctx = context.current;
+      await readyAudio(ctx);
+      if (id !== operation.current) return;
       if (!scene.lines.some(line => takes[line.id])) {
         advance('USE_ORIGINAL', id);
         const el = await readyVideo(start, false);
@@ -351,10 +414,6 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
         if (id !== operation.current) return;
         advance('PLAYING', id); watch(id, end); return;
       }
-      context.current ??= new AudioContext();
-      const ctx = context.current;
-      await readyAudio(ctx);
-      if (id !== operation.current) return;
       // Keep the output clock running through the lead-in, even when the first
       // voice starts later. A fresh WebKit context can otherwise park at sample 128.
       const output = ctx.createBufferSource(); output.buffer = ctx.createBuffer(1, 128, ctx.sampleRate); output.loop = true;
@@ -421,13 +480,14 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
         source.onended = () => source.disconnect(); sources.current.push(source);
       }
       replayClock.current = { context: ctx, base };
+      log('replay-scheduled', { base, start, end, firstVoice, needsLeadIn });
       if (needsLeadIn) await playVideo(el, id, { delay: Math.max(0, (base + start - audibleContextTime(ctx)) * 1000) });
       if (id !== operation.current) return;
       advance('PLAYING', id); watch(id, end, takes);
     } catch (e) { fail(id, e); }
   }
 
-  return { phase, buffering, time, timeline, playbackProgress, error, setError, prepareVideo, stop: () => stop(), preview, record, replay, listen, finish: () => finishRecording.current?.() };
+  return { phase, buffering, time, timeline, playbackProgress, videoKey, error, diagnostic, setError, prepareVideo, stop: () => stop(), preview, record, replay, listen, finish: () => finishRecording.current?.() };
 }
 
 function microphoneMessage(error: unknown): string {

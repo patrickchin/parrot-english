@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures';
+import { originalAudioLevel, test, expect } from './fixtures';
 
 test('Holly practises her own lines including the complete closing response', async ({ page }) => {
   await page.goto('/scenes/ben-blue-hat');
@@ -22,5 +22,5 @@ test('brief supporting speakers remain in the scene and are omitted from role se
   await expect(page.getByRole('button', { name: /^痞老板/ })).toHaveCount(0);
   await page.getByRole('button', { name: '播放原片', exact: true }).click();
   await expect.poll(() => page.locator('video').evaluate((el: HTMLVideoElement) => el.currentTime)).toBeGreaterThan(4);
-  await expect(page.locator('video')).toHaveJSProperty('muted', false);
+  await expect.poll(() => originalAudioLevel(page)).toBe(1);
 });
