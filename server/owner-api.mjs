@@ -10,6 +10,7 @@ const MiB = 1024 * 1024;
 const contentRoot = 'content/';
 const catalogKey = contentRoot + 'catalog.json';
 const ownerIndexKey = contentRoot + 'owner-packs.json';
+const catalogLimit = 2 * MiB;
 const mime = { json: 'application/json', mp4: 'video/mp4', m4a: 'audio/mp4', jpg: 'image/jpeg' };
 const limits = { json: 2 * MiB, mp4: 100 * MiB, m4a: 100 * MiB, jpg: 10 * MiB };
 const sessionId = value => typeof value === 'string' && /^upl_[A-Za-z0-9_-]{1,80}$/.test(value);
@@ -74,7 +75,7 @@ export function createOwnerApi({ client, bucket = ownerBucket, region = ownerReg
   }
   async function head(key, maximum, optional = false) {
     let response;
-    try { response = await store('head', key); }
+    try { response = await store('head', key, { headers: { 'Accept-Encoding': 'identity' } }); }
     catch (error) {
       if (optional && notFound(error)) return undefined;
       if (notFound(error)) reject(400, `A referenced file is missing: ${key}`);
@@ -88,7 +89,8 @@ export function createOwnerApi({ client, bucket = ownerBucket, region = ownerReg
   async function readJson(key, maximum = 2 * MiB, optional = false) {
     const info = await head(key, maximum, optional);
     if (!info) return undefined;
-    const response = await store('get', key, { headers: { Range: `bytes=0-${maximum}` } });
+    // OSS dynamic compression can omit ETag; identity preserves byte and ETag checks.
+    const response = await store('get', key, { headers: { Range: `bytes=0-${maximum}`, 'Accept-Encoding': 'identity' } });
     const bytes = Buffer.from(response.content);
     if (bytes.length > maximum) reject(413, `JSON file is too large: ${key}`);
     const etag = lowerHeaders(response.res?.headers).etag;
@@ -96,13 +98,15 @@ export function createOwnerApi({ client, bucket = ownerBucket, region = ownerReg
     try { return { value: JSON.parse(bytes.toString('utf8')), info }; }
     catch { reject(400, `Invalid JSON file: ${key}`); }
   }
-  async function putJson(key, value, acl = 'private') {
-    await store('put', key, jsonBytes(value), { headers: {
+  async function putJson(key, value, acl = 'private', maximum = Infinity) {
+    const bytes = jsonBytes(value);
+    if (bytes.length > maximum) reject(413, `JSON file is too large: ${key}`);
+    await store('put', key, bytes, { headers: {
       'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'x-oss-object-acl': acl,
     } });
   }
   async function catalog() {
-    const stored = await readJson(catalogKey, 64 * 1024, true);
+    const stored = await readJson(catalogKey, catalogLimit, true);
     return stored ? validateCatalog(stored.value) : { version: 1, packs: [] };
   }
   async function ownerIndex() {
@@ -111,6 +115,12 @@ export function createOwnerApi({ client, bucket = ownerBucket, region = ownerReg
   }
   const combine = (index, current) => [...new Map([...index.packs, ...current.packs].map(entry => [entry.id, entry])).values()];
   const entryOf = result => ({ id: result.id, manifest: result.manifest, uploader: result.uploader });
+  async function activateCatalog(next, items) {
+    const entries = validateCatalog({ version: 1, packs: next.packs.map(entryOf) });
+    const packs = new Map(items.map(({ pack }) => [pack.id, pack]));
+    const packData = Object.fromEntries(entries.packs.map(entry => [entry.id, validatePack(packs.get(entry.id), entry.id)]));
+    await putJson(catalogKey, { ...entries, packData }, 'public-read', catalogLimit);
+  }
   const uploadRoot = id => `${contentRoot}uploads/${id}/`;
   const rawRoot = id => uploadRoot(id) + 'files/';
   async function session(id) {
@@ -276,7 +286,7 @@ export function createOwnerApi({ client, bucket = ownerBucket, region = ownerReg
       } }));
     });
     await parallel(current.packs.filter(entry => !next.packs.some(pack => pack.id === entry.id)), sealPublication);
-    await putJson(catalogKey, next, 'public-read');
+    await activateCatalog(next, [...prior, ...completed, ...fresh]);
     const index = await ownerIndex();
     await putJson(ownerIndexKey, { version: 1, packs: combine(index, next) });
     await parallel(fresh, item => putJson(uploadRoot(item.session.id) + 'result.json', item.result));
@@ -296,6 +306,13 @@ export function createOwnerApi({ client, bucket = ownerBucket, region = ownerReg
     if (method === 'POST' && path === '/publish') {
       if (body?.replaceCatalog !== undefined && typeof body.replaceCatalog !== 'boolean') reject(400, 'replaceCatalog must be a boolean.');
       return { packs: await publish(body?.uploads, body?.replaceCatalog === true) };
+    }
+    if (method === 'POST' && path === '/catalog/refresh') {
+      if (body !== undefined && (!body || typeof body !== 'object' || Array.isArray(body) || Object.keys(body).length)) reject(400, 'Catalog refresh does not accept request fields.');
+      const current = await catalog(), items = await parallel(current.packs, published);
+      collisions(items);
+      await activateCatalog(current, items);
+      return { packCount: current.packs.length, sceneCount: items.reduce((count, { pack }) => count + pack.scenes.length, 0) };
     }
     if (method === 'GET' && path === '/packs') {
       const current = await catalog(), index = await ownerIndex();
@@ -317,7 +334,8 @@ export function createOwnerApi({ client, bucket = ownerBucket, region = ownerReg
       if (method === 'PATCH' && typeof body?.visible !== 'boolean') reject(400, 'visible must be a boolean.');
       if (method === 'DELETE' || !body.visible) await sealPublication(entry);
       if (method === 'DELETE') {
-        await putJson(catalogKey, { ...current, packs: current.packs.filter(value => value.id !== entry.id) }, 'public-read');
+        const next = { version: 1, packs: current.packs.filter(value => value.id !== entry.id) };
+        await activateCatalog(next, await parallel(next.packs, published));
         await putJson(ownerIndexKey, { version: 1, packs: entries.filter(value => value.id !== entry.id) });
         return { id: entry.id, deleted: true };
       }
@@ -325,11 +343,13 @@ export function createOwnerApi({ client, bucket = ownerBucket, region = ownerReg
         // Capture the visible entry before removing discovery, so a failed
         // catalog write leaves the same visible pack and a retry is harmless.
         await putJson(ownerIndexKey, { version: 1, packs: entries });
-        await putJson(catalogKey, { ...current, packs: current.packs.filter(value => value.id !== entry.id) }, 'public-read');
+        const next = { version: 1, packs: current.packs.filter(value => value.id !== entry.id) };
+        await activateCatalog(next, await parallel(next.packs, published));
       } else {
         const next = current.packs.filter(value => value.id !== entry.id);
-        collisions(await parallel([...next, entry], published));
-        await putJson(catalogKey, validateCatalog({ version: 1, packs: [...next, entry] }), 'public-read');
+        const items = await parallel([...next, entry], published);
+        collisions(items);
+        await activateCatalog({ version: 1, packs: [...next, entry] }, items);
       }
       return { id: entry.id, visible: body.visible };
     }

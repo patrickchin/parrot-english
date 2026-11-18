@@ -99,7 +99,7 @@ async function readJson(url: string, signal?: AbortSignal, max = 2 * 1024 * 1024
 }
 export async function loadContent(url: string, signal?: AbortSignal): Promise<ContentCatalog> {
   const catalogUrl = storageUrl(url, url, 'json');
-  const catalog = validateCatalog(await readJson(catalogUrl, signal, 64 * 1024, 'no-store'));
+  const catalog = validateCatalog(await readJson(catalogUrl, signal, 2 * 1024 * 1024, 'no-store'));
   const packs = await Promise.all(catalog.packs.map(async entry => {
     const manifest = storageUrl(entry.manifest, catalogUrl, 'json');
     return { pack: validatePack(await readJson(manifest, signal), entry.id), manifest, uploader: entry.uploader };

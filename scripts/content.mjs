@@ -153,15 +153,43 @@ export async function removePack(packId) {
   if (!/^pack_[A-Za-z0-9_-]{1,80}$/.test(packId)) throw new Error('Provide a valid pack ID.');
   return ownerRequest()('DELETE', '/packs/' + packId);
 }
+export async function refreshCatalog(invocationFile) {
+  if (invocationFile) {
+    const event = {
+      rawPath: '/catalog/refresh', requestContext: { http: { method: 'POST' } },
+      headers: { 'Content-Type': 'application/json' }, body: '{}', isBase64Encoded: false,
+    };
+    await writeFile(invocationFile, json(event), { flag: 'wx', mode: 0o600 });
+    return;
+  }
+  return ownerRequest()('POST', '/catalog/refresh', {});
+}
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const [command, ...args] = process.argv.slice(2);
-  const replaceCatalog = args.includes('--replace-catalog');
-  if (args.some(arg => arg.startsWith('--') && arg !== '--replace-catalog') || (replaceCatalog && command !== 'publish')) throw new Error('Only publish supports --replace-catalog.');
-  const positional = args.filter(arg => arg !== '--replace-catalog');
+  const flags = new Set(), positional = [];
+  let invocationFile;
+  for (let index = 0; index < args.length; index++) {
+    const arg = args[index];
+    if (!arg.startsWith('--')) { positional.push(arg); continue; }
+    if (!['--replace-catalog', '--refresh-catalog', '--invocation-file'].includes(arg) || flags.has(arg)) throw new Error(`Unknown or repeated content option: ${arg}`);
+    flags.add(arg);
+    if (arg === '--invocation-file') {
+      invocationFile = args[++index];
+      if (!invocationFile || invocationFile.startsWith('--')) throw new Error('--invocation-file requires a destination path.');
+    }
+  }
+  const replaceCatalog = flags.has('--replace-catalog'), refresh = flags.has('--refresh-catalog');
+  if (flags.size && command !== 'publish') throw new Error('Only publish supports content publication options.');
+  if (refresh && replaceCatalog) throw new Error('--refresh-catalog cannot be combined with --replace-catalog.');
+  if (invocationFile && !refresh) throw new Error('--invocation-file requires --refresh-catalog.');
+  if (refresh && positional.length) throw new Error('--refresh-catalog uses the live catalog and does not accept a content root.');
   if (positional.length > 1) throw new Error('Provide at most one content root or pack ID.');
   const [argument] = positional;
-  if (command === 'validate') {
+  if (refresh) {
+    const result = await refreshCatalog(invocationFile);
+    console.log(invocationFile ? `Prepared invocation: ${resolve(invocationFile)}` : `Refreshed catalog discovery: ${result.packCount} packs / ${result.sceneCount} scenes.`);
+  } else if (command === 'validate') {
     const result = await validateDirectory(argument);
     console.log(`Validated ${result.catalog.packs.length} packs, ${result.sceneCount} scenes, ${result.files.size} files; ${result.remote.length} existing OSS media references.`);
   } else if (command === 'stage' || command === 'publish') {
@@ -170,5 +198,5 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   } else if (command === 'remove' && argument) {
     await removePack(argument);
     console.log(`Deleted ${argument} from discovery and owner management. Pack files and media remain stored; remove the entry from the source catalog to keep a later publish from adding it again.`);
-  } else throw new Error('Usage: node scripts/content.mjs validate|stage [content-root] | publish [content-root] [--replace-catalog] | remove pack_ID');
+  } else throw new Error('Usage: node scripts/content.mjs validate|stage [content-root] | publish [content-root] [--replace-catalog] | publish --refresh-catalog [--invocation-file path] | remove pack_ID');
 }
