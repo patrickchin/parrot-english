@@ -6,7 +6,7 @@ for (const gallery of ['packs', 'scenes'] as const) test(`${gallery} waits to do
   page.on('request', request => { if (request.resourceType() === 'image') images.add(request.url()); });
   await page.goto(gallery === 'packs' ? '/en/packs' : '/en/library/all');
   const cards = gallery === 'packs'
-    ? page.getByRole('navigation', { name: 'Packs', exact: true }).getByRole('link')
+    ? page.getByRole('navigation', { name: 'Collections', exact: true }).getByRole('link')
     : page.getByRole('button', { name: /^Choose scene:/ });
   await expect(cards).toHaveCount(gallery === 'packs' ? packs.length : clips.length);
   await expect.poll(() => cards.first().locator('img').evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
@@ -33,9 +33,9 @@ test('packs keeps loaded posters when clearing a filter moves them offscreen', a
   const pack = packs.at(-1)!;
   const poster = new URL(pack.data.scenes[0].poster, new URL(pack.entry.manifest, catalogUrl)).href;
   await page.goto('/en/packs');
-  const search = page.getByRole('searchbox', { name: 'Find a pack', exact: true });
+  const search = page.getByRole('searchbox', { name: 'Find a collection', exact: true });
   await search.fill(pack.data.title);
-  const card = page.getByRole('navigation', { name: 'Packs', exact: true }).getByRole('link', { name: pack.data.title, exact: true });
+  const card = page.getByRole('navigation', { name: 'Collections', exact: true }).getByRole('link', { name: pack.data.title, exact: true });
   await expect.poll(() => card.locator('img').evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
   await search.fill('');
   await expect(card).not.toBeInViewport();

@@ -34,7 +34,7 @@ test('phone and tablet layouts retain Packs navigation, practice controls and co
   console.log(`Mobile QA engine: ${info.project.name} ${browser.version()}`);
   const lines = await prepareMediaTest(page);
   await page.goto('/en/packs');
-  const gallery = page.getByRole('navigation', { name: 'Packs', exact: true });
+  const gallery = page.getByRole('navigation', { name: 'Collections', exact: true });
   await expect(gallery.getByRole('link')).toHaveCount(packs.length);
   // Full-page screenshots do not themselves load offscreen lazy covers.
   for (const card of await gallery.getByRole('link').all()) {
@@ -45,9 +45,9 @@ test('phone and tablet layouts retain Packs navigation, practice controls and co
   }
   for (const viewport of mobileViewports) {
     await page.setViewportSize(viewport);
-    await expect(page.getByRole('heading', { level: 1, name: 'Packs', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Collections', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await touchControl(page, page.getByRole('searchbox', { name: 'Find a pack', exact: true }));
+    await touchControl(page, page.getByRole('searchbox', { name: 'Find a collection', exact: true }));
     const [first, second] = await Promise.all([gallery.getByRole('link').nth(0).boundingBox(), gallery.getByRole('link').nth(1).boundingBox()]);
     if (viewport.width >= 640) {
       expect(Math.abs(first!.y - second!.y)).toBeLessThan(1);
@@ -56,7 +56,7 @@ test('phone and tablet layouts retain Packs navigation, practice controls and co
     await page.evaluate(() => scrollTo(0, 0));
     await mobileScreenshot(page, info, 'packs', viewport.name);
   }
-  await page.getByRole('searchbox', { name: 'Find a pack', exact: true }).fill('SpongeBob');
+  await page.getByRole('searchbox', { name: 'Find a collection', exact: true }).fill('SpongeBob');
   await expect(gallery.getByRole('link')).toHaveCount(1);
   await gallery.getByRole('link', { name: 'SpongeBob SquarePants', exact: true }).tap();
   await page.getByRole('button', { name: 'Choose scene: Who are you looking for?', exact: true }).tap();

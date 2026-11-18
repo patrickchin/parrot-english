@@ -51,7 +51,7 @@ test('an account-free playback link works independently of the content catalogue
   expect(catalogs).toBe(0);
   await page.unroute(catalogUrl);
   await page.getByRole('link', { name: 'Try a scene', exact: true }).click();
-  await expect(page.getByRole('navigation', { name: 'Packs', exact: true }).getByRole('link').first()).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Collections', exact: true }).getByRole('link').first()).toBeVisible();
   expect(catalogs).toBeGreaterThan(0);
 });
 

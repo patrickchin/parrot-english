@@ -10,8 +10,11 @@ Build working software for testing with friends. Creator-permission work is
 deferred for this iteration; retain factual credits and notices. Friend testing
 is separate from a child release or public launch.
 
-The owner selected one public catalogue named **Packs**. The former tag groups
-become 21 packs containing the same 128 scenes, labelled **Uploaded by Patrick**.
+The public catalogue is named **Collections** as of the owner's 2026-11-18
+request. The former tag groups contain the same 21 collections / 128 scenes,
+labelled **Uploaded by Patrick**. Collection cards share the scene grid and
+thumbnail dimensions at phone, tablet and desktop widths; descriptions appear
+on collection details. The content-package format and publication API are unchanged.
 No separate tag/franchise catalogue is shown. Only the owner uploads for now,
 through both an authenticated API and private browser page. The owner can hide,
 show, or delete a pack independently of the player release. Delete removes its

@@ -12,7 +12,7 @@ test('the home wordmark returns to Packs without reloading the app or its catalo
   await expect(page.getByRole('heading', { name: 'Shrek', exact: true })).toBeVisible();
   const before = { documents, catalogs };
   await page.getByRole('link', { name: 'Parrotbook home', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Packs', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Collections', exact: true })).toBeVisible();
   expect({ documents, catalogs }).toEqual(before);
 });
 
@@ -43,7 +43,7 @@ test('pack paths follow selection, reload, Back and Forward', async ({ page }) =
   await page.goto('/en/');
   await page.getByRole('link', { name: 'Shrek', exact: true }).click();
   await expect(page).toHaveURL(new RegExp('/packs/' + packs.find(pack => pack.data.title === 'Shrek')!.entry.id + '$'));
-  await page.getByRole('link', { name: 'All packs', exact: true }).click();
+  await page.getByRole('link', { name: 'All collections', exact: true }).click();
   await page.getByRole('link', { name: 'Friends', exact: true }).click();
   await expect(page).toHaveURL(new RegExp('/packs/' + packs.find(pack => pack.data.title === 'Friends')!.entry.id + '$'));
   await page.getByRole('searchbox').fill('not-a-scene');
@@ -123,7 +123,7 @@ test('My dubs is a separate page with direct links, history, language and an emp
   }
   await page.getByRole('button', { name: 'Browse scenes', exact: true }).click();
   await expect(page.getByRole('searchbox')).toBeVisible();
-  await expect(await headerDestination(page, 'Packs')).toHaveAttribute('aria-current', 'page');
+  await expect(await headerDestination(page, 'Collections')).toHaveAttribute('aria-current', 'page');
   await page.keyboard.press('Escape');
   await page.goto('/dubs/');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('My dubs');
@@ -132,7 +132,7 @@ test('My dubs is a separate page with direct links, history, language and an emp
 test('My dubs shows storage read failures and retries without an empty-state claim', async ({ page }) => {
   await page.goto('/dubs');
   await expect(page.getByRole('heading', { name: '还没有配音', exact: true })).toBeVisible();
-  await (await headerDestination(page, '内容包')).click();
+  await (await headerDestination(page, '合集')).click();
   await page.evaluate(() => {
     const open = indexedDB.open.bind(indexedDB);
     (window as Window & { restoreStorage?: () => void }).restoreStorage = () => { indexedDB.open = open; };
@@ -164,7 +164,7 @@ test('navigation shares the language-selector row and its compact menu supports 
       expect(Math.abs(navigationBox.y + navigationBox.height / 2 - languageBox.y - languageBox.height / 2)).toBeLessThan(1);
       expect(navigationBox.x + navigationBox.width).toBeLessThanOrEqual(languageBox.x + 1);
       const brand = (await page.getByRole('link', { name: 'Parrotbook home', exact: true }).boundingBox())!;
-      const firstNavigation = compact ? navigationBox : (await page.getByRole('link', { name: 'Packs', exact: true }).boundingBox())!;
+      const firstNavigation = compact ? navigationBox : (await page.getByRole('link', { name: 'Collections', exact: true }).boundingBox())!;
       expect(brand.x + brand.width).toBeLessThanOrEqual(firstNavigation.x + 1);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       if (compact) {

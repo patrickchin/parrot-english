@@ -8,7 +8,7 @@ const youngerCount = clips.filter(clip => clip.note === 'English Singsing').leng
 
 test('learner franchises open from the directory and survive playback and language changes', async ({ page }) => {
   await page.goto('/en/');
-  const tags = page.getByRole('navigation', { name: 'Packs', exact: true });
+  const tags = page.getByRole('navigation', { name: 'Collections', exact: true });
   const younger = tags.getByRole('link', { name: 'English Singsing', exact: true });
   await expect(younger).toContainText(`${youngerCount} scenes`);
   await younger.focus();
@@ -21,7 +21,7 @@ test('learner franchises open from the directory and survive playback and langua
   await expect(page.getByRole('listitem')).toHaveCount(youngerCount);
   await setLanguage(page, 'zh-CN');
   await expect(page.getByRole('heading', { level: 1, name: 'English Singsing', exact: true })).toBeVisible();
-  await page.getByRole('link', { name: '全部内容包', exact: true }).click();
+  await page.getByRole('link', { name: '全部合集', exact: true }).click();
   await page.getByRole('link', { name: 'Ratatouille', exact: true }).click();
   await expect(page.getByRole('listitem')).toHaveCount(filmCount);
   await page.getByRole('searchbox').fill('cook');
@@ -41,7 +41,7 @@ test('internet memes share one tag and retain searchable source names', async ({
   const sceneIds = new Set(recipe.scenes.map((scene: { sceneId: string }) => scene.sceneId));
   const memes = clips.filter(clip => sceneIds.has(clip.id));
   await page.goto('/en/');
-  const tags = page.getByRole('navigation', { name: 'Packs', exact: true });
+  const tags = page.getByRole('navigation', { name: 'Collections', exact: true });
   const tag = tags.getByRole('link', { name: 'Memes', exact: true });
   await expect(tag).toContainText(`${memes.length} scenes`);
   await expect(tags.getByRole('link', { name: 'SpongeBob SquarePants', exact: true })).toBeVisible();
@@ -54,7 +54,7 @@ test('internet memes share one tag and retain searchable source names', async ({
   for (const clip of memes) await expect(page.getByRole('button', { name: `Choose scene: ${clip.english}`, exact: true })).toBeVisible();
   await page.getByRole('searchbox').fill('FOX5');
   await expect(page.getByRole('button', { name: "Choose scene: Wouldn't you like to know, weather boy?", exact: true })).toBeVisible();
-  await page.getByRole('link', { name: 'All packs', exact: true }).click();
+  await page.getByRole('link', { name: 'All collections', exact: true }).click();
   await page.getByRole('searchbox').fill('Memes');
-  await expect(page.getByRole('navigation', { name: 'Packs', exact: true }).getByRole('link', { name: 'Memes', exact: true })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Collections', exact: true }).getByRole('link', { name: 'Memes', exact: true })).toBeVisible();
 });
