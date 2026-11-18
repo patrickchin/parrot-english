@@ -60,5 +60,45 @@ authentication, cleanup policy or media encoding change is included.
   to 307 KB. Sample video queue delay falls from 2.2–2.5 seconds to 144–149 ms.
   This isolates the thumbnail change; it is not a production cold-page claim.
 
-Production rollout and timing verification are recorded after the release.
+## Production rollout
+
+[PR #296](https://github.com/patrickchin/parrot-english/pull/296) merged as
+`8735bf1b78262227983464687f0c207ea34d1ee0`. The
+[player workflow](https://github.com/patrickchin/parrot-english/actions/runs/44226539267)
+passed; native ESA Git build `189690527187084` succeeded at that exact source
+on `release/player`, matching public `/api/health`. The
+[API workflow](https://github.com/patrickchin/parrot-english/actions/runs/44226539286)
+also passed exact-source, scoped-role, concurrency-one and unchanged owner-auth
+readbacks. Sharing config returns 200 with the expected HTTPS API; owner config
+remains disabled (503). No content publication or cleanup change was performed.
+
+Required [PR Firefox QA](https://github.com/patrickchin/parrot-english/actions/runs/44225951181)
+and [merged-main Firefox QA](https://github.com/patrickchin/parrot-english/actions/runs/44226539200)
+both pass.
+
+The same 1365 × 900 desktop flow was repeated against the public site using a
+fresh Chromium context followed by a same-context reload. Health before and
+after remains `8735bf1b`; all 21 pack URLs match the baseline. There is no
+network interception or artificial throttling.
+
+| Same live flow | Before `2be60d01` | After `8735bf1b` |
+| --- | --- | --- |
+| Cold Packs visible | 3,028 ms | 2,376 ms |
+| Full reload | 1,028 ms | 418 ms |
+| Pack → Home | 1,669 ms, document reload | 40 ms, no document/catalog/manifest request |
+| Pack → scene list | 53 ms | 52 ms |
+| Selected video metadata | 982 ms | 806 ms |
+| Reload manifest transfer | 166,308 bytes, no cache hits | 0 bytes, 21/21 cache hits |
+| Images requested before video metadata | 54 | 22 |
+
+These are single unthrottled comparison samples; network latency is variable.
+The unchanged pack-navigation time and reduced requests/cache transfers are
+more repeatable signals than a general promise about first-visit speed.
+
+A separate fresh 390 × 844 Chromium viewport check passes visible-poster and
+mobile-header inspection with no page errors. It records 2,160 ms cold Packs,
+317 ms reload (21 cached manifests / zero bytes), 874 ms selected-video metadata
+and 41 ms Home navigation. This phone-shaped viewport is not a physical device.
+The screenshot is saved locally under the project's Codex screenshots folder.
+
 These browser checks do not establish physical-phone microphone reliability.
