@@ -1,6 +1,21 @@
 import { test, expect, setLanguage, headerDestination } from './fixtures';
 import { clips, packs } from '../content-fixtures';
 
+test('the home wordmark returns to Packs without reloading the app or its catalog', async ({ page }) => {
+  let documents = 0, catalogs = 0;
+  page.on('request', request => {
+    if (request.isNavigationRequest() && request.frame() === page.mainFrame()) documents++;
+    if (new URL(request.url()).pathname === '/content/catalog.json') catalogs++;
+  });
+  await page.goto('/en/');
+  await page.getByRole('link', { name: 'Shrek', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Shrek', exact: true })).toBeVisible();
+  const before = { documents, catalogs };
+  await page.getByRole('link', { name: 'Parrotbook home', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Packs', exact: true })).toBeVisible();
+  expect({ documents, catalogs }).toEqual(before);
+});
+
 test('the readable Toy Story URL keeps its name through saving, reload and resume', async ({ page }) => {
   await page.goto('/library/all');
   await page.getByRole('button', { name: '选择片段：飞向宇宙！', exact: true }).click();

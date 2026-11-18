@@ -1,6 +1,6 @@
 # Parrotbook release board
 
-Updated 2026-11-17, Asia/Shanghai. Codex leads implementation, specialist agents,
+Updated 2026-11-18, Asia/Shanghai. Codex leads implementation, specialist agents,
 integration, and verification in this chat. Patrick owns participant contact and
 business decisions. [Product plan](../product-plan.md) owns the broader scope.
 
@@ -25,8 +25,17 @@ automatic recording upload is part of this iteration.
 
 ## Current release
 
+The 2026-11-18 loading increment shipped in
+[PR #296](https://github.com/patrickchin/parrot-english/pull/296), source
+`8735bf1b78262227983464687f0c207ea34d1ee0`. Native ESA Git build
+`189690527187084` succeeded and public health matches that source. It preserves
+the on-video subtitle and Android/replay fixes from the `2be60d01` baseline.
+See [dated loading evidence](loading-performance.md) for cache, navigation,
+deferred-code and thumbnail checks. The records below describe the earlier
+hosted-sharing milestone.
+
 The public player is live with **21 packs / 128 scenes**, all uploaded by Patrick.
-The latest verified player and API source is
+That hosted-sharing milestone used player and API source
 `8e40e5b2826892afa209e2d2409d114511938da3`, merged in
 [PR #288](https://github.com/patrickchin/parrot-english/pull/288).
 Player workflow
@@ -114,6 +123,7 @@ Hosted owner CRUD acceptance remains separate from the completed API deployment.
 
 | Work | Owner | State / next action |
 | --- | --- | --- |
+| Page loading and video startup | Engineering + QA + delivery | PR #296 merged and native player/API deployment succeeded at `8735bf1b`. Immutable metadata uses the browser cache; Home stays within the app; owner/share pages skip unrelated discovery; secondary code and offscreen posters load when needed. [Dated performance evidence](loading-performance.md). |
 | One Packs catalogue and Patrick attribution | Delivery + content + UI | Content PR #275 merged as e8f9878b and published at 2026-11-14T17:26:27Z: 21 packs / 128 scenes, all uploaded by Patrick. All 277 JSON objects and 513 media references verified. Flat Packs UI merged in PR #276 and deployed; live 390px gallery/search/detail smoke passed. |
 | Owner API + private management page | Backend + UI | Implemented and independently reviewed; local API/browser checks cover upload/retry, staging, publication, hide/show/delete. Native Bearer trigger saved/read back; missing/invalid-token rejection and apex/www preflight pass. Authenticated hosted CRUD acceptance remains. |
 | Owner CLI uses the same serialized API | Content/backend | Implemented: default merge preserves unrelated packs; explicit replacement is available. The initial uploader-complete catalogue was published on 2026-11-14. Authenticated hosted CLI acceptance remains. |
