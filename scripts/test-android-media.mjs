@@ -1,4 +1,4 @@
-// Real USB-debugged Android browser and microphone; no media API substitutions.
+// Real USB-debugged Android browser and microphone; no synthetic input or clock.
 import { chromium, expect } from '@playwright/test';
 import { spawn } from 'node:child_process';
 import { writeFile } from 'node:fs/promises';
@@ -20,6 +20,26 @@ const original = page.url();
 const report = { browser: version.Browser, androidPackage: version['Android-Package'], trials: [], diagnostics: [] };
 page.on('console', message => { if (message.text().startsWith('Parrotbook media failure')) report.diagnostics.push(message.text()); });
 const output = process.env.ANDROID_TEST_REPORT ?? resolve(tmpdir(), 'parrotbook-android-media.json');
+await page.addInitScript(() => {
+  window.__androidVoicePeak = 0;
+  const taps = [], connect = AudioNode.prototype.connect;
+  AudioNode.prototype.connect = function (destination, ...channels) {
+    if (this instanceof AudioBufferSourceNode && !this.loop && this.buffer && destination === this.context.destination) {
+      const tap = this.context.createAnalyser(); tap.fftSize = 256;
+      Reflect.apply(connect, this, [tap]); Reflect.apply(connect, tap, [destination]);
+      taps.push(tap); return destination;
+    }
+    return Reflect.apply(connect, this, [destination, ...channels]);
+  };
+  const sample = () => {
+    for (const tap of taps) {
+      const values = new Float32Array(tap.fftSize); tap.getFloatTimeDomainData(values);
+      window.__androidVoicePeak = Math.max(window.__androidVoicePeak, ...values.map(Math.abs));
+    }
+    requestAnimationFrame(sample);
+  };
+  requestAnimationFrame(sample);
+});
 let sound;
 try {
   await page.goto(scene.href);
@@ -38,11 +58,13 @@ try {
     await page.reload();
     await expect(listen).toBeEnabled({ timeout: 15000 });
     for (let replay = 0; replay < 2; replay++) {
+      await page.evaluate(() => { window.__androidVoicePeak = 0; });
       await listen.click();
       await page.getByRole('button', { name: 'Stop playback', exact: true }).waitFor({ timeout: 15000 });
+      await page.waitForFunction(() => window.__androidVoicePeak > 0.003, undefined, { timeout: 10000 });
       await expect(listen).toBeEnabled({ timeout: 20000 });
       await expect(page.getByRole('alert')).toHaveCount(0);
-      report.trials.push({ trial, replay, time: await page.locator('video').evaluate(video => video.currentTime) });
+      report.trials.push({ trial, replay, time: await page.locator('video').evaluate(video => video.currentTime), peak: await page.evaluate(() => window.__androidVoicePeak) });
     }
   }
   await page.goto(original);
