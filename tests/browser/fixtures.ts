@@ -33,6 +33,19 @@ export async function routeContent(page: Page, sampleScene = false) {
 export const test = base.extend<{ sampleScene: boolean }>({
   sampleScene: [false, { option: true }],
   page: async ({ page, sampleScene }, use) => {
+    await page.addInitScript(() => {
+      const create = AudioContext.prototype.createMediaElementSource;
+      AudioContext.prototype.createMediaElementSource = function (video) {
+        const source = create.call(this, video), connect = source.connect.bind(source);
+        source.connect = ((destination: AudioNode) => {
+          if (destination instanceof GainNode && video === document.querySelector('video')) {
+            (window as unknown as { originalOutputGain: GainNode }).originalOutputGain = destination;
+          }
+          return connect(destination);
+        }) as typeof source.connect;
+        return source;
+      };
+    });
     // A source edit in another local tool must not reset an in-flight lesson.
     await page.routeWebSocket(/^ws:\/\/127\.0\.0\.1:\d+\//, socket => socket.close());
     await routeContent(page, sampleScene);
@@ -59,6 +72,12 @@ export const test = base.extend<{ sampleScene: boolean }>({
   },
 });
 export { expect };
+
+// Inspect the native output control, regardless of whether a browser uses a
+// Web Audio gain or its media element's native mute control.
+export function originalAudioLevel(page: Page) {
+  return page.evaluate(() => (window as unknown as { originalOutputGain?: GainNode }).originalOutputGain?.gain.value ?? (document.querySelector('video')!.muted ? 0 : 1));
+}
 
 export async function setLanguage(page: Page, language: Language) {
   // Loading shells replace their header when the destination mounts.

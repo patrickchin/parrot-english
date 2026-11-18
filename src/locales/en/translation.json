@@ -56,6 +56,11 @@
     "keepDub": "Keep dub"
   },
   "player": {
+    "errorDetails": "Error details",
+    "diagnosticDescription": "This report contains browser and playback state. It stays on this device until you choose to share it.",
+    "diagnosticReport": "Diagnostic report",
+    "copyDiagnostic": "Copy diagnostic report",
+    "diagnosticCopied": "Report copied",
     "loading": "Getting your scene ready…",
     "reload": "Reload",
     "startANewDub": "Start a new dub",

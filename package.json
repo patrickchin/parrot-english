@@ -12,6 +12,7 @@
     "build": "tsc -p tsconfig.app.json --noEmit && vite build && node scripts/build-edge.mjs",
     "test": "npm run test:typecheck && npm run test:app && npm run test:content && npm run test:boundary",
     "test:browser": "playwright test",
+    "test:android": "node scripts/test-android-media.mjs",
     "test:api": "npm --prefix api test",
     "build:owner": "npm --prefix api run build",
     "test:stress": "playwright test --grep @stress",

@@ -1,5 +1,5 @@
 import { readScene } from '../content-fixtures';
-import { test, expect } from './fixtures';
+import { originalAudioLevel, test, expect } from './fixtures';
 import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -31,7 +31,7 @@ test('a short Joey line has moving video context and retains early and late voic
       tone.connect(gain).connect(output); gain.gain.value = 0; tone.start();
       const video = document.querySelector('video')!;
       video.addEventListener('playing', () => {
-        probe.videoStart = video.currentTime; probe.leadInAudible = !video.muted;
+        probe.videoStart = video.currentTime; probe.leadInAudible = ((window as unknown as { originalOutputGain?: GainNode }).originalOutputGain?.gain.value ?? (video.muted ? 0 : 1)) > 0;
         // Voice begins 200 ms before the target and finishes 350 ms after it.
         const origin = context.currentTime - video.currentTime;
         gain.gain.setValueAtTime(0.2, origin + 9.765);
@@ -57,7 +57,7 @@ test('a short Joey line has moving video context and retains early and late voic
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止录音', exact: true })).toBeVisible();
   await expect.poll(async () => Number(await cursor.getAttribute('aria-valuenow'))).toBeGreaterThan(0.1);
-  await expect(page.locator('video')).toHaveJSProperty('muted', true);
+  await expect.poll(() => originalAudioLevel(page)).toBe(0);
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
   await expect(page.getByText('已保存到本机', { exact: true })).toBeVisible();
   const capture = await page.evaluate(async scene => {
