@@ -43,6 +43,24 @@ test('a slow native video start does not reject a healthy recorded replay or cut
   expect(start.picturePaused).toBe(false);
 });
 
+test('a failed audio session after capture replaces its attached video and replays the saved take', async ({ page }) => {
+  await page.goto('/zh/scenes/patrick');
+  await page.getByRole('button', { name: '开始配音', exact: true }).click();
+  await page.getByRole('button', { name: '开始录音', exact: true }).click();
+  const listen = page.getByRole('button', { name: '听我的录音', exact: true });
+  await expect(listen).toBeEnabled();
+  await page.evaluate(() => {
+    (window as unknown as { mediaAudit: MediaAudit }).mediaAudit.context!.resume = () => new Promise<void>(() => {});
+  });
+  await listen.click();
+  await expect(page.getByRole('alert')).toContainText('播放或录音暂时中断', { timeout: 11000 });
+  await expect(listen).toBeEnabled();
+  await listen.click();
+  await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
+  await expect(listen).toBeEnabled();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
 test('microphone loss and a failed replacement preserve the accepted take and release capture resources', async ({ page }) => {
   await page.goto('/zh/scenes/patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();

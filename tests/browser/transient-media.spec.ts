@@ -136,23 +136,36 @@ for (const fault of ['readiness', 'waiting', 'clock'] as const) for (const actio
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
-test('a captured take survives reload and produces real rendered audio during recorded replay', async ({ page }) => {
+test('a captured take survives reload and produces real rendered audio during recorded replay', async ({ page, browserName }) => {
   await prepareMediaTest(page);
   await page.addInitScript(() => {
     const analysers: AnalyserNode[] = [];
+    const originals: AnalyserNode[] = [];
     (window as unknown as { replayAnalysers: AnalyserNode[] }).replayAnalysers = analysers;
+    (window as unknown as { originalAnalysers: AnalyserNode[] }).originalAnalysers = originals;
     const connect = AudioNode.prototype.connect;
     AudioNode.prototype.connect = function (this: AudioNode, destination: AudioNode | AudioParam, output?: number, input?: number) {
-      if (this instanceof AudioBufferSourceNode && !this.loop && this.buffer && destination === this.context.destination) {
+      if ((this instanceof MediaElementAudioSourceNode || this instanceof GainNode || this instanceof AudioBufferSourceNode && !this.loop && this.buffer) && destination === this.context.destination) {
         const analyser = this.context.createAnalyser(); analyser.fftSize = 256;
         Reflect.apply(connect, this, [analyser, 0, 0]); Reflect.apply(connect, analyser, [destination, 0, 0]);
-        analysers.push(analyser); return destination;
+        (this instanceof AudioBufferSourceNode ? analysers : originals).push(analyser); return destination;
       }
       return Reflect.apply(connect, this, destination instanceof AudioParam ? [destination, output] : [destination, output, input]);
     } as typeof connect;
   });
   await page.goto('/zh/scenes/patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
+  if (browserName === 'chromium') {
+    await page.getByRole('button', { name: '听这一句原声', exact: true }).click();
+    await expect.poll(() => page.evaluate(() => {
+      const analysers = (window as unknown as { originalAnalysers: AnalyserNode[] }).originalAnalysers;
+      return Math.max(0, ...analysers.map(analyser => {
+        const samples = new Float32Array(analyser.fftSize); analyser.getFloatTimeDomainData(samples);
+        return Math.max(...samples.map(Math.abs));
+      }));
+    })).toBeGreaterThan(0.001);
+    await expect(page.getByRole('button', { name: '开始录音', exact: true })).toBeEnabled();
+  }
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   const listen = page.getByRole('button', { name: '听我的录音', exact: true });
   await expect(listen).toBeEnabled();
@@ -167,6 +180,12 @@ test('a captured take survives reload and produces real rendered audio during re
       return Math.max(...samples.map(Math.abs));
     }));
   })).toBeGreaterThan(0.03);
+  if (browserName === 'chromium') {
+    expect(await page.evaluate(() => {
+      const audit = window as unknown as { originalAnalysers: AnalyserNode[]; replayAnalysers: AnalyserNode[] };
+      return audit.originalAnalysers[0].context === audit.replayAnalysers[0].context;
+    })).toBe(true);
+  }
   await expect(listen).toBeEnabled();
   await expect(page.getByRole('alert')).toHaveCount(0);
 });

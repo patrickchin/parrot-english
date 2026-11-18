@@ -1,7 +1,7 @@
 import { readScene } from '../content-fixtures';
 import { scenePath } from './scene-path';
 import { expectPictureSubtitles } from './picture-subtitles';
-import { test, expect, documentBoxes } from './fixtures';
+import { originalAudioLevel, test, expect, documentBoxes } from './fixtures';
 import type { Line } from '../../src/scene';
 import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
@@ -25,7 +25,7 @@ test('reference, live take, and saved take share a moving timeline; cancelling k
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止录音', exact: true })).toBeVisible({ timeout: 1500 });
   await expect(page.locator('video')).toHaveJSProperty('paused', false);
-  await expect(page.locator('video')).toHaveJSProperty('muted', true);
+  await expect.poll(() => originalAudioLevel(page)).toBe(0);
   expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
   await expect(graph.getByRole('img', { name: '你的声音波形', exact: true })).toBeVisible();
   await expect.poll(async () => Number(await cursor.getAttribute('aria-valuenow'))).toBeGreaterThan(0.2);
@@ -72,7 +72,7 @@ test('reference, live take, and saved take share a moving timeline; cancelling k
   }
   await page.getByRole('button', { name: '听我的录音', exact: true }).click();
   await expect(page.locator('video')).toHaveJSProperty('paused', false);
-  await expect(page.locator('video')).toHaveJSProperty('muted', true);
+  await expect.poll(() => originalAudioLevel(page)).toBe(0);
   await expect.poll(async () => Number(await cursor.getAttribute('aria-valuenow'))).toBeGreaterThan(0.15);
   // The role starts later in the scene; picture and cursor must share that offset.
   await expect.poll(async () => Math.abs(await page.locator('video').evaluate((v: HTMLVideoElement) => v.currentTime) - Math.max(0, turn.start - 0.5) - Number(await cursor.getAttribute('aria-valuenow')))).toBeLessThan(0.15);

@@ -1,4 +1,4 @@
-import { test, expect } from './fixtures';
+import { originalAudioLevel, test, expect } from './fixtures';
 import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -107,7 +107,7 @@ test('records three real fake-microphone takes, retries, replays, and clears the
   await page.getByRole('region', { name: '配音完成', exact: true }).getByRole('button', { name: '播放我的配音', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
   await expect.poll(() => page.locator('video').evaluate((v: HTMLVideoElement) => v.currentTime)).toBeGreaterThan(1);
-  await expect(page.locator('video')).toHaveJSProperty('muted', true);
+  await expect.poll(() => originalAudioLevel(page)).toBe(0);
   await page.getByRole('button', { name: '停止播放', exact: true }).click();
   expect(uploads).toEqual([]);
   await page.getByRole('button', { name: '重新开始', exact: true }).click();

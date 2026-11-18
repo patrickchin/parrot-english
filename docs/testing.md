@@ -165,8 +165,41 @@ Player errors now offer **Error details → Copy diagnostic report**. The bounde
 in-memory report captures the app bundle revision, browser, failure reason,
 recent player events, and audio/video clock state before cleanup. It also appears
 in the browser console. No report is uploaded automatically; recordings, media
-URLs, learner text, and account data are excluded. A report from an affected
-device is still required to establish the Samsung failure cause.
+URLs, learner text, and account data are excluded.
+
+### Connected Android reproduction (2026-11-18)
+
+USB debugging reproduced recording and recorded-replay interruptions on a
+Samsung Galaxy S24 (SM-S9210), Android 16, Brave 1.99.57 / Chromium 157.0.8103.79,
+using the phone speaker. Native video and Web Audio used independent output
+paths. Starting and muting native video changed its clock relative to the
+capture/voice clock, and the application's sync watchdog stopped the operation.
+This was captured from the actual device, without substituting media APIs.
+
+Chromium now routes the video through the same AudioContext as capture and
+recorded voices. A GainNode silences the original during replaced turns without
+reconfiguring the native video output. The temporary 50 ms startup-threshold
+experiment was insufficient and was removed. WebKit retains native video audio:
+its MediaElementAudioSourceNode exposes an inaccurate media clock, reproduced
+in local WebKit tests and tracked by [WebKit #204228](https://bugs.webkit.org/show_bug.cgi?id=204228).
+Failure recovery replaces an attached video together with a closed context,
+because a media element can belong to only one MediaElementAudioSourceNode.
+
+Repeat the real microphone → accepted take → reload → two replays flow twice
+on an attached Android browser, with Parrotbook open in the foreground:
+
+```sh
+adb forward tcp:9222 localabstract:chrome_devtools_remote
+ANDROID_CDP_URL=http://127.0.0.1:9222 npm run test:android
+```
+
+This macOS acoustic test plays the authored Sintel fixture using `afplay` into
+the nearby phone's real microphone. Keep the computer speaker audible. It uses
+a fresh scene draft and leaves that test draft on the device, preserving existing
+dubs. `ANDROID_TEST_SCENE` selects another fresh English scene URL; `/dubs/` URLs
+are rejected. The JSON report in the temporary directory contains outcomes and
+diagnostics, with no recorded audio. `ANDROID_TEST_REPORT` overrides its path.
+This optional device gate is separate from desktop browser emulation in CI.
 
 The shared runtime previously aborted recording or replay on a single low
 `readyState` sample, a `waiting` event, or one clock discrepancy over 120 ms.

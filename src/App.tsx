@@ -160,7 +160,7 @@ function Player({ scene, slug, notice, initial, rememberDraft, onBack, leaving, 
       <section aria-label={t("player.movieScene")} className="player-video" style={{ '--video-aspect': videoAspect } as CSSProperties}>
         <div className="player-frame overflow-hidden">
           <div className="player-screen relative">
-            <video ref={video} src={source} poster={scene.poster ? asset(scene, scene.poster) : undefined} crossOrigin="anonymous" playsInline preload="auto" aria-label={t("player.dialogueScene", { title: scene.credit.title })}
+            <video key={media.videoKey} ref={video} src={source} poster={scene.poster ? asset(scene, scene.poster) : undefined} crossOrigin="anonymous" playsInline preload="auto" aria-label={t("player.dialogueScene", { title: scene.credit.title })}
               className="player-picture"
               onLoadedMetadata={e => {
                 const el = e.currentTarget;
@@ -235,7 +235,7 @@ function Player({ scene, slug, notice, initial, rememberDraft, onBack, leaving, 
             </div>
           </div>
         </>}
-        {media.error && <div role="alert" className="player-error rounded-xl border border-danger/25 bg-destructive/10 p-3 text-sm leading-6 text-destructive"><p>{t(media.error, { defaultValue: t('errors.unexpected') })}</p>{!videoReady && <button onClick={() => { media.setError(''); setVideoStatus('loading'); video.current?.load(); }} className="mt-2 min-h-11 rounded-lg px-2 font-bold underline">{t("player.reloadVideo")}</button>}
+        {media.error && <div className="player-error rounded-xl border border-danger/25 bg-destructive/10 p-3 text-sm leading-6 text-destructive"><p role="alert">{t(media.error, { defaultValue: t('errors.unexpected') })}</p>{!videoReady && <button onClick={() => { media.setError(''); setVideoStatus('loading'); video.current?.load(); }} className="mt-2 min-h-11 rounded-lg px-2 font-bold underline">{t("player.reloadVideo")}</button>}
           {media.diagnostic && <details className="mt-2">
             <summary className="min-h-11 cursor-pointer content-center font-bold underline">{t('player.errorDetails')}</summary>
             <p>{t('player.diagnosticDescription')}</p>
