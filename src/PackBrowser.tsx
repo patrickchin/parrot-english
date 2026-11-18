@@ -40,8 +40,7 @@ export function PackBrowser() {
         {visible.map((pack, index) => <Link key={pack.id} to={packPath(pack.id, language)} aria-label={pack.title} className="pack-card">
           <span className="pack-cover">{pack.poster ? <ContentPoster src={pack.poster} eager={index < 2} priority={index === 0} /> : <Icon name="collection" className="size-16" />}</span>
           <div className="pack-card-copy">
-            <h2 className="font-display"><span>{pack.title}</span><Icon name="arrow" className="size-5 shrink-0" /></h2>
-            <p className="pack-description">{pack.description}</p>
+            <h2 className="scene-title font-display">{pack.title}</h2>
             <p className="pack-meta"><span>{t('packs.uploadedBy', { uploader: pack.uploader })}</span><span>{t('library.sceneCount', { count: pack.sceneCount })}</span></p>
           </div>
         </Link>)}

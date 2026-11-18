@@ -2,6 +2,12 @@
 
 Date: 2026-10-28
 
+Catalogue naming updated 2026-11-18: the public and owner interfaces call groups
+of scenes **Collections**. Collection cards use the same responsive grid and
+thumbnail size as scene cards. Descriptions remain on collection details;
+Patrick attribution and scene counts stay visible in the directory. The
+underlying content-package format and publication workflow are unchanged.
+
 Software friend-test direction updated 2026-11-14: separate software delivery
 from creator-permission work for the current owner-directed test. Use the
 existing authored scenes as owner-published content packs that friends can

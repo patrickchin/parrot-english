@@ -10,8 +10,8 @@ const creators = [...new Set(memeScenes.map(clip => clip.note))];
 
 test('home presents actual packs on one level with an all-scenes link outside the gallery', async ({ page }, info) => {
   await page.goto('/en/');
-  await expect(page.getByRole('heading', { level: 1, name: 'Packs', exact: true })).toBeVisible();
-  const gallery = page.getByRole('navigation', { name: 'Packs', exact: true });
+  await expect(page.getByRole('heading', { level: 1, name: 'Collections', exact: true })).toBeVisible();
+  const gallery = page.getByRole('navigation', { name: 'Collections', exact: true });
   await expect(gallery.getByRole('link')).toHaveCount(packs.length);
   await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(0);
   await expect(gallery.getByRole('link', { name: 'All scenes', exact: true })).toHaveCount(0);
@@ -41,15 +41,15 @@ test('home presents actual packs on one level with an all-scenes link outside th
 
 test('pack search finds titles and uploaders and has a recoverable empty state', async ({ page }) => {
   await page.goto('/en/');
-  const search = page.getByRole('searchbox', { name: 'Find a pack' });
-  const gallery = page.getByRole('navigation', { name: 'Packs', exact: true });
+  const search = page.getByRole('searchbox', { name: 'Find a collection' });
+  const gallery = page.getByRole('navigation', { name: 'Collections', exact: true });
   await search.fill('  FRIENDS  ');
   await expect(gallery.getByRole('link')).toHaveCount(1);
   await expect(gallery.getByRole('link', { name: 'Friends', exact: true })).toBeVisible();
   await search.fill('Patrick');
   await expect(gallery.getByRole('link')).toHaveCount(packs.length);
   await search.fill('not-a-pack');
-  await expect(page.getByRole('status')).toHaveText('No packs found.');
+  await expect(page.getByRole('status')).toHaveText('No collections found.');
   await page.getByRole('button', { name: 'Clear search', exact: true }).click();
   await expect(search).toHaveValue('');
   await expect(gallery.getByRole('link')).toHaveCount(packs.length);
@@ -62,7 +62,7 @@ test('pack and all-scene pages support history, reload, language, scene search a
   await page.goto('/en/');
   const franchise = 'Peppa Pig', pack = packs.find(pack => pack.data.title === franchise)!;
   const scenes = pack.data.scenes;
-  const target = page.getByRole('navigation', { name: 'Packs', exact: true }).getByRole('link', { name: franchise, exact: true });
+  const target = page.getByRole('navigation', { name: 'Collections', exact: true }).getByRole('link', { name: franchise, exact: true });
   await target.focus(); await target.press('Enter');
   await expect(page).toHaveURL(new URL(packPath(pack.entry.id, 'en'), page.url()).href);
   await page.reload(); await expect(page.getByRole('listitem')).toHaveCount(scenes.length);
@@ -76,7 +76,7 @@ test('pack and all-scene pages support history, reload, language, scene search a
   await expect(page.getByRole('button', { name: '开始配音', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: '返回片段', exact: true }).click();
   await expect(page.getByRole('listitem')).toHaveCount(scenes.length);
-  await page.getByRole('link', { name: '全部内容包', exact: true }).click();
+  await page.getByRole('link', { name: '全部合集', exact: true }).click();
   await page.getByRole('link', { name: '全部片段', exact: true }).click();
   await expect(page.getByRole('listitem')).toHaveCount(clips.length);
   await page.goBack(); await expect(page.getByRole('listitem')).toHaveCount(0);
@@ -85,7 +85,7 @@ test('pack and all-scene pages support history, reload, language, scene search a
 
 test('the Memes pack retains original source names and searches its own scenes', async ({ page }) => {
   await page.goto('/en/');
-  const gallery = page.getByRole('navigation', { name: 'Packs', exact: true });
+  const gallery = page.getByRole('navigation', { name: 'Collections', exact: true });
   await expect(gallery.getByRole('link', { name: 'Memes', exact: true })).toContainText(`${memeScenes.length} scenes`);
   for (const creator of creators) await expect(gallery.getByRole('link', { name: creator, exact: true })).toHaveCount(0);
   await gallery.getByRole('link', { name: 'Memes', exact: true }).click();
@@ -100,7 +100,7 @@ test('the Memes pack retains original source names and searches its own scenes',
 test('pack back links, headings and scene search remain usable across viewport sizes', async ({ page }) => {
   const pack = packs.find(pack => pack.data.title === 'Shrek')!;
   await page.goto(packPath(pack.entry.id, 'en'));
-  const back = page.getByRole('link', { name: 'All packs', exact: true });
+  const back = page.getByRole('link', { name: 'All collections', exact: true });
   const heading = page.getByRole('heading', { name: 'Shrek', level: 1, exact: true });
   const search = page.getByRole('searchbox', { name: 'Find a scene', exact: true });
   for (const width of [320, 390, 768, 1440]) {
@@ -111,5 +111,5 @@ test('pack back links, headings and scene search remain usable across viewport s
   await search.fill('zxqvunfindable');
   await expect(page.getByRole('status')).toHaveText('No scenes found.');
   await back.focus(); await back.press('Enter');
-  await expect(page.getByRole('navigation', { name: 'Packs', exact: true })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Collections', exact: true })).toBeVisible();
 });

@@ -30,11 +30,11 @@ test('phone and tablet layouts keep software notices and source hashes readable'
   }
 });
 
-test('phone and tablet layouts retain Packs navigation, practice controls and completion through rotation', async ({ page, browser }, info) => {
+test('phone and tablet layouts retain Collections navigation, practice controls and completion through rotation', async ({ page, browser }, info) => {
   console.log(`Mobile QA engine: ${info.project.name} ${browser.version()}`);
   const lines = await prepareMediaTest(page);
   await page.goto('/en/packs');
-  const gallery = page.getByRole('navigation', { name: 'Packs', exact: true });
+  const gallery = page.getByRole('navigation', { name: 'Collections', exact: true });
   await expect(gallery.getByRole('link')).toHaveCount(packs.length);
   // Full-page screenshots do not themselves load offscreen lazy covers.
   for (const card of await gallery.getByRole('link').all()) {
@@ -45,18 +45,25 @@ test('phone and tablet layouts retain Packs navigation, practice controls and co
   }
   for (const viewport of mobileViewports) {
     await page.setViewportSize(viewport);
-    await expect(page.getByRole('heading', { level: 1, name: 'Packs', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Collections', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await touchControl(page, page.getByRole('searchbox', { name: 'Find a pack', exact: true }));
-    const [first, second] = await Promise.all([gallery.getByRole('link').nth(0).boundingBox(), gallery.getByRole('link').nth(1).boundingBox()]);
-    if (viewport.width >= 640) {
-      expect(Math.abs(first!.y - second!.y)).toBeLessThan(1);
-      expect(second!.x).toBeGreaterThan(first!.x + first!.width);
-    } else expect(second!.y).toBeGreaterThanOrEqual(first!.y + first!.height);
+    await touchControl(page, page.getByRole('searchbox', { name: 'Find a collection', exact: true }));
+    const columns = viewport.width >= 1024 ? 4 : viewport.width >= 640 ? 3 : 2;
+    const boxes = await Promise.all(Array.from({ length: columns + 1 }, (_, index) => gallery.getByRole('link').nth(index).boundingBox()));
+    const first = boxes[0]!;
+    for (let index = 1; index < columns; index++) {
+      const card = boxes[index]!, previous = boxes[index - 1]!;
+      expect(Math.abs(card.y - first.y)).toBeLessThan(1);
+      expect(card.x).toBeGreaterThan(previous.x + previous.width);
+      expect(card.width).toBeCloseTo(first.width, 0);
+    }
+    const nextRow = boxes[columns]!;
+    expect(nextRow.x).toBeCloseTo(first.x, 0);
+    expect(nextRow.y).toBeGreaterThan(first.y + first.height);
     await page.evaluate(() => scrollTo(0, 0));
-    await mobileScreenshot(page, info, 'packs', viewport.name);
+    await mobileScreenshot(page, info, 'collections', viewport.name);
   }
-  await page.getByRole('searchbox', { name: 'Find a pack', exact: true }).fill('SpongeBob');
+  await page.getByRole('searchbox', { name: 'Find a collection', exact: true }).fill('SpongeBob');
   await expect(gallery.getByRole('link')).toHaveCount(1);
   await gallery.getByRole('link', { name: 'SpongeBob SquarePants', exact: true }).tap();
   await page.getByRole('button', { name: 'Choose scene: Who are you looking for?', exact: true }).tap();

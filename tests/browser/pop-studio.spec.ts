@@ -1,7 +1,7 @@
 import { test, expect, headerDestination } from './fixtures';
 
 test('the pack gallery keeps artwork, readable titles and usable selection on phones in every language', async ({ page }) => {
-  for (const [language, label] of [['en', 'Packs'], ['zh', '内容包'], ['es', 'Paquetes'], ['ja', 'パック'], ['ko', '팩']]) {
+  for (const [language, label] of [['en', 'Collections'], ['zh', '合集'], ['es', 'Colecciones'], ['ja', 'コレクション'], ['ko', '컬렉션']]) {
     await page.goto(`/${language}/`);
     if (language === 'zh') await expect(page).toHaveTitle('Parrotbook · 英语配音');
     const title = page.getByRole('heading', { level: 1, name: label, exact: true });

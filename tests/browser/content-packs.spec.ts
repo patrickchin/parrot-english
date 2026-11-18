@@ -88,17 +88,17 @@ for (const failure of ['an unavailable catalog', 'a malformed inline pack']) tes
   await expect(page.getByRole('button', { name: 'Start dubbing', exact: true })).toHaveCount(0);
   await (await headerDestination(page, 'My dubs')).click();
   await expect(page.getByRole('heading', { level: 1, name: 'My dubs', exact: true })).toBeVisible();
-  await (await headerDestination(page, 'Packs')).click();
+  await (await headerDestination(page, 'Collections')).click();
   broken = false;
   await page.getByRole('button', { name: 'Reload', exact: true }).click();
-  await expect(page.getByRole('searchbox', { name: 'Find a pack', exact: true })).toBeVisible();
+  await expect(page.getByRole('searchbox', { name: 'Find a collection', exact: true })).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
 test('an empty published catalog keeps categories and a single meaningful heading usable', async ({ page }) => {
   await page.route(catalogUrl, route => route.fulfill({ json: { version: 1, packs: [], packData: {} } }));
   await page.goto('/en/');
-  await expect(page.getByRole('heading', { level: 1, name: 'Packs', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Collections', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(0);
   await page.getByRole('link', { name: 'All scenes', exact: true }).click();
   await expect(page.getByRole('status')).toBeVisible();

@@ -134,32 +134,32 @@ async function unlock(page: Page) {
   await page.goto('/en/owner/packs');
   await page.getByLabel('Owner access key', { exact: true }).fill(ownerKey);
   await page.getByRole('button', { name: 'Unlock uploads', exact: true }).click();
-  await expect(page.getByLabel('Choose pack folder', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Choose collection folder', { exact: true })).toBeVisible();
 }
 
 test('owner access protects folder uploads and never persists the access key', async ({ page }) => {
   const state = await ownerService(page);
   await page.goto('/en/owner/packs');
-  await expect(page.getByRole('heading', { level: 1, name: 'Manage packs', exact: true })).toBeVisible();
-  await expect(page.getByLabel('Choose pack folder', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('heading', { level: 1, name: 'Manage collections', exact: true })).toBeVisible();
+  await expect(page.getByLabel('Choose collection folder', { exact: true })).toHaveCount(0);
   await page.getByLabel('Owner access key', { exact: true }).fill('wrong-test-key');
   await page.getByRole('button', { name: 'Unlock uploads', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('The access key was not accepted.');
   expect(state.starts).toBe(0);
   await page.getByLabel('Owner access key', { exact: true }).fill(ownerKey);
   await page.getByRole('button', { name: 'Unlock uploads', exact: true }).click();
-  await expect(page.getByLabel('Choose pack folder', { exact: true })).toBeVisible();
+  await expect(page.getByLabel('Choose collection folder', { exact: true })).toBeVisible();
   const stored = await page.evaluate(() => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }));
   expect(stored).not.toContain(ownerKey);
   await page.reload();
   await expect(page.getByLabel('Owner access key', { exact: true })).toHaveValue('');
-  await expect(page.getByLabel('Choose pack folder', { exact: true })).toHaveCount(0);
+  await expect(page.getByLabel('Choose collection folder', { exact: true })).toHaveCount(0);
 });
 
 test('an owner publishes a native folder without franchise metadata and its pack becomes searchable without rebuilding', async ({ page }, info) => {
   const state = await ownerService(page);
   await unlock(page);
-  await page.getByLabel('Choose pack folder', { exact: true }).setInputFiles(packFolder);
+  await page.getByLabel('Choose collection folder', { exact: true }).setInputFiles(packFolder);
   await expect(page.getByRole('heading', { level: 3, name: pack.title, exact: true })).toBeVisible();
   const viewports = info.project.name.startsWith('mobile-qa-') ? mobileViewports : [320, 390, 768, 1440].map(width => ({ width, height: 900, name: String(width) }));
   for (const viewport of viewports) {
@@ -180,14 +180,14 @@ test('an owner publishes a native folder without franchise metadata and its pack
   await page.getByRole('button', { name: 'Upload and publish', exact: true }).click();
   await expect(page.getByRole('status').filter({ hasText: 'Weekend Patrick is published.' })).toHaveText('Weekend Patrick is published.');
   expect(state.starts).toBe(1); expect(state.puts).toBe(bodies.size); expect(state.publishes).toBe(1);
-  await page.getByRole('link', { name: 'Open published pack', exact: true }).click();
+  await page.getByRole('link', { name: 'Open published collection', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: pack.title, exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(1);
-  await page.getByRole('link', { name: 'All packs', exact: true }).click();
-  const gallery = page.getByRole('navigation', { name: 'Packs', exact: true });
-  await page.getByRole('searchbox', { name: 'Find a pack', exact: true }).fill('Mary');
-  await expect(page.getByRole('status')).toHaveText('No packs found.');
-  await page.getByRole('searchbox', { name: 'Find a pack', exact: true }).fill('Weekend Patrick');
+  await page.getByRole('link', { name: 'All collections', exact: true }).click();
+  const gallery = page.getByRole('navigation', { name: 'Collections', exact: true });
+  await page.getByRole('searchbox', { name: 'Find a collection', exact: true }).fill('Mary');
+  await expect(page.getByRole('status')).toHaveText('No collections found.');
+  await page.getByRole('searchbox', { name: 'Find a collection', exact: true }).fill('Weekend Patrick');
   await expect(gallery.getByRole('link')).toHaveCount(1);
   await expect(gallery.getByRole('link', { name: pack.title, exact: true })).toBeVisible();
   await expect(gallery.getByText('Uploaded by Patrick', { exact: true })).toBeVisible();
@@ -196,7 +196,7 @@ test('an owner publishes a native folder without franchise metadata and its pack
 test('failed transfers refresh signed URLs and retry without repeating completed uploads', async ({ page }) => {
   const state = await ownerService(page, { failFile: true });
   await unlock(page);
-  await page.getByLabel('Choose pack folder', { exact: true }).setInputFiles(packFolder);
+  await page.getByLabel('Choose collection folder', { exact: true }).setInputFiles(packFolder);
   await page.getByRole('button', { name: 'Upload and publish', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('Completed files are kept for retry.');
   expect(state.publishes).toBe(0);
@@ -208,7 +208,7 @@ test('failed transfers refresh signed URLs and retry without repeating completed
 test('an uncertain publication can be retried without uploading files again', async ({ page }) => {
   const state = await ownerService(page, { failPublication: true });
   await unlock(page);
-  await page.getByLabel('Choose pack folder', { exact: true }).setInputFiles(packFolder);
+  await page.getByLabel('Choose collection folder', { exact: true }).setInputFiles(packFolder);
   await page.getByRole('button', { name: 'Upload and publish', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('Publication could not be confirmed.');
   await page.getByRole('button', { name: 'Retry upload', exact: true }).click();
@@ -226,10 +226,10 @@ test('an in-flight transfer has a navigation warning and can be cancelled before
     await route.abort('aborted').catch(() => {});
   });
   await unlock(page);
-  await page.getByLabel('Choose pack folder', { exact: true }).setInputFiles(packFolder);
+  await page.getByLabel('Choose collection folder', { exact: true }).setInputFiles(packFolder);
   await page.getByRole('button', { name: 'Upload and publish', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Cancel upload', exact: true })).toBeVisible();
-  await (await headerDestination(page, 'Packs')).click();
+  await (await headerDestination(page, 'Collections')).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await page.getByRole('button', { name: 'Keep uploading', exact: true }).click();
   await expect(page).toHaveURL(/\/en\/owner\/packs$/);
@@ -252,24 +252,24 @@ test('owner setup failure is visible and an invalid folder never starts an uploa
   const invalid = join(directory, 'invalid-pack');
   await mkdir(invalid, { recursive: true });
   await writeFile(join(invalid, 'pack.json'), JSON.stringify({ ...pack, title: '' }));
-  await page.getByLabel('Choose pack folder', { exact: true }).setInputFiles(invalid);
+  await page.getByLabel('Choose collection folder', { exact: true }).setInputFiles(invalid);
   await expect(page.getByRole('alert')).toContainText('pack.json is invalid.');
   await expect(page.getByRole('button', { name: 'Upload and publish', exact: true })).toHaveCount(0);
 });
 
 test('public pack search survives reload and recovers from an empty result', async ({ page }) => {
   await page.goto('/en/packs');
-  const gallery = page.getByRole('navigation', { name: 'Packs', exact: true });
+  const gallery = page.getByRole('navigation', { name: 'Collections', exact: true });
   await expect(gallery.getByRole('link')).toHaveCount(packs.length);
   await expect(gallery.getByText('Uploaded by Patrick', { exact: true })).toHaveCount(packs.length);
   await expect(page.getByRole('combobox', { name: 'Franchise', exact: true })).toHaveCount(0);
-  await page.getByRole('searchbox', { name: 'Find a pack', exact: true }).fill('Patrick');
+  await page.getByRole('searchbox', { name: 'Find a collection', exact: true }).fill('Patrick');
   await expect(gallery.getByRole('link')).toHaveCount(packs.length);
   expect(new URL(page.url()).searchParams.get('q')).toBe('Patrick');
   await page.reload();
-  await expect(page.getByRole('searchbox', { name: 'Find a pack', exact: true })).toHaveValue('Patrick');
-  await page.getByRole('searchbox', { name: 'Find a pack', exact: true }).fill('no-pack-matches-this-query');
-  await expect(page.getByRole('status')).toHaveText('No packs found.');
+  await expect(page.getByRole('searchbox', { name: 'Find a collection', exact: true })).toHaveValue('Patrick');
+  await page.getByRole('searchbox', { name: 'Find a collection', exact: true }).fill('no-pack-matches-this-query');
+  await expect(page.getByRole('status')).toHaveText('No collections found.');
   await page.getByRole('button', { name: 'Clear search', exact: true }).click();
   await expect(gallery.getByRole('link')).toHaveCount(packs.length);
 });
@@ -278,36 +278,36 @@ test('owner management hides, restores and deletes packs through the owner API',
   await ownerService(page);
   await unlock(page);
   const title = packs[0].data.title;
-  const management = page.getByRole('region', { name: 'Your packs', exact: true });
+  const management = page.getByRole('region', { name: 'Your collections', exact: true });
   const row = management.getByRole('listitem').filter({ has: page.getByRole('heading', { name: title, exact: true }) });
-  await expect(row.getByText('Visible in Packs', { exact: true })).toBeVisible();
+  await expect(row.getByText('Visible in Collections', { exact: true })).toBeVisible();
   if (info.project.name.startsWith('mobile-qa-')) for (const viewport of mobileViewports) {
     await page.setViewportSize(viewport);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     for (const action of ['Hide', 'Delete']) await touchControl(page, row.getByRole('button', { name: `${action} ${title}`, exact: true }));
   }
   await row.getByRole('button', { name: `Hide ${title}`, exact: true }).click();
-  await expect(row.getByText('Hidden from Packs', { exact: true })).toBeVisible();
-  await (await headerDestination(page, 'Packs')).click();
-  const gallery = page.getByRole('navigation', { name: 'Packs', exact: true });
+  await expect(row.getByText('Hidden from Collections', { exact: true })).toBeVisible();
+  await (await headerDestination(page, 'Collections')).click();
+  const gallery = page.getByRole('navigation', { name: 'Collections', exact: true });
   await expect(gallery.getByRole('link')).toHaveCount(packs.length - 1);
   await expect(gallery.getByRole('link', { name: title, exact: true })).toHaveCount(0);
   await unlock(page);
   await row.getByRole('button', { name: `Show ${title}`, exact: true }).click();
-  await expect(row.getByText('Visible in Packs', { exact: true })).toBeVisible();
-  await (await headerDestination(page, 'Packs')).click();
+  await expect(row.getByText('Visible in Collections', { exact: true })).toBeVisible();
+  await (await headerDestination(page, 'Collections')).click();
   await expect(gallery.getByRole('link')).toHaveCount(packs.length);
   await expect(gallery.getByRole('link', { name: title, exact: true })).toBeVisible();
   await unlock(page);
   await row.getByRole('button', { name: `Delete ${title}`, exact: true }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toContainText('Shared videos, audio and images remain in storage.');
-  await dialog.getByRole('button', { name: 'Keep pack', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Keep collection', exact: true }).click();
   await expect(row).toBeVisible();
   await row.getByRole('button', { name: `Delete ${title}`, exact: true }).click();
   await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
   await expect(row).toHaveCount(0);
-  await (await headerDestination(page, 'Packs')).click();
+  await (await headerDestination(page, 'Collections')).click();
   await expect(gallery.getByRole('link')).toHaveCount(packs.length - 1);
   await expect(gallery.getByRole('link', { name: title, exact: true })).toHaveCount(0);
 });

@@ -10,7 +10,7 @@ for (const slug of ['corn-corntastic-day', 'apparently-get-dizzy', 'emotional-da
     const clip = clips.find(clip => clip.slug === slug)!;
     const title = clip.english;
     await page.goto('/en/');
-    await page.getByRole('navigation', { name: 'Packs', exact: true }).getByRole('link', { name: 'Memes', exact: true }).click();
+    await page.getByRole('navigation', { name: 'Collections', exact: true }).getByRole('link', { name: 'Memes', exact: true }).click();
     await expect(page).toHaveURL(new RegExp('/en/packs/' + packs.find(pack => pack.data.title === 'Memes')!.entry.id + '$'));
     await expect(page.getByRole('heading', { level: 1, name: 'Memes', exact: true })).toBeVisible();
     await page.getByRole('searchbox').fill(title);

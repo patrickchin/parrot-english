@@ -22,7 +22,7 @@ test('scene search finds tags and full dialogue and remains scoped to a selected
   await page.getByRole('button', { name: '清除搜索', exact: true }).click();
   await expect(search).toBeFocused();
   await expect(results).toHaveCount(clips.length);
-  await page.getByRole('link', { name: '全部内容包', exact: true }).click();
+  await page.getByRole('link', { name: '全部合集', exact: true }).click();
   await page.getByRole('link', { name: 'English Singsing', exact: true }).click();
   await expect(results).toHaveCount(clips.filter(clip => clip.note === 'English Singsing').length);
   await search.fill('SpongeBob');

@@ -11,7 +11,7 @@ for (const initialPath of ['/en/packs', '/en/library/all']) test(`first visit to
   expect(packs).toHaveLength(21);
   expect(clips).toHaveLength(128);
   if (initialPath === '/en/packs') {
-    const gallery = page.getByRole('navigation', { name: 'Packs', exact: true });
+    const gallery = page.getByRole('navigation', { name: 'Collections', exact: true });
     await expect(gallery.getByRole('link')).toHaveCount(packs.length);
     for (const pack of packs) await expect(gallery.getByRole('link', { name: pack.data.title, exact: true })).toBeVisible();
     await page.getByRole('link', { name: 'All scenes', exact: true }).click();
@@ -44,7 +44,7 @@ for (const initialPath of ['/en/packs', '/en/library/all']) test(`first visit to
 test('the production build browses published packs and reloads the selected pack', async ({ page }) => {
   const response = await page.goto('/en/packs');
   expect(response?.status()).toBe(200);
-  const gallery = page.getByRole('navigation', { name: 'Packs', exact: true });
+  const gallery = page.getByRole('navigation', { name: 'Collections', exact: true });
   await expect(gallery.getByRole('link')).toHaveCount(packs.length);
   const pack = packs[0];
   await gallery.getByRole('link', { name: pack.data.title, exact: true }).click();
@@ -83,7 +83,7 @@ test('production prepares player code from a scene list and defers owner JavaScr
   const codecsRequested = () => [...scripts].some(path => /\/assets\/(?:src|mediabunny[^/]*|export-dub)-[^/]+\.js$/.test(path));
   await page.route('**/api/owner-config', route => route.fulfill({ json: { apiBase: 'https://owner.example.test' } }));
   await page.goto('/en/');
-  const gallery = page.getByRole('navigation', { name: 'Packs', exact: true });
+  const gallery = page.getByRole('navigation', { name: 'Collections', exact: true });
   await expect(gallery.getByRole('link')).toHaveCount(packs.length);
   // This verifies request presence, not HTTP-cache behavior; routing fixtures
   // deliberately disable the browser cache in this test suite.
@@ -110,7 +110,7 @@ test('production prepares player code from a scene list and defers owner JavaScr
   // Owner uploads intentionally have no public navigation entry.
   catalogs = 0;
   await page.goto('/en/owner/packs');
-  await expect(page.getByRole('heading', { level: 1, name: 'Manage packs', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Manage collections', exact: true })).toBeVisible();
   await expect(page.getByLabel('Owner access key', { exact: true })).toBeVisible();
   expect(requested('OwnerPacks')).toBe(true);
   expect(codecsRequested()).toBe(false);
@@ -125,7 +125,7 @@ for (const screen of ['owner', 'player']) test(`a failed route chunk keeps a loc
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Parrotbook');
   await page.unroute(chunk);
   await page.getByRole('button', { name: 'Reload', exact: true }).click();
-  if (screen === 'owner') await expect(page.getByRole('heading', { name: 'Manage packs', exact: true })).toBeVisible();
+  if (screen === 'owner') await expect(page.getByRole('heading', { name: 'Manage collections', exact: true })).toBeVisible();
   else await expect(page.getByRole('button', { name: 'Start dubbing', exact: true })).toBeEnabled();
 });
 
@@ -169,7 +169,7 @@ for (const path of ['/en/', '/zh/', '/en/packs', '/zh/packs', '/en/library/all',
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   if (path.includes('/scenes/')) await expect(page.getByRole('button', { name: english ? 'Start dubbing' : '开始配音', exact: true })).toBeEnabled();
   else if (path.includes('/dubs')) await expect(page.getByRole('heading', { level: 1 })).toHaveText(english ? 'My dubs' : '我的配音');
-  else await expect(page.getByRole('searchbox', { name: path.includes('/library/') ? english ? 'Find a scene' : '查找片段' : english ? 'Find a pack' : '查找内容包', exact: true })).toBeVisible();
+  else await expect(page.getByRole('searchbox', { name: path.includes('/library/') ? english ? 'Find a scene' : '查找片段' : english ? 'Find a collection' : '查找合集', exact: true })).toBeVisible();
 });
 
 for (const [language, heading, search, start] of [
