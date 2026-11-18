@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import type { Pack } from '../src/content-pack';
 
 // Authoring fixtures belong to tests, never to the player bundle.
 export type FixtureClip = {
@@ -15,6 +16,8 @@ export const packs = catalog.packs.map(entry => ({
   entry, file: new URL(entry.manifest, contentRoot),
   data: JSON.parse(readFileSync(new URL(entry.manifest, contentRoot), 'utf8')),
 }));
+// Publication embeds validated pack metadata; the authoring catalog keeps refs.
+export const publishedCatalog = { ...catalog, packData: Object.fromEntries(packs.map(pack => [pack.entry.id, pack.data])) as Record<string, Pack> };
 export const clips: FixtureClip[] = packs.flatMap(pack => pack.data.scenes.map((scene: Omit<FixtureClip, 'packId'>) => ({ ...scene, packId: pack.entry.id })));
 export function sceneFile(slug: string, file = 'scene.json') {
   const clip = clips.find(clip => clip.slug === slug)!;

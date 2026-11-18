@@ -1,6 +1,7 @@
 import { test, expect, catalogUrl, headerDestination } from './fixtures';
-import { catalog, clips, packs, readScene, sceneFile } from '../content-fixtures';
+import { publishedCatalog, clips, packs, readScene, sceneFile } from '../content-fixtures';
 import { readFile } from 'node:fs/promises';
+import type { Pack } from '../../src/content-pack';
 
 const communityId = 'pack_communityTest';
 const communityPath = `packs/${communityId}/pack.json`;
@@ -21,14 +22,13 @@ function communityPack() {
     scenes: { [scene.id]: { title: scene.title, licence: scene.credit.licence, changes: scene.credit.changes } },
     roles: { [scene.roles[0].id]: { name: 'Sam', hint: scene.roles[0].hint } },
   }]));
-  return { scene, pack: { version: 1, id: communityId, title: 'Community test', franchise: 'Original', description: 'A dynamically published test pack.', author: 'Community creator', scenes: [summary], locales } };
+  return { scene, pack: { version: 1, id: communityId, title: 'Community test', franchise: 'Original', description: 'A dynamically published test pack.', author: 'Community creator', scenes: [summary], locales } satisfies Pack };
 }
 
 test('publishing and withdrawing a pack updates discovery, search, playback and saved dubs without rebuilding', async ({ page }) => {
   const { scene, pack } = communityPack();
-  const current = structuredClone(catalog);
+  const current = structuredClone(publishedCatalog);
   await page.route(catalogUrl, route => route.fulfill({ json: current }));
-  await page.route(communityUrl, route => route.fulfill({ json: pack }));
   await page.route(new URL('scenes/community-hello/scene.json', communityUrl).href, route => route.fulfill({ json: scene }));
   await page.route(new URL('scenes/community-hello/' + scene.waveform, communityUrl).href, async route => route.fulfill({ body: await readFile(sceneFile('patrick', scene.waveform)), contentType: 'application/json' }));
   await page.goto('/en/library/all');
@@ -37,6 +37,7 @@ test('publishing and withdrawing a pack updates discovery, search, playback and 
   await expect(page.getByRole('button', { name: 'Choose scene: Community hello', exact: true })).toHaveCount(0);
 
   current.packs.push({ id: communityId, manifest: communityPath, uploader: 'Patrick' });
+  current.packData[communityId] = pack;
   await page.reload();
   await search.fill('communitymagic');
   await page.getByRole('button', { name: 'Choose scene: Community hello', exact: true }).click();
@@ -53,6 +54,7 @@ test('publishing and withdrawing a pack updates discovery, search, playback and 
   const savedUrl = page.url();
 
   current.packs.pop();
+  delete current.packData[communityId];
   await page.goto(savedUrl);
   await expect(page.getByRole('heading', { level: 1, name: 'Page not found', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Record', exact: true })).toHaveCount(0);
@@ -66,7 +68,7 @@ test('publishing and withdrawing a pack updates discovery, search, playback and 
 test('a direct scene link waits for the dynamic catalog before resolving the scene', async ({ page }) => {
   let release!: () => void;
   const waiting = new Promise<void>(resolve => { release = resolve; });
-  await page.route(catalogUrl, async route => { await waiting; await route.fulfill({ json: catalog }); });
+  await page.route(catalogUrl, async route => { await waiting; await route.fulfill({ json: publishedCatalog }); });
   await page.goto('/en/scenes/toy-story-infinity');
   await expect(page.getByRole('status')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Page not found', exact: true })).toHaveCount(0);
@@ -75,10 +77,12 @@ test('a direct scene link waits for the dynamic catalog before resolving the sce
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
 });
 
-test('failed or malformed packs show a retryable error and My dubs stays accessible', async ({ page }) => {
+for (const failure of ['an unavailable catalog', 'a malformed inline pack']) test(`${failure} shows a retryable error and My dubs stays accessible`, async ({ page }) => {
   let broken = true;
   const pack = packs[0];
-  await page.route(new URL(pack.entry.manifest, catalogUrl).href, route => route.fulfill({ json: broken ? { ...pack.data, version: 99 } : pack.data }));
+  await page.route(catalogUrl, route => broken && failure === 'an unavailable catalog'
+    ? route.fulfill({ status: 503, json: { error: 'unavailable' } })
+    : route.fulfill({ json: { ...publishedCatalog, packData: { ...publishedCatalog.packData, [pack.entry.id]: broken ? { ...pack.data, version: 99 } : pack.data } } }));
   await page.goto('/en/scenes/patrick');
   await expect(page.getByRole('alert')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Start dubbing', exact: true })).toHaveCount(0);
@@ -92,7 +96,7 @@ test('failed or malformed packs show a retryable error and My dubs stays accessi
 });
 
 test('an empty published catalog keeps categories and a single meaningful heading usable', async ({ page }) => {
-  await page.route(catalogUrl, route => route.fulfill({ json: { version: 1, packs: [] } }));
+  await page.route(catalogUrl, route => route.fulfill({ json: { version: 1, packs: [], packData: {} } }));
   await page.goto('/en/');
   await expect(page.getByRole('heading', { level: 1, name: 'Packs', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(0);

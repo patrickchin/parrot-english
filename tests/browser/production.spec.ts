@@ -1,8 +1,45 @@
 import { scenePath } from './scene-path';
-import { test, expect } from './fixtures';
+import { test, expect, catalogUrl, setLanguage } from './fixtures';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { clips, packs } from '../content-fixtures';
+
+for (const initialPath of ['/en/packs', '/en/library/all']) test(`first visit to ${initialPath} discovers every pack, scene and locale with one catalog request`, async ({ page }) => {
+  const requests: { method: string; url: string; type: string }[] = [];
+  page.on('request', request => requests.push({ method: request.method(), url: request.url(), type: request.resourceType() }));
+  await page.goto(initialPath);
+  expect(packs).toHaveLength(21);
+  expect(clips).toHaveLength(128);
+  if (initialPath === '/en/packs') {
+    const gallery = page.getByRole('navigation', { name: 'Packs', exact: true });
+    await expect(gallery.getByRole('link')).toHaveCount(packs.length);
+    for (const pack of packs) await expect(gallery.getByRole('link', { name: pack.data.title, exact: true })).toBeVisible();
+    await page.getByRole('link', { name: 'All scenes', exact: true }).click();
+  }
+  for (const language of ['en', 'zh-CN', 'es', 'ja', 'ko'] as const) {
+    await setLanguage(page, language);
+    const titles = packs.flatMap(pack => pack.data.scenes.map((clip: typeof clips[number]) => pack.data.locales[language].scenes[clip.id].title));
+    await expect(page.getByRole('heading', { level: 3 })).toHaveText(titles);
+  }
+  await setLanguage(page, 'en');
+  const catalogRequests = () => requests.filter(request => request.url === catalogUrl);
+  expect(catalogRequests()).toEqual([{ method: 'GET', url: catalogUrl, type: 'fetch' }]);
+  // Posters may load while browsing. Pack/scene JSON, waveforms and playable
+  // media remain deferred until the learner chooses a scene.
+  expect(requests.filter(request => {
+    const path = new URL(request.url).pathname;
+    return request.type === 'media' || /\.(?:mp4|m4a|mp3|wav|aac|ogg|webm)$/.test(path) ||
+      path.endsWith('.json') && (path.startsWith('/content/') && request.url !== catalogUrl || /waveform/i.test(path));
+  })).toEqual([]);
+  const clip = clips.find(clip => clip.slug === 'patrick')!;
+  const pack = packs.find(pack => pack.entry.id === clip.packId)!;
+  await page.getByRole('button', { name: `Choose scene: ${pack.data.locales.en.scenes[clip.id].title}`, exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Start dubbing', exact: true })).toBeEnabled();
+  const sceneUrl = new URL(clip.manifest, new URL(pack.entry.manifest, catalogUrl)).href;
+  expect(requests.filter(request => request.url === sceneUrl)).toHaveLength(1);
+  expect(requests.filter(request => new URL(request.url).pathname.endsWith('/pack.json'))).toEqual([]);
+  expect(catalogRequests()).toHaveLength(1);
+});
 
 test('the production build browses published packs and reloads the selected pack', async ({ page }) => {
   const response = await page.goto('/en/packs');

@@ -1,5 +1,5 @@
 import { test, expect, catalogUrl, setLanguage, headerDestination } from './fixtures';
-import { catalog, clips, packs, readScene } from '../content-fixtures';
+import { publishedCatalog, clips, packs, readScene } from '../content-fixtures';
 import { packPath, packsPath } from '../../src/app/routes';
 import type { Pack } from '../../src/content-pack';
 import { mkdir } from 'node:fs/promises';
@@ -84,15 +84,15 @@ test('a newly published pack and its actual authored scene appear from the runti
     for (const role of scene.roles) delete locale.roles[role.id];
   }
   source.scenes = source.scenes.filter(clip => clip.id !== chosen.id);
-  const current = structuredClone(catalog);
+  const current = structuredClone(publishedCatalog);
   const manifest = memePack.entry.manifest.replace('pack.json', 'weekend-pack.json');
   await page.route(catalogUrl, route => route.fulfill({ json: current }));
-  await page.route(new URL(memePack.entry.manifest, catalogUrl).href, route => route.fulfill({ json: current.packs.some(pack => pack.id === id) ? source : memePack.data }));
-  await page.route(new URL(manifest, catalogUrl).href, route => route.fulfill({ json: extra }));
   await page.goto(packsPath('en'));
   const gallery = page.getByRole('navigation', { name: 'Packs', exact: true });
   await expect(gallery.getByRole('link', { name: extra.title, exact: true })).toHaveCount(0);
   current.packs.push({ id, manifest, uploader: 'Patrick' });
+  current.packData[memePack.entry.id] = source;
+  current.packData[id] = extra;
   await page.reload();
   await expect(gallery.getByRole('link')).toHaveCount(packs.length + 1);
   const added = gallery.getByRole('link', { name: extra.title, exact: true });
@@ -110,6 +110,8 @@ test('a newly published pack and its actual authored scene appear from the runti
   await page.getByRole('button', { name: 'Back to scenes', exact: true }).click();
   await expect(page).toHaveURL(new URL(packPath(id, 'en'), page.url()).href);
   current.packs.pop();
+  delete current.packData[id];
+  current.packData[memePack.entry.id] = memePack.data;
   await page.reload();
   await expect(page.getByRole('heading', { level: 1, name: 'Page not found', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Packs', exact: true }).click();
@@ -187,7 +189,7 @@ test('recorded dubs retain their selected pack through saving, reload, language 
 });
 
 test('an empty catalog keeps a useful pack gallery without an upload flow', async ({ page }) => {
-  await page.route(catalogUrl, route => route.fulfill({ json: { version: 1, packs: [] } }));
+  await page.route(catalogUrl, route => route.fulfill({ json: { version: 1, packs: [], packData: {} } }));
   await page.goto(packsPath('en'));
   await expect(page.getByRole('heading', { level: 1, name: 'Packs', exact: true })).toBeVisible();
   await expect(page.getByRole('status')).toHaveText('No content packs yet');
@@ -196,7 +198,7 @@ test('an empty catalog keeps a useful pack gallery without an upload flow', asyn
 });
 
 test('an empty authored pack stays distinct from an unknown pack', async ({ page }) => {
-  await page.route(new URL(starter.entry.manifest, catalogUrl).href, route => route.fulfill({ json: { ...starter.data, scenes: [], locales: undefined } }));
+  await page.route(catalogUrl, route => route.fulfill({ json: { ...publishedCatalog, packData: { ...publishedCatalog.packData, [starter.entry.id]: { ...starter.data, scenes: [], locales: undefined } } } }));
   await page.goto(packPath(starter.entry.id, 'en'));
   await expect(page.getByRole('heading', { level: 1, name: starter.data.title, exact: true })).toBeVisible();
   await expect(page.getByRole('status')).toHaveText('No scenes in this pack');

@@ -1,6 +1,6 @@
 import { test, expect, catalogUrl, headerDestination } from './fixtures';
 import type { Page } from '@playwright/test';
-import { catalog, packs, clips, readScene, sceneFile } from '../content-fixtures';
+import { publishedCatalog, packs, clips, readScene, sceneFile } from '../content-fixtures';
 import type { Pack } from '../../src/content-pack';
 import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir, homedir } from 'node:os';
@@ -57,10 +57,14 @@ async function ownerService(page: Page, options: { failFile?: boolean; failPubli
       return send.call(this, body);
     };
   });
-  const current = structuredClone(catalog);
+  const current = structuredClone(publishedCatalog);
+  const packData = { ...current.packData, [pack.id]: pack };
   const uploaded = new Map<string, Buffer>();
   const managed = packs.map(item => ({ id: item.entry.id, title: item.data.title, uploader: 'Patrick', manifest: new URL(item.entry.manifest, catalogUrl).href, sceneCount: item.data.scenes.length, visible: true }));
-  const syncCatalog = () => { current.packs = managed.filter(item => item.visible).map(item => ({ id: item.id, manifest: new URL(item.manifest).pathname.replace('/content/', ''), uploader: item.uploader })); };
+  const syncCatalog = () => {
+    current.packs = managed.filter(item => item.visible).map(item => ({ id: item.id, manifest: new URL(item.manifest).pathname.replace('/content/', ''), uploader: item.uploader }));
+    current.packData = Object.fromEntries(current.packs.map(item => [item.id, packData[item.id]]));
+  };
   const state = { starts: 0, refreshes: 0, puts: 0, publishes: 0, published: false };
   let fileFailed = false, publishFailed = false;
   let descriptors: { path: string; size: number; type: string }[] = [];
@@ -121,7 +125,6 @@ async function ownerService(page: Page, options: { failFile?: boolean; failPubli
     uploaded.set(path, bytes);
     return route.fulfill({ status: 200, headers: { 'Access-Control-Allow-Origin': '*' } });
   });
-  await page.route(new URL(`packs/${pack.id}/pack.json`, catalogUrl).href, route => route.fulfill({ json: pack }));
   await page.route(new URL(`packs/${pack.id}/scenes/patrick/scene.json`, catalogUrl).href, route => route.fulfill({ json: scene }));
   await page.route(new URL(`packs/${pack.id}/scenes/patrick/${scene.waveform}`, catalogUrl).href, route => route.fulfill({ body: bodies.get(`scenes/patrick/${scene.waveform}`), contentType: 'application/json' }));
   return state;
@@ -285,8 +288,17 @@ test('owner management hides, restores and deletes packs through the owner API',
   }
   await row.getByRole('button', { name: `Hide ${title}`, exact: true }).click();
   await expect(row.getByText('Hidden from Packs', { exact: true })).toBeVisible();
+  await (await headerDestination(page, 'Packs')).click();
+  const gallery = page.getByRole('navigation', { name: 'Packs', exact: true });
+  await expect(gallery.getByRole('link')).toHaveCount(packs.length - 1);
+  await expect(gallery.getByRole('link', { name: title, exact: true })).toHaveCount(0);
+  await unlock(page);
   await row.getByRole('button', { name: `Show ${title}`, exact: true }).click();
   await expect(row.getByText('Visible in Packs', { exact: true })).toBeVisible();
+  await (await headerDestination(page, 'Packs')).click();
+  await expect(gallery.getByRole('link')).toHaveCount(packs.length);
+  await expect(gallery.getByRole('link', { name: title, exact: true })).toBeVisible();
+  await unlock(page);
   await row.getByRole('button', { name: `Delete ${title}`, exact: true }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog).toContainText('Shared videos, audio and images remain in storage.');
@@ -296,5 +308,6 @@ test('owner management hides, restores and deletes packs through the owner API',
   await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
   await expect(row).toHaveCount(0);
   await (await headerDestination(page, 'Packs')).click();
-  await expect(page.getByRole('navigation', { name: 'Packs', exact: true }).getByRole('link', { name: title, exact: true })).toHaveCount(0);
+  await expect(gallery.getByRole('link')).toHaveCount(packs.length - 1);
+  await expect(gallery.getByRole('link', { name: title, exact: true })).toHaveCount(0);
 });
