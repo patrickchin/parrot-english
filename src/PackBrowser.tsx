@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router';
 import { AppHeader } from './app/AppHeader';
+import { ContentPoster } from './app/ContentPoster';
 import { useContent } from './app/ContentProvider';
 import { libraryPath, packPath } from './app/routes';
 import { useLanguage } from './i18n';
@@ -36,8 +37,8 @@ export function PackBrowser() {
       </div>}
       {packs.length && !visible.length ? <Card className="library-empty"><p role="status">{t('packs.noResults')}</p><Button className="mt-4 h-11" onClick={() => setParams({})}>{t('packs.clearFilters')}</Button></Card> : null}
       {packs.length ? <nav aria-label={t('navigation.packs')} className="pack-grid">
-        {visible.map(pack => <Link key={pack.id} to={packPath(pack.id, language)} aria-label={pack.title} className="pack-card">
-          <span className="pack-cover">{pack.poster ? <img src={pack.poster} alt="" loading="lazy" decoding="async" /> : <Icon name="collection" className="size-16" />}</span>
+        {visible.map((pack, index) => <Link key={pack.id} to={packPath(pack.id, language)} aria-label={pack.title} className="pack-card">
+          <span className="pack-cover">{pack.poster ? <ContentPoster src={pack.poster} eager={index < 2} priority={index === 0} /> : <Icon name="collection" className="size-16" />}</span>
           <div className="pack-card-copy">
             <h2 className="font-display"><span>{pack.title}</span><Icon name="arrow" className="size-5 shrink-0" /></h2>
             <p className="pack-description">{pack.description}</p>

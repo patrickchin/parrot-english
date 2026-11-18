@@ -5,6 +5,7 @@ import { useContent } from './app/ContentProvider';
 import { useLanguage } from './i18n';
 import { searchScenes } from './scene-search';
 import { AppHeader } from './app/AppHeader';
+import { ContentPoster } from './app/ContentPoster';
 import { Icon } from './shared/ui';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -44,9 +45,9 @@ export function Library({ onChoose, packId }: { onChoose: (slug: string, draftId
           </InputGroup>
         </div>
         {!visible.length && <Card className="library-empty"><p role="status">{t(scenes.length ? 'library.noScenesFound' : packId ? 'packs.emptyPack' : 'library.empty')}</p>{!!scenes.length && <><p>{t('library.searchSuggestion')}</p><Button onClick={clearSearch} className="mx-auto mt-5 h-12">{t('library.showAllScenes')}<Icon name="arrow" /></Button></>}</Card>}
-        <ul role="list" className="scene-shelf">{visible.map(clip => <li key={clip.slug}>
+        <ul role="list" className="scene-shelf">{visible.map((clip, index) => <li key={clip.slug}>
           <button onClick={() => onChoose(clip.slug)} aria-label={t('library.chooseScene', { title: t(`content:scenes.${clip.id}.title`, { defaultValue: clip.title }) })} className="scene-select">
-            <img src={clip.poster} alt="" loading="lazy" decoding="async" />
+            <ContentPoster src={clip.poster} eager={index < 2} priority={index === 0} />
             <span className="scene-copy"><span role="heading" aria-level={3} className="scene-title font-display">{t(`content:scenes.${clip.id}.title`, { defaultValue: clip.title })}</span>{pack?.title === 'Memes' && <span className="scene-source">{clip.note}</span>}</span>
           </button>
         </li>)}</ul>

@@ -18,6 +18,58 @@ test('the production build browses published packs and reloads the selected pack
   await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(pack.data.scenes.length);
 });
 
+test('production loads player and owner JavaScript only when those screens are opened', async ({ page }) => {
+  const scripts = new Set<string>();
+  let catalogs = 0;
+  page.on('request', request => {
+    const path = new URL(request.url()).pathname;
+    if (path.startsWith('/assets/') && path.endsWith('.js')) scripts.add(path);
+    if (path === '/content/catalog.json') catalogs++;
+  });
+  const requested = (prefix: string) => [...scripts].some(path => new RegExp(`/assets/${prefix}-[^/]+\\.js$`).test(path));
+  const codecsRequested = () => [...scripts].some(path => /\/assets\/(?:src|mediabunny[^/]*|export-dub)-[^/]+\.js$/.test(path));
+  await page.route('**/api/owner-config', route => route.fulfill({ json: { apiBase: 'https://owner.example.test' } }));
+  await page.goto('/en/');
+  const gallery = page.getByRole('navigation', { name: 'Packs', exact: true });
+  await expect(gallery.getByRole('link')).toHaveCount(packs.length);
+  // This verifies request presence, not HTTP-cache behavior; routing fixtures
+  // deliberately disable the browser cache in this test suite.
+  for (const prefix of ['Player', 'OwnerPacks', 'SavedDubs', 'SharedDub', 'share-client', 'dialog']) {
+    expect(requested(prefix), `${prefix} stays out of the initial Packs request graph`).toBe(false);
+  }
+  expect(codecsRequested()).toBe(false);
+
+  const clip = clips.find(clip => clip.slug === 'patrick')!;
+  const pack = packs.find(pack => pack.entry.id === clip.packId)!;
+  await gallery.getByRole('link', { name: pack.data.title, exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1, name: pack.data.title, exact: true })).toBeVisible();
+  const title = pack.data.locales.en.scenes[clip.id].title;
+  await page.getByRole('button', { name: `Choose scene: ${title}`, exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Start dubbing', exact: true })).toBeEnabled();
+  expect(requested('Player')).toBe(true);
+  expect(requested('OwnerPacks')).toBe(false);
+  expect(codecsRequested()).toBe(false);
+
+  // Owner uploads intentionally have no public navigation entry.
+  catalogs = 0;
+  await page.goto('/en/owner/packs');
+  await expect(page.getByRole('heading', { level: 1, name: 'Manage packs', exact: true })).toBeVisible();
+  await expect(page.getByLabel('Owner access key', { exact: true })).toBeVisible();
+  expect(requested('OwnerPacks')).toBe(true);
+  expect(codecsRequested()).toBe(false);
+  expect(catalogs).toBe(0);
+});
+
+test('a failed route chunk keeps a localized error and recovers with Reload', async ({ page }) => {
+  await page.route('**/assets/OwnerPacks-*.js', route => route.abort());
+  await page.goto('/en/owner/packs');
+  await expect(page.getByRole('alert')).toHaveText('Something went wrong. Please try again.');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Parrotbook');
+  await page.unroute('**/assets/OwnerPacks-*.js');
+  await page.getByRole('button', { name: 'Reload', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Manage packs', exact: true })).toBeVisible();
+});
+
 for (const clip of clips) test(`hosted ${clip.slug} opens and plays without a device file`, async ({ page }) => {
   await page.goto(scenePath(clip.slug));
   await expect(page.getByLabel('选择本地片段', { exact: true })).toHaveCount(0);

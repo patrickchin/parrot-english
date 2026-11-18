@@ -80,8 +80,8 @@ export function storageUrl(path: string, base: string, extension: string): strin
       !relativeContentPath(url.pathname.slice(1), extension)) throw invalid();
   return url.href;
 }
-async function readJson(url: string, signal?: AbortSignal, max = 2 * 1024 * 1024): Promise<unknown> {
-  const response = await fetch(url, { signal, cache: 'no-store', credentials: 'omit', redirect: 'error' });
+async function readJson(url: string, signal?: AbortSignal, max = 2 * 1024 * 1024, cache: RequestCache = 'default'): Promise<unknown> {
+  const response = await fetch(url, { signal, cache, credentials: 'omit', redirect: 'error' });
   if (!response.ok || Number(response.headers.get('content-length')) > max) throw invalid();
   const reader = response.body?.getReader();
   if (!reader) throw invalid();
@@ -99,7 +99,7 @@ async function readJson(url: string, signal?: AbortSignal, max = 2 * 1024 * 1024
 }
 export async function loadContent(url: string, signal?: AbortSignal): Promise<ContentCatalog> {
   const catalogUrl = storageUrl(url, url, 'json');
-  const catalog = validateCatalog(await readJson(catalogUrl, signal, 64 * 1024));
+  const catalog = validateCatalog(await readJson(catalogUrl, signal, 64 * 1024, 'no-store'));
   const packs = await Promise.all(catalog.packs.map(async entry => {
     const manifest = storageUrl(entry.manifest, catalogUrl, 'json');
     return { pack: validatePack(await readJson(manifest, signal), entry.id), manifest, uploader: entry.uploader };

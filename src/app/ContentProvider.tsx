@@ -4,6 +4,7 @@ import { loadContent, type Clip, type ContentCatalog, type PublishedPack } from 
 import { i18n } from '../i18n-engine';
 import { languages } from '../locale';
 import type { LoadState } from '../load-state';
+import { useMatches } from 'react-router';
 
 const emptyClips: Clip[] = [];
 const emptyPacks: PublishedPack[] = [];
@@ -12,9 +13,11 @@ const ContentContext = createContext<{
 } | null>(null);
 
 export function ContentProvider({ children }: { children: ReactNode }) {
+  const needsCatalog = !useMatches().some(match => ['share', 'owner', 'not-found'].includes(match.id));
   const [state, setState] = useState<LoadState<ContentCatalog>>({ status: 'loading' });
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
+    if (!needsCatalog) return;
     const abort = new AbortController();
     setState({ status: 'loading' });
     void loadContent(contentCatalogUrl, abort.signal).then(value => {
@@ -28,7 +31,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
       if (!abort.signal.aborted) setState({ status: 'error', error: 'errors.contentLoad' });
     });
     return () => abort.abort();
-  }, [attempt]);
+  }, [attempt, needsCatalog]);
   return <ContentContext value={{ clips: state.status === 'ready' ? state.value.clips : emptyClips, packs: state.status === 'ready' ? state.value.packs : emptyPacks, state, reload: () => setAttempt(value => value + 1) }}>{children}</ContentContext>;
 }
 
