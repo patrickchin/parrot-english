@@ -18,9 +18,10 @@ export function AppHeader({ onHelp, onBack }: { onHelp?: () => void; onBack?: ()
     { page: 'packs', label: "navigation.packs", href: packsPath(language) },
     { page: 'dubs', label: "navigation.dubs", href: dubsPath(language) },
   ];
-  function follow(event: MouseEvent<HTMLAnchorElement>, href: string) {
+  function follow(event: MouseEvent<HTMLAnchorElement>, href: string, onFollow?: () => void) {
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    event.preventDefault(); navigation.navigateTo(href);
+    event.preventDefault();
+    if (onFollow) onFollow(); else navigation.navigateTo(href);
   }
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'));
   useLayoutEffect(() => {
@@ -30,7 +31,7 @@ export function AppHeader({ onHelp, onBack }: { onHelp?: () => void; onBack?: ()
   }, [dark]);
   return <header className="app-header mx-auto flex max-w-6xl items-center gap-0 px-4 py-4 sm:gap-4 sm:px-8 sm:py-5">
     {onBack && <Button variant="ghost" size="icon" onClick={onBack} aria-label={t("navigation.backToScenes")} className="size-11 shrink-0"><Icon name="back" /></Button>}
-    <a href={languagePath('/', language)} onClick={e => { if (onBack) { e.preventDefault(); onBack(); } }} className="app-wordmark min-w-0 flex-1 rounded-lg font-display text-base max-[359px]:text-sm font-bold tracking-tight focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-brand sm:text-3xl" aria-label={t("navigation.home")}><Bird className="app-brand-mark" strokeWidth={2.2} aria-hidden="true" /><span>parrotbook</span></a>
+    <a href={languagePath('/', language)} onClick={event => follow(event, languagePath('/', language), onBack)} className="app-wordmark min-w-0 flex-1 rounded-lg font-display text-base max-[359px]:text-sm font-bold tracking-tight focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-brand sm:text-3xl" aria-label={t("navigation.home")}><Bird className="app-brand-mark" strokeWidth={2.2} aria-hidden="true" /><span>parrotbook</span></a>
     {!onBack && <nav aria-label={t("navigation.main")} className="app-navigation">
       <div className="app-navigation-links">{destinations.map(item => <a key={item.page} href={item.href} aria-current={navigation.page === item.page || item.page === 'packs' && (navigation.page === 'pack' || navigation.page === 'library' || navigation.directory) ? 'page' : undefined} onClick={event => follow(event, item.href)}>{t(item.label)}</a>)}</div>
       <Menu.Root>

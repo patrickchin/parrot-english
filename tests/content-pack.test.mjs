@@ -8,7 +8,7 @@ test('runtime discovery validates hosted packs and never fetches scene media bef
   t.after(() => { globalThis.fetch = original; });
   const requests = [];
   globalThis.fetch = async (url, options) => {
-    requests.push(url); assert.equal(options.credentials, 'omit'); assert.equal(options.cache, 'no-store');
+    requests.push(url); assert.equal(options.credentials, 'omit'); assert.equal(options.cache, url.endsWith('/catalog.json') ? 'no-store' : 'default');
     assert.ok(documents.has(url), `Unexpected content request: ${url}`);
     return Response.json(documents.get(url));
   };
@@ -24,6 +24,35 @@ test('runtime discovery validates hosted packs and never fetches scene media bef
   assert.ok(scene.base.startsWith(contentBase));
   assert.equal(loaded.locales.en.scenes[scene.id].title, scene.title);
   await assert.rejects(loadScene({ ...clip, id: 'scene_wrong' }), /sceneInvalid/);
+});
+
+test('refresh reads the current catalog so withdrawn or updated releases cannot reappear from cache', async t => {
+  const original = globalThis.fetch;
+  t.after(() => { globalThis.fetch = original; });
+  let current = catalog;
+  const requests = [];
+  globalThis.fetch = async (url, options) => {
+    requests.push(url);
+    if (url.endsWith('/catalog.json')) {
+      assert.equal(options.cache, 'no-store');
+      return Response.json(current);
+    }
+    assert.equal(options.cache, 'default');
+    return Response.json(documents.get(url));
+  };
+  assert.equal((await loadContent(contentBase + 'catalog.json')).packs.length, 1);
+  current = { version: 1, packs: [] };
+  requests.length = 0;
+  assert.deepEqual(await loadContent(contentBase + 'catalog.json'), { clips: [], packs: [], locales: {} });
+  assert.deepEqual(requests, [contentBase + 'catalog.json']);
+  current = { version: 1, packs: [{ ...catalog.packs[0], manifest: 'releases/upl_new/packs/pack_fixture/pack.json' }] };
+  globalThis.fetch = async (url, options) => {
+    requests.push(url);
+    if (url.endsWith('/catalog.json')) { assert.equal(options.cache, 'no-store'); return Response.json(current); }
+    return Response.json(pack);
+  };
+  const updated = await loadContent(contentBase + 'catalog.json');
+  assert.ok(updated.clips.every(clip => clip.manifest.startsWith(contentBase + 'releases/upl_new/')));
 });
 
 test('pack trust boundaries reject traversal, unsupported versions, collisions and oversized responses', async t => {

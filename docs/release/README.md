@@ -1,6 +1,6 @@
 # Parrotbook release board
 
-Updated 2026-11-17, Asia/Shanghai. Codex leads implementation, specialist agents,
+Updated 2026-11-18, Asia/Shanghai. Codex leads implementation, specialist agents,
 integration, and verification in this chat. Patrick owns participant contact and
 business decisions. [Product plan](../product-plan.md) owns the broader scope.
 
@@ -24,6 +24,12 @@ expiry, and a removal capability kept on the creator's device. No public feed or
 automatic recording upload is part of this iteration.
 
 ## Current release
+
+The 2026-11-18 loading increment is measured against public source `2be60d01`
+(PR #294), which includes the on-video subtitle and Android/replay fixes.
+Cache, navigation and deferred-loading work is in verification; see
+[dated loading evidence](loading-performance.md). The deployment records below
+describe the earlier hosted-sharing milestone.
 
 The public player is live with **21 packs / 128 scenes**, all uploaded by Patrick.
 The latest verified player and API source is

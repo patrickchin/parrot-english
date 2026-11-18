@@ -8,6 +8,8 @@ const videoUrl = new URL(`/guest-shares/published/${id}/video.mp4?signature=test
 
 test('an account-free playback link works independently of the content catalogue and only its creator can remove it', async ({ page }) => {
   let removed = false;
+  let catalogs = 0;
+  page.on('request', request => { if (request.url() === catalogUrl) catalogs++; });
   await page.route(catalogUrl, route => route.fulfill({ status: 503, json: { error: 'unavailable' } }));
   await page.route('**/api/share-config', route => route.fulfill({ json: { apiBase: '/api/guest' } }));
   await page.route('**/api/guest/shares/' + id, route => {
@@ -26,6 +28,7 @@ test('an account-free playback link works independently of the content catalogue
   await expect(page.getByRole('button', { name: 'Remove shared video', exact: true })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Original source: Original clip', exact: true })).toHaveAttribute('href', 'https://example.com/original');
   await expect.poll(() => page.getByLabel('Patrick’s dub', { exact: true }).evaluate((video: HTMLVideoElement) => video.readyState)).toBeGreaterThanOrEqual(1);
+  expect(catalogs).toBe(0);
   await page.evaluate(({ id, token }) => new Promise<void>((resolve, reject) => {
     const open = indexedDB.open('parrotbook-share-capabilities', 1);
     open.onupgradeneeded = () => open.result.createObjectStore('capabilities');
@@ -45,6 +48,11 @@ test('an account-free playback link works independently of the content catalogue
   await page.reload();
   await expect(page.getByRole('status')).toHaveText('This video is unavailable, expired, or has been removed.');
   await expect(page.getByRole('button', { name: 'Remove shared video', exact: true })).toHaveCount(0);
+  expect(catalogs).toBe(0);
+  await page.unroute(catalogUrl);
+  await page.getByRole('link', { name: 'Try a scene', exact: true }).click();
+  await expect(page.getByRole('navigation', { name: 'Packs', exact: true }).getByRole('link').first()).toBeVisible();
+  expect(catalogs).toBeGreaterThan(0);
 });
 
 for (const failure of ['expired', 'pending', 'unconfigured', 'foreign-media']) test(`shared video ${failure} shows a useful recovery state`, async ({ page }) => {
