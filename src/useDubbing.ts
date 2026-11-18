@@ -65,7 +65,6 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
   const finishRecording = useRef<(() => void) | null>(null);
   const backing = useRef<AudioBuffer | null>(null);
   const decodedTakes = useRef(new WeakMap<Blob, Promise<AudioBuffer>>());
-  const replayClock = useRef<{ context: AudioContext; base: number } | null>(null);
   const captureCleanup = useRef<(() => void) | null>(null);
   const trace = useRef<(ReturnType<typeof mediaSnapshot> & { event: string; details: Record<string, unknown> })[]>([]);
   function log(event: string, details: Record<string, unknown> = {}) {
@@ -77,7 +76,6 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
     clearBuffering();
     operation.current++;
     cancellation.current.abort(); cancellation.current = new AbortController();
-    replayClock.current = null;
     timeline.current.capture = null;
     cancelAnimationFrame(frame.current);
     stream.current?.getTracks().forEach(track => track.stop());
@@ -178,30 +176,21 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
   useEffect(() => {
     const hidden = () => { if (document.hidden) stop(); };
     const el = video.current;
-    const events = ['play', 'playing', 'pause', 'waiting', 'stalled', 'seeking', 'seeked', 'error', 'ended'];
-    const observed = (event: Event) => log('video.' + event.type);
-    events.forEach(event => el?.addEventListener(event, observed));
-    const waiting = () => {
-      if (!['preview', 'recording', 'replay', 'listening'].includes(machine.current.phase)) return;
-      setBuffering(true);
-      bufferingTimeout.current ??= setTimeout(() => stop('errors.videoBuffering'), 8000);
-    };
-    // Reset/completion can seek a paused video without starting a frame loop.
-    const seeked = () => {
-      if (el && machine.current.phase === 'idle') updateTime(el.currentTime, true);
+    const events = ['play', 'playing', 'canplay', 'pause', 'waiting', 'stalled', 'seeking', 'seeked', 'error', 'ended'];
+    const observed = (event: Event) => {
+      log('video.' + event.type);
+      if (event.type === 'seeked' && el && machine.current.phase === 'idle') updateTime(el.currentTime, true);
+      if (event.type === 'playing' || event.type === 'canplay') clearBuffering();
+      if (event.type === 'waiting' && ['preview', 'recording', 'replay', 'listening'].includes(machine.current.phase)) {
+        setBuffering(true);
+        bufferingTimeout.current ??= setTimeout(() => stop('errors.videoBuffering'), 8000);
+      }
     };
     document.addEventListener('visibilitychange', hidden);
-    el?.addEventListener('seeked', seeked);
-    el?.addEventListener('waiting', waiting);
-    el?.addEventListener('playing', clearBuffering);
-    el?.addEventListener('canplay', clearBuffering);
+    events.forEach(event => el?.addEventListener(event, observed));
     return () => {
       document.removeEventListener('visibilitychange', hidden);
       events.forEach(event => el?.removeEventListener(event, observed));
-      el?.removeEventListener('seeked', seeked);
-      el?.removeEventListener('waiting', waiting);
-      el?.removeEventListener('playing', clearBuffering);
-      el?.removeEventListener('canplay', clearBuffering);
       stop();
       void context.current?.close();
       context.current = null; waveformModule.current = null;
@@ -233,26 +222,28 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
     return el;
   }
 
-  function watch(id: number, end: number, takes?: Takes) {
+  // Recording and playback share cancellation, end handling, and sync checks.
+  function watch(id: number, end: number, { audio, mute, onEnd = () => stop() }: {
+    audio?: { context: AudioContext; position: () => number; reason: 'capture-drift' | 'replay-drift' };
+    mute?: (time: number) => boolean;
+    onEnd?: () => void;
+  } = {}) {
     const drifted = sustainedDrift();
     const tick = () => {
       const el = video.current;
-      if (id !== operation.current || !el) return;
-      if (!el.ended && el.currentTime < end && (el.paused || el.seeking || el.playbackRate !== 1)) {
+      if (id !== operation.current || !el || machine.current.phase === 'saving') return;
+      if (el.ended || el.currentTime >= end) { onEnd(); return; }
+      if (el.paused || el.seeking || el.playbackRate !== 1) {
         stop("errors.mediaInterrupted", el.paused ? 'video-paused' : el.seeking ? 'video-seeking' : 'video-rate'); return;
       }
-      const clock = replayClock.current;
-      if (clock && !el.ended && el.currentTime < end) {
-        const audible = audibleContextTime(clock.context) - clock.base;
-        // Stop rather than silently accepting a shifted dub after an output
-        // device change or a picture startup/stall outside the sync tolerance.
-        if (clock.context.state !== 'running' || drifted(audible - el.currentTime)) {
-          stop("errors.mediaInterrupted", clock.context.state !== 'running' ? 'audio-state' : 'replay-drift', { drift: audible - el.currentTime }); return;
+      if (audio) {
+        const drift = audio.position() - el.currentTime;
+        if (audio.context.state !== 'running' || drifted(drift)) {
+          stop("errors.mediaInterrupted", audio.context.state !== 'running' ? 'audio-state' : audio.reason, { drift }); return;
         }
       }
-      if (takes) muteOriginal(scene.lines.some(line => takes[line.id] && el.currentTime >= line.start && el.currentTime < line.end));
+      if (mute) muteOriginal(mute(el.currentTime));
       updateTime(el.currentTime);
-      if (el.ended || el.currentTime >= end) { stop(); return; }
       frame.current = requestAnimationFrame(tick);
     };
     frame.current = requestAnimationFrame(tick);
@@ -272,8 +263,8 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
     } catch (e) { fail(id, e); }
   }
 
-  async function listen(take: Take, line: Line) {
-    await replay({ [line.id]: take }, line);
+  function listen(take: Take, line: Line) {
+    return replay({ [line.id]: take }, line);
   }
 
   async function record(line: Line) {
@@ -379,19 +370,11 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
         saveTimeout = setTimeout(() => { if (id === operation.current) stop("errors.recordingInterrupted"); }, 8000);
         detail.port.postMessage('stop');
       };
-      const drifted = sustainedDrift();
-      const meter = () => {
-        if (id !== operation.current || machine.current.phase !== 'recording') return;
-        updateTime(el.currentTime);
-        if (el.ended || el.currentTime >= window.end) { finishRecording.current?.(); return; }
-        const captureTime = captureStart + ctx.currentTime - captureContextStart;
-        if (ctx.state !== 'running' || drifted(captureTime - el.currentTime) || el.paused || el.seeking || el.playbackRate !== 1) {
-          stop("errors.mediaInterrupted", ctx.state !== 'running' ? 'audio-state' : el.paused ? 'video-paused' : el.seeking ? 'video-seeking' : el.playbackRate !== 1 ? 'video-rate' : 'capture-drift', { drift: captureTime - el.currentTime }); return;
-        }
-        muteOriginal(el.currentTime >= line.start && el.currentTime < line.end);
-        frame.current = requestAnimationFrame(meter);
-      };
-      frame.current = requestAnimationFrame(meter);
+      watch(id, window.end, {
+        audio: { context: ctx, position: () => captureStart + ctx.currentTime - captureContextStart, reason: 'capture-drift' },
+        mute: time => time >= line.start && time < line.end,
+        onEnd: finishRecording.current,
+      });
     } catch (e) { fail(id, e); }
   }
 
@@ -479,11 +462,14 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
         source.start(Math.max(0, base + voiceStart), offset, duration);
         source.onended = () => source.disconnect(); sources.current.push(source);
       }
-      replayClock.current = { context: ctx, base };
       log('replay-scheduled', { base, start, end, firstVoice, needsLeadIn });
       if (needsLeadIn) await playVideo(el, id, { delay: Math.max(0, (base + start - audibleContextTime(ctx)) * 1000) });
       if (id !== operation.current) return;
-      advance('PLAYING', id); watch(id, end, takes);
+      advance('PLAYING', id);
+      watch(id, end, {
+        audio: { context: ctx, position: () => audibleContextTime(ctx) - base, reason: 'replay-drift' },
+        mute: time => scene.lines.some(line => takes[line.id] && time >= line.start && time < line.end),
+      });
     } catch (e) { fail(id, e); }
   }
 

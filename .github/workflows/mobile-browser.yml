@@ -25,6 +25,8 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
+      - name: Use the primary Ubuntu package mirror
+        run: sudo sed -i 's|http://[^ ]*archive.ubuntu.com/ubuntu|https://archive.ubuntu.com/ubuntu|g; s|http://security.ubuntu.com/ubuntu|https://security.ubuntu.com/ubuntu|g' /etc/apt/sources.list.d/ubuntu.sources
       - name: Install Firefox and native browser dependencies
         run: npx playwright install --with-deps firefox
       - name: Install the media fixture tools
