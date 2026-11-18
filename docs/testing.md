@@ -156,6 +156,18 @@ coverage; they do not establish that all possible orders have been tested.
 
 ## Intermittent recording/replay interruptions
 
+Production does not collect browser error logs. Earlier timing reproductions
+were controlled simulations, not a reproduction of the reported Samsung Brave
+failure. The error message alone cannot distinguish the app's own sync watchdog
+from a paused video, changed playback rate, or suspended audio context.
+
+Player errors now offer **Error details → Copy diagnostic report**. The bounded
+in-memory report captures the app bundle revision, browser, failure reason,
+recent player events, and audio/video clock state before cleanup. It also appears
+in the browser console. No report is uploaded automatically; recordings, media
+URLs, learner text, and account data are excluded. A report from an affected
+device is still required to establish the Samsung failure cause.
+
 The shared runtime previously aborted recording or replay on a single low
 `readyState` sample, a `waiting` event, or one clock discrepancy over 120 ms.
 `transient-media.spec.ts` reproduces false failures with an 80 ms readiness dip

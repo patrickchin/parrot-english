@@ -56,6 +56,11 @@
     "keepDub": "吹き替えを残す"
   },
   "player": {
+    "errorDetails": "エラーの詳細",
+    "diagnosticDescription": "ブラウザーと再生状態のレポートです。共有するまでは、この端末内にのみ保存されます。",
+    "diagnosticReport": "診断レポート",
+    "copyDiagnostic": "診断レポートをコピー",
+    "diagnosticCopied": "レポートをコピーしました",
     "loading": "シーンを準備中…",
     "reload": "再読み込み",
     "startANewDub": "新しい吹き替えを始める",

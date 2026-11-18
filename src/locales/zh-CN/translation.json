@@ -56,6 +56,11 @@
     "keepDub": "保留配音"
   },
   "player": {
+    "errorDetails": "错误详情",
+    "diagnosticDescription": "此报告包含浏览器和播放状态，由你选择是否分享，之前仅保留在本机。",
+    "diagnosticReport": "诊断报告",
+    "copyDiagnostic": "复制诊断报告",
+    "diagnosticCopied": "报告已复制",
     "loading": "正在准备你的小片场…",
     "reload": "重新加载",
     "startANewDub": "开始新的配音",
