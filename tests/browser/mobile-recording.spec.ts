@@ -85,3 +85,39 @@ test('cancelling a pending audio resume immediately releases capture and leaves 
   await expect.poll(() => page.evaluate(() => (window as unknown as { startupAudit: StartupAudit }).startupAudit.contexts[0].state), { timeout: 1500 }).toBe('closed');
   await expectFreshRecording(page);
 });
+
+test('a late microphone response from a cancelled attempt cannot stop or save over its replacement', async ({ page }) => {
+  await page.evaluate(() => {
+    const getUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+    let first = true;
+    navigator.mediaDevices.getUserMedia = async constraints => {
+      const pending = getUserMedia(constraints);
+      if (!first) return pending;
+      first = false;
+      const stream = await pending;
+      return new Promise<MediaStream>(resolve => {
+        (window as unknown as { releaseCancelledMicrophone: () => void }).releaseCancelledMicrophone = () => resolve(stream);
+      });
+    };
+  });
+  const record = page.getByRole('button', { name: '开始录音', exact: true });
+  await record.click();
+  await page.waitForFunction(() => typeof (window as unknown as { releaseCancelledMicrophone?: () => void }).releaseCancelledMicrophone === 'function');
+  await page.getByRole('button', { name: '取消', exact: true }).click();
+  await record.click();
+  await expect(page.getByRole('button', { name: '停止录音', exact: true })).toBeVisible();
+  await page.evaluate(() => (window as unknown as { releaseCancelledMicrophone: () => void }).releaseCancelledMicrophone());
+  await expect.poll(() => page.evaluate(() => {
+    const tracks = (window as unknown as { mediaAudit: MediaAudit }).mediaAudit.tracks;
+    return tracks.map(track => track.readyState);
+  })).toEqual(['ended', 'live']);
+  const listen = page.getByRole('button', { name: '听我的录音', exact: true });
+  await expect(listen).toBeEnabled();
+  await expect(page.getByText('已保存到本机', { exact: true })).toBeVisible();
+  await expectReleasedMicrophone(page);
+  expect(await page.evaluate(() => (window as unknown as { mediaAudit: MediaAudit }).mediaAudit.captures.length)).toBe(1);
+  await listen.click();
+  await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
+  await expect(listen).toBeEnabled();
+  await expect(page.getByRole('alert')).toHaveCount(0);
+});

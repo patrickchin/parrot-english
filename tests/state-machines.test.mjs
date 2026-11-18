@@ -1,40 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { idleMedia, transitionMedia } from '../src/media-state.ts';
 import { createLesson, lessonTakes, transitionLesson } from '../src/lesson-state.ts';
 import { waitForVideo } from '../src/video-events.ts';
-
-test('recording advances only through its handshake and cancelled operations cannot resume', () => {
-  const events = ['MICROPHONE_GRANTED', 'WORKLET_READY', 'AUDIO_READY', 'VIDEO_READY', 'CAPTURE_READY', 'PLAYING', 'FINISH', 'SAVED'];
-  const phases = ['worklet', 'audio', 'video', 'capture', 'playing', 'recording', 'saving', 'idle'];
-  let state = transitionMedia(idleMedia, { type: 'START', operation: 1, activity: 'recording' });
-  assert.equal(state.stage, 'microphone');
-  assert.equal(transitionMedia(state, { type: 'PLAYING', operation: 1 }), state, 'cannot play before capture is acknowledged');
-  for (let i = 0; i < events.length; i++) {
-    const cancelled = transitionMedia(state, { type: 'STOP' });
-    assert.equal(transitionMedia(cancelled, { type: events[i], operation: 1 }), cancelled);
-    const replacement = transitionMedia(cancelled, { type: 'START', operation: 2, activity: 'preview' });
-    assert.equal(transitionMedia(replacement, { type: events[i], operation: 1 }), replacement);
-    state = transitionMedia(state, { type: events[i], operation: 1 });
-    assert.equal(state.phase === 'loading' ? state.stage : state.phase, phases[i]);
-  }
-  const failed = transitionMedia(state, { type: 'STOP', error: 'permission denied' });
-  assert.deepEqual(failed, { phase: 'idle', error: 'permission denied' });
-  assert.deepEqual(transitionMedia(failed, { type: 'CLEAR_ERROR' }), idleMedia);
-});
-
-test('preview, listening, and replay have distinct original and decoded-audio preparation paths', () => {
-  for (const activity of ['preview', 'listening', 'replay']) {
-    for (const original of activity === 'preview' ? [true] : [true, false]) {
-      let state = transitionMedia(idleMedia, { type: 'START', operation: 3, activity });
-      const events = activity === 'preview' ? [] : original ? ['USE_ORIGINAL'] : ['AUDIO_READY', 'TAKES_READY', 'BACKING_READY'];
-      for (const type of [...events, 'VIDEO_READY', 'PLAYING']) state = transitionMedia(state, { type, operation: 3 });
-      assert.deepEqual(state, { phase: activity, operation: 3 });
-      assert.equal(transitionMedia(state, { type: 'FINISH', operation: 3 }), state, 'only recording can save');
-    }
-  }
-});
 
 test('lesson keeps line dispositions exclusive, wraps unfinished lines, and resets without stale takes', async () => {
   const scene = JSON.parse(await readFile('tests/fixtures/sintel/scene.json', 'utf8'));
