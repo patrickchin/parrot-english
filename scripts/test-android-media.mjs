@@ -20,9 +20,11 @@ const original = page.url();
 const report = { browser: version.Browser, androidPackage: version['Android-Package'], trials: [], diagnostics: [] };
 page.on('console', message => { if (message.text().startsWith('Parrotbook media failure')) report.diagnostics.push(message.text()); });
 const output = process.env.ANDROID_TEST_REPORT ?? resolve(tmpdir(), 'parrotbook-android-media.json');
-await page.addInitScript(() => {
+const observeVoice = () => {
   window.__androidVoicePeak = 0;
   const taps = [], connect = AudioNode.prototype.connect;
+  let active = true;
+  window.__restoreAndroidMeter = () => { active = false; AudioNode.prototype.connect = connect; };
   AudioNode.prototype.connect = function (destination, ...channels) {
     if (this instanceof AudioBufferSourceNode && !this.loop && this.buffer && destination === this.context.destination) {
       const tap = this.context.createAnalyser(); tap.fftSize = 256;
@@ -32,6 +34,7 @@ await page.addInitScript(() => {
     return Reflect.apply(connect, this, [destination, ...channels]);
   };
   const sample = () => {
+    if (!active) return;
     for (const tap of taps) {
       const values = new Float32Array(tap.fftSize); tap.getFloatTimeDomainData(values);
       window.__androidVoicePeak = Math.max(window.__androidVoicePeak, ...values.map(Math.abs));
@@ -39,10 +42,11 @@ await page.addInitScript(() => {
     requestAnimationFrame(sample);
   };
   requestAnimationFrame(sample);
-});
+};
 let sound;
 try {
   await page.goto(scene.href);
+  await page.evaluate(observeVoice);
   await page.getByRole('button', { name: 'Start dubbing', exact: true }).click();
   for (let trial = 0; trial < 2; trial++) {
     await page.getByRole('button', { name: /^(Record|Record this line again)$/ }).click();
@@ -56,6 +60,7 @@ try {
     await expect(page.getByRole('alert')).toHaveCount(0);
     await expect(page.getByText('Saved on this device', { exact: true })).toBeVisible();
     await page.reload();
+    await page.evaluate(observeVoice);
     await expect(listen).toBeEnabled({ timeout: 15000 });
     for (let replay = 0; replay < 2; replay++) {
       await page.evaluate(() => { window.__androidVoicePeak = 0; });
@@ -73,6 +78,7 @@ try {
   process.exitCode = 1;
 } finally {
   sound?.kill();
+  await page.evaluate(() => window.__restoreAndroidMeter?.()).catch(() => {});
   await writeFile(output, JSON.stringify(report, null, 2));
   console.log(JSON.stringify({ passed: !report.error, replays: report.trials.length, report: output, error: report.error }));
   // End this CDP client without sending Browser.close to the user's phone.

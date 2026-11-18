@@ -198,7 +198,7 @@ the nearby phone's real microphone. Keep the computer speaker audible. It uses
 a fresh scene draft and leaves that test draft on the device, preserving existing
 dubs. `ANDROID_TEST_SCENE` selects another fresh English scene URL; `/dubs/` URLs
 are rejected. The JSON report in the temporary directory contains outcomes and
-diagnostics, with no recorded audio. `ANDROID_TEST_REPORT` overrides its path.
+diagnostics and the measured peak of rendered recorded-voice output, with no recorded audio. `ANDROID_TEST_REPORT` overrides its path.
 This optional device gate is separate from desktop browser emulation in CI.
 
 The shared runtime previously aborted recording or replay on a single low
