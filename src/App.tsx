@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Component, lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
+import { Component, lazy, startTransition, Suspense, useEffect, useState, type ReactNode } from 'react';
 import { AppHeader } from './app/AppHeader';
 import { Button } from './shared/ui';
 import type { Scene } from './scene';
@@ -46,16 +46,18 @@ function AppContent() {
   const choose = (slug: string, draftId?: string) => navigation.navigate(slug, draftId);
   const back = () => navigation.navigate('');
   useEffect(() => {
+    // Prepare player code while browsing scenes or resolving a direct link.
+    if (!navigation.directory && ['scene', 'pack', 'library', 'dubs'].includes(navigation.page)) void loadPlayer().catch(() => {});
+  }, [navigation.page, navigation.directory]);
+  useEffect(() => {
     const abort = new AbortController();
     const request = { revision: navigation.revision, attempt };
     setLoadedScene({ ...request, load: { status: 'loading' } });
     if (!selected) return;
-    // Fetch code and metadata together; failed code loads reach PageBoundary.
-    void loadPlayer().catch(() => {});
     loadScene(selected, abort.signal)
       .then(async scene => {
         const draft = navigation.draftId ? await loadDub(navigation.draftId, scene) : undefined;
-        if (!abort.signal.aborted) setLoadedScene({ ...request, load: { status: 'ready', value: { scene, draft } } });
+        if (!abort.signal.aborted) startTransition(() => setLoadedScene({ ...request, load: { status: 'ready', value: { scene, draft } } }));
       })
       .catch(e => { if (!abort.signal.aborted) setLoadedScene({ ...request, load: { status: 'error', error: e instanceof Error ? e.message : "errors.sceneLoadFailed" } }); });
     return () => abort.abort();
