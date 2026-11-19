@@ -92,7 +92,7 @@ test('cold Start, Record and resumed-dub playback initiate loading without prema
   await record.click();
   await expectTrustedLoads(page, 2);
   await expect(page.getByRole('button', { name: 'My recording (You)', exact: true })).toBeEnabled();
-  await expect(page.getByText('Saved on this device', { exact: true })).toBeVisible();
+  await expect(page.getByText('Saved on this device', { exact: true })).toBeAttached();
   await expect.poll(() => page.evaluate(() => (window as unknown as PreloadWindow).mediaAudit.tracks.every(track => track.readyState === 'ended'))).toBe(true);
   await page.reload();
   await expectMetadataOnly(page);

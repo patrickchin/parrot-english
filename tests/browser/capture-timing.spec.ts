@@ -65,7 +65,7 @@ test('capture is ready before the picture and preserves the opening sound throug
   await expect.poll(async () => Number(await cursor.getAttribute('aria-valuenow'))).toBeGreaterThan(0.65);
   await stop.click();
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
-  await expect(page.getByText('已保存到本机', { exact: true })).toBeVisible();
+  await expect(page.getByText('已保存到本机', { exact: true })).toBeAttached();
   const signal = await page.evaluate(async scene => {
     const path = '/src/dub-store.ts';
     const { loadDub } = await import(path) as typeof import('../../src/dub-store');

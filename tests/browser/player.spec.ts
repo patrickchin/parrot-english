@@ -62,15 +62,15 @@ test('shows the real clip, switches roles, and works at phone and tablet widths'
     }
   }
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
-  await expect(page.getByText('旅人', { exact: true })).toBeVisible();
+  await expect(page.getByText('旅人', { exact: true })).toBeAttached();
   await page.getByRole('button', { name: '听这一句原声 (听原声)', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '停止播放', exact: true }).click();
   await page.getByRole('button', { name: '下一步', exact: true }).click();
   await page.getByRole('button', { name: '下一步', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '你的配音，完成啦！' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '你的配音，完成啦！' })).toBeAttached();
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
-  await expect(page.getByText('这一次先听原声，下次试着录一句。')).toBeVisible();
+  await expect(page.getByText('这一次先听原声，下次试着录一句。')).toBeAttached();
   await page.getByRole('region', { name: '配音完成' }).getByRole('button', { name: '播放我的配音', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '停止播放', exact: true }).click();
@@ -96,7 +96,7 @@ test('records three real fake-microphone takes, retries, replays, and clears the
       await page.getByRole('button', { name: '取消', exact: true }).click();
       await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
     }
-    await page.getByRole('button', { name: i < 2 ? '下一步' : '看我的配音', exact: true }).click();
+    await page.getByRole('button', { name: i < 2 ? '下一步' : '看我的配音 (播放)', exact: true }).click();
     if (i === 0) {
       await page.getByRole('button', { name: '上一句', exact: true }).click();
       await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
@@ -112,7 +112,7 @@ test('records three real fake-microphone takes, retries, replays, and clears the
   expect(uploads).toEqual([]);
   await page.getByRole('button', { name: '重新开始', exact: true }).click();
   await page.getByRole('button', { name: '保留录音，继续玩', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '你的配音，完成啦！' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '你的配音，完成啦！' })).toBeAttached();
   await page.getByRole('button', { name: '重新开始', exact: true }).click();
   await page.getByRole('button', { name: '开始新的配音', exact: true }).click();
   await page.getByRole('button', { name: '开始配音', exact: true }).click();

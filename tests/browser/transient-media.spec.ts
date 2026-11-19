@@ -169,7 +169,7 @@ test('a captured take survives reload and produces real rendered audio during re
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   const listen = page.getByRole('button', { name: '听我的录音', exact: true });
   await expect(listen).toBeEnabled();
-  await expect(page.getByText('已保存到本机', { exact: true })).toBeVisible();
+  await expect(page.getByText('已保存到本机', { exact: true })).toBeAttached();
   await page.reload();
   await expect(listen).toBeEnabled();
   await listen.click();

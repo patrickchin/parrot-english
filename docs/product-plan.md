@@ -2,6 +2,26 @@
 
 Date: 2026-10-28
 
+Visual direction updated 2026-11-19: restore the owner's confirmed geometric
+bird icon from pre-reset commit `77fc76ccecbe2d377080e4e49da91dc9f83d878d`.
+Its blue field, navy eye, lime body and orange beak guide the interface: ice-white
+surfaces, navy text, cobalt actions, restrained lime/orange emphasis, and tighter
+geometric corners. Retain readable light/dark themes, the shared scene/collection
+card grid, and compact icon controls. Original PNG artwork is served unchanged
+from the existing OSS bucket; ESA continues to serve application code.
+
+Owner testing update 2026-11-19: Patrick reports audio quality is satisfactory
+in his latest testing. The earlier audio-quality report is no longer an active
+release blocker; preserve the working audio engine during this visual work.
+
+Player layout updated 2026-11-19: keep routine role, saved-location, waveform
+legend and completion summaries out of the visible workspace, while retaining
+accessible names and live saving/error feedback. Main controls use inline icons
+and short captions when their container has room, and icons alone when narrow.
+Playback and Next sit toward the right; Previous stays on the left and remains
+available on the completed dub. Share, reset and scene information have quieter
+visual weight while keeping full touch targets.
+
 Player controls updated 2026-11-19: use familiar icons and short captions for
 repeated playback, recording, download and share actions. Keep full translated
 accessible names, readable status/errors, reset confirmation and upload consent.
@@ -27,11 +47,9 @@ the software. Existing permission labels remain factual metadata; no permission
 clearance is asserted. Child-release and wider public-operation work remain
 separate from this friend test.
 
-Audience and visual direction updated 2026-11-12: Parrotbook serves independent
-learners across ages, including children, teens, and adults. Use the green Pop
-Studio identity throughout the application: vivid green, forest ink, mint
-surfaces, yellow actions, and a small parrot mark. Scene content and language
-level tailor the experience; the global interface should welcome every age.
+Audience direction updated 2026-11-12: Parrotbook serves independent
+learners across ages, including children, teens, and adults. Scene content and
+language level tailor the experience; the global interface should welcome every age.
 Guardian consent and privacy requirements still apply before child use.
 
 Content direction updated 2026-11-12: prioritize recognizable, memeable internet

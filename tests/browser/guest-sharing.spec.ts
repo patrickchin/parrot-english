@@ -59,7 +59,7 @@ async function prepareVideo(page: import('@playwright/test').Page, language: 'en
   await expect(page.getByRole('button', { name: labels.recording, exact: true })).toBeEnabled();
   await page.getByRole('button', { name: labels.next, exact: true }).click();
   await page.getByRole('button', { name: labels.next, exact: true }).click();
-  await expect(page.getByRole('heading', { name: labels.result, exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: labels.result, exact: true })).toBeAttached();
   await page.getByRole('button', { name: labels.prepare, exact: true }).click();
   await expect(page.getByRole('button', { name: labels.file, exact: true })).toBeVisible({ timeout: 15000 });
 }

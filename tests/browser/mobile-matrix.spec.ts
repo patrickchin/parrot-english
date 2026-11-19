@@ -96,7 +96,7 @@ test('phone and tablet layouts retain Collections navigation, practice controls 
   for (const _ of lines) await page.getByRole('button', { name: 'Next', exact: true }).tap();
   for (const viewport of mobileViewports) {
     await page.setViewportSize(viewport);
-    await expect(page.getByRole('heading', { level: 1, name: 'Your dub is ready!', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Your dub is ready!', exact: true })).toBeAttached();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     for (const name of ['Prepare to share', 'Download video', 'Back to scenes']) await touchControl(page, page.getByRole('button', { name, exact: true }));
     await touchControl(page, page.getByRole('button', { name: 'Prepare to share', exact: true }));

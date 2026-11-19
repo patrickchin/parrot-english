@@ -34,7 +34,7 @@ test('browser Back keeps saved takes and Forward restores the same session', asy
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   const listen = page.getByRole('button', { name: '听我的录音', exact: true });
   await expect(listen).toBeEnabled({ timeout: 12000 });
-  await expect(page.getByText('已保存到本机', { exact: true })).toBeVisible();
+  await expect(page.getByText('已保存到本机', { exact: true })).toBeAttached();
   const waveform = page.getByRole('img', { name: '你的声音波形', exact: true });
   const saved = await waveformImage(waveform);
   await page.goBack();
@@ -51,7 +51,7 @@ test('changing the scene path leaves the saved attempt available in My dubs', as
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled({ timeout: 12000 });
-  await expect(page.getByText('已保存到本机', { exact: true })).toBeVisible();
+  await expect(page.getByText('已保存到本机', { exact: true })).toBeAttached();
   await page.goto('/scenes/chocolate');
   await expect(page.getByRole('heading', { name: '巧克力？！', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '返回片段', exact: true }).click();

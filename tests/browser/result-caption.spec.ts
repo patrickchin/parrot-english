@@ -12,8 +12,8 @@ test('completing after the last recording keeps the paused picture, caption and 
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled({ timeout: 12000 });
   const video = page.getByRole('region', { name: '电影片段', exact: true }).getByLabel(/对话片段$/);
   expect(await video.evaluate((el: HTMLVideoElement) => el.currentTime)).toBeGreaterThan(1);
-  await page.getByRole('button', { name: '看我的配音', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '你的配音，完成啦！', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '看我的配音 (播放)', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '你的配音，完成啦！', exact: true })).toBeAttached();
   await expect(video).toHaveJSProperty('paused', true);
   await expect(video).toHaveJSProperty('seeking', false);
   await expect.poll(() => video.evaluate((el: HTMLVideoElement) => el.currentTime)).toBeLessThan(0.05);

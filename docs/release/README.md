@@ -10,6 +10,12 @@ Build working software for testing with friends. Creator-permission work is
 deferred for this iteration; retain factual credits and notices. Friend testing
 is separate from a child release or public launch.
 
+On 2026-11-19 Patrick reported that audio quality is fine in his latest testing;
+the earlier audio-quality report is no longer an active blocker. Preserve the
+working audio implementation while following the requested visual work. He
+confirmed the original blue geometric bird logo and requested a matching site
+identity plus simpler, right-biased player actions and less routine metadata.
+
 The public catalogue is named **Collections** as of the owner's 2026-11-18
 request. The former tag groups contain the same 21 collections / 128 scenes,
 labelled **Uploaded by Patrick**. Collection cards share the scene grid and
@@ -27,6 +33,27 @@ expiry, and a removal capability kept on the creator's device. No public feed or
 automatic recording upload is part of this iteration.
 
 ## Current release
+
+The geometric-bird and player-layout increment is in verification on
+`codex/geometric-blue-brand`, based on `2263208b`. The exact archived PNGs are
+published under immutable `branding/geometric-bird/` OSS keys; header, favicon
+and Apple touch icon use those assets. No catalogue, API, recording engine,
+or lifecycle policy changes are included. TypeScript, 43 app / 20 content /
+1 boundary checks, 24 focused Chromium/mobile/WebKit cases, six appearance
+cases and two authored-scene recording cases pass. The authored media check
+uses an ignored local cache verified against OSS ETag, after live download
+latency caused a seek timeout. An independent source review found no blockers.
+The expanded production matrix contains 44 cases per engine; rollout evidence
+will be recorded on the release PR after those checks and native deployment.
+
+The icon-control increment shipped in
+[PR #304](https://github.com/patrickchin/parrot-english/pull/304), merged source
+`2263208b03b154177513408aea5119289c9457da`. Native ESA Git build
+`189879853033600` succeeded for that exact source, confirmed by native readback
+and public health. Production Chromium/WebKit checks passed 74 cases plus six
+final layout cases; required Firefox QA passed 37/37. Four fresh live contexts
+verified phone/desktop controls, navigation and reset cancellation, each with
+one catalogue request and no runtime page errors.
 
 The collection naming and card-sizing increment shipped in
 [PR #302](https://github.com/patrickchin/parrot-english/pull/302), merged source
@@ -145,7 +172,7 @@ Hosted owner CRUD acceptance remains separate from the completed API deployment.
 | New release and catalogue publication | Delivery | Catalogue publication complete: 21 packs / 128 scenes. Both code releases verified at 8e40e5b2. Native ESA build 189456526729324 enabled guest link sharing; owner HTTPS/CRUD acceptance and its separate endpoint enablement remain. |
 | Mobile browser verification | QA + engineering | 48/48 passes, zero skips: Chromium/WebKit/Firefox each 16 cases across five shapes. Fixed clipped recovery text, missing native AAC export and notice wrapping. [Evidence and real-phone sequence](mobile-browser-verification.md). |
 | Physical-device friend test | Patrick + QA | Test complete recording/replay, sharing, resume/delete, mic deny/retry, app switching, audio routes, and network on actual phones. No device row has passed yet. |
-| WebKit timing investigation | Engineering + QA | Gather physical-device evidence before weakening guards or changing the audio model. Preserve diagnostics. |
+| Latest audio feedback | Patrick + QA | Patrick reports satisfactory quality in his latest testing on 2026-11-19. No active audio-quality fix is requested; retain the existing regression suite and diagnostics. |
 | ESA continuation | Patrick + operations | Site plan expires **2026-11-29 00:00 Asia/Shanghai**, renewal normal / duration 0. Confirm continuation and cost before that date; no purchase or billing change authorized or made. |
 | API certificate renewal | Delivery + Patrick | Both certificates expire **2027-02-14 07:59:59 Asia/Shanghai**. Automatic reissue/renewal is disabled; arrange renewal before expiry. No paid renewal or new subscription is authorized by this record. |
 

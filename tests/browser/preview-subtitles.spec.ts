@@ -53,8 +53,8 @@ test('one bilingual subtitle group stays on the picture through role choice, lin
   await page.getByRole('button', { name: '下一步', exact: true }).click();
   await expect(subtitles.getByText('Onions have layers.', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '下一步', exact: true }).click();
-  await page.getByRole('button', { name: '看我的配音', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '你的配音，完成啦！', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '看我的配音 (播放)', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '你的配音，完成啦！', exact: true })).toBeAttached();
   await expect(subtitles.getByText('Onions have layers.', { exact: true })).toBeVisible();
   await expectPictureSubtitles(page, '电影片段', '台词');
 });

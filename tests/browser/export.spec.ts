@@ -42,7 +42,7 @@ async function completeDub(page: import('@playwright/test').Page) {
   await page.getByRole('button', { name: '下一步', exact: true }).click();
   // Leave the second learner turn skipped: its original audio must survive.
   await page.getByRole('button', { name: '下一步', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '你的配音，完成啦！', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '你的配音，完成啦！', exact: true })).toBeAttached();
 }
 
 test('downloads a real local H.264/AAC MP4 with the recorded voice and original skipped turns', async ({ page }, info) => {

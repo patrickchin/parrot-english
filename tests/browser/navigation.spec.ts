@@ -21,7 +21,7 @@ test('the readable Toy Story URL keeps its name through saving, reload and resum
   await page.getByRole('button', { name: '选择片段：飞向宇宙！', exact: true }).click();
   await expect(page).toHaveURL(/\/scenes\/toy-story-infinity$/);
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
-  await expect(page.getByText('已保存到本机', { exact: true })).toBeVisible();
+  await expect(page.getByText('已保存到本机', { exact: true })).toBeAttached();
   await expect(page).toHaveURL(/\/scenes\/toy-story-infinity\/dubs\/dub_[a-f0-9]{30}$/);
   const savedUrl = page.url();
   await page.reload();
