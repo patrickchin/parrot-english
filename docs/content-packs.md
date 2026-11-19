@@ -198,7 +198,14 @@ format before activating this API. Ordinary later publication should omit the fl
 
 The public entry point is the
 [OSS catalog](https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/content/catalog.json).
-It uses `Cache-Control: no-store`; immutable release objects can be cached.
+It uses `Cache-Control: no-cache, must-revalidate`: browsers may store the catalog,
+but must check OSS for changes before reusing it. Unchanged catalogs can return
+`304 Not Modified`; withdrawn content is never served as an offline fallback.
+Publication and catalog refresh apply this header; immutable release objects can be cached.
+After deploying an updated publisher, `npm run content:publish -- --refresh-catalog`
+reapplies catalog metadata without uploading media or activating local content.
+The player starts discovery before downloading the React app and retries one
+temporary network/server failure, with a 12-second timeout per attempt.
 Upload new external `mediaBase` assets to public OSS `clips/` objects before
 publishing their references. Existing public release media can also be referenced;
 private upload drafts and shared recordings cannot. The API checks remote media

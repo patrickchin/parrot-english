@@ -80,15 +80,28 @@ export function storageUrl(path: string, base: string, extension: string): strin
       !relativeContentPath(url.pathname.slice(1), extension)) throw invalid();
   return url.href;
 }
+class ContentRequestError extends Error {
+  readonly retryable: boolean;
+  constructor(cause: unknown, retryable = true) {
+    super('errors.contentLoad', { cause });
+    this.retryable = retryable;
+  }
+}
 async function readJson(url: string, signal?: AbortSignal, max = 2 * 1024 * 1024, cache: RequestCache = 'default'): Promise<unknown> {
-  const response = await fetch(url, { signal, cache, credentials: 'omit', redirect: 'error' });
-  if (!response.ok || Number(response.headers.get('content-length')) > max) throw invalid();
+  let response: Response;
+  try { response = await fetch(url, { signal, cache, credentials: 'omit', redirect: 'error' }); }
+  catch (error) { throw new ContentRequestError(error); }
+  if (!response.ok || Number(response.headers.get('content-length')) > max) {
+    await response.body?.cancel();
+    throw new ContentRequestError(new Error(response.ok ? 'Content exceeds its size limit' : `HTTP ${response.status}`),
+      !response.ok && [408, 500, 502, 503, 504].includes(response.status));
+  }
   const reader = response.body?.getReader();
   if (!reader) throw invalid();
   const decoder = new TextDecoder(); let body = '', bytes = 0;
   try {
     while (true) {
-      const chunk = await reader.read();
+      const chunk = await reader.read().catch(error => { throw new ContentRequestError(error); });
       if (chunk.done) break;
       bytes += chunk.value.byteLength;
       if (bytes > max) { await reader.cancel(); throw invalid(); }
@@ -97,9 +110,22 @@ async function readJson(url: string, signal?: AbortSignal, max = 2 * 1024 * 1024
     return JSON.parse(body + decoder.decode());
   } finally { reader.releaseLock(); }
 }
+async function readCatalog(url: string, signal?: AbortSignal): Promise<unknown> {
+  for (let attempt = 0; ; attempt++) {
+    signal?.throwIfAborted();
+    const timeout = new AbortController();
+    const timer = setTimeout(() => timeout.abort(new DOMException('Catalog request timed out', 'TimeoutError')), 12000);
+    const requestSignal = signal ? AbortSignal.any([signal, timeout.signal]) : timeout.signal;
+    try { return await readJson(url, requestSignal, 2 * 1024 * 1024, 'no-cache'); }
+    catch (error) {
+      if (signal?.aborted || attempt >= 1 || !(error instanceof ContentRequestError) || !error.retryable) throw error;
+    } finally { clearTimeout(timer); }
+    await new Promise(resolve => setTimeout(resolve, 300));
+  }
+}
 export async function loadContent(url: string, signal?: AbortSignal): Promise<ContentCatalog> {
   const catalogUrl = storageUrl(url, url, 'json');
-  const value = await readJson(catalogUrl, signal, 2 * 1024 * 1024, 'no-store');
+  const value = await readCatalog(catalogUrl, signal);
   const catalog = validateCatalog(value);
   if (!record(value) || !record(value.packData) || Object.keys(value.packData).length !== catalog.packs.length) throw invalid();
   const packData = value.packData;

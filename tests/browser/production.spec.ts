@@ -4,6 +4,21 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { clips, packs } from '../content-fixtures';
 
+test('catalog downloads while application JavaScript is held and is reused on first render', async ({ page }) => {
+  let release!: () => void;
+  const held = new Promise<void>(resolve => { release = resolve; });
+  let requests = 0;
+  page.on('request', request => { if (request.url() === catalogUrl) requests++; });
+  await page.route('**/assets/main-*.js', async route => { await held; await route.continue(); });
+  try {
+    await page.goto('/en/packs', { waitUntil: 'commit' });
+    await expect.poll(() => requests).toBe(1);
+    await expect(page.getByRole('searchbox')).toHaveCount(0);
+  } finally { release(); }
+  await expect(page.getByRole('searchbox', { name: 'Find a collection', exact: true })).toBeVisible();
+  expect(requests).toBe(1);
+});
+
 for (const initialPath of ['/en/packs', '/en/library/all']) test(`first visit to ${initialPath} discovers every pack, scene and locale with one catalog request`, async ({ page }) => {
   const requests: { method: string; url: string; type: string }[] = [];
   page.on('request', request => requests.push({ method: request.method(), url: request.url(), type: request.resourceType() }));

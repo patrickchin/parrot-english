@@ -105,3 +105,19 @@ test('an empty published catalog keeps categories and a single meaningful headin
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
+
+test('a temporary catalog failure recovers automatically without showing an error', async ({ page }) => {
+  let requests = 0;
+  let alerts = 0;
+  await page.exposeFunction('catalogAlert', () => { alerts++; });
+  await page.addInitScript(() => new MutationObserver(() => {
+    if (document.querySelector('[role="alert"]')) (window as unknown as { catalogAlert: () => void }).catalogAlert();
+  }).observe(document, { childList: true, subtree: true }));
+  await page.route(catalogUrl, route => ++requests === 1
+    ? route.fulfill({ status: 503, body: '' })
+    : route.fulfill({ json: publishedCatalog }));
+  await page.goto('/en/packs');
+  await expect(page.getByRole('searchbox', { name: 'Find a collection', exact: true })).toBeVisible();
+  expect(requests).toBe(2);
+  expect(alerts).toBe(0);
+});

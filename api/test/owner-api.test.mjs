@@ -121,7 +121,7 @@ function assertDiscovery(storage, expectedIds) {
     assert.deepEqual(snapshot.packData[entry.id], storage.json('content/' + entry.manifest));
     assert.deepEqual(Object.keys(entry).sort(), ['id', 'manifest', 'uploader']);
   }
-  assert.equal(storage.object('content/catalog.json').headers['cache-control'], 'no-store');
+  assert.equal(storage.object('content/catalog.json').headers['cache-control'], 'no-cache, must-revalidate');
   assert.equal(storage.object('content/catalog.json').headers['x-oss-object-acl'], 'public-read');
   assert.equal(storage.object('content/catalog.json').headers['content-type'], 'application/json');
   if (storage.objects.has('content/owner-packs.json')) assert.equal('packData' in storage.json('content/owner-packs.json'), false);
