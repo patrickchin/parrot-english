@@ -156,7 +156,7 @@ test('the public build reads a selected device file without uploading it or requ
   await expect(page).toHaveURL(/\/dubs\/dub_[a-f0-9]{30}$/);
   await page.reload();
   await expect(page.getByLabel('选择本地片段', { exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: '听这一句原声', exact: true }).click();
+  await page.getByRole('button', { name: '听这一句原声 (听原声)', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
   expect(requests).toEqual([]);
 });

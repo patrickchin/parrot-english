@@ -44,11 +44,11 @@ for (const slug of ['corn-corntastic-day', 'apparently-get-dizzy', 'emotional-da
     if (browserName !== 'chromium') return;
     await page.getByRole('button', { name: 'Start dubbing', exact: true }).click();
     await page.getByRole('button', { name: 'Record', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'My recording', exact: true })).toBeEnabled({ timeout: 15000 });
+    await expect(page.getByRole('button', { name: 'My recording (You)', exact: true })).toBeEnabled({ timeout: 15000 });
     await expect(page.getByText('Saved on this device', { exact: true })).toBeVisible();
     await page.reload();
-    await expect(page.getByRole('button', { name: 'My recording', exact: true })).toBeEnabled();
-    await page.getByRole('button', { name: 'My recording', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'My recording (You)', exact: true })).toBeEnabled();
+    await page.getByRole('button', { name: 'My recording (You)', exact: true }).click();
     await expect(page.getByRole('button', { name: 'Stop playback', exact: true })).toBeVisible();
   });
 }

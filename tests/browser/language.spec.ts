@@ -86,7 +86,7 @@ test('switching language during recording keeps the take, waveform and replay', 
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止录音', exact: true })).toBeVisible();
   await setLanguage(page, 'en');
-  await expect(page.getByRole('button', { name: 'My recording', exact: true })).toBeEnabled({ timeout: 15000 });
+  await expect(page.getByRole('button', { name: 'My recording (You)', exact: true })).toBeEnabled({ timeout: 15000 });
   await expect(page.getByRole('img', { name: 'Your voice waveform', exact: true })).toBeVisible();
   await setLanguage(page, 'zh-CN');
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();

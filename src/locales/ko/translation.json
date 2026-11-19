@@ -184,6 +184,15 @@
     "sceneCount_one": "장면 {{count}}개",
     "sceneCount_other": "장면 {{count}}개"
   },
+  "controls": {
+    "you": "내 목소리",
+    "stop": "중지",
+    "edit": "편집",
+    "download": "다운로드",
+    "share": "공유",
+    "video": "영상",
+    "link": "링크"
+  },
   "waveform": {
     "voiceWaveformComparison": "음성 파형 비교",
     "yourVoiceRecording": "내 목소리 · 녹음 중",

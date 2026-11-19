@@ -12,7 +12,7 @@ for (const fault of ['pause', 'rate', 'audio-suspend', 'drift'] as const) test(`
   await page.goto('/en/scenes/patrick');
   await page.getByRole('button', { name: 'Start dubbing', exact: true }).click();
   await page.getByRole('button', { name: 'Record', exact: true }).click();
-  const listen = page.getByRole('button', { name: 'My recording', exact: true });
+  const listen = page.getByRole('button', { name: 'My recording (You)', exact: true });
   await expect(listen).toBeEnabled();
   await listen.click();
   await expect(page.getByRole('button', { name: 'Stop playback', exact: true })).toBeVisible();

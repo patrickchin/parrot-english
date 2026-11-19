@@ -63,7 +63,7 @@ test('shows the real clip, switches roles, and works at phone and tablet widths'
   }
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await expect(page.getByText('旅人', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '听这一句原声', exact: true }).click();
+  await page.getByRole('button', { name: '听这一句原声 (听原声)', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '停止播放', exact: true }).click();
   await page.getByRole('button', { name: '下一步', exact: true }).click();
@@ -91,7 +91,7 @@ test('records three real fake-microphone takes, retries, replays, and clears the
       await page.getByRole('button', { name: '听我的录音', exact: true }).click();
       await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
       await page.getByRole('button', { name: '停止播放', exact: true }).click();
-      await page.getByRole('button', { name: '重新录这一句', exact: true }).click();
+      await page.getByRole('button', { name: '重新录这一句 (开始录音)', exact: true }).click();
       await expect(page.getByRole('button', { name: '取消', exact: true })).toBeVisible();
       await page.getByRole('button', { name: '取消', exact: true }).click();
       await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();

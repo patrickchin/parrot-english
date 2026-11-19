@@ -2,6 +2,12 @@
 
 Date: 2026-10-28
 
+Player controls updated 2026-11-19: use familiar icons and short captions for
+repeated playback, recording, download and share actions. Keep full translated
+accessible names, readable status/errors, reset confirmation and upload consent.
+Arrow navigation, reset and scene information can use icon buttons with keyboard
+and pointer hints; first-use and upload decisions retain clear text.
+
 Catalogue naming updated 2026-11-18: the public and owner interfaces call groups
 of scenes **Collections**. Collection cards use the same responsive grid and
 thumbnail size as scene cards. Descriptions remain on collection details;

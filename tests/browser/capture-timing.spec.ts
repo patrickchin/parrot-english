@@ -89,13 +89,13 @@ test('capture is ready before the picture and preserves the opening sound throug
   // Compare real encoded PCM to its plotted envelope, not to an assumed mic latency.
   expect(Math.abs(onset - signal.onset)).toBeLessThan(0.02);
   const savedWave = await waveformImage(page.getByRole('img', { name: '你的声音波形', exact: true }));
-  await page.getByRole('button', { name: '重新录这一句', exact: true }).click();
+  await page.getByRole('button', { name: '重新录这一句 (开始录音)', exact: true }).click();
   await expect(stop).toBeVisible();
   await page.evaluate(() => (window as unknown as { context: AudioContext }).context.suspend());
   await expect(page.getByRole('alert')).toContainText('播放或录音暂时中断');
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
   await expect.poll(() => waveformImage(page.getByRole('img', { name: '你的声音波形', exact: true }))).toBe(savedWave);
-  await page.getByRole('button', { name: '重新录这一句', exact: true }).click();
+  await page.getByRole('button', { name: '重新录这一句 (开始录音)', exact: true }).click();
   await expect(stop).toBeVisible();
   await page.evaluate(() => {
     const context = (window as unknown as { context: AudioContext }).context;

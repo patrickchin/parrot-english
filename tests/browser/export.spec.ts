@@ -113,7 +113,7 @@ test('downloads a real local H.264/AAC MP4 with the recorded voice and original 
   expect([...frame].some(value => value > 10)).toBe(true);
   expect(uploads).toEqual([]);
   await expect(page.getByRole('link', { name: '再次下载视频', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: '再改一句', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: '再改一句 (编辑)', exact: true })).toBeEnabled();
 });
 
 test('cancel and failed export preserve takes and allow retry', async ({ page }) => {
@@ -123,7 +123,7 @@ test('cancel and failed export preserve takes and allow retry', async ({ page })
   await page.route('**/search-v1.mp4', async route => { await new Promise(resolve => setTimeout(resolve, 500)); await route.fallback(); });
   await page.getByRole('button', { name: '下载配音视频', exact: true }).click();
   await expect(page.getByRole('button', { name: '取消导出', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: '再改一句', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '再改一句 (编辑)', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: '取消导出', exact: true }).click();
   await expect(page.getByRole('button', { name: '下载配音视频', exact: true })).toBeEnabled();
   await page.route('**/search-v1.mp4', route => route.abort());
@@ -131,7 +131,7 @@ test('cancel and failed export preserve takes and allow retry', async ({ page })
   await expect(page.getByRole('alert')).toBeVisible();
   await expect(page.getByRole('button', { name: '下载配音视频', exact: true })).toBeEnabled();
   await page.unroute('**/search-v1.mp4');
-  await page.getByRole('button', { name: '再改一句', exact: true }).click();
+  await page.getByRole('button', { name: '再改一句 (编辑)', exact: true }).click();
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
   expect(downloads).toEqual([]);
 });

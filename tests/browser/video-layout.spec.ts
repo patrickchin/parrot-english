@@ -128,7 +128,7 @@ test('completion keeps the picture anchored and replay keeps its waveform and su
     }
     await page.getByRole('button', { name: '停止播放', exact: true }).click();
     await expectLayout(completed);
-    await page.getByRole('button', { name: '再改一句', exact: true }).click();
+    await page.getByRole('button', { name: '再改一句 (编辑)', exact: true }).click();
     await expectLayout(recording);
   }
 });

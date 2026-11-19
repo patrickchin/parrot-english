@@ -91,7 +91,7 @@ test('cold Start, Record and resumed-dub playback initiate loading without prema
   await expect(record).toBeEnabled();
   await record.click();
   await expectTrustedLoads(page, 2);
-  await expect(page.getByRole('button', { name: 'My recording', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'My recording (You)', exact: true })).toBeEnabled();
   await expect(page.getByText('Saved on this device', { exact: true })).toBeVisible();
   await expect.poll(() => page.evaluate(() => (window as unknown as PreloadWindow).mediaAudit.tracks.every(track => track.readyState === 'ended'))).toBe(true);
   await page.reload();
@@ -99,7 +99,7 @@ test('cold Start, Record and resumed-dub playback initiate loading without prema
   await expect(secondLine).toHaveAttribute('aria-current', 'step');
   await expect(page.getByText("I'm searching for someone.", { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Record this line again', exact: true })).toBeEnabled();
-  const listen = page.getByRole('button', { name: 'My recording', exact: true });
+  const listen = page.getByRole('button', { name: 'My recording (You)', exact: true });
   await expect(listen).toBeEnabled();
   await expectTrustedLoads(page, 0);
   await listen.click();

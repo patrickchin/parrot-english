@@ -3,7 +3,8 @@ import { useLanguage } from '../i18n';
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react';
 import { AppHeader } from './AppHeader';
 import { DubDownload } from './DubDownload';
-import { Button, Icon } from '../shared/ui';
+import { Button, Icon, controlLabel } from '../shared/ui';
+import { IconButton } from '../shared/IconButton';
 import { asset, type Scene, type Role } from '../scene';
 import { useDubbing, type Take } from '../useDubbing';
 import { dubsPath } from './routes';
@@ -142,7 +143,7 @@ export function Player({ scene, slug, notice, initial, rememberDraft, onBack, le
           <div className="role-options mx-auto mt-5 flex max-w-2xl flex-wrap justify-center gap-3">{practiceRoles.map(r => <ControlButton variant="outline" key={r.id} onClick={() => send({ type: 'SELECT_ROLE', roleId: r.id })} aria-pressed={roleId === r.id} className="group h-auto min-h-17 flex-1 basis-50 justify-start gap-3 whitespace-normal px-4 py-3 text-left aria-pressed:border-primary aria-pressed:bg-accent"><RolePortrait scene={scene} role={r} /><span className="flex-1 font-bold">{t(`content:roles.${r.id}.name`, { defaultValue: r.name })}</span><Icon name="check" className="invisible group-aria-pressed:visible" /></ControlButton>)}</div>
           <div className="choose-actions mt-5">
             <Button disabled={!videoReady || busy} onClick={startPractice}>{t("player.startDubbing")}<Icon name="arrow" /></Button>
-            <Button tone="quiet" onClick={() => { media.stop(); setModal('details'); }}>{t("player.sceneCredits")}</Button>
+            <IconButton tone="plain" label={t("player.sceneCredits")} onClick={() => { media.stop(); setModal('details'); }}><Icon name="info" /></IconButton>
           </div>
         </div>}
         {step !== 'choose' && <>
@@ -159,30 +160,30 @@ export function Player({ scene, slug, notice, initial, rememberDraft, onBack, le
           </div>
           <div className="player-controls">
             <div className={`practice-actions ${step !== 'practice' ? 'invisible' : ''}`} inert={step !== 'practice'} aria-hidden={step !== 'practice'} role="group" aria-label={t("player.dubbingControls")}>
-              <Button tone="plain" aria-label={t("player.listenToTheOriginalLine")} disabled={busy || !videoReady} onClick={() => void media.preview(line)}><Icon name="sound" />{t("recording.listenOriginal")}</Button>
+              <Button tone="plain" aria-label={controlLabel(t("player.listenToTheOriginalLine"), t("recording.listenOriginal"))} disabled={busy || !videoReady} onClick={() => void media.preview(line)}><Icon name="sound" />{t("recording.listenOriginal")}</Button>
               {/* Keep each action's DOM identity: a Stop pointer gesture must not become Record after an asynchronous stop. */}
-              {media.phase === 'recording' ? <Button key="finish-recording" ref={mediaActionRef} tone="danger" onClick={media.finish}><Icon name="stop" />{t("player.stopRecording")}</Button> : busy ? <Button key="stop-media" ref={mediaActionRef} tone="quiet" onClick={media.stop}><Icon name="stop" />{capturing || media.phase === 'loading' ? t("player.cancel") : t("player.stopPlayback")}</Button> : <Button key="start-recording" ref={mediaActionRef} tone={currentTake ? 'quiet' : 'record'} aria-label={currentTake ? t("player.recordThisLineAgain") : t("player.record")} disabled={!videoReady} onClick={() => void media.record(line)}><Icon name="mic" />{currentTake ? t("player.recordAgain") : t("player.record")}</Button>}
-              <Button tone={currentTake ? 'primary' : 'plain'} aria-label={t("player.myRecording")} disabled={busy || !currentTake} onClick={() => { if (currentTake) void media.listen(currentTake, line); }}><Icon name="play" />{t("player.myRecording")}</Button>
+              {media.phase === 'recording' ? <Button key="finish-recording" ref={mediaActionRef} tone="danger" aria-label={controlLabel(t("player.stopRecording"), t("controls.stop"))} onClick={media.finish}><Icon name="stop" />{t("controls.stop")}</Button> : busy ? <Button key="stop-media" ref={mediaActionRef} tone="quiet" aria-label={capturing || media.phase === 'loading' ? t("player.cancel") : controlLabel(t("player.stopPlayback"), t("controls.stop"))} onClick={media.stop}><Icon name={capturing || media.phase === 'loading' ? 'close' : 'stop'} />{capturing || media.phase === 'loading' ? t("player.cancel") : t("controls.stop")}</Button> : <Button key="start-recording" ref={mediaActionRef} tone={currentTake ? 'quiet' : 'record'} aria-label={controlLabel(currentTake ? t("player.recordThisLineAgain") : t("player.record"), t("player.record"))} disabled={!videoReady} onClick={() => void media.record(line)}><Icon name="mic" />{t("player.record")}</Button>}
+              <Button tone={currentTake ? 'primary' : 'plain'} aria-label={controlLabel(t("player.myRecording"), t("controls.you"))} disabled={busy || !currentTake} onClick={() => { if (currentTake) void media.listen(currentTake, line); }}><Icon name="play" />{t("controls.you")}</Button>
               <div className="practice-navigation">
-                <Button tone="quiet" aria-label={t("player.previousLine")} title={t("player.previousLine")} disabled={busy || lineIndex === 0} onClick={() => chooseLine(lineIndex - 1)}><Icon name="back" /></Button>
-                <Button tone={currentTake || skipped.has(line.id) ? 'primary' : 'quiet'} disabled={busy} onClick={nextLine}>{lineIndex === rolesLines.length - 1 && allDone ? t("player.watchMyDub") : t("player.next")}<Icon name="arrow" /></Button>
+                <IconButton tone="quiet" label={t("player.previousLine")} disabled={busy || lineIndex === 0} onClick={() => chooseLine(lineIndex - 1)}><Icon name="back" /></IconButton>
+                <IconButton tone={currentTake || skipped.has(line.id) ? 'primary' : 'quiet'} label={lineIndex === rolesLines.length - 1 && allDone ? t("player.watchMyDub") : t("player.next")} disabled={busy} onClick={nextLine}><Icon name={lineIndex === rolesLines.length - 1 && allDone ? 'play' : 'arrow'} /></IconButton>
               </div>
               <div className="practice-secondary">
-                <Button tone="plain" onClick={() => { media.stop(); setModal('reset'); }}><Icon name="repeat" />{t("player.startOver")}</Button>
-                {media.phase === 'recording' ? <Button tone="plain" onClick={media.stop}>{t("player.cancel")}</Button> : <Button tone="plain" onClick={() => { media.stop(); setModal('details'); }}>{t("player.sceneCredits")}</Button>}
+                <IconButton tone="plain" label={t("player.startOver")} onClick={() => { media.stop(); setModal('reset'); }}><Icon name="repeat" /></IconButton>
+                {media.phase === 'recording' ? <IconButton tone="plain" label={t("player.cancel")} onClick={media.stop}><Icon name="close" /></IconButton> : <IconButton tone="plain" label={t("player.sceneCredits")} onClick={() => { media.stop(); setModal('details'); }}><Icon name="info" /></IconButton>}
               </div>
             </div>
             <div className={`player-result text-center ${step !== 'result' ? 'invisible' : ''}`} inert={step !== 'result'} aria-hidden={step !== 'result'}>
               <h1 className="text-lg font-semibold">{t("player.resultTitle")}</h1>
               <p className="result-summary text-xs text-muted-foreground">{t("recording.recordedLines", { count: recorded })}{!recorded && t("player.emptyResult")}</p>
               <div className="result-actions">
-                <Button tone="quiet" disabled={!videoReady || exporting} onClick={() => busy ? media.stop() : void media.replay(takes)}><Icon name={busy ? 'stop' : 'play'} />{busy ? t("player.stopPlayback") : t("player.playMyDub")}</Button>
-                <Button tone="quiet" disabled={busy || exporting} onClick={() => chooseLine(0)}><Icon name="repeat" />{t("player.editALine")}</Button>
+                <IconButton tone="quiet" label={busy ? t("player.stopPlayback") : t("player.playMyDub")} disabled={!videoReady || exporting} onClick={() => busy ? media.stop() : void media.replay(takes)}><Icon name={busy ? 'stop' : 'play'} /></IconButton>
+                <Button tone="quiet" aria-label={controlLabel(t("player.editALine"), t("controls.edit"))} disabled={busy || exporting} onClick={() => chooseLine(0)}><Icon name="edit" />{t("controls.edit")}</Button>
               </div>
               <DubDownload scene={scene} takes={takes} source={source} active={step === 'result' && !leaving} disabled={busy || !videoReady || !recorded || autosave.status === 'saving'} onExportingChange={setExporting} />
               <div className="practice-secondary">
-                <Button tone="plain" onClick={() => { media.stop(); setModal('reset'); }}><Icon name="repeat" />{t("player.startOver")}</Button>
-                <Button tone="plain" onClick={() => { media.stop(); setModal('details'); }}>{t("player.sceneCredits")}</Button>
+                <IconButton tone="plain" label={t("player.startOver")} onClick={() => { media.stop(); setModal('reset'); }}><Icon name="repeat" /></IconButton>
+                <IconButton tone="plain" label={t("player.sceneCredits")} onClick={() => { media.stop(); setModal('details'); }}><Icon name="info" /></IconButton>
               </div>
             </div>
           </div>

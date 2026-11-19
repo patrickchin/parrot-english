@@ -118,14 +118,16 @@ button:disabled { cursor: not-allowed; }
 .voice-playhead { will-change: transform; }
 .player-controls { display: grid; margin-top: 12px; }
 .player-controls > div { grid-area: 1 / 1; min-width: 0; }
-.practice-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
-.practice-actions > button, .practice-navigation > button { min-height: 56px; padding: 10px 8px; font-size: 18px; gap: 8px; }
-.practice-navigation { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 8px; }
+.practice-actions { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.practice-actions > button { grid-column: span 2; min-width: 0; min-height: 72px; padding: 8px 4px; flex-direction: column; font-size: 14px; line-height: 20px; gap: 4px; white-space: normal; }
+.practice-actions > button > svg { width: 26px; height: 26px; }
+.practice-navigation { grid-column: span 3; display: grid; grid-template-columns: repeat(2, minmax(44px, 1fr)); gap: 8px; }
 .practice-navigation > button { white-space: normal; }
 .practice-secondary { grid-column: 1 / -1; display: flex; gap: 10px; height: 44px; margin-bottom: max(4px, env(safe-area-inset-bottom)); }
+.practice-actions > .practice-secondary { grid-column: span 3; gap: 8px; }
 .practice-secondary > button { flex: 1; min-height: 44px; padding: 8px; font-size: 16px; }
 .player-choose { padding: 16px; border-radius: var(--radius); background: var(--card); }
-.choose-actions { display: grid; gap: 8px; }
+.choose-actions { display: grid; grid-template-columns: minmax(0, 1fr) 44px; align-items: center; gap: 8px; }
 .choose-actions > button:last-child { min-height: 44px; font-size: 14px; }
 .player-result { display: flex; flex-direction: column; justify-content: center; gap: 2px; }
 .result-summary { line-height: 16px; }
@@ -138,6 +140,8 @@ button:disabled { cursor: not-allowed; }
 .dub-share-link > label { font-size: 14px; font-weight: 600; }
 .player-result .practice-secondary { margin-top: 4px; }
 .player-error { margin-top: 10px; }
+.icon-control { min-width: 44px; min-height: 44px; padding: 10px; }
+.control-tooltip { max-width: min(260px, calc(100vw - 24px)); padding: 8px 12px; border-radius: 8px; background: var(--popover); color: var(--popover-foreground); font-size: 13px; line-height: 1.5; box-shadow: var(--overlay-shadow); } /* taste-skill-ignore: A tooltip floats above the interface. */
 @media (min-width: 900px) {
   .player-shell { min-height: 560px; }
   .player-shell > header { max-width: 1280px; padding: 16px 32px; }
@@ -147,9 +151,6 @@ button:disabled { cursor: not-allowed; }
   .player-main:not([data-step=choose]) .player-workspace { display: contents; }
   .practice-content { grid-column: 1; grid-row: 2; }
   .player-controls { grid-column: 2; grid-row: 1 / 3; align-self: start; margin: 0; }
-  .practice-actions { display: flex; flex-direction: column; justify-content: flex-start; gap: 12px; margin: 0; }
-  .practice-actions > button { min-height: 56px; font-size: 18px; }
-  .practice-navigation { margin-top: 12px; }
   .player-main[data-step=choose] { grid-template-rows: minmax(160px, 1fr); }
   .player-main[data-step=choose] .player-workspace { align-self: start; }
   .player-result { align-self: start; gap: 12px; }
@@ -199,17 +200,16 @@ button:disabled { cursor: not-allowed; }
   .voice-waveform { height: 40px; }
   .player-controls { margin-top: 8px; }
   .player-controls > [aria-hidden=true] { display: none; }
-  /* Three primary actions, then navigation and secondary actions: two 44px rows. */
+  /* Three labelled media actions, then icon navigation and utilities. */
   .practice-actions { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
   .practice-actions > button { grid-column: span 2; }
   .practice-actions > button, .practice-navigation > button, .practice-secondary > button,
   .result-actions > button, .dub-download > button, .dub-download > a, .dub-share-actions > button {
     height: auto; min-height: 44px; padding: 4px; font-size: 14px; line-height: 20px; gap: 4px; white-space: normal;
   }
-  .practice-actions > button { min-height: 56px; flex-direction: column; gap: 4px; }
+  .practice-actions > button { min-height: 64px; flex-direction: column; gap: 4px; }
+  .result-actions > button, .dub-download > button, .dub-download > a, .dub-share-actions > button { min-width: 0; min-height: 56px; flex-direction: column; gap: 2px; }
   .practice-secondary > button { font-size: 13px; line-height: 18px; }
-  .practice-secondary > button > svg,
-  .result-actions > button > svg, .dub-download > button > svg, .dub-download > a > svg { display: none; }
   .practice-navigation, .practice-actions > .practice-secondary { grid-column: span 3; gap: 4px; }
   .practice-actions > .practice-secondary { margin-bottom: 0; }
   .practice-secondary { height: auto; gap: 4px; }
