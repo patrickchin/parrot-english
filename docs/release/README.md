@@ -1,6 +1,6 @@
 # Parrotbook release board
 
-Updated 2026-11-18, Asia/Shanghai. Codex leads implementation, specialist agents,
+Updated 2026-11-19, Asia/Shanghai. Codex leads implementation, specialist agents,
 integration, and verification in this chat. Patrick owns participant contact and
 business decisions. [Product plan](../product-plan.md) owns the broader scope.
 
@@ -27,6 +27,14 @@ expiry, and a removal capability kept on the creator's device. No public feed or
 automatic recording upload is part of this iteration.
 
 ## Current release
+
+The collection naming and card-sizing increment shipped in
+[PR #302](https://github.com/patrickchin/parrot-english/pull/302), merged source
+`89af1899bf95dc9d45d78ef8c02122f687c4cf29`. Native ESA Git build
+`189785102518404` succeeded for that source and public health matched. Live
+Chromium (390/1440px) and WebKit (390px) checks confirmed collection/scene card
+width and thumbnail parity. Earlier local checks passed 264 browser cases with
+one existing WebKit capture skip; final PR Firefox QA passed 34/34.
 
 The 2026-11-18 loading increment shipped in
 [PR #296](https://github.com/patrickchin/parrot-english/pull/296), source
@@ -126,6 +134,7 @@ Hosted owner CRUD acceptance remains separate from the completed API deployment.
 
 | Work | Owner | State / next action |
 | --- | --- | --- |
+| Icon-forward player controls | UI + accessibility + QA | Implemented familiar media icons, short captions in all five languages, icon navigation/reset/info, and keyboard/pointer hints. Full action names include the visible captions for speech control. Status, errors, reset confirmation and sharing consent remain explicit. Production browser and rollout evidence is recorded with the implementation PR; physical-device testing remains separate. |
 | Page loading and video startup | Engineering + QA + delivery | PR #296 merged and native player/API deployment succeeded at `8735bf1b`. Immutable metadata uses the browser cache; Home stays within the app; owner/share pages skip unrelated discovery; secondary code and offscreen posters load when needed. [Dated performance evidence](loading-performance.md). |
 | One Packs catalogue and Patrick attribution | Delivery + content + UI | Content PR #275 merged as e8f9878b and published at 2026-11-14T17:26:27Z: 21 packs / 128 scenes, all uploaded by Patrick. All 277 JSON objects and 513 media references verified. Flat Packs UI merged in PR #276 and deployed; live 390px gallery/search/detail smoke passed. |
 | Owner API + private management page | Backend + UI | Implemented and independently reviewed; local API/browser checks cover upload/retry, staging, publication, hide/show/delete. Native Bearer trigger saved/read back; missing/invalid-token rejection and apex/www preflight pass. Authenticated hosted CRUD acceptance remains. |

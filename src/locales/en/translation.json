@@ -184,6 +184,15 @@
     "sceneCount_one": "{{count}} scene",
     "sceneCount_other": "{{count}} scenes"
   },
+  "controls": {
+    "you": "You",
+    "stop": "Stop",
+    "edit": "Edit",
+    "download": "Download",
+    "share": "Share",
+    "video": "Video",
+    "link": "Link"
+  },
   "waveform": {
     "voiceWaveformComparison": "Voice waveform comparison",
     "yourVoiceRecording": "Your voice · Recording",

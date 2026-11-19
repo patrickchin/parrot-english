@@ -66,7 +66,7 @@ for (const clip of [...clips.slice(0, 4), ...clips.filter(c => ['infinity', 'may
   test.skip(browserName !== 'chromium', 'WebKit microphone capture requires a physical-device check.');
   await page.goto(scenePath(clip.slug));
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
-  await page.getByRole('button', { name: '听这一句原声', exact: true }).click();
+  await page.getByRole('button', { name: '听这一句原声 (听原声)', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '停止播放', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();

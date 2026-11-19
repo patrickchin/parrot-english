@@ -184,6 +184,15 @@
     "sceneCount_one": "{{count}} 个片段",
     "sceneCount_other": "{{count}} 个片段"
   },
+  "controls": {
+    "you": "我的",
+    "stop": "停止",
+    "edit": "编辑",
+    "download": "下载",
+    "share": "分享",
+    "video": "视频",
+    "link": "链接"
+  },
   "waveform": {
     "voiceWaveformComparison": "声音波形对比",
     "yourVoiceRecording": "你的声音 · 录音中",

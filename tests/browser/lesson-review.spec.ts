@@ -9,9 +9,9 @@ test('Holly practises her own lines including the complete closing response', as
   await expect(page.getByText('Me too.', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '下一步', exact: true }).click();
   await expect(page.getByText("And it's nice to have you back, wand. I will never lose you again.", { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '听这一句原声', exact: true }).click();
+  await page.getByRole('button', { name: '听这一句原声 (听原声)', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: '听这一句原声', exact: true })).toBeEnabled({ timeout: 12000 });
+  await expect(page.getByRole('button', { name: '听这一句原声 (听原声)', exact: true })).toBeEnabled({ timeout: 12000 });
   expect(await page.locator('video').evaluate((el: HTMLVideoElement) => el.currentTime)).toBeGreaterThan(24.8);
 });
 

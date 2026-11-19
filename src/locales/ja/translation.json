@@ -184,6 +184,15 @@
     "sceneCount_one": "{{count}}シーン",
     "sceneCount_other": "{{count}}シーン"
   },
+  "controls": {
+    "you": "自分",
+    "stop": "停止",
+    "edit": "編集",
+    "download": "ダウンロード",
+    "share": "共有",
+    "video": "動画",
+    "link": "リンク"
+  },
   "waveform": {
     "voiceWaveformComparison": "声の波形を比べる",
     "yourVoiceRecording": "自分の声・録音中",

@@ -23,7 +23,7 @@ for (const seed of seeds) test(`@stress mixed recording actions preserve takes a
   const takes = new Map<number, string>();
   let selected = 0;
   async function idle() {
-    await expect(button('听这一句原声')).toBeEnabled();
+    await expect(button('听这一句原声 (听原声)')).toBeEnabled();
     await expect(page.locator('video')).toHaveJSProperty('paused', true);
     await expect(page.getByRole('alert')).toHaveCount(0);
     await expect(button(labels[selected])).toHaveAttribute('aria-current', 'step');
@@ -37,7 +37,7 @@ for (const seed of seeds) test(`@stress mixed recording actions preserve takes a
     expect(uploads).toEqual([]);
   }
   async function record() {
-    await button(takes.has(selected) ? '重新录这一句' : '开始录音').click();
+    await button(takes.has(selected) ? '重新录这一句 (开始录音)' : '开始录音').click();
     await expect(button('停止录音')).toBeVisible();
     await expect(button('听我的录音')).toBeEnabled();
     takes.set(selected, await waveformImage(wave));
@@ -60,13 +60,13 @@ for (const seed of seeds) test(`@stress mixed recording actions preserve takes a
         switch (action) {
           case 'record': await record(); break;
           case 'cancel-capture':
-            await button('重新录这一句').click();
+            await button('重新录这一句 (开始录音)').click();
             await expect(button('停止录音')).toBeVisible();
             await button('取消').click(); break;
           case 'cancel-permission': {
             const tracksBefore = await page.evaluate(() => (window as unknown as { mediaAudit: MediaAudit }).mediaAudit.tracks.length);
             await page.evaluate(() => { (window as unknown as { mediaAudit: MediaAudit }).mediaAudit.microphoneDelay = 250; });
-            await button('重新录这一句').click(); await button('取消').click();
+            await button('重新录这一句 (开始录音)').click(); await button('取消').click();
             // Allow the late stream to arrive; it must be stopped without saving.
             await expect.poll(() => page.evaluate(() => (window as unknown as { mediaAudit: MediaAudit }).mediaAudit.tracks.length)).toBe(tracksBefore + 1);
             await expect.poll(() => page.evaluate(() => (window as unknown as { mediaAudit: MediaAudit }).mediaAudit.tracks.at(-1)?.readyState)).toBe('ended');
@@ -74,7 +74,7 @@ for (const seed of seeds) test(`@stress mixed recording actions preserve takes a
             break;
           }
           case 'original': case 'listen':
-            await button(action === 'original' ? '听这一句原声' : '听我的录音').click();
+            await button(action === 'original' ? '听这一句原声 (听原声)' : '听我的录音').click();
             await expect(button('停止播放')).toBeVisible();
             await page.waitForTimeout(random(90));
             await button('停止播放').click(); break;
@@ -93,7 +93,7 @@ for (const seed of seeds) test(`@stress mixed recording actions preserve takes a
             selected = labels.length - 1; await button(labels[selected]).click(); await button('看我的配音').click();
             await page.getByRole('region', { name: '配音完成', exact: true }).getByRole('button', { name: '播放我的配音', exact: true }).click();
             await expect(button('停止播放')).toBeVisible(); await button('停止播放').click();
-            await button('再改一句').click(); selected = 0; break;
+            await button('再改一句 (编辑)').click(); selected = 0; break;
           case 'interrupt-help':
             await button('听我的录音').click(); await expect(button('停止播放')).toBeVisible();
             await button('怎么配音？').click(); await page.getByRole('dialog').getByRole('button', { name: '知道了', exact: true }).click(); break;

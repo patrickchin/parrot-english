@@ -21,7 +21,7 @@ for (const slug of ['young-sheldon-library', 'himym-driving-lesson', 'harry-pott
   test.skip(browserName !== 'chromium', 'WebKit microphone capture needs a physical device.');
   await page.goto(scenePath(slug));
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
-  await page.getByRole('button', { name: '听这一句原声', exact: true }).click();
+  await page.getByRole('button', { name: '听这一句原声 (听原声)', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '停止播放', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();

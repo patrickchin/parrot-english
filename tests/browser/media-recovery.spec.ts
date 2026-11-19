@@ -69,7 +69,7 @@ test('microphone loss and a failed replacement preserve the accepted take and re
   await expect(listen).toBeEnabled();
   const wave = page.getByRole('img', { name: '你的声音波形', exact: true });
   const accepted = await waveformImage(wave);
-  await page.getByRole('button', { name: '重新录这一句', exact: true }).click();
+  await page.getByRole('button', { name: '重新录这一句 (开始录音)', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止录音', exact: true })).toBeVisible();
   await page.evaluate(() => {
     const audit = (window as unknown as { mediaAudit: MediaAudit }).mediaAudit;
@@ -130,7 +130,7 @@ test('a Stop gesture cannot turn into a re-record when playback ends between poi
   await page.locator('video').evaluate((video: HTMLVideoElement) => video.pause());
   await expect(page.getByRole('alert')).toContainText('播放或录音暂时中断');
   await page.mouse.up();
-  await expect(page.getByRole('button', { name: '重新录这一句', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '重新录这一句 (开始录音)', exact: true })).toBeVisible();
   expect(await page.evaluate(() => (window as unknown as { mediaAudit: MediaAudit }).mediaAudit.tracks.length)).toBe(count);
 });
 
@@ -141,5 +141,5 @@ test('keyboard focus follows the recording control through startup and completio
   await record.focus(); await record.press('Enter');
   await expect(page.getByRole('button', { name: '停止录音', exact: true })).toBeFocused();
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
-  await expect(page.getByRole('button', { name: '重新录这一句', exact: true })).toBeFocused();
+  await expect(page.getByRole('button', { name: '重新录这一句 (开始录音)', exact: true })).toBeFocused();
 });

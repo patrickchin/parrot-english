@@ -68,7 +68,7 @@ test('stalled original playback leaves loading with a retryable error', async ({
     (window as Window & { restorePlay?: () => void }).restorePlay = () => { HTMLMediaElement.prototype.play = original; };
     HTMLMediaElement.prototype.play = () => new Promise<void>(() => {});
   });
-  const original = page.getByRole('button', { name: '听这一句原声', exact: true });
+  const original = page.getByRole('button', { name: '听这一句原声 (听原声)', exact: true });
   await original.click();
   await expect(page.getByRole('alert')).toContainText('视频暂时无法播放', { timeout: 12000 });
   await expect(original).toBeEnabled();
@@ -81,10 +81,10 @@ test('stalled original playback leaves loading with a retryable error', async ({
 test('interrupted original playback returns to idle with the selected line intact', async ({ page }) => {
   await page.goto('/scenes/patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
-  await page.getByRole('button', { name: '听这一句原声', exact: true }).click();
+  await page.getByRole('button', { name: '听这一句原声 (听原声)', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
   await page.locator('video').evaluate((video: HTMLVideoElement) => video.pause());
   await expect(page.getByRole('alert')).toContainText('播放或录音暂时中断');
-  await expect(page.getByRole('button', { name: '听这一句原声', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: '听这一句原声 (听原声)', exact: true })).toBeEnabled();
   await expect(page.getByText('Thank you.', { exact: true })).toBeVisible();
 });

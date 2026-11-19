@@ -156,7 +156,7 @@ test('a captured take survives reload and produces real rendered audio during re
   await page.goto('/zh/scenes/patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   if (browserName === 'chromium') {
-    await page.getByRole('button', { name: '听这一句原声', exact: true }).click();
+    await page.getByRole('button', { name: '听这一句原声 (听原声)', exact: true }).click();
     await expect.poll(() => page.evaluate(() => {
       const analysers = (window as unknown as { originalAnalysers: AnalyserNode[] }).originalAnalysers;
       return Math.max(0, ...analysers.map(analyser => {
@@ -218,7 +218,7 @@ test('an original preview reports a bounded buffering failure without losing rec
   await prepareMediaTest(page);
   await page.goto('/zh/scenes/patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
-  await page.getByRole('button', { name: '听这一句原声', exact: true }).click();
+  await page.getByRole('button', { name: '听这一句原声 (听原声)', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
   await page.evaluate(() => {
     const video = document.querySelector('video')!;

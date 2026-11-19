@@ -19,7 +19,7 @@ test('reference, live take, and saved take share a moving timeline; cancelling k
   const cursor = graph.getByRole('progressbar', { name: '配音时间指针' });
   await expect(graph.getByRole('img', { name: '原声波形', exact: true })).toBeVisible();
   await expect(graph.getByRole('img', { name: '你的声音波形', exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: '听这一句原声', exact: true }).click();
+  await page.getByRole('button', { name: '听这一句原声 (听原声)', exact: true }).click();
   await expect.poll(async () => Number(await cursor.getAttribute('aria-valuenow'))).toBeGreaterThan(0.15);
   await page.getByRole('button', { name: '停止播放', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
@@ -54,7 +54,7 @@ test('reference, live take, and saved take share a moving timeline; cancelling k
     await mkdir(folder, { recursive: true });
     await page.setViewportSize({ width: 1440, height: 900 });
     expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
-    const desktopRecord = await page.getByRole('button', { name: '重新录这一句', exact: true }).boundingBox();
+    const desktopRecord = await page.getByRole('button', { name: '重新录这一句 (开始录音)', exact: true }).boundingBox();
     expect(desktopRecord!.y + desktopRecord!.height).toBeLessThanOrEqual(900);
     await page.screenshot({ path: join(folder, 'warm-waveform-recorded.png'), fullPage: true });
     await page.setViewportSize({ width: 375, height: 667 });
@@ -65,7 +65,7 @@ test('reference, live take, and saved take share a moving timeline; cancelling k
       expect(bounds!.height).toBeGreaterThanOrEqual(name === '下一步' ? 44 : 56);
       expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(667);
     }
-    const mobileRecord = await page.getByRole('button', { name: '重新录这一句', exact: true }).boundingBox();
+    const mobileRecord = await page.getByRole('button', { name: '重新录这一句 (开始录音)', exact: true }).boundingBox();
     expect(mobileRecord!.height).toBeGreaterThanOrEqual(56);
     expect(mobileRecord!.y + mobileRecord!.height).toBeLessThanOrEqual(667);
     await page.screenshot({ path: join(folder, 'waveform-overlay-phone-375.png'), fullPage: true });
@@ -84,7 +84,7 @@ test('reference, live take, and saved take share a moving timeline; cancelling k
   const stoppedAt = await page.locator('video').evaluate((v: HTMLVideoElement) => v.currentTime);
   expect(stoppedAt).toBeGreaterThanOrEqual(windowEnd);
   expect(stoppedAt).toBeLessThan(windowEnd + 0.2);
-  await page.getByRole('button', { name: '重新录这一句', exact: true }).click();
+  await page.getByRole('button', { name: '重新录这一句 (开始录音)', exact: true }).click();
   await page.getByRole('button', { name: '取消', exact: true }).click();
   await expect(graph.getByRole('img', { name: '你的声音波形', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '重新开始', exact: true }).click();
@@ -99,7 +99,7 @@ test('missing waveform metadata leaves recording and reference playback availabl
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await expect(page.getByText('原声波形暂时无法显示，仍可听原声并录音。')).toBeVisible();
   await expect(page.getByRole('button', { name: '开始录音', exact: true })).toBeEnabled();
-  await expect(page.getByRole('button', { name: '听这一句原声', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: '听这一句原声 (听原声)', exact: true })).toBeEnabled();
 });
 
 
@@ -120,7 +120,7 @@ test('scene, caption, waveforms and every main action remain reachable across th
     for (const viewport of [{ width: 360, height: 640 }, { width: 375, height: 667 }, { width: 768, height: 1024 }, { width: 1024, height: 600 }, { width: 1280, height: 720 }]) {
       await page.setViewportSize(viewport);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-      for (const name of ['听这一句原声', '开始录音', '听我的录音', '下一步']) {
+      for (const name of ['听这一句原声 (听原声)', '开始录音', '听我的录音', '下一步']) {
         const action = page.getByRole('group', { name: '配音操作' }).getByRole('button', { name, exact: true });
         const bounds = await action.boundingBox();
         expect(bounds!.height).toBeGreaterThanOrEqual(viewport.width < 900 && name === '下一步' ? 44 : 56);
@@ -178,7 +178,7 @@ test('line choices keep the picture, waveform and controls anchored with selecte
         }
         await expectPictureSubtitles(page, '电影片段', '台词');
         if (i === 0) {
-          await page.getByRole('button', { name: '听这一句原声', exact: true }).click();
+          await page.getByRole('button', { name: '听这一句原声 (听原声)', exact: true }).click();
           await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
           const playing = await documentBoxes(page, [entry, graph, actions]);
           for (const [index, box] of playing.entries()) for (const dimension of ['x', 'y', 'width', 'height'] as const) {
@@ -218,7 +218,7 @@ test('playhead advances on animation frames and stays on the video clock', async
   const scene = readScene('onions');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   const cursor = page.getByRole('progressbar', { name: '配音时间指针' });
-  await page.getByRole('button', { name: '听这一句原声', exact: true }).click();
+  await page.getByRole('button', { name: '听这一句原声 (听原声)', exact: true }).click();
   await expect.poll(async () => Number(await cursor.getAttribute('aria-valuenow'))).toBeGreaterThan(0.1);
   const samples = await cursor.evaluate(async (node, start) => {
     const video = document.querySelector('video')!;

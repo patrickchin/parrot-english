@@ -171,13 +171,13 @@ test('recorded dubs retain their selected pack through saving, reload, language 
   await page.getByRole('button', { name: `Choose scene: ${titleOf(memePack, authoredPatrick.id)}`, exact: true }).click();
   await page.getByRole('button', { name: 'Start dubbing', exact: true }).click();
   await page.getByRole('button', { name: 'Record', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'My recording', exact: true })).toBeEnabled({ timeout: 15000 });
+  await expect(page.getByRole('button', { name: 'My recording (You)', exact: true })).toBeEnabled({ timeout: 15000 });
   await expect(page.getByText('Saved on this device', { exact: true })).toBeVisible();
   const saved = new URL(page.url());
   expect(saved.pathname).toMatch(/\/dubs\/dub_[a-f0-9]{30}$/);
   expect(saved.searchParams.get('pack')).toBe(memePack.entry.id);
   await page.reload();
-  await expect(page.getByRole('button', { name: 'My recording', exact: true })).toBeEnabled();
+  await expect(page.getByRole('button', { name: 'My recording (You)', exact: true })).toBeEnabled();
   await setLanguage(page, 'zh-CN');
   expect(new URL(page.url()).searchParams.get('pack')).toBe(memePack.entry.id);
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();

@@ -52,7 +52,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function prepareVideo(page: import('@playwright/test').Page, language: 'en' | 'zh' = 'en') {
-  const labels = language === 'en' ? { start: 'Start dubbing', record: 'Record', recording: 'My recording', next: 'Next', result: 'Your dub is ready!', prepare: 'Prepare to share', file: 'Share video file' } : { start: '开始配音', record: '开始录音', recording: '听我的录音', next: '下一步', result: '你的配音，完成啦！', prepare: '准备分享', file: '分享视频文件' };
+  const labels = language === 'en' ? { start: 'Start dubbing', record: 'Record', recording: 'My recording (You)', next: 'Next', result: 'Your dub is ready!', prepare: 'Prepare to share', file: 'Share video file' } : { start: '开始配音', record: '开始录音', recording: '听我的录音', next: '下一步', result: '你的配音，完成啦！', prepare: '准备分享', file: '分享视频文件' };
   await page.goto(`/${language}/scenes/patrick`);
   await page.getByRole('button', { name: labels.start, exact: true }).click();
   await page.getByRole('button', { name: labels.record, exact: true }).click();
