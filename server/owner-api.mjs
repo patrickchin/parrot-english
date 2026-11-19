@@ -102,7 +102,7 @@ export function createOwnerApi({ client, bucket = ownerBucket, region = ownerReg
     const bytes = jsonBytes(value);
     if (bytes.length > maximum) reject(413, `JSON file is too large: ${key}`);
     await store('put', key, bytes, { headers: {
-      'Content-Type': 'application/json', 'Cache-Control': 'no-store', 'x-oss-object-acl': acl,
+      'Content-Type': 'application/json', 'Cache-Control': key === catalogKey ? 'no-cache, must-revalidate' : 'no-store', 'x-oss-object-acl': acl,
     } });
   }
   async function catalog() {

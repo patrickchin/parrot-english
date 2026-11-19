@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { contentCatalogUrl } from '../catalog';
+import { startupContent } from '../catalog-startup';
 import { loadContent, type Clip, type ContentCatalog, type PublishedPack } from '../content-pack';
 import { i18n } from '../i18n-engine';
 import { languages } from '../locale';
@@ -16,19 +17,24 @@ export function ContentProvider({ children }: { children: ReactNode }) {
   const needsCatalog = !useMatches().some(match => ['share', 'owner', 'not-found'].includes(match.id));
   const [state, setState] = useState<LoadState<ContentCatalog>>({ status: 'loading' });
   const [attempt, setAttempt] = useState(0);
+  const initialRequest = useRef(startupContent);
   useEffect(() => {
     if (!needsCatalog) return;
     const abort = new AbortController();
     setState({ status: 'loading' });
-    void loadContent(contentCatalogUrl, abort.signal).then(value => {
+    void (initialRequest.current ?? loadContent(contentCatalogUrl, abort.signal)).then(value => {
       if (abort.signal.aborted) return;
+      initialRequest.current = undefined;
       for (const { value: language } of languages) {
         i18n.removeResourceBundle(language, 'content');
         i18n.addResourceBundle(language, 'content', value.locales[language] ?? {});
       }
       setState({ status: 'ready', value });
-    }).catch(() => {
-      if (!abort.signal.aborted) setState({ status: 'error', error: 'errors.contentLoad' });
+    }).catch(error => {
+      if (abort.signal.aborted) return;
+      initialRequest.current = undefined;
+      console.error('Scene catalog could not be loaded', { url: contentCatalogUrl, error });
+      setState({ status: 'error', error: 'errors.contentLoad' });
     });
     return () => abort.abort();
   }, [attempt, needsCatalog]);

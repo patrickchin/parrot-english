@@ -8,7 +8,7 @@ test('runtime discovery validates one published index without fetching pack or s
   t.after(() => { globalThis.fetch = original; });
   const requests = [];
   globalThis.fetch = async (url, options) => {
-    requests.push(url); assert.equal(options.credentials, 'omit'); assert.equal(options.cache, url.endsWith('/catalog.json') ? 'no-store' : 'default');
+    requests.push(url); assert.equal(options.credentials, 'omit'); assert.equal(options.cache, url.endsWith('/catalog.json') ? 'no-cache' : 'default');
     assert.ok(documents.has(url), `Unexpected content request: ${url}`);
     return Response.json(documents.get(url));
   };
@@ -35,7 +35,7 @@ test('refresh reads the current catalog so withdrawn or updated releases cannot 
   globalThis.fetch = async (url, options) => {
     requests.push(url);
     if (url.endsWith('/catalog.json')) {
-      assert.equal(options.cache, 'no-store');
+      assert.equal(options.cache, 'no-cache');
       return Response.json(current);
     }
     assert.equal(options.cache, 'default');
@@ -50,7 +50,7 @@ test('refresh reads the current catalog so withdrawn or updated releases cannot 
   requests.length = 0;
   globalThis.fetch = async (url, options) => {
     requests.push(url);
-    if (url.endsWith('/catalog.json')) { assert.equal(options.cache, 'no-store'); return Response.json(current); }
+    if (url.endsWith('/catalog.json')) { assert.equal(options.cache, 'no-cache'); return Response.json(current); }
     return Response.json(pack);
   };
   const updated = await loadContent(contentBase + 'catalog.json');
@@ -92,4 +92,58 @@ test('discovery rejects incomplete snapshots and cross-pack collisions without a
     await assert.rejects(loadContent(contentBase + 'catalog.json'), /contentLoad/);
     assert.deepEqual(requests, [contentBase + 'catalog.json']);
   }
+});
+
+test('catalog retries one temporary failure, including an interrupted response body', async t => {
+  const original = globalThis.fetch;
+  t.after(() => { globalThis.fetch = original; });
+  for (const failure of [
+    () => { throw new TypeError('Network connection lost'); },
+    () => new Response(null, { status: 503 }),
+    () => new Response(new ReadableStream({ start(controller) { controller.error(new TypeError('Body interrupted')); } })),
+  ]) {
+    let requests = 0;
+    globalThis.fetch = async () => ++requests === 1 ? failure() : Response.json(catalog);
+    assert.equal((await loadContent(contentBase + 'catalog.json')).clips.length, 2);
+    assert.equal(requests, 2);
+  }
+  let requests = 0;
+  globalThis.fetch = async () => { requests++; return new Response(null, { status: 503 }); };
+  await assert.rejects(loadContent(contentBase + 'catalog.json'), error => error.cause.message === 'HTTP 503');
+  assert.equal(requests, 2);
+});
+
+test('catalog never retries permanent errors or invalid JSON, and abort prevents a retry', async t => {
+  const original = globalThis.fetch;
+  t.after(() => { globalThis.fetch = original; });
+  for (const response of [() => new Response(null, { status: 404 }), () => new Response('{broken')]) {
+    let requests = 0;
+    globalThis.fetch = async () => { requests++; return response(); };
+    await assert.rejects(loadContent(contentBase + 'catalog.json'));
+    assert.equal(requests, 1);
+  }
+  const abort = new AbortController();
+  let requests = 0;
+  globalThis.fetch = async () => { requests++; abort.abort(); throw abort.signal.reason; };
+  await assert.rejects(loadContent(contentBase + 'catalog.json', abort.signal));
+  assert.equal(requests, 1);
+});
+
+test('a stalled catalog times out and retries once', async t => {
+  const original = globalThis.fetch;
+  t.after(() => { globalThis.fetch = original; });
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  let requests = 0;
+  globalThis.fetch = async (_url, { signal }) => {
+    requests++;
+    if (requests > 1) return Response.json(catalog);
+    return new Promise((_resolve, reject) => signal.addEventListener('abort', () => reject(signal.reason), { once: true }));
+  };
+  const loading = loadContent(contentBase + 'catalog.json');
+  t.mock.timers.tick(12000);
+  // Let rejection handling schedule the retry delay before advancing its clock.
+  await new Promise(resolve => setImmediate(resolve));
+  t.mock.timers.tick(300);
+  assert.equal((await loading).clips.length, 2);
+  assert.equal(requests, 2);
 });
