@@ -85,7 +85,7 @@ export function VoiceWaveform({ scene, start, end, target, timeline, recordings,
   }, [reference, recordings, start, end, recording, active, idleTime, timeline, t]);
   return <section aria-label={t("waveform.voiceWaveformComparison")} className="mx-auto min-w-0 w-full max-w-4xl">
     <div className="voice-comparison">
-      <div className="voice-waveform-legend text-xs text-muted-foreground">
+      <div className="sr-only">
         <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="h-0.5 w-4 bg-muted-foreground/80" />{t('player.original')}</span>
         <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="h-0.5 w-4 bg-coral" />{t('waveform.yourVoice')}<span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-danger" style={{ visibility: recording ? 'visible' : 'hidden' }} />{recording && <span className="sr-only">{t('player.recording')}</span>}</span>
       </div>

@@ -141,7 +141,7 @@
     "recordDescription": "Escucha el original, pulsa Grabar y habla. Pulsa Detener cuando termines.",
     "watchTitle": "3. Mira tu versión.",
     "watchDescription": "Tu grabación sustituye las frases de tu personaje. Los demás conservan sus voces originales.",
-    "recordingAdvice": "Es mejor usar auriculares. El verde muestra el audio original; el naranja, tu voz. El cursor marca el momento actual. Las formas de onda muestran el volumen, no puntúan la pronunciación; el original incluye música y efectos. Los borradores de doblaje se guardan en este navegador. Puedes continuarlos o borrarlos en Mis doblajes. El vídeo terminado solo se sube si eliges Crear enlace de reproducción y confirmas la subida. En el móvil, usa Safari o Chrome; la grabación dentro de WeChat no se ha verificado.",
+    "recordingAdvice": "Es mejor usar auriculares. «Original» muestra el audio de referencia; «Tu voz», tu grabación. El cursor marca el momento actual. Las formas de onda muestran el volumen, no puntúan la pronunciación; el original incluye música y efectos. Los borradores de doblaje se guardan en este navegador. Puedes continuarlos o borrarlos en Mis doblajes. El vídeo terminado solo se sube si eliges Crear enlace de reproducción y confirmas la subida. En el móvil, usa Safari o Chrome; la grabación dentro de WeChat no se ha verificado.",
     "guardianConsent": "Por ahora es para que tú y tus compañeros hagáis pruebas. Antes de que lo use un niño, su tutor debe conocer y aceptar la finalidad de la grabación."
   },
   "credits": {
@@ -185,6 +185,8 @@
     "sceneCount_other": "{{count}} escenas"
   },
   "controls": {
+    "play": "Reproducir",
+    "previous": "Anterior",
     "you": "Tú",
     "stop": "Detener",
     "edit": "Editar",

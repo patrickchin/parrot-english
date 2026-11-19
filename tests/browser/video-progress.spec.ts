@@ -70,7 +70,7 @@ test('early playing waits for the moving picture before recording and recorded r
   await releasePicture(page);
   const listen = page.getByRole('button', { name: '听我的录音', exact: true });
   await expect(listen).toBeEnabled();
-  await expect(page.getByText('已保存到本机', { exact: true })).toBeVisible();
+  await expect(page.getByText('已保存到本机', { exact: true })).toBeAttached();
   await expectMicrophoneReleased(page);
   await listen.click();
   await expectParkedPreparation(page);

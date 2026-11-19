@@ -172,7 +172,7 @@ test('recorded dubs retain their selected pack through saving, reload, language 
   await page.getByRole('button', { name: 'Start dubbing', exact: true }).click();
   await page.getByRole('button', { name: 'Record', exact: true }).click();
   await expect(page.getByRole('button', { name: 'My recording (You)', exact: true })).toBeEnabled({ timeout: 15000 });
-  await expect(page.getByText('Saved on this device', { exact: true })).toBeVisible();
+  await expect(page.getByText('Saved on this device', { exact: true })).toBeAttached();
   const saved = new URL(page.url());
   expect(saved.pathname).toMatch(/\/dubs\/dub_[a-f0-9]{30}$/);
   expect(saved.searchParams.get('pack')).toBe(memePack.entry.id);

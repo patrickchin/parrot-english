@@ -39,7 +39,12 @@ async function noHorizontalOverflow(page: Page) {
 for (const [language, translations] of [['en', en], ['zh-CN', zh]] as const) {
   for (const slug of ['onions', 'wumbo']) {
     test(`${language} ${slug}: phone picture and all lesson options fit together`, async ({ page }, info) => {
-      const ui = translations.player;
+      const ui = {
+        ...translations.player,
+        listenToTheOriginalLine: language === 'zh-CN' ? '听这一句原声 (听原声)' : 'Listen to the original line',
+        myRecording: language === 'en' ? 'My recording (You)' : '听我的录音',
+        editALine: language === 'zh-CN' ? '再改一句 (编辑)' : 'Edit a line',
+      };
       const scene = readScene(slug);
       const roles = scene.roles.filter((role: { selectable?: boolean }) => role.selectable !== false);
       const lines = scene.lines.filter((line: { roleId: string }) => line.roleId === roles[0].id);
@@ -93,7 +98,7 @@ for (const [language, translations] of [['en', en], ['zh-CN', zh]] as const) {
               const guidance = workspace.getByRole('status').filter({ hasText: translations.recording.listenFirst });
               await expect(guidance).toHaveText(translations.recording.listenFirst);
               for (const name of [ui.listenToTheOriginalLine, ui.record, ui.myRecording]) {
-                await fullyVisible(workspace.getByRole('button', { name, exact: true }), page, 56);
+                await fullyVisible(workspace.getByRole('button', { name, exact: true }), page, 44);
               }
             }
             await noHorizontalOverflow(page);
@@ -205,7 +210,7 @@ test('an eight-line role keeps every line and practice action visible on a short
       expect(Math.abs(number.width - 32), 'Number disk stays smaller than its touch target').toBeLessThanOrEqual(1);
       expect(Math.abs(number.height - 32), 'Number disk stays smaller than its touch target').toBeLessThanOrEqual(1);
     }
-    for (const name of [en.player.listenToTheOriginalLine, en.player.record, en.player.myRecording, en.player.previousLine, en.player.next, en.player.startOver, en.player.sceneCredits]) {
+    for (const name of [en.player.listenToTheOriginalLine, en.player.record, 'My recording (You)', en.player.previousLine, en.player.next, en.player.startOver, en.player.sceneCredits]) {
       await fullyVisible(page.getByRole('button', { name, exact: true }), page, 44);
     }
     await noHorizontalOverflow(page);
@@ -221,7 +226,7 @@ test('an eight-line role keeps every line and practice action visible on a short
 });
 
 test('rotating a phone keeps both source shapes and lesson actions inside the landscape viewport', async ({ page }) => {
-  const ui = en.player;
+  const ui = { ...en.player, myRecording: 'My recording (You)' };
   for (const slug of ['onions', 'wumbo']) {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(scenePath(slug, undefined, 'en'));

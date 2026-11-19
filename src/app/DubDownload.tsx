@@ -4,6 +4,7 @@ import { exportDub } from '../export-dub';
 import type { Scene } from '../scene';
 import type { Takes } from '../useDubbing';
 import { Button, Icon, controlLabel } from '../shared/ui';
+import { IconButton } from '../shared/IconButton';
 import { buttonVariants } from '../components/ui/button';
 import { transitionExport } from '../export-state';
 import { useLanguage } from '../i18n';
@@ -92,14 +93,14 @@ export function DubDownload({ scene, takes, source, active, disabled, onExportin
 
   return <div className="dub-download">
     {state.status === 'exporting'
-      ? <Button tone="quiet" aria-label={t("download.cancelExport")} className="py-1" onClick={() => { controller.current?.abort(); controller.current = null; send({ type: 'RESET' }); }}><span><span className="block">{t("download.cancelExport")} · {state.percent}%</span><span className="block text-xs font-normal">{t("download.keepThisPageOpen")}</span></span></Button>
+      ? <Button tone="quiet" aria-label={t("download.cancelExport")} className="result-primary export-progress py-1" onClick={() => { controller.current?.abort(); controller.current = null; send({ type: 'RESET' }); }}><Icon name="close" /><span><span className="block">{t("download.cancelExport")} · {state.percent}%</span><span className="block text-xs font-normal">{t("download.keepThisPageOpen")}</span></span></Button>
       : state.status === 'ready'
-        ? <a ref={link} href={downloadUrl} download={`parrotbook-${scene.id}.mp4`} aria-label={controlLabel(t(downloaded ? 'download.downloadAgain' : 'download.downloadVideo'), t('controls.download'))} onClick={() => setDownloaded(true)} className={buttonVariants({ size: 'lg', className: 'min-h-14 gap-3 px-5 py-3 text-lg font-semibold' })}><Icon name="download" />{t('controls.download')}</a>
-        : <Button tone="primary" aria-label={controlLabel(t("download.downloadVideo"), t("controls.download"))} title={t("download.privacyNotice")} disabled={disabled || !source} onClick={() => void prepare(true)}><Icon name="download" />{t("controls.download")}</Button>}
-    {active && state.status !== 'exporting' && state.status !== 'ready' && <Button tone="quiet" aria-label={controlLabel(t('share.prepare'), t('controls.share'))} disabled={disabled || !source} onClick={() => void prepare(false)}><Icon name="share" />{t('controls.share')}</Button>}
+        ? <a ref={link} href={downloadUrl} download={`parrotbook-${scene.id}.mp4`} aria-label={controlLabel(t(downloaded ? 'download.downloadAgain' : 'download.downloadVideo'), t('controls.download'))} title={controlLabel(t(downloaded ? 'download.downloadAgain' : 'download.downloadVideo'), t('controls.download'))} onClick={() => setDownloaded(true)} className={buttonVariants({ variant: 'outline', size: 'lg', className: 'result-primary min-h-14 gap-3 px-5 py-3 text-lg font-semibold' })}><Icon name="download" /><span className="control-caption">{t('controls.download')}</span></a>
+        : <IconButton className="result-primary" tone="quiet" label={controlLabel(t("download.downloadVideo"), t("controls.download"))} title={t("download.privacyNotice")} disabled={disabled || !source} onClick={() => void prepare(true)}><Icon name="download" /><span className="control-caption">{t("controls.download")}</span></IconButton>}
+    {active && state.status !== 'exporting' && state.status !== 'ready' && <IconButton className="result-utility" tone="plain" label={controlLabel(t('share.prepare'), t('controls.share'))} disabled={disabled || !source} onClick={() => void prepare(false)}><Icon name="share" /></IconButton>}
     {active && state.status === 'ready' && <div className="dub-share-actions">
-      {canShareFile && <Button tone="quiet" aria-label={controlLabel(t('share.file'), t('controls.video'))} disabled={disabled || !!hosting} onClick={() => void shareFile()}><Icon name="video" />{t('controls.video')}</Button>}
-      <Button tone="quiet" aria-label={controlLabel(t(shared ? 'share.viewLink' : 'share.createLink'), t('controls.link'))} disabled={disabled || !!hosting} onClick={() => { setShareOpen(true); setShareError(''); }}><Icon name="link" />{t('controls.link')}</Button>
+      {canShareFile && <IconButton tone="quiet" label={controlLabel(t('share.file'), t('controls.video'))} disabled={disabled || !!hosting} onClick={() => void shareFile()}><Icon name="video" /><span className="control-caption">{t('controls.video')}</span></IconButton>}
+      <IconButton tone="quiet" label={controlLabel(t(shared ? 'share.viewLink' : 'share.createLink'), t('controls.link'))} disabled={disabled || !!hosting} onClick={() => { setShareOpen(true); setShareError(''); }}><Icon name="link" /><span className="control-caption">{t('controls.link')}</span></IconButton>
       {!canShareFile && <p className="dub-share-note">{t('share.fileUnavailable')}</p>}
       {fileShared && <p role="status" className="dub-share-note">{t('share.fileShared')}</p>}
     </div>}

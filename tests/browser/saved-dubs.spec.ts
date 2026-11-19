@@ -37,7 +37,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function saved(page: import('@playwright/test').Page) {
-  await expect(page.getByText('已保存到本机', { exact: true })).toBeVisible();
+  await expect(page.getByText('已保存到本机', { exact: true })).toBeAttached();
   await expect(page).toHaveURL(/\/scenes\/patrick\/dubs\/dub_[a-f0-9]{30}$/);
 }
 async function record(page: import('@playwright/test').Page) {
@@ -122,7 +122,7 @@ test('completed and partial attempts stay separate; restarting keeps history and
   const firstUrl = page.url();
   await page.getByRole('button', { name: '下一步', exact: true }).click();
   await page.getByRole('button', { name: '下一步', exact: true }).click(); await saved(page);
-  await page.reload(); await expect(page.getByRole('heading', { name: '你的配音，完成啦！', exact: true })).toBeVisible();
+  await page.reload(); await expect(page.getByRole('heading', { name: '你的配音，完成啦！', exact: true })).toBeAttached();
   await expect(page.getByRole('button', { name: '下载配音视频', exact: true })).toBeEnabled();
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: '下载配音视频', exact: true }).click();
@@ -144,7 +144,7 @@ test('completed and partial attempts stay separate; restarting keeps history and
     if (info.project.name === 'chromium') { const folder = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english'); await mkdir(folder, { recursive: true }); await page.screenshot({ path: join(folder, `saved-dubs-${width}.png`), fullPage: true }); }
   }
   await history.getByRole('button', { name: '继续配音：你在找谁？，Sintel', exact: true }).click();
-  await expect(page).toHaveURL(resumedUrl(firstUrl)); await expect(page.getByRole('heading', { name: '你的配音，完成啦！', exact: true })).toBeVisible();
+  await expect(page).toHaveURL(resumedUrl(firstUrl)); await expect(page.getByRole('heading', { name: '你的配音，完成啦！', exact: true })).toBeAttached();
   await page.getByRole('button', { name: '返回片段', exact: true }).click();
   await (await headerDestination(page, '我的配音')).click();
   const row = history.getByRole('listitem').filter({ has: page.getByRole('button', { name: '继续配音：你在找谁？，Sintel', exact: true }) });

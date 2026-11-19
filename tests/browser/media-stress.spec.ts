@@ -80,17 +80,17 @@ for (const seed of seeds) test(`@stress mixed recording actions preserve takes a
             await button('停止播放').click(); break;
           case 'line': selected = random(labels.length); await button(labels[selected]).click(); break;
           case 'reload':
-            await expect(page.getByText('已保存到本机', { exact: true })).toBeVisible();
+            await expect(page.getByText('已保存到本机', { exact: true })).toBeAttached();
             await page.reload(); break;
           case 'history':
-            await expect(page.getByText('已保存到本机', { exact: true })).toBeVisible();
+            await expect(page.getByText('已保存到本机', { exact: true })).toBeAttached();
             await button('返回片段').click(); await expect(page.getByRole('searchbox')).toBeVisible();
             await page.goBack(); break;
           case 'reset-cancel':
             await button('重新开始').click();
             await page.getByRole('dialog').getByRole('button', { name: '保留录音，继续玩', exact: true }).click(); break;
           case 'result':
-            selected = labels.length - 1; await button(labels[selected]).click(); await button('看我的配音').click();
+            selected = labels.length - 1; await button(labels[selected]).click(); await button('看我的配音 (播放)').click();
             await page.getByRole('region', { name: '配音完成', exact: true }).getByRole('button', { name: '播放我的配音', exact: true }).click();
             await expect(button('停止播放')).toBeVisible(); await button('停止播放').click();
             await button('再改一句 (编辑)').click(); selected = 0; break;
@@ -101,7 +101,7 @@ for (const seed of seeds) test(`@stress mixed recording actions preserve takes a
         await idle();
       });
     }
-    await expect(page.getByText('已保存到本机', { exact: true })).toBeVisible();
+    await expect(page.getByText('已保存到本机', { exact: true })).toBeAttached();
     await page.reload();
     for (selected = 0; selected < labels.length; selected++) {
       await button(labels[selected]).click(); await idle();

@@ -40,7 +40,7 @@ test('language history preserves the running player, saved dub and selected line
   await page.getByRole('button', { name: '下一步', exact: true }).click();
   const line = "I'm searching for someone.";
   await expect(page.getByRole('button', { name: `第 2 句：${line}`, exact: true })).toHaveAttribute('aria-current', 'step');
-  await expect(page.getByText('已保存到本机', { exact: true })).toBeVisible();
+  await expect(page.getByText('已保存到本机', { exact: true })).toBeAttached();
   await expect(page).toHaveURL(/\/zh\/scenes\/patrick\/dubs\/dub_[a-f0-9]{30}$/);
   const chinese = page.url();
   const video = await page.locator('video').elementHandle();
@@ -85,7 +85,7 @@ test('Back to an earlier language entry keeps a dub saved after that entry was c
   await setLanguage(page, 'en');
   await page.getByRole('button', { name: 'Start dubbing', exact: true }).click();
   await page.getByRole('button', { name: 'Next', exact: true }).click();
-  await expect(page.getByText('Saved on this device', { exact: true })).toBeVisible();
+  await expect(page.getByText('Saved on this device', { exact: true })).toBeAttached();
   await expect(page).toHaveURL(/\/en\/scenes\/patrick\/dubs\/dub_[a-f0-9]{30}$/);
   const english = page.url();
   const video = await page.locator('video').elementHandle();

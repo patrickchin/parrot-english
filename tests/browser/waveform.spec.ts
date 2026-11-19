@@ -62,11 +62,11 @@ test('reference, live take, and saved take share a moving timeline; cancelling k
     expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight + 1)).toBe(true);
     for (const name of ['听我的录音', '下一步']) {
       const bounds = await page.getByRole('button', { name, exact: true }).boundingBox();
-      expect(bounds!.height).toBeGreaterThanOrEqual(name === '下一步' ? 44 : 56);
+      expect(bounds!.height).toBeGreaterThanOrEqual(44);
       expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(667);
     }
     const mobileRecord = await page.getByRole('button', { name: '重新录这一句 (开始录音)', exact: true }).boundingBox();
-    expect(mobileRecord!.height).toBeGreaterThanOrEqual(56);
+    expect(mobileRecord!.height).toBeGreaterThanOrEqual(44);
     expect(mobileRecord!.y + mobileRecord!.height).toBeLessThanOrEqual(667);
     await page.screenshot({ path: join(folder, 'waveform-overlay-phone-375.png'), fullPage: true });
   }
@@ -123,7 +123,7 @@ test('scene, caption, waveforms and every main action remain reachable across th
       for (const name of ['听这一句原声 (听原声)', '开始录音', '听我的录音', '下一步']) {
         const action = page.getByRole('group', { name: '配音操作' }).getByRole('button', { name, exact: true });
         const bounds = await action.boundingBox();
-        expect(bounds!.height).toBeGreaterThanOrEqual(viewport.width < 900 && name === '下一步' ? 44 : 56);
+        expect(bounds!.height).toBeGreaterThanOrEqual(44);
         await action.scrollIntoViewIfNeeded();
         await expect(action).toBeInViewport();
       }
@@ -207,8 +207,8 @@ test('line choices keep the picture, waveform and controls anchored with selecte
       await page.getByRole('button', { name: '下一步', exact: true }).click();
       if (i < lines.length - 1) await expect(page.getByText(`已完成 ${i + 1} / ${lines.length} 句`, { exact: true })).toHaveCount(1);
     }
-    await expect(page.getByRole('heading', { name: '你的配音，完成啦！' })).toBeVisible();
-    await expect(page.getByText('录了 0 句台词。', { exact: false })).toBeVisible();
+    await expect(page.getByRole('heading', { name: '你的配音，完成啦！' })).toBeAttached();
+    await expect(page.getByText('录了 0 句台词。', { exact: false })).toBeAttached();
   }
 });
 

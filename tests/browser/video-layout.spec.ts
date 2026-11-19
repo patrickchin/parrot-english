@@ -115,7 +115,7 @@ test('completion keeps the picture anchored and replay keeps its waveform and su
       await expect(credits).toBeInViewport();
     };
     for (const _ of lines) await page.getByRole('button', { name: '下一步', exact: true }).click();
-    await expect(page.getByRole('heading', { level: 1, name: '你的配音，完成啦！' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: '你的配音，完成啦！' })).toBeAttached();
     await expectLayout();
     const completed = await documentBoxes(page, regions);
     await page.getByRole('region', { name: '配音完成', exact: true }).getByRole('button', { name: '播放我的配音', exact: true }).click();

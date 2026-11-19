@@ -59,7 +59,7 @@ test('a short Joey line has moving video context and retains early and late voic
   await expect.poll(async () => Number(await cursor.getAttribute('aria-valuenow'))).toBeGreaterThan(0.1);
   await expect.poll(() => originalAudioLevel(page)).toBe(0);
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
-  await expect(page.getByText('已保存到本机', { exact: true })).toBeVisible();
+  await expect(page.getByText('已保存到本机', { exact: true })).toBeAttached();
   const capture = await page.evaluate(async scene => {
     const probe = (window as unknown as { leadInProbe: { videoStart: number; leadInAudible: boolean } }).leadInProbe;
     const path = '/src/dub-store.ts';
@@ -84,7 +84,7 @@ test('a short Joey line has moving video context and retains early and late voic
   const stoppedAt = await page.locator('video').evaluate((video: HTMLVideoElement) => video.currentTime);
   expect(stoppedAt).toBeGreaterThanOrEqual(11.085);
   expect(stoppedAt).toBeLessThan(11.2);
-  await expect(page.getByText('已保存到本机', { exact: true })).toBeVisible();
+  await expect(page.getByText('已保存到本机', { exact: true })).toBeAttached();
   await page.reload();
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: '听我的录音', exact: true }).click();

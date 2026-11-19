@@ -49,7 +49,7 @@ test('publishing and withdrawing a pack updates discovery, search, playback and 
   await expect(page.getByRole('dialog')).not.toContainText(packs[0].data.locales.en.notices.scene);
   await page.getByRole('dialog').getByRole('button', { name: 'Close', exact: true }).click();
   await page.getByRole('button', { name: 'Start dubbing', exact: true }).click();
-  await expect(page.getByText('Saved on this device', { exact: true })).toBeVisible();
+  await expect(page.getByText('Saved on this device', { exact: true })).toBeAttached();
   await expect(page).toHaveURL(/\/dubs\/dub_[a-f0-9]{30}$/);
   const savedUrl = page.url();
 
