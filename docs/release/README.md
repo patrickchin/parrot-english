@@ -34,17 +34,22 @@ automatic recording upload is part of this iteration.
 
 ## Current release
 
-The geometric-bird and player-layout increment is in verification on
-`codex/geometric-blue-brand`, based on `2263208b`. The exact archived PNGs are
+The geometric-bird and player-layout increment is implemented in
+[PR #305](https://github.com/patrickchin/parrot-english/pull/305), based on
+`2263208b`. The exact archived PNGs are
 published under immutable `branding/geometric-bird/` OSS keys; header, favicon
 and Apple touch icon use those assets. No catalogue, API, recording engine,
 or lifecycle policy changes are included. TypeScript, 43 app / 20 content /
-1 boundary checks, 24 focused Chromium/mobile/WebKit cases, six appearance
-cases and two authored-scene recording cases pass. The authored media check
+1 boundary checks, 88 production Chromium/WebKit cases, 24 focused
+Chromium/mobile/WebKit cases, six appearance cases and two authored-scene
+recording cases pass. The authored media check
 uses an ignored local cache verified against OSS ETag, after live download
 latency caused a seek timeout. An independent source review found no blockers.
-The expanded production matrix contains 44 cases per engine; rollout evidence
-will be recorded on the release PR after those checks and native deployment.
+The extra subtitle/export checks pass 24 cases. A desktop completion jump found
+by the picture-anchoring check was fixed by retaining the hidden line-picker's
+footprint; phone controls remain compact. The expanded production matrix
+contains 44 cases per engine. Final Firefox, geometry and native deployment
+evidence is tracked on the release PR.
 
 The icon-control increment shipped in
 [PR #304](https://github.com/patrickchin/parrot-english/pull/304), merged source

@@ -164,6 +164,8 @@ button:disabled { cursor: not-allowed; }
   .player-video { grid-column: 1; grid-row: 1; max-height: none; }
   .player-main:not([data-step=choose]) .player-workspace { display: contents; }
   .practice-content { grid-column: 1; grid-row: 2; }
+  /* Retain the line-picker footprint so completion keeps the picture and timeline anchored. */
+  .player-main[data-step=result] .line-picker { display: flex; visibility: hidden; }
   .player-controls { grid-column: 2; grid-row: 1 / 3; align-self: start; margin: 0; }
   .player-main[data-step=choose] { grid-template-rows: minmax(160px, 1fr); }
   .player-main[data-step=choose] .player-workspace { align-self: start; }
