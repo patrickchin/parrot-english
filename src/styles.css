@@ -118,7 +118,7 @@ button:disabled { cursor: not-allowed; }
 .voice-playhead { will-change: transform; }
 .player-controls { display: grid; margin-top: 12px; }
 .player-controls > div { grid-area: 1 / 1; min-width: 0; }
-.practice-actions { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+.practice-actions { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); align-content: start; gap: 8px; }
 .practice-actions > button { grid-column: span 2; min-width: 0; min-height: 72px; padding: 8px 4px; flex-direction: column; font-size: 14px; line-height: 20px; gap: 4px; white-space: normal; }
 .practice-actions > button > svg { width: 26px; height: 26px; }
 .practice-navigation { grid-column: span 3; display: grid; grid-template-columns: repeat(2, minmax(44px, 1fr)); gap: 8px; }
