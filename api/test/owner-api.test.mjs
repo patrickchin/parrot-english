@@ -113,6 +113,27 @@ function published(storage, files, release = 'known') {
   return entry;
 }
 
+test('the owner can feature a visible scene and hiding its pack clears the feature', async () => {
+  const state = setup();
+  const first = await upload(state, packageFiles());
+  assert.equal((await state.call('POST', `/uploads/${first}/publish`)).statusCode, 200);
+  const feature = sceneId => state.call('PATCH', '/catalog/featured-scene', { sceneId });
+  assert.equal((await feature('scene_unknown')).statusCode, 404);
+  assert.deepEqual((await feature('scene_alpha')).value, { featuredSceneId: 'scene_alpha' });
+  assert.equal(state.storage.json('content/catalog.json').featuredSceneId, 'scene_alpha');
+
+  const second = await upload(state, packageFiles('beta'));
+  assert.equal((await state.call('POST', `/uploads/${second}/publish`)).statusCode, 200);
+  assert.equal((await state.call('GET', '/packs')).value.featuredSceneId, 'scene_alpha');
+  assert.deepEqual((await feature(null)).value, { featuredSceneId: null });
+  assert.equal(state.storage.json('content/catalog.json').featuredSceneId, undefined);
+
+  assert.equal((await feature('scene_alpha')).statusCode, 200);
+  assert.equal((await state.call('PATCH', '/packs/pack_alpha', { visible: false })).statusCode, 200);
+  assert.equal(state.storage.json('content/catalog.json').featuredSceneId, undefined);
+  assert.equal((await feature('scene_alpha')).statusCode, 404);
+});
+
 function assertDiscovery(storage, expectedIds) {
   const snapshot = storage.json('content/catalog.json');
   assert.deepEqual(snapshot.packs.map(entry => entry.id), expectedIds);

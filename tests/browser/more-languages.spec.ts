@@ -1,9 +1,9 @@
 import { test, expect, setLanguage } from './fixtures';
 
 const added = [
-  { code: 'es', label: 'Español', title: 'Parrotbook · Doblaje en inglés', start: 'Empezar a doblar', search: 'Buscar una escena', dubs: 'Mis doblajes', next: 'Siguiente', line: "Frase 2: I'm searching for someone." },
-  { code: 'ja', label: '日本語', title: 'Parrotbook · 英語で吹き替え', start: '吹き替えを始める', search: 'シーンを探す', dubs: '自分の吹き替え', next: '次へ', line: "セリフ2：I'm searching for someone." },
-  { code: 'ko', label: '한국어', title: 'Parrotbook · 영어 더빙', start: '더빙 시작', search: '장면 찾기', dubs: '내 더빙', next: '다음', line: "대사 2: I'm searching for someone." },
+  { code: 'es', label: 'Español', title: 'Parrotbook · Doblaje en inglés', start: 'Empezar a doblar', search: 'Buscar una escena', dubs: 'Mis doblajes', next: 'Siguiente' },
+  { code: 'ja', label: '日本語', title: 'Parrotbook · 英語で吹き替え', start: '吹き替えを始める', search: 'シーンを探す', dubs: '自分の吹き替え', next: '次へ' },
+  { code: 'ko', label: '한국어', title: 'Parrotbook · 영어 더빙', start: '더빙 시작', search: '장면 찾기', dubs: '내 더빙', next: '다음' },
 ] as const;
 
 for (const language of added) test(`${language.code} opens directly, persists, and fits a phone`, async ({ page }) => {
@@ -43,14 +43,14 @@ test.describe('saved player language changes', () => {
     for (const language of added) {
       await setLanguage(page, language.code);
       await expect(page).toHaveURL(original.replace('/en/', `/${language.code}/`));
-      await expect(page.getByRole('button', { name: language.line, exact: true })).toHaveAttribute('aria-current', 'step');
+      await expect(page.getByText("I'm searching for someone.", { exact: true })).toBeVisible();
       expect(await video!.evaluate(element => element.isConnected)).toBe(true);
     }
     await page.goBack();
-    await expect(page.getByRole('button', { name: added[1].line, exact: true })).toHaveAttribute('aria-current', 'step');
+    await expect(page.getByText("I'm searching for someone.", { exact: true })).toBeVisible();
     await page.goForward();
-    await expect(page.getByRole('button', { name: added[2].line, exact: true })).toHaveAttribute('aria-current', 'step');
+    await expect(page.getByText("I'm searching for someone.", { exact: true })).toBeVisible();
     await page.reload();
-    await expect(page.getByRole('button', { name: added[2].line, exact: true })).toHaveAttribute('aria-current', 'step');
+    await expect(page.getByText("I'm searching for someone.", { exact: true })).toBeVisible();
   });
 });

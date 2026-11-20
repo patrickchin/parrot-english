@@ -17,7 +17,7 @@ test('completing after the last recording keeps the paused picture, caption and 
   await expect(video).toHaveJSProperty('paused', true);
   await expect(video).toHaveJSProperty('seeking', false);
   await expect.poll(() => video.evaluate((el: HTMLVideoElement) => el.currentTime)).toBeLessThan(0.05);
-  const firstText = lines[0].slice(lines[0].indexOf('：') + 1);
+  const firstText = lines[0];
   await expect(page.getByRole('group', { name: '台词', exact: true }).getByText(firstText, { exact: true })).toBeVisible();
   await expect(page.getByRole('progressbar', { name: '配音时间指针', exact: true })).toHaveAttribute('aria-valuenow', '0.000');
 });

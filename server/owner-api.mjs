@@ -119,7 +119,8 @@ export function createOwnerApi({ client, bucket = ownerBucket, region = ownerReg
     const entries = validateCatalog({ version: 1, packs: next.packs.map(entryOf) });
     const packs = new Map(items.map(({ pack }) => [pack.id, pack]));
     const packData = Object.fromEntries(entries.packs.map(entry => [entry.id, validatePack(packs.get(entry.id), entry.id)]));
-    await putJson(catalogKey, { ...entries, packData }, 'public-read', catalogLimit);
+    const featuredSceneId = Object.values(packData).some(pack => pack.scenes.some(scene => scene.id === next.featuredSceneId)) ? next.featuredSceneId : undefined;
+    await putJson(catalogKey, { ...entries, featuredSceneId, packData }, 'public-read', catalogLimit);
   }
   const uploadRoot = id => `${contentRoot}uploads/${id}/`;
   const rawRoot = id => uploadRoot(id) + 'files/';
@@ -269,7 +270,7 @@ export function createOwnerApi({ client, bucket = ownerBucket, region = ownerReg
     const prior = await parallel(retained, published);
     const completed = replaceCatalog ? await parallel(values.filter(value => value.result), value => published(value.result)) : [];
     collisions([...prior, ...completed, ...fresh]);
-    const next = validateCatalog({ version: 1, packs: [
+    const next = validateCatalog({ ...current, packs: [
       ...retained, ...(replaceCatalog ? incoming : fresh.map(item => item.result)).map(entryOf),
     ] });
     for (const item of fresh) {
@@ -314,14 +315,24 @@ export function createOwnerApi({ client, bucket = ownerBucket, region = ownerReg
       await activateCatalog(current, items);
       return { packCount: current.packs.length, sceneCount: items.reduce((count, { pack }) => count + pack.scenes.length, 0) };
     }
+    if (method === 'PATCH' && path === '/catalog/featured-scene') {
+      const sceneId = body?.sceneId;
+      if (Object.keys(body ?? {}).length !== 1 || (sceneId !== null && (typeof sceneId !== 'string' || !/^scene_[A-Za-z0-9_-]{1,80}$/.test(sceneId)))) reject(400, 'Provide a scene ID or null.');
+      const current = await catalog();
+      const items = current.packs.map(entry => ({ pack: validatePack(current.packData?.[entry.id], entry.id) }));
+      if (sceneId !== null && !items.some(({ pack }) => pack.scenes.some(scene => scene.id === sceneId))) reject(404, 'Choose a published scene from a visible collection.');
+      await activateCatalog({ ...current, featuredSceneId: sceneId ?? undefined }, items);
+      return { featuredSceneId: sceneId };
+    }
     if (method === 'GET' && path === '/packs') {
       const current = await catalog(), index = await ownerIndex();
       const packs = await parallel(combine(index, current), async entry => {
         const { pack } = await published(entry);
+        const visible = current.packs.some(value => value.id === entry.id);
         return { ...entry, title: pack.title, ...(pack.franchise === undefined ? {} : { franchise: pack.franchise }),
-          sceneCount: pack.scenes.length, visible: current.packs.some(value => value.id === entry.id) };
+          sceneCount: pack.scenes.length, visible, scenes: visible ? pack.scenes.map(({ id, title }) => ({ id, title })) : [] };
       });
-      return { packs };
+      return { packs, featuredSceneId: current.featuredSceneId ?? null };
     }
     const managed = /^\/packs\/(pack_[A-Za-z0-9_-]{1,80})$/.exec(path);
     if (managed && packId(managed[1]) && ['PATCH', 'DELETE'].includes(method)) {
@@ -334,7 +345,7 @@ export function createOwnerApi({ client, bucket = ownerBucket, region = ownerReg
       if (method === 'PATCH' && typeof body?.visible !== 'boolean') reject(400, 'visible must be a boolean.');
       if (method === 'DELETE' || !body.visible) await sealPublication(entry);
       if (method === 'DELETE') {
-        const next = { version: 1, packs: current.packs.filter(value => value.id !== entry.id) };
+        const next = { ...current, packs: current.packs.filter(value => value.id !== entry.id) };
         await activateCatalog(next, await parallel(next.packs, published));
         await putJson(ownerIndexKey, { version: 1, packs: entries.filter(value => value.id !== entry.id) });
         return { id: entry.id, deleted: true };
@@ -343,13 +354,13 @@ export function createOwnerApi({ client, bucket = ownerBucket, region = ownerReg
         // Capture the visible entry before removing discovery, so a failed
         // catalog write leaves the same visible pack and a retry is harmless.
         await putJson(ownerIndexKey, { version: 1, packs: entries });
-        const next = { version: 1, packs: current.packs.filter(value => value.id !== entry.id) };
+        const next = { ...current, packs: current.packs.filter(value => value.id !== entry.id) };
         await activateCatalog(next, await parallel(next.packs, published));
       } else {
         const next = current.packs.filter(value => value.id !== entry.id);
         const items = await parallel([...next, entry], published);
         collisions(items);
-        await activateCatalog({ version: 1, packs: [...next, entry] }, items);
+        await activateCatalog({ ...current, packs: [...next, entry] }, items);
       }
       return { id: entry.id, visible: body.visible };
     }

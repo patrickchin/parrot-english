@@ -127,20 +127,21 @@ test('scene, caption, waveforms and every main action remain reachable across th
         await action.scrollIntoViewIfNeeded();
         await expect(action).toBeInViewport();
       }
-      const waveform = await page.getByRole('region', { name: '声音波形对比' }).boundingBox();
       await expectPictureSubtitles(page, '电影片段', '台词');
       const movie = page.getByRole('region', { name: '电影片段' });
       const picture = movie.getByLabel(/对话片段$/);
       await expect(picture).toBeVisible();
-      const entry = (await movie.boundingBox())!;
-      const image = (await picture.boundingBox())!;
-      // Compact screens reserve 120px for the picture and its transport.
-      expect(entry.height).toBeGreaterThanOrEqual(120);
-      expect(image.x).toBeGreaterThanOrEqual(entry.x - 1);
-      expect(image.y).toBeGreaterThanOrEqual(entry.y - 1);
-      expect(image.x + image.width).toBeLessThanOrEqual(entry.x + entry.width + 1);
-      expect(image.y + image.height).toBeLessThanOrEqual(entry.y + entry.height + 1);
-      expect(entry.y + entry.height).toBeLessThanOrEqual(waveform!.y + 1);
+      const graph = page.getByRole('region', { name: '声音波形对比' });
+      await expect(async () => {
+        const [entry, image, waveform] = (await documentBoxes(page, [movie, picture, graph])).map(box => box!);
+        // Compact screens reserve 120px for the picture and its transport.
+        expect(entry.height).toBeGreaterThanOrEqual(120);
+        expect(image.x).toBeGreaterThanOrEqual(entry.x - 1);
+        expect(image.y).toBeGreaterThanOrEqual(entry.y - 1);
+        expect(image.x + image.width).toBeLessThanOrEqual(entry.x + entry.width + 1);
+        expect(image.y + image.height).toBeLessThanOrEqual(entry.y + entry.height + 1);
+        expect(entry.y + entry.height).toBeLessThanOrEqual(waveform.y + 1);
+      }).toPass({ timeout: 3000 });
       if (slug === 'onions' && info.project.name === 'chromium' && [375, 1280].includes(viewport.width)) {
         const folder = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english');
         await mkdir(folder, { recursive: true });
@@ -151,7 +152,7 @@ test('scene, caption, waveforms and every main action remain reachable across th
 });
 
 
-test('line choices keep the picture, waveform and controls anchored with selected subtitles on the video', async ({ page }, info) => {
+test('moving between lines keeps the picture, waveform and controls anchored', async ({ page }, info) => {
   for (const slug of ['onions', 'patrick', 'wumbo', 'infinity']) {
     await page.goto(scenePath(slug));
     const scene = readScene(slug);
@@ -159,6 +160,8 @@ test('line choices keep the picture, waveform and controls anchored with selecte
     await page.getByRole('button', { name: '开始配音', exact: true }).click();
     await expect.poll(() => page.getByRole('region', { name: '电影片段', exact: true }).getByLabel(/对话片段$/).evaluate((el: HTMLVideoElement) => el.videoWidth)).toBeGreaterThan(0);
     await expect(page.getByRole('region', { name: '声音波形对比' }).getByText('正在准备原声波形…', { exact: true })).toHaveCount(0);
+    const next = page.getByRole('button', { name: '下一步', exact: true });
+    const previous = page.getByRole('button', { name: '上一句', exact: true });
     for (const viewport of [{ width: 360, height: 640 }, { width: 768, height: 1024 }, { width: 1280, height: 720 }]) {
       await page.setViewportSize(viewport);
       const entry = page.getByRole('region', { name: '电影片段' });
@@ -167,7 +170,7 @@ test('line choices keep the picture, waveform and controls anchored with selecte
       const actions = page.getByRole('group', { name: '配音操作' });
       const before = await documentBoxes(page, [entry, graph, actions]);
       for (const [i, line] of lines.entries()) {
-        await page.getByRole('button', { name: `第 ${i + 1} 句：${line.text}`, exact: true }).click();
+        if (i > 0) await next.click();
         await expect(caption.getByText(line.text, { exact: true })).toBeVisible();
         await expect(caption.getByText(line.hint, { exact: true })).toBeVisible();
         const after = await documentBoxes(page, [entry, graph, actions]);
@@ -200,13 +203,10 @@ test('line choices keep the picture, waveform and controls anchored with selecte
         await mkdir(folder, { recursive: true });
         await page.screenshot({ path: join(folder, `stable-dubbing-${viewport.width}.png`) });
       }
+      for (const _ of lines.slice(1)) await previous.click();
     }
-    await page.getByRole('button', { name: `第 1 句：${lines[0].text}`, exact: true }).click();
-    for (const [i] of lines.entries()) {
-      await expect(page.getByRole('button', { name: '下一步', exact: true })).toBeEnabled();
-      await page.getByRole('button', { name: '下一步', exact: true }).click();
-      if (i < lines.length - 1) await expect(page.getByText(`已完成 ${i + 1} / ${lines.length} 句`, { exact: true })).toHaveCount(1);
-    }
+    await expect(page.getByText(`已完成 ${lines.length - 1} / ${lines.length} 句`, { exact: true })).toHaveCount(1);
+    for (const _ of lines) await next.click();
     await expect(page.getByRole('heading', { name: '你的配音，完成啦！' })).toBeAttached();
     await expect(page.getByText('录了 0 句台词。', { exact: false })).toBeAttached();
   }

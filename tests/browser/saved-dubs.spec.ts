@@ -88,8 +88,8 @@ test('partial dubs survive reload and a new tab with exact audio, waveform, role
   const url = page.url();
   await page.getByRole('button', { name: '下一步', exact: true }).click(); await saved(page);
   await page.reload();
-  await expect(page.getByRole('button', { name: "第 2 句：I'm searching for someone.", exact: true })).toHaveAttribute('aria-current', 'step');
-  await page.getByRole('button', { name: '第 1 句：Thank you.', exact: true }).click();
+  await expect(page.getByText("I'm searching for someone.", { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '上一句', exact: true }).click();
   await expect.poll(() => waveformImage(wave)).toBe(originalPath);
   await page.getByRole('button', { name: '听我的录音', exact: true }).click();
   await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
@@ -109,7 +109,6 @@ test('partial dubs survive reload and a new tab with exact audio, waveform, role
   await page.goto('/library/all'); await page.goto(url);
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
   await expect.poll(() => waveformImage(wave)).toBe(originalPath);
-  await page.getByRole('button', { name: '第 1 句：Thank you.', exact: true }).click();
   await page.getByRole('button', { name: '返回片段', exact: true }).click();
   await expect(page.getByRole('searchbox')).toBeVisible();
   await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -236,8 +235,8 @@ test('queued writes cannot mark newer progress saved and a failed latest write r
   await page.getByRole('button', { name: '重试保存', exact: true }).click();
   await saved(page);
   await page.reload();
-  await expect(page.getByRole('button', { name: "第 2 句：I'm searching for someone.", exact: true })).toHaveAttribute('aria-current', 'step');
-  await page.getByRole('button', { name: '第 1 句：Thank you.', exact: true }).click();
+  await expect(page.getByText("I'm searching for someone.", { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '上一句', exact: true }).click();
   await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled();
 });
 

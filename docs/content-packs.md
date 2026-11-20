@@ -245,6 +245,13 @@ IDs and routes before restoring it. An already open learner tab can retain its
 loaded catalog until refreshed. Local dubs remain visible and deletable; resuming
 a removed scene reports that it is unavailable.
 
+On the private owner page, choose **Featured scene** under **Your collections**
+and save. Only scenes in visible collections are available. The owner API saves
+the selection in the public OSS catalog as `featuredSceneId`, so Collections
+shows it on the next visit or reload without an application redeploy. Choose
+**No featured scene** to clear it. Hiding or deleting its collection, or publishing
+a catalog that excludes the scene, clears the selection automatically.
+
 Discovery removal and object deletion are separate operations. Direct URLs to
 retained public objects can still work. A complete media takedown requires
 identifying affected objects, checking shared references, and deleting those

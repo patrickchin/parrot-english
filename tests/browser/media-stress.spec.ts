@@ -17,16 +17,20 @@ for (const seed of seeds) test(`@stress mixed recording actions preserve takes a
     randomState = (Math.imul(randomState, 1664525) + 1013904223) >>> 0;
     return randomState % length;
   };
-  const labels = await prepareMediaTest(page);
+  const lines = await prepareMediaTest(page);
   const button = (name: string) => page.getByRole('button', { name, exact: true });
   const wave = page.getByRole('img', { name: '你的声音波形', exact: true });
   const takes = new Map<number, string>();
   let selected = 0;
+  async function goToLine(target: number) {
+    for (; selected < target; selected++) await button('下一步').click();
+    for (; selected > target; selected--) await button('上一句').click();
+  }
   async function idle() {
     await expect(button('听这一句原声 (听原声)')).toBeEnabled();
     await expect(page.locator('video')).toHaveJSProperty('paused', true);
     await expect(page.getByRole('alert')).toHaveCount(0);
-    await expect(button(labels[selected])).toHaveAttribute('aria-current', 'step');
+    await expect(page.getByRole('group', { name: '台词', exact: true }).getByText(lines[selected], { exact: true })).toBeVisible();
     await expect(button('听我的录音')).toBeEnabled({ enabled: takes.has(selected) });
     if (takes.has(selected)) await expect.poll(() => waveformImage(wave)).toBe(takes.get(selected)!);
     await expect.poll(() => page.evaluate(() => {
@@ -46,10 +50,9 @@ for (const seed of seeds) test(`@stress mixed recording actions preserve takes a
     await page.goto('/zh/scenes/patrick');
     await button('开始配音').click();
     // Establish real saved takes before mixing destructive-looking operations.
-    for (selected = 0; selected < labels.length; selected++) {
-      await button(labels[selected]).click(); await record();
+    for (const index of lines.keys()) {
+      await goToLine(index); await record();
     }
-    selected = labels.length - 1;
     const choices = ['record', 'cancel-capture', 'cancel-permission', 'original', 'listen', 'line', 'reload', 'history', 'reset-cancel', 'result', 'interrupt-help'];
     let bag: string[] = [];
     for (let step = 0; step < steps; step++) {
@@ -78,7 +81,7 @@ for (const seed of seeds) test(`@stress mixed recording actions preserve takes a
             await expect(button('停止播放')).toBeVisible();
             await page.waitForTimeout(random(90));
             await button('停止播放').click(); break;
-          case 'line': selected = random(labels.length); await button(labels[selected]).click(); break;
+          case 'line': await goToLine(random(lines.length)); break;
           case 'reload':
             await expect(page.getByText('已保存到本机', { exact: true })).toBeAttached();
             await page.reload(); break;
@@ -90,7 +93,7 @@ for (const seed of seeds) test(`@stress mixed recording actions preserve takes a
             await button('重新开始').click();
             await page.getByRole('dialog').getByRole('button', { name: '保留录音，继续玩', exact: true }).click(); break;
           case 'result':
-            selected = labels.length - 1; await button(labels[selected]).click(); await button('看我的配音 (播放)').click();
+            await goToLine(lines.length - 1); await button('看我的配音 (播放)').click();
             await page.getByRole('region', { name: '配音完成', exact: true }).getByRole('button', { name: '播放我的配音', exact: true }).click();
             await expect(button('停止播放')).toBeVisible(); await button('停止播放').click();
             await button('再改一句 (编辑)').click(); selected = 0; break;
@@ -103,8 +106,8 @@ for (const seed of seeds) test(`@stress mixed recording actions preserve takes a
     }
     await expect(page.getByText('已保存到本机', { exact: true })).toBeAttached();
     await page.reload();
-    for (selected = 0; selected < labels.length; selected++) {
-      await button(labels[selected]).click(); await idle();
+    for (const index of lines.keys()) {
+      await goToLine(index); await idle();
     }
   } finally {
     const media = await page.evaluate(() => {

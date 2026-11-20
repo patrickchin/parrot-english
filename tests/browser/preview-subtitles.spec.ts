@@ -28,7 +28,7 @@ test('one bilingual subtitle group stays on the picture through role choice, lin
   await expect(page.getByRole('region', { name: '原片字幕', exact: true })).toHaveCount(0);
   await expectPictureSubtitles(page, '电影片段', '台词');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
-  await page.getByRole('button', { name: '第 2 句：You get it?', exact: true }).click();
+  await page.getByRole('button', { name: '下一步', exact: true }).click();
   await expect(subtitles.getByText('You get it?', { exact: true })).toBeVisible();
   await expect(subtitles.getByText('你明白了吗？', { exact: true })).toBeVisible();
   for (const viewport of [{ width: 360, height: 640 }, { width: 375, height: 667 }, { width: 768, height: 1024 }, { width: 1440, height: 900 }]) {
@@ -50,16 +50,16 @@ test('one bilingual subtitle group stays on the picture through role choice, lin
       await page.screenshot({ path: join(folder, `picture-subtitles-practice-${viewport.width}.png`) });
     }
   }
-  await page.getByRole('button', { name: '下一步', exact: true }).click();
+  await page.getByRole('button', { name: '上一句', exact: true }).click();
   await expect(subtitles.getByText('Onions have layers.', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '下一步', exact: true }).click();
-  await page.getByRole('button', { name: '看我的配音 (播放)', exact: true }).click();
+  await page.getByRole('button', { name: '下一步', exact: true }).click();
   await expect(page.getByRole('heading', { name: '你的配音，完成啦！', exact: true })).toBeAttached();
   await expect(subtitles.getByText('Onions have layers.', { exact: true })).toBeVisible();
   await expectPictureSubtitles(page, '电影片段', '台词');
 });
 
-test('preview follows actual dialogue timing, holds the previous cue through gaps and resets on replay', async ({ page }) => {
+test('preview follows dialogue timing, holds the previous cue through gaps and can seek back to the first cue', async ({ page }) => {
   await page.goto('/scenes/onions');
   const subtitles = page.getByRole('group', { name: '台词', exact: true });
   const picture = page.getByRole('region', { name: '电影片段', exact: true }).getByLabel(/对话片段$/);
@@ -89,10 +89,11 @@ test('preview follows actual dialogue timing, holds the previous cue through gap
     await expect(subtitles.getByRole('listitem')).toHaveCount(0);
     await expectPictureSubtitles(page, '电影片段', '台词');
   }
-  await page.getByRole('button', { name: '停止播放或录音', exact: true }).click();
+  await page.getByRole('button', { name: '暂停播放', exact: true }).click();
+  await page.getByRole('slider', { name: '调整片段播放位置', exact: true }).press('Home');
   await page.getByRole('button', { name: '播放原片', exact: true }).click();
   await expect(subtitles.getByText('Onions have layers.', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '停止播放或录音', exact: true }).click();
+  await page.getByRole('button', { name: '暂停播放', exact: true }).click();
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
   await page.getByRole('button', { name: '下一步', exact: true }).click();
   await page.getByRole('button', { name: '下一步', exact: true }).click();
@@ -113,7 +114,7 @@ test('subtitles do not move the picture, role choices or transport during playba
   await setLanguage(page, 'en');
   const picture = page.getByRole('region', { name: 'Movie scene', exact: true }).getByLabel(/dialogue scene$/);
   const roles = page.getByRole('region', { name: 'Choose a role', exact: true });
-  const transport = page.getByRole('progressbar', { name: 'Scene playback progress', exact: true });
+  const transport = page.getByRole('slider', { name: 'Seek in scene', exact: true });
   for (const viewport of [{ width: 375, height: 667 }, { width: 768, height: 1024 }, { width: 1024, height: 600 }, { width: 1440, height: 900 }]) {
     await page.setViewportSize(viewport);
     await page.evaluate(() => document.fonts.ready.then(() => undefined));
@@ -127,6 +128,7 @@ test('subtitles do not move the picture, role choices or transport during playba
       expect(Math.abs(box.width - Math.min(viewing.width, viewing.height * aspect))).toBeLessThan(1);
       expect(Math.abs(box.height - Math.min(viewing.height, viewing.width / aspect))).toBeLessThan(1);
     }).toPass({ timeout: 3000 });
+    await transport.press('Home');
     const before = await documentBoxes(page, [picture, roles, transport]);
     await page.getByRole('button', { name: 'Play original scene', exact: true }).click();
     await expect(page.getByRole('group', { name: 'Dialogue', exact: true }).getByText('Ogres have layers.', { exact: true })).toBeVisible();
@@ -135,7 +137,7 @@ test('subtitles do not move the picture, role choices or transport during playba
     for (const [index, box] of after.entries()) for (const dimension of ['x', 'y', 'width', 'height'] as const) {
       expect(Math.abs(box![dimension] - before[index]![dimension]), `${viewport.width}px region ${index} ${dimension}`).toBeLessThan(1);
     }
-    await page.getByRole('button', { name: 'Stop playback or recording', exact: true }).click();
+    await page.getByRole('button', { name: 'Pause playback', exact: true }).click();
     if (info.project.name === 'chromium' && viewport.width === 375) {
       const folder = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english');
       await mkdir(folder, { recursive: true });
@@ -156,7 +158,7 @@ test('the longest authored bilingual cue fits the viewing area on a small phone 
   await page.goto('/en/scenes/madagascar-little-situation');
   await page.getByRole('region', { name: 'Choose a role', exact: true }).getByRole('button', { name: 'Alex', exact: true }).click();
   await page.getByRole('button', { name: 'Start dubbing', exact: true }).click();
-  await page.getByRole('button', { name: `Line 2: ${cue.text}`, exact: true }).click();
+  await page.getByRole('button', { name: 'Next', exact: true }).click();
   const subtitles = page.getByRole('group', { name: 'Dialogue', exact: true });
   for (const viewport of [{ width: 320, height: 568 }, { width: 375, height: 667 }, { width: 844, height: 390 }, { width: 1440, height: 900 }]) {
     await page.setViewportSize(viewport);

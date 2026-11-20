@@ -5,22 +5,22 @@ import { join } from 'node:path';
 
 test.use({ sampleScene: true });
 
-test('previous line sits beside Next and the labelled numbers select lines at every width', async ({ page }, info) => {
+test('Previous and Next navigate lines at every width', async ({ page }, info) => {
   await page.goto('/en/scenes/patrick');
   await page.getByRole('button', { name: 'Start dubbing', exact: true }).click();
   const previous = page.getByRole('button', { name: 'Previous line', exact: true });
   const next = page.getByRole('button', { name: 'Next', exact: true });
-  const lines = page.getByRole('navigation', { name: 'Your lines', exact: true });
-  await expect(lines.getByText('Choose a line', { exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /^Line \d+:/ })).toHaveCount(0);
   await expect(previous).toBeDisabled();
   await next.click();
-  await expect(lines.getByRole('button', { name: /^Line 2:/ })).toHaveAttribute('aria-current', 'step');
+  await expect(page.getByText("I'm searching for someone.", { exact: true })).toBeVisible();
   await previous.click();
   await expect(page.getByText('Thank you.', { exact: true })).toBeVisible();
   await expect(previous).toBeDisabled();
+  await next.click();
   for (const width of [375, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    await lines.getByRole('button', { name: /^Line 3:/ }).click();
+    await next.click();
     await expect(page.getByText('A dragon.', { exact: true })).toBeVisible();
     await expect(previous).toBeEnabled();
     const backBox = (await previous.boundingBox())!;
@@ -29,7 +29,7 @@ test('previous line sits beside Next and the labelled numbers select lines at ev
     expect(backBox.y).toBe(nextBox.y);
     expect(backBox.x + backBox.width).toBeLessThan(nextBox.x);
     expect(backBox.width).toBeGreaterThanOrEqual(44);
-    expect(backBox.width).toBeLessThan(nextBox.width / 2);
+    expect(Math.abs(backBox.width - nextBox.width)).toBeLessThan(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     if (info.project.name === 'chromium') {
       const screenshots = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english');
@@ -87,7 +87,7 @@ test('records three real fake-microphone takes, retries, replays, and clears the
     await expect(page.getByRole('button', { name: '停止录音', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: '听我的录音', exact: true })).toBeEnabled({ timeout: 12000 });
     if (i === 0) {
-      await expect(page.getByRole('navigation', { name: '你的台词' }).getByRole('button', { name: /^第 1 句/ })).toContainText('1');
+      await expect(page.getByText('Thank you.', { exact: true })).toBeVisible();
       await page.getByRole('button', { name: '听我的录音', exact: true }).click();
       await expect(page.getByRole('button', { name: '停止播放', exact: true })).toBeVisible();
       await page.getByRole('button', { name: '停止播放', exact: true }).click();

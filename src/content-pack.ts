@@ -13,8 +13,8 @@ export type PackLocales = Record<string, {
   notices?: { library: string; scene: string };
 }>;
 export type PublishedPack = { id: string; title: string; franchise?: string; uploader: string; description: string; author: string; sceneCount: number; poster?: string };
-export type ContentCatalog = { clips: Clip[]; packs: PublishedPack[]; locales: PackLocales };
-export type Catalog = { version: 1; packs: { id: string; manifest: string; uploader: string }[] };
+export type ContentCatalog = { clips: Clip[]; packs: PublishedPack[]; locales: PackLocales; featuredScene?: Clip };
+export type Catalog = { version: 1; packs: { id: string; manifest: string; uploader: string }[]; featuredSceneId?: string };
 export type Pack = { version: 1; id: string; title: string; franchise?: string; description: string; author: string; scenes: Omit<Clip, 'packId' | 'notices'>[]; locales?: PackLocales };
 
 const invalid = () => new Error('errors.contentLoad');
@@ -27,7 +27,8 @@ export function relativeContentPath(path: unknown, extension = 'json'): path is 
   return typeof path === 'string' && path.length <= 300 && new RegExp(`^(?:[A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+\\.(${extension})$`).test(path);
 }
 export function validateCatalog(value: unknown): Catalog {
-  if (!record(value) || value.version !== 1 || !Array.isArray(value.packs) || value.packs.length > 100) throw invalid();
+  if (!record(value) || value.version !== 1 || !Array.isArray(value.packs) || value.packs.length > 100 ||
+      (value.featuredSceneId !== undefined && !id(value.featuredSceneId, 'scene'))) throw invalid();
   const ids = new Set();
   for (const pack of value.packs) {
     if (!record(pack) || !id(pack.id, 'pack') || ids.has(pack.id) || !relativeContentPath(pack.manifest) || !text(pack.uploader, 200) || !pack.uploader.trim()) throw invalid();
@@ -155,7 +156,8 @@ export async function loadContent(url: string, signal?: AbortSignal): Promise<Co
       }
     }
   }
-  return { clips, packs: publishedPacks, locales };
+  const featuredScene = clips.find(clip => clip.id === catalog.featuredSceneId);
+  return { clips, packs: publishedPacks, locales, ...(featuredScene && { featuredScene }) };
 }
 
 export async function loadScene(clip: Clip, signal?: AbortSignal): Promise<Scene> {

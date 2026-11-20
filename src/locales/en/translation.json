@@ -77,6 +77,8 @@
     "playDub": "Play dub",
     "playReferenceScene": "Play reference scene",
     "scenePlaybackProgress": "Scene playback progress",
+    "seekScene": "Seek in scene",
+    "pausePlayback": "Pause playback",
     "chooseARole": "Choose a role",
     "dubComplete": "Dub complete",
     "recordYourLines": "Record your lines",
@@ -86,7 +88,6 @@
     "saving": "Saving…",
     "notSavedYet": "Not saved yet",
     "savedOnThisDeviceOnly": "Saved on this device only",
-    "yourLines": "Your lines",
     "chooseALine": "Choose a line",
     "previousLine": "Previous line",
     "original": "Original",
@@ -128,7 +129,6 @@
     "takeReady": "Your take is ready. Listen to it or go to the next line.",
     "listenFirst": "Listen to the original, then record.",
     "completedLines": "Completed {{completed}} of {{total}} lines",
-    "lineLabel": "Line {{number}}: {{text}}",
     "lineNumber": "Line {{number}} of {{total}}",
     "listenOriginal": "Original",
     "recordedLines": "Recorded lines: {{count}}."
@@ -241,7 +241,8 @@
     "searchPlaceholder": "Search collections or uploaders",
     "noResults": "No collections found.",
     "clearFilters": "Clear search",
-    "uploadedBy": "Uploaded by {{uploader}}"
+    "uploadedBy": "Uploaded by {{uploader}}",
+    "featuredScene": "Featured scene"
   },
   "owner": {
     "title": "Manage collections",
@@ -307,7 +308,11 @@
     "saving": "Saving changes…",
     "deleteTitle": "Delete {{title}}?",
     "deleteNotice": "This removes the collection from your list and public Collections. Shared videos, audio and images remain in storage.",
-    "keepPack": "Keep collection"
+    "keepPack": "Keep collection",
+    "noFeaturedScene": "No featured scene",
+    "saveFeaturedScene": "Save featured scene",
+    "featuredSceneSaved": "Featured scene updated.",
+    "featuredSceneFailed": "Could not save the featured scene. Try again."
   },
   "share": {
     "prepare": "Prepare to share",

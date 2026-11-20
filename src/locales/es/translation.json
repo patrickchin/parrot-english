@@ -77,6 +77,8 @@
     "playDub": "Reproducir doblaje",
     "playReferenceScene": "Reproducir escena de referencia",
     "scenePlaybackProgress": "Progreso de reproducción",
+    "seekScene": "Cambiar la posición de reproducción",
+    "pausePlayback": "Pausar reproducción",
     "chooseARole": "Elegir un personaje",
     "dubComplete": "Doblaje completado",
     "recordYourLines": "Graba tus frases",
@@ -86,7 +88,6 @@
     "saving": "Guardando…",
     "notSavedYet": "Aún no se ha guardado",
     "savedOnThisDeviceOnly": "Solo se guarda en este dispositivo",
-    "yourLines": "Tus frases",
     "chooseALine": "Elige una frase",
     "previousLine": "Frase anterior",
     "original": "Original",
@@ -128,7 +129,6 @@
     "takeReady": "Tu toma está lista. Escúchala o pasa a la siguiente frase.",
     "listenFirst": "Escucha el original y luego graba.",
     "completedLines": "{{completed}} de {{total}} frases completadas",
-    "lineLabel": "Frase {{number}}: {{text}}",
     "lineNumber": "Frase {{number}} de {{total}}",
     "listenOriginal": "Original",
     "recordedLines": "Frases grabadas: {{count}}."
@@ -241,7 +241,8 @@
     "searchPlaceholder": "Buscar colecciones o usuarios que las subieron",
     "noResults": "No se encontraron colecciones.",
     "clearFilters": "Borrar búsqueda",
-    "uploadedBy": "Subida por {{uploader}}"
+    "uploadedBy": "Subida por {{uploader}}",
+    "featuredScene": "Escena destacada"
   },
   "owner": {
     "title": "Gestionar colecciones",
@@ -307,7 +308,11 @@
     "saving": "Guardando cambios…",
     "deleteTitle": "¿Eliminar {{title}}?",
     "deleteNotice": "La colección se elimina de tu lista y de las Colecciones públicas. Los vídeos, audios e imágenes compartidos permanecen almacenados.",
-    "keepPack": "Conservar colección"
+    "keepPack": "Conservar colección",
+    "noFeaturedScene": "Ninguna escena destacada",
+    "saveFeaturedScene": "Guardar escena destacada",
+    "featuredSceneSaved": "Escena destacada actualizada.",
+    "featuredSceneFailed": "No se pudo guardar la escena destacada. Inténtalo de nuevo."
   },
   "share": {
     "prepare": "Preparar para compartir",

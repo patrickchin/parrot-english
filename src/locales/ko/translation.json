@@ -77,6 +77,8 @@
     "playDub": "더빙 재생",
     "playReferenceScene": "원본 장면 듣기",
     "scenePlaybackProgress": "장면 재생 진행률",
+    "seekScene": "장면 재생 위치 이동",
+    "pausePlayback": "재생 일시 정지",
     "chooseARole": "등장인물 선택",
     "dubComplete": "더빙 완성",
     "recordYourLines": "대사 녹음",
@@ -86,7 +88,6 @@
     "saving": "저장 중…",
     "notSavedYet": "아직 저장되지 않음",
     "savedOnThisDeviceOnly": "이 기기에만 저장",
-    "yourLines": "내 대사",
     "chooseALine": "대사 선택",
     "previousLine": "이전 대사",
     "original": "원본",
@@ -128,7 +129,6 @@
     "takeReady": "녹음이 준비됐어요. 들어 보거나 다음 대사로 넘어가세요.",
     "listenFirst": "원본을 먼저 듣고 녹음해 봐요.",
     "completedLines": "{{total}}개 대사 중 {{completed}}개 완료",
-    "lineLabel": "대사 {{number}}: {{text}}",
     "lineNumber": "{{total}}개 중 {{number}}번째 대사",
     "listenOriginal": "원본",
     "recordedLines": "녹음한 대사: {{count}}개."
@@ -241,7 +241,8 @@
     "searchPlaceholder": "컬렉션 또는 업로더 검색",
     "noResults": "컬렉션을 찾지 못했어요.",
     "clearFilters": "검색 지우기",
-    "uploadedBy": "{{uploader}} 님이 업로드"
+    "uploadedBy": "{{uploader}} 님이 업로드",
+    "featuredScene": "추천 장면"
   },
   "owner": {
     "title": "컬렉션 관리",
@@ -307,7 +308,11 @@
     "saving": "변경 사항 저장 중…",
     "deleteTitle": "{{title}} 컬렉션을 삭제할까요?",
     "deleteNotice": "내 목록과 공개 컬렉션에서 제거됩니다. 공유 동영상, 오디오, 이미지는 저장소에 유지됩니다.",
-    "keepPack": "컬렉션 유지"
+    "keepPack": "컬렉션 유지",
+    "noFeaturedScene": "추천 장면 표시 안 함",
+    "saveFeaturedScene": "추천 장면 저장",
+    "featuredSceneSaved": "추천 장면을 업데이트했습니다.",
+    "featuredSceneFailed": "추천 장면을 저장하지 못했습니다. 다시 시도해 주세요."
   },
   "share": {
     "prepare": "공유 준비",

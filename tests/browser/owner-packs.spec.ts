@@ -57,13 +57,17 @@ async function ownerService(page: Page, options: { failFile?: boolean; failPubli
       return send.call(this, body);
     };
   });
-  const current = structuredClone(publishedCatalog);
+  const current: typeof publishedCatalog & { featuredSceneId?: string } = structuredClone(publishedCatalog);
   const packData = { ...current.packData, [pack.id]: pack };
   const uploaded = new Map<string, Buffer>();
-  const managed = packs.map(item => ({ id: item.entry.id, title: item.data.title, uploader: 'Patrick', manifest: new URL(item.entry.manifest, catalogUrl).href, sceneCount: item.data.scenes.length, visible: true }));
+  const managed = packs.map(({ entry, data }: { entry: typeof packs[number]['entry']; data: Pack }) => ({
+    id: entry.id, title: data.title, uploader: 'Patrick', manifest: new URL(entry.manifest, catalogUrl).href,
+    sceneCount: data.scenes.length, visible: true, scenes: data.scenes.map(({ id, title }) => ({ id, title })),
+  }));
   const syncCatalog = () => {
     current.packs = managed.filter(item => item.visible).map(item => ({ id: item.id, manifest: new URL(item.manifest).pathname.replace('/content/', ''), uploader: item.uploader }));
     current.packData = Object.fromEntries(current.packs.map(item => [item.id, packData[item.id]]));
+    if (!managed.some(item => item.visible && item.scenes.some(scene => scene.id === current.featuredSceneId))) delete current.featuredSceneId;
   };
   const state = { starts: 0, refreshes: 0, puts: 0, publishes: 0, published: false };
   let fileFailed = false, publishFailed = false;
@@ -79,7 +83,14 @@ async function ownerService(page: Page, options: { failFile?: boolean; failPubli
     expect(request.url()).not.toContain(ownerKey);
     const path = new URL(request.url()).pathname;
     if (path.endsWith('/session')) return route.fulfill({ json: { ok: true } });
-    if (path === '/api/owner/packs') return route.fulfill({ json: { packs: managed } });
+    if (path === '/api/owner/packs') return route.fulfill({ json: { packs: managed.map(item => ({ ...item, scenes: item.visible ? item.scenes : [] })), featuredSceneId: current.featuredSceneId ?? null } });
+    if (path === '/api/owner/catalog/featured-scene') {
+      expect(request.method()).toBe('PATCH');
+      const { sceneId } = request.postDataJSON();
+      if (sceneId !== null && !managed.some(item => item.visible && item.scenes.some(scene => scene.id === sceneId))) return route.fulfill({ status: 404 });
+      current.featuredSceneId = sceneId ?? undefined;
+      return route.fulfill({ json: { featuredSceneId: sceneId } });
+    }
     if (path.startsWith('/api/owner/packs/')) {
       const id = path.split('/').at(-1)!;
       const index = managed.findIndex(item => item.id === id);
@@ -99,7 +110,7 @@ async function ownerService(page: Page, options: { failFile?: boolean; failPubli
       expect(uploaded.size).toBe(bodies.size);
       if (options.failPublication && !publishFailed) { publishFailed = true; return route.fulfill({ status: 503, json: { message: 'Please retry this upload.' } }); }
       const manifest = `packs/${pack.id}/pack.json`;
-      if (!state.published) managed.push({ id: pack.id, title: pack.title, uploader: 'Patrick', manifest: new URL(manifest, catalogUrl).href, sceneCount: 1, visible: true });
+      if (!state.published) managed.push({ id: pack.id, title: pack.title, uploader: 'Patrick', manifest: new URL(manifest, catalogUrl).href, sceneCount: 1, visible: true, scenes: [{ id: scene.id, title: pack.title }] });
       syncCatalog();
       state.published = true;
       return route.fulfill({ json: { id: pack.id, title: pack.title, franchise: pack.franchise, manifest: new URL(manifest, catalogUrl).href, sceneCount: 1 } });
@@ -272,6 +283,45 @@ test('public pack search survives reload and recovers from an empty result', asy
   await expect(page.getByRole('status')).toHaveText('No collections found.');
   await page.getByRole('button', { name: 'Clear search', exact: true }).click();
   await expect(gallery.getByRole('link')).toHaveCount(packs.length);
+});
+
+test('the owner can change or clear the public featured scene at runtime', async ({ page }) => {
+  await ownerService(page);
+  const featured = clips.find(clip => clip.slug === 'patrick')!;
+  const second = clips.find(clip => clip.slug === 'first-english-good-morning')!;
+  const title = (clip: typeof featured) => publishedCatalog.packData[clip.packId].locales?.en?.scenes[clip.id]?.title ?? clip.title;
+  const picker = page.getByRole('combobox', { name: 'Featured scene', exact: true });
+  const save = page.getByRole('button', { name: 'Save featured scene', exact: true });
+  await unlock(page);
+  await expect(picker).toHaveValue('');
+  await picker.selectOption(featured.id);
+  await save.click();
+  await expect(page.getByRole('status')).toHaveText('Featured scene updated.');
+  await (await headerDestination(page, 'Collections')).click();
+  const region = page.getByRole('region', { name: title(featured), exact: true });
+  await expect(region).toBeVisible();
+  for (const width of [320, 390, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await expect(region.getByRole('link', { name: /Start dubbing/ })).toBeVisible();
+  }
+  await region.getByRole('link', { name: /Start dubbing/ }).click();
+  await expect(page.getByRole('button', { name: 'Start dubbing', exact: true })).toBeEnabled();
+  await unlock(page);
+  await expect(picker).toHaveValue(featured.id);
+  await picker.selectOption(second.id);
+  await save.click();
+  await expect(page.getByRole('status')).toHaveText('Featured scene updated.');
+  await (await headerDestination(page, 'Collections')).click();
+  await expect(page.getByRole('region', { name: title(second), exact: true })).toBeVisible();
+  await expect(region).toHaveCount(0);
+  await unlock(page);
+  await picker.selectOption('');
+  await save.click();
+  await expect(page.getByRole('status')).toHaveText('Featured scene updated.');
+  await (await headerDestination(page, 'Collections')).click();
+  await expect(page.getByRole('navigation', { name: 'Collections', exact: true }).getByRole('link')).toHaveCount(packs.length);
+  await expect(page.getByText('Featured scene', { exact: true })).toHaveCount(0);
 });
 
 test('owner management hides, restores and deletes packs through the owner API', async ({ page }, info) => {

@@ -3,7 +3,7 @@ import { Icon } from '../shared/ui';
 import { useLanguage } from '../i18n';
 import { Button } from '@/components/ui/button';
 import { LanguageSelect } from './LanguageSelect';
-import { useLayoutEffect, useState, type MouseEvent } from 'react';
+import { useLayoutEffect, useRef, useState, type MouseEvent } from 'react';
 import { Menu } from '@base-ui/react/menu';
 import { Menu as MenuIcon } from 'lucide-react';
 import { dubsPath, packsPath } from './routes';
@@ -24,12 +24,13 @@ export function AppHeader({ onHelp, onBack }: { onHelp?: () => void; onBack?: ()
     if (onFollow) onFollow(); else navigation.navigateTo(href);
   }
   const [dark, setDark] = useState(() => document.documentElement.classList.contains('dark'));
+  const headerRef = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
     document.documentElement.classList.toggle('dark', dark);
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', getComputedStyle(document.documentElement).getPropertyValue('--background').trim());
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', getComputedStyle(headerRef.current ?? document.documentElement).getPropertyValue('--background').trim());
     try { localStorage.setItem('parrotbook-theme', dark ? 'dark' : 'light'); } catch { /* The current page still remembers the choice. */ }
   }, [dark]);
-  return <header className="app-header mx-auto flex max-w-6xl items-center gap-0 px-4 py-4 sm:gap-4 sm:px-8 sm:py-5">
+  return <header ref={headerRef} className="app-header mx-auto flex max-w-6xl items-center gap-0 px-4 py-4 sm:gap-4 sm:px-8 sm:py-5">
     {onBack && <Button variant="ghost" size="icon" onClick={onBack} aria-label={t("navigation.backToScenes")} className="size-11 shrink-0"><Icon name="back" /></Button>}
     <a href={languagePath('/', language)} onClick={event => follow(event, languagePath('/', language), onBack)} className="app-wordmark min-w-0 flex-1 rounded-lg font-display text-base max-[359px]:text-sm font-bold tracking-tight focus-visible:outline-3 focus-visible:outline-offset-4 focus-visible:outline-brand sm:text-2xl" aria-label={t("navigation.home")}><img src="https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/branding/geometric-bird/icon-192-d38b0084a13d5b10.png" alt="" aria-hidden="true" width="36" height="36" decoding="async" className="app-brand-mark" /><span>parrotbook</span></a>
     {!onBack && <nav aria-label={t("navigation.main")} className="app-navigation">

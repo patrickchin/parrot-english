@@ -90,7 +90,7 @@ export function VoiceWaveform({ scene, start, end, target, timeline, recordings,
         <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="h-0.5 w-4 bg-coral" />{t('waveform.yourVoice')}<span aria-hidden="true" className="h-1.5 w-1.5 shrink-0 rounded-full bg-danger" style={{ visibility: recording ? 'visible' : 'hidden' }} />{recording && <span className="sr-only">{t('player.recording')}</span>}</span>
       </div>
       <div ref={plot} className="voice-waveform relative overflow-hidden rounded-xl bg-brand/4">
-        {target && <div role="img" aria-label={t("waveform.targetLineTiming")} className="pointer-events-none absolute inset-y-0 border-x border-brand/30 bg-brand/8" style={{ left: `${(target.start - start) / (end - start) * 100}%`, width: `${(target.end - target.start) / (end - start) * 100}%` }} />}
+        {target && <div role="img" aria-label={t("waveform.targetLineTiming")} className="pointer-events-none absolute inset-y-0 border-x-2 border-brand bg-brand/8" style={{ left: `${(target.start - start) / (end - start) * 100}%`, width: `${(target.end - target.start) / (end - start) * 100}%` }} />}
         <div aria-hidden="true" className="absolute inset-x-0 top-1/2 h-px bg-brand/10" />
         <canvas ref={originalCanvas} role="img" aria-label={t('waveform.originalAudioWaveform')} hidden={!reference} className="absolute inset-0 h-full w-full text-muted-foreground opacity-80" />
         <canvas ref={recordedCanvas} role="img" aria-label={t('waveform.yourVoiceWaveform')} hidden={!recording && !recordings.some(r => r.peaks.length > 0)} className="absolute inset-0 h-full w-full text-coral opacity-90" />

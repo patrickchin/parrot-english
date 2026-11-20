@@ -204,6 +204,26 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
     if (el && !el.error && el.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) el.load();
   }
 
+  function endOfScene(el: HTMLVideoElement) {
+    return Number.isFinite(el.duration) ? Math.min(scene.duration, el.duration) : scene.duration;
+  }
+
+  function playbackStart() {
+    const el = video.current;
+    return el && el.currentTime < endOfScene(el) - .05 ? el.currentTime : 0;
+  }
+
+  function seek(position: number) {
+    const el = video.current;
+    const phase = machine.current.phase;
+    if (!el || el.error || el.readyState < HTMLMediaElement.HAVE_METADATA || !Number.isFinite(position) ||
+        !['idle', 'preview', 'replay'].includes(phase)) return;
+    if (phase === 'replay') stop();
+    const time = Math.max(0, Math.min(endOfScene(el), position));
+    if (el.currentTime !== time) el.currentTime = time;
+    updateTime(el.currentTime, true);
+  }
+
   async function readyVideo(start: number, muted: boolean) {
     const el = video.current;
     if (!el || el.error) throw new Error("errors.videoPlayback");
@@ -223,15 +243,17 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
   }
 
   // Recording and playback share cancellation, end handling, and sync checks.
-  function watch(id: number, end: number, { audio, mute, onEnd = () => stop() }: {
+  function watch(id: number, end: number, { audio, mute, seekable = false, onEnd = () => stop() }: {
     audio?: { context: AudioContext; position: () => number; reason: 'capture-drift' | 'replay-drift' };
     mute?: (time: number) => boolean;
+    seekable?: boolean;
     onEnd?: () => void;
   } = {}) {
     const drifted = sustainedDrift();
     const tick = () => {
       const el = video.current;
       if (id !== operation.current || !el || machine.current.phase === 'saving') return;
+      if (seekable && el.seeking) { frame.current = requestAnimationFrame(tick); return; }
       if (el.ended || el.currentTime >= end) { onEnd(); return; }
       if (el.paused || el.seeking || el.playbackRate !== 1) {
         stop("errors.mediaInterrupted", el.paused ? 'video-paused' : el.seeking ? 'video-seeking' : 'video-rate'); return;
@@ -250,16 +272,17 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
   }
 
   async function preview(line?: Line) {
+    const start = line?.start ?? playbackStart();
     const id = begin('preview');
-    updateTime(line?.start ?? 0, true);
+    updateTime(start, true);
     try {
       prepareVideo();
       if (sharedOutput) { context.current ??= new AudioContext(); await readyAudio(context.current); }
       if (id !== operation.current) return;
-      const el = await readyVideo(line?.start ?? 0, false);
+      const el = await readyVideo(start, false);
       await playVideo(el, id);
       if (id !== operation.current) return;
-      advance('PLAYING', id); watch(id, line?.end ?? scene.duration);
+      advance('PLAYING', id); watch(id, line?.end ?? scene.duration, { seekable: !line });
     } catch (e) { fail(id, e); }
   }
 
@@ -379,10 +402,11 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
   }
 
   async function replay(takes: Takes, line?: Line) {
-    const id = begin(line ? 'listening' : 'replay');
     const window = line && lineWindow(scene, line);
-    const start = window?.start ?? 0;
+    const start = window?.start ?? playbackStart();
     const end = window?.end ?? scene.duration;
+    const id = begin(line ? 'listening' : 'replay');
+    const remaining = scene.lines.filter(turn => takes[turn.id] && (line ? turn.id === line.id : turn.end > start));
     updateTime(start, true);
     try {
       prepareVideo();
@@ -390,7 +414,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
       const ctx = context.current;
       await readyAudio(ctx);
       if (id !== operation.current) return;
-      if (!scene.lines.some(line => takes[line.id])) {
+      if (!remaining.length) {
         advance('USE_ORIGINAL', id);
         const el = await readyVideo(start, false);
         await playVideo(el, id);
@@ -405,7 +429,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
       await waitForAudioClock(ctx, cancellation.current.signal);
       if (id !== operation.current) return;
       advance('AUDIO_READY', id);
-      const buffers = await Promise.all(scene.lines.filter(turn => takes[turn.id] && (!line || turn.id === line.id)).map(async line => ({
+      const buffers = await Promise.all(remaining.map(async line => ({
         line, buffer: await decodeTake(decodedTakes.current, ctx, takes[line.id].blob),
       })));
       if (id !== operation.current) return;
@@ -440,12 +464,16 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
       }
       if (buffers.length && backing.current) {
         const music = ctx.createBufferSource(); music.buffer = backing.current;
-        const gain = ctx.createGain(); gain.gain.setValueAtTime(0, ctx.currentTime);
+        const now = ctx.currentTime;
+        const gain = ctx.createGain(); gain.gain.setValueAtTime(0, now);
         for (const { line } of buffers) {
-          gain.gain.setValueAtTime(0, Math.max(0, base + line.start));
-          gain.gain.linearRampToValueAtTime(1, Math.max(0, base + line.start + 0.015));
-          gain.gain.setValueAtTime(1, Math.max(0, base + line.end - 0.015));
-          gain.gain.linearRampToValueAtTime(0, Math.max(0, base + line.end));
+          const from = Math.max(now, base + line.start), to = base + line.end;
+          if (to <= from) continue;
+          const fade = Math.min(0.015, (to - from) / 2);
+          gain.gain.setValueAtTime(0, from);
+          gain.gain.linearRampToValueAtTime(1, from + fade);
+          gain.gain.setValueAtTime(1, to - fade);
+          gain.gain.linearRampToValueAtTime(0, to);
         }
         const musicStart = Math.max(ctx.currentTime, base + start);
         music.connect(gain).connect(ctx.destination); music.start(musicStart, musicStart - base);
@@ -473,7 +501,7 @@ export function useDubbing(video: RefObject<HTMLVideoElement | null>, scene: Sce
     } catch (e) { fail(id, e); }
   }
 
-  return { phase, buffering, time, timeline, playbackProgress, videoKey, error, diagnostic, setError, prepareVideo, stop: () => stop(), preview, record, replay, listen, finish: () => finishRecording.current?.() };
+  return { phase, buffering, time, timeline, playbackProgress, videoKey, error, diagnostic, setError, prepareVideo, seek, stop: () => stop(), preview, record, replay, listen, finish: () => finishRecording.current?.() };
 }
 
 function microphoneMessage(error: unknown): string {

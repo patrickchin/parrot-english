@@ -77,6 +77,8 @@
     "playDub": "播放配音",
     "playReferenceScene": "播放参考片段",
     "scenePlaybackProgress": "片段播放进度",
+    "seekScene": "调整片段播放位置",
+    "pausePlayback": "暂停播放",
     "chooseARole": "选择角色",
     "dubComplete": "配音完成",
     "recordYourLines": "录制台词",
@@ -86,7 +88,6 @@
     "saving": "正在保存…",
     "notSavedYet": "尚未保存",
     "savedOnThisDeviceOnly": "仅在此设备保存",
-    "yourLines": "你的台词",
     "chooseALine": "选择台词",
     "previousLine": "上一句",
     "original": "原声",
@@ -128,7 +129,6 @@
     "takeReady": "录音已保存，可听录音或继续下一句。",
     "listenFirst": "先听原声，再录音。",
     "completedLines": "已完成 {{completed}} / {{total}} 句",
-    "lineLabel": "第 {{number}} 句：{{text}}",
     "lineNumber": "第 {{number}} / {{total}} 句",
     "listenOriginal": "听原声",
     "recordedLines": "录了 {{count}} 句台词。"
@@ -241,7 +241,8 @@
     "searchPlaceholder": "搜索合集或上传者",
     "noResults": "未找到合集。",
     "clearFilters": "清除搜索",
-    "uploadedBy": "由 {{uploader}} 上传"
+    "uploadedBy": "由 {{uploader}} 上传",
+    "featuredScene": "精选片段"
   },
   "owner": {
     "title": "管理合集",
@@ -307,7 +308,11 @@
     "saving": "正在保存更改…",
     "deleteTitle": "删除 {{title}}？",
     "deleteNotice": "这会从你的列表和公开合集中移除此合集。共用的视频、音频和图片仍保留在存储中。",
-    "keepPack": "保留合集"
+    "keepPack": "保留合集",
+    "noFeaturedScene": "不展示精选片段",
+    "saveFeaturedScene": "保存精选片段",
+    "featuredSceneSaved": "精选片段已更新。",
+    "featuredSceneFailed": "无法保存精选片段，请重试。"
   },
   "share": {
     "prepare": "准备分享",

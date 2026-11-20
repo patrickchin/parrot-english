@@ -63,6 +63,8 @@ export function Player({ scene, slug, notice, initial, rememberDraft, onBack, le
   }, []);
   const [exporting, setExporting] = useState(false);
   const busy = media.phase !== 'idle';
+  const fullScenePlaying = step !== 'practice' && (media.phase === 'preview' || media.phase === 'replay');
+  const position = Math.min(media.time, scene.duration);
   const capturing = media.phase === 'recording' || media.phase === 'saving';
   const completed = rolesLines.filter(l => takes[l.id] || skipped.has(l.id)).length;
   const recorded = rolesLines.filter(l => takes[l.id]).length;
@@ -99,7 +101,8 @@ export function Player({ scene, slug, notice, initial, rememberDraft, onBack, le
     send({ type: 'NEXT' });
     if (lineIndex === rolesLines.length - 1 && video.current) video.current.currentTime = 0;
   }
-  function startPractice() { media.stop(); media.setError(''); media.prepareVideo(); onDirtyChange(true); send({ type: 'START' }); }
+  function startPractice() { media.stop(); media.setError(''); media.prepareVideo(); media.seek(window.start); onDirtyChange(true); send({ type: 'START' }); }
+  function playScene() { if (step === 'result') void media.replay(takes); else void media.preview(step === 'practice' ? line : undefined); }
 
   const graphRecordings = useMemo(() => step === 'result'
     ? scene.lines.flatMap(l => takes[l.id] ? [{ start: takes[l.id].start, peaks: takes[l.id].peaks }] : [])
@@ -123,16 +126,18 @@ export function Player({ scene, slug, notice, initial, rememberDraft, onBack, le
               }}
               onError={() => { setVideoStatus('error'); media.setError("errors.videoLoad"); }} />
             {!source ? <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 px-4 text-center text-white"><p className="text-sm font-bold">{t("player.loadTheVideoFromYourDevice")}</p><label className="cursor-pointer rounded-xl bg-paper px-5 py-3 text-sm font-bold text-ink">{t("player.chooseALocalVideo")}<input aria-label={t("player.chooseALocalVideo")} type="file" accept="video/mp4,video/webm,video/quicktime" className="sr-only" onChange={e => openFile(e.target.files?.[0])} /></label><p className="text-xs text-white/80">{scene.video}{t("player.fileStaysOnYourDevice")}</p></div>
-              : !busy && <button onClick={() => step === 'result' ? void media.replay(takes) : void media.preview(step === 'practice' ? line : undefined)} disabled={!videoReady || exporting} aria-label={step === 'result' ? t("player.playMyDub") : t("player.playOriginalScene")} className="absolute inset-0 flex items-center justify-center text-white focus-visible:outline-4 focus-visible:-outline-offset-4 focus-visible:outline-lemon disabled:opacity-40"><span className="flex h-14 w-14 items-center justify-center rounded-full bg-brand/75 text-primary-foreground sm:h-17 sm:w-17"><Icon name="play" className="h-7 w-7" /></span></button>}
+              : !busy && <button onClick={playScene} disabled={!videoReady || exporting} aria-label={step === 'result' ? t("player.playMyDub") : t("player.playOriginalScene")} className="absolute inset-0 flex items-center justify-center text-white focus-visible:outline-4 focus-visible:-outline-offset-4 focus-visible:outline-lemon disabled:opacity-40"><span className="flex h-14 w-14 items-center justify-center rounded-full bg-brand/75 text-primary-foreground sm:h-17 sm:w-17"><Icon name="play" className="h-7 w-7" /></span></button>}
             {media.phase === 'recording' && <span className="absolute top-3 right-3 flex items-center gap-2 rounded-full bg-danger px-3 py-1.5 text-xs font-bold text-destructive-foreground"><span className="h-2 w-2 rounded-full bg-current motion-safe:animate-pulse" />{t("player.recording")}</span>}
             {source && <div className="video-subtitles" role="group" aria-label={t("player.dialogue")}>
               {caption && <div><p lang="en">{caption.text}</p>{caption.hint && <p lang="zh-CN">{caption.hint}</p>}</div>}
             </div>}
             {(media.phase === 'loading' || media.buffering) && <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-sm font-bold text-white" role="status">{t("player.gettingReady")}</div>}
           </div>
-          <div className="player-transport flex items-center gap-2 bg-neutral-900 px-2 text-white sm:px-4">
-            <progress ref={media.playbackProgress} aria-label={t("player.scenePlaybackProgress")} max={scene.duration} value={0} className="h-1.5 flex-1 appearance-none overflow-hidden rounded-full [&::-webkit-progress-bar]:bg-white/30 [&::-webkit-progress-value]:bg-coral [&::-moz-progress-bar]:bg-coral" /><span className="shrink-0 font-mono text-xs">{clock(media.time)} / {clock(scene.duration)}</span>
-            <button onClick={() => busy ? media.stop() : step === 'result' ? void media.replay(takes) : void media.preview(step === 'practice' ? line : undefined)} disabled={!videoReady || exporting} aria-label={busy ? t("player.stopPlaybackOrRecording") : step === 'result' ? t("player.playDub") : t("player.playReferenceScene")} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-white disabled:opacity-40"><Icon name={busy ? 'stop' : 'play'} /></button>
+          <div className="player-transport flex items-center gap-2">
+            <button onClick={() => busy ? media.stop() : playScene()} disabled={!videoReady || exporting} aria-label={fullScenePlaying ? t("player.pausePlayback") : busy ? t("player.stopPlaybackOrRecording") : step === 'result' ? t("player.playDub") : t("player.playReferenceScene")} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-current disabled:opacity-40"><Icon name={fullScenePlaying ? 'pause' : busy ? 'stop' : 'play'} /></button>
+            {step === 'practice' ? <progress ref={media.playbackProgress} aria-label={t("player.scenePlaybackProgress")} max={scene.duration} value={position} className="h-1.5 flex-1 appearance-none overflow-hidden rounded-full" /> :
+              <input type="range" className="player-seek" min={0} max={scene.duration} step={0.1} value={position} style={{ '--seek-position': `${position / scene.duration * 100}%` } as CSSProperties} aria-label={t("player.seekScene")} aria-valuetext={`${clock(position)} / ${clock(scene.duration)}`} disabled={videoStatus !== 'ready' || exporting || (busy && !fullScenePlaying)} onChange={event => media.seek(event.currentTarget.valueAsNumber)} />}
+            <span className="shrink-0 font-mono text-xs">{clock(position)} / {clock(scene.duration)}</span>
           </div>
         </div>
       </section>
@@ -142,18 +147,15 @@ export function Player({ scene, slug, notice, initial, rememberDraft, onBack, le
           <h2 className="mt-3 text-base font-semibold text-muted-foreground">{t("player.chooseRolePrompt")}</h2>
           <div className="role-options mx-auto mt-5 flex max-w-2xl flex-wrap justify-center gap-3">{practiceRoles.map(r => <ControlButton variant="outline" key={r.id} onClick={() => send({ type: 'SELECT_ROLE', roleId: r.id })} aria-pressed={roleId === r.id} className="group h-auto min-h-17 flex-1 basis-50 justify-start gap-3 whitespace-normal px-4 py-3 text-left aria-pressed:border-primary aria-pressed:bg-accent"><RolePortrait scene={scene} role={r} /><span className="flex-1 font-bold">{t(`content:roles.${r.id}.name`, { defaultValue: r.name })}</span><Icon name="check" className="invisible group-aria-pressed:visible" /></ControlButton>)}</div>
           <div className="choose-actions mt-5">
-            <Button disabled={!videoReady || busy} onClick={startPractice}>{t("player.startDubbing")}<Icon name="arrow" /></Button>
+            <Button disabled={!videoReady} onClick={startPractice}>{t("player.startDubbing")}<Icon name="arrow" /></Button>
             <IconButton tone="plain" label={t("player.sceneCredits")} onClick={() => { media.stop(); setModal('details'); }}><Icon name="info" /></IconButton>
           </div>
         </div>}
         {step !== 'choose' && <>
           <div className="practice-content">
-            <div className="practice-meta flex flex-wrap items-center justify-between gap-2 text-sm">
-              <span className="sr-only">{t(`content:roles.${role.id}.name`, { defaultValue: role.name })}</span><span role="status" className={autosave.status === 'saving' || autosave.status === 'error' ? 'save-status text-xs text-muted-foreground' : 'sr-only'}>{t(autosave.status === 'saved' ? "player.savedOnThisDevice" : autosave.status === 'saving' ? "player.saving" : autosave.status === 'error' ? "player.notSavedYet" : "player.savedOnThisDeviceOnly")}</span><span className="sr-only">{t("recording.completedLines", { completed, total: rolesLines.length })}</span>
-              <nav aria-label={t("player.yourLines")} className="line-picker flex flex-wrap items-center gap-1">
-                {rolesLines.map((l, i) => <button key={l.id} disabled={busy} onClick={() => chooseLine(i)} aria-label={t("recording.lineLabel", { number: i + 1, text: l.text })} aria-current={i === lineIndex ? 'step' : undefined} className="line-choice"><span className="line-number">{i + 1}{takes[l.id] && <Icon name="check" className="absolute -right-0.5 -bottom-0.5 size-3 rounded-full bg-card text-brand" />}</span>{skipped.has(l.id) && <span className="sr-only">{t("player.original")}</span>}</button>)}
-              </nav>
-            </div>
+            <span className="sr-only">{t(`content:roles.${role.id}.name`, { defaultValue: role.name })}</span>
+            <p role="status" className={autosave.status === 'saving' || autosave.status === 'error' ? 'mb-2 text-xs text-muted-foreground' : 'sr-only'}>{t(autosave.status === 'saved' ? "player.savedOnThisDevice" : autosave.status === 'saving' ? "player.saving" : autosave.status === 'error' ? "player.notSavedYet" : "player.savedOnThisDeviceOnly")}</p>
+            <span className="sr-only">{t("recording.completedLines", { completed, total: rolesLines.length })}</span>
             <VoiceWaveform scene={scene} start={step === 'result' ? 0 : window.start} end={step === 'result' ? scene.duration : window.end} target={step === 'result' ? undefined : line} timeline={media.timeline} recordings={graphRecordings} recording={capturing} active={busy} idleTime={busy ? undefined : media.time} />
             <p className="sr-only">{t("recording.lineNumber", { number: lineIndex + 1, total: rolesLines.length })}</p>
             <p className="sr-only" role="status">{media.phase === 'recording' ? t("recording.speakingGuidance") : media.phase === 'saving' ? t("player.preparingYourRecording") : currentTake ? t("recording.takeReady") : t("recording.listenFirst")}</p>

@@ -17,7 +17,7 @@ export async function prepareMediaTest(page: Page) {
   await routeShortScene(page);
   await page.addInitScript(() => {
     const audit = {
-      tracks: [] as MediaStreamTrack[], sources: new Set<AudioBufferSourceNode>(), microphoneDelay: 0,
+      tracks: [] as MediaStreamTrack[], sources: new Set<AudioBufferSourceNode>(), voiceOffsets: [] as number[], microphoneDelay: 0,
       context: undefined as AudioContext | undefined, inputs: [] as AudioContext[],
       captures: [] as { frames: number; peak: number; sampleRate: number; started?: number; stopped?: number; inputClock?: number }[],
       playback: [] as Record<string, unknown>[],
@@ -42,7 +42,10 @@ export async function prepareMediaTest(page: Page) {
       createBufferSource() {
         const source = super.createBufferSource();
         const start = source.start.bind(source), stop = source.stop.bind(source);
-        source.start = (...args) => { start(...args); audit.sources.add(source); };
+        source.start = (...args) => {
+          start(...args); audit.sources.add(source);
+          if (!source.loop && args[2] !== undefined) audit.voiceOffsets.push(args[1] ?? 0);
+        };
         source.stop = (...args) => { stop(...args); audit.sources.delete(source); };
         source.addEventListener('ended', () => audit.sources.delete(source));
         return source;
@@ -90,11 +93,11 @@ export async function prepareMediaTest(page: Page) {
       return stream;
     } } });
   });
-  return scene.lines.map((line, index) => `第 ${index + 1} 句：${line.text}`);
+  return scene.lines.map(line => line.text);
 }
 
 export type MediaAudit = {
-  tracks: MediaStreamTrack[]; sources: Set<AudioBufferSourceNode>; microphoneDelay: number; context?: AudioContext;
+  tracks: MediaStreamTrack[]; sources: Set<AudioBufferSourceNode>; voiceOffsets: number[]; microphoneDelay: number; context?: AudioContext;
   inputs: AudioContext[]; captures: { frames: number; peak: number; sampleRate: number; started?: number; stopped?: number; inputClock?: number }[];
   playback: Record<string, unknown>[];
 };

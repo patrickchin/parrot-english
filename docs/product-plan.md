@@ -4,11 +4,17 @@ Date: 2026-10-28
 
 Visual direction updated 2026-11-19: restore the owner's confirmed geometric
 bird icon from pre-reset commit `77fc76ccecbe2d377080e4e49da91dc9f83d878d`.
-Its blue field, navy eye, lime body and orange beak guide the interface: ice-white
-surfaces, navy text, cobalt actions, restrained lime/orange emphasis, and tighter
-geometric corners. Retain readable light/dark themes, the shared scene/collection
-card grid, and compact icon controls. Original PNG artwork is served unchanged
-from the existing OSS bucket; ESA continues to serve application code.
+Its blue field, navy eye, lime body and orange beak guide the interface: a light
+sky-blue background, white cards, navy text, cobalt actions, lime and orange
+accents, and tighter geometric corners. Retain readable light/dark themes, the
+shared scene/collection card grid, and compact icon controls. Original PNG
+artwork is served unchanged from the existing OSS bucket; ESA continues to
+serve application code.
+
+Collections uses a saturated blue background and a separate cobalt opening
+panel. In light mode, cyan distinguishes collection cards and lime highlights
+the featured scene. Dark mode uses navy cards and a deep green featured panel.
+Orange marks the featured badge and recording actions.
 
 Owner testing update 2026-11-19: Patrick reports audio quality is satisfactory
 in his latest testing. The earlier audio-quality report is no longer an active
@@ -18,9 +24,14 @@ Player layout updated 2026-11-19: keep routine role, saved-location, waveform
 legend and completion summaries out of the visible workspace, while retaining
 accessible names and live saving/error feedback. Main controls use inline icons
 and short captions when their container has room, and icons alone when narrow.
-Playback and Next sit toward the right; Previous stays on the left and remains
-available on the completed dub. Share, reset and scene information have quieter
-visual weight while keeping full touch targets.
+In the practice controls, playback and Next sit toward the right. Previous stays
+on the left and remains available on the completed dub. Share, reset and scene
+information have quieter visual weight while keeping full touch targets.
+
+The video transport puts Play/Pause on the left. The original scene can be
+scrubbed while it plays, and Start dubbing remains available during the preview.
+Seeking in a finished dub pauses it so playback can resume in sync from the new
+position. Recording and line practice use the authored timing window.
 
 Player controls updated 2026-11-19: use familiar icons and short captions for
 repeated playback, recording, download and share actions. Keep full translated

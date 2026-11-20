@@ -10,7 +10,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
-import { listOwnerPacks, manageOwnerPack, ownerApiConfiguration, OwnerUploadError, preparePack, unlockOwner, uploadPack, type ManagedPack, type PreparedPack, type PublishedUpload, type UploadJob } from './owner-upload';
+import { listOwnerPacks, manageOwnerPack, ownerApiConfiguration, OwnerUploadError, preparePack, setOwnerFeaturedScene, unlockOwner, uploadPack, type ManagedPack, type OwnerCatalog, type PreparedPack, type PublishedUpload, type UploadJob } from './owner-upload';
+
+const emptyOwnerCatalog: OwnerCatalog = { packs: [], featuredSceneId: null };
+const featureAction = 'featured-scene';
 
 export function OwnerPacks() {
   const { t } = useTranslation();
@@ -29,7 +32,9 @@ export function OwnerPacks() {
   const [phase, setPhase] = useState<'ready' | 'uploading' | 'publishing' | 'cancelled' | 'success'>('ready');
   const [progress, setProgress] = useState({ bytes: 0, path: '' });
   const [published, setPublished] = useState<PublishedUpload>();
-  const [managed, setManaged] = useState<ManagedPack[]>([]);
+  const [{ packs: managed, featuredSceneId }, setManaged] = useState(emptyOwnerCatalog);
+  const [featuredChoice, setFeaturedChoice] = useState<string>();
+  const [featureStatus, setFeatureStatus] = useState<'idle' | 'saved' | 'error'>('idle');
   const [listing, setListing] = useState(false);
   const [listError, setListError] = useState(false);
   const [listRevision, setListRevision] = useState(0);
@@ -40,6 +45,8 @@ export function OwnerPacks() {
   const job = useRef<UploadJob | undefined>(undefined);
   const selection = useRef(0);
   const busy = phase === 'uploading' || phase === 'publishing';
+  const featuredPacks = managed.filter(pack => pack.visible && pack.scenes.length);
+  const selectedScene = featuredChoice ?? featuredSceneId ?? '';
   const bytes = (value: number) => new Intl.NumberFormat(language, { maximumFractionDigits: value < 1024 * 1024 ? 3 : 1 }).format(value / 1024 / 1024);
 
   useEffect(() => {
@@ -52,10 +59,12 @@ export function OwnerPacks() {
   }, [attempt]);
   useEffect(() => () => { operation.current?.abort(); management.current?.abort(); }, []);
   useEffect(() => {
-    if (!unlocked) { setManaged([]); return; }
+    if (!unlocked) { setManaged(emptyOwnerCatalog); return; }
     const abort = new AbortController();
     setListing(true); setListError(false);
-    void listOwnerPacks(apiBase, key, abort.signal).then(setManaged).catch(cause => {
+    void listOwnerPacks(apiBase, key, abort.signal).then(value => {
+      if (!abort.signal.aborted) { setManaged(value); setFeaturedChoice(undefined); }
+    }).catch(cause => {
       if (abort.signal.aborted) return;
       setListError(true);
       if (cause instanceof OwnerUploadError && cause.code === 'unauthorized') setUnlocked(false);
@@ -97,22 +106,38 @@ export function OwnerPacks() {
       }
     }
   }
-  async function manage(pack: ManagedPack, visible?: boolean) {
+  async function manage(actionId: string, update: (signal: AbortSignal) => Promise<void>) {
     if (busy || managing) return;
     const abort = new AbortController(); management.current = abort;
-    setManaging(pack.id); setError(undefined);
+    setManaging(actionId); setError(undefined); setFeatureStatus('idle');
     try {
-      await manageOwnerPack(apiBase, key, pack.id, visible, abort.signal);
-      setDeleting(undefined); setListRevision(value => value + 1); content.reload();
+      await update(abort.signal);
     } catch (cause) {
       if (!abort.signal.aborted) {
-        setError(cause instanceof OwnerUploadError ? cause : new OwnerUploadError('request'));
-        setDeleting(undefined);
-        if (cause instanceof OwnerUploadError && cause.code === 'unauthorized') setUnlocked(false);
+        const error = cause instanceof OwnerUploadError ? cause : new OwnerUploadError('request');
+        if (error.code === 'unauthorized') { setError(error); setUnlocked(false); }
+        else if (actionId === featureAction) setFeatureStatus('error');
+        else setError(error);
       }
-    } finally { setManaging(''); }
+    } finally { setDeleting(undefined); setManaging(''); }
   }
-  function lock() { setKey(''); setUnlocked(false); setError(undefined); }
+  function managePack(pack: ManagedPack, visible?: boolean) {
+    return manage(pack.id, async signal => {
+      await manageOwnerPack(apiBase, key, pack.id, visible, signal);
+      setListRevision(value => value + 1); content.reload();
+    });
+  }
+  function saveFeaturedScene(event: FormEvent) {
+    event.preventDefault();
+    const sceneId = selectedScene || null;
+    if (listing || sceneId === featuredSceneId) return;
+    void manage(featureAction, async signal => {
+      await setOwnerFeaturedScene(apiBase, key, sceneId, signal);
+      setManaged(current => ({ ...current, featuredSceneId: sceneId }));
+      setFeaturedChoice(undefined); setFeatureStatus('saved'); content.reload();
+    });
+  }
+  function lock() { setKey(''); setUnlocked(false); setError(undefined); setFeaturedChoice(undefined); setFeatureStatus('idle'); }
   const percentage = prepared?.bytes ? Math.min(100, Math.floor(progress.bytes / prepared.bytes * 100)) : 0;
   const currentIndex = prepared?.files.findIndex(file => file.path === progress.path) ?? -1;
   const currentFile = currentIndex >= 0 ? prepared!.files[currentIndex] : undefined;
@@ -161,11 +186,24 @@ export function OwnerPacks() {
         </section>}
         {unlocked && <section className="owner-panel owner-management" aria-labelledby="owner-management-heading">
           <h2 id="owner-management-heading">{t('owner.manageTitle')}</h2>
+          {!listError && !!featuredPacks.length && <form className="owner-feature" onSubmit={saveFeaturedScene}>
+            <label htmlFor="owner-featured-scene">{t('packs.featuredScene')}</label>
+            <div className="owner-actions">
+              <select id="owner-featured-scene" value={selectedScene} disabled={busy || listing || !!managing} onChange={event => { setFeaturedChoice(event.target.value); setFeatureStatus('idle'); }}>
+                <option value="">{t('owner.noFeaturedScene')}</option>
+                {featuredPacks.map(pack => <optgroup key={pack.id} label={pack.title}>{pack.scenes.map(scene => <option key={scene.id} value={scene.id}>{scene.title}</option>)}</optgroup>)}
+              </select>
+              <Button type="submit" disabled={busy || listing || !!managing || selectedScene === (featuredSceneId ?? '')}>{t('owner.saveFeaturedScene')}</Button>
+            </div>
+            {managing === featureAction && <p role="status">{t('owner.saving')}</p>}
+            {featureStatus === 'saved' && <p role="status">{t('owner.featuredSceneSaved')}</p>}
+            {featureStatus === 'error' && <p role="alert" className="text-destructive">{t('owner.featuredSceneFailed')}</p>}
+          </form>}
           {listing ? <p role="status">{t('owner.loadingPacks')}</p> : listError ? <div><p role="alert">{t('owner.listError')}</p><Button className="mt-3 h-11" onClick={() => setListRevision(value => value + 1)}>{t('player.reload')}</Button></div> : managed.length ? <ul className="owner-managed-list">{managed.map(pack => <li key={pack.id}>
             <div><h3>{pack.title}</h3><p>{t('packs.uploadedBy', { uploader: pack.uploader })} · {t('library.sceneCount', { count: pack.sceneCount })}</p><p>{t(pack.visible ? 'owner.visible' : 'owner.hidden')}</p></div>
-            <div className="owner-actions"><Button variant="outline" disabled={busy || !!managing} aria-label={t(pack.visible ? 'owner.hidePack' : 'owner.showPack', { title: pack.title })} onClick={() => void manage(pack, !pack.visible)}>{t(pack.visible ? 'owner.hide' : 'owner.show')}</Button><Button variant="ghost" disabled={busy || !!managing} aria-label={t('owner.deletePack', { title: pack.title })} onClick={() => setDeleting(pack)}>{t('owner.delete')}</Button></div>
+            <div className="owner-actions"><Button variant="outline" disabled={busy || !!managing} aria-label={t(pack.visible ? 'owner.hidePack' : 'owner.showPack', { title: pack.title })} onClick={() => void managePack(pack, !pack.visible)}>{t(pack.visible ? 'owner.hide' : 'owner.show')}</Button><Button variant="ghost" disabled={busy || !!managing} aria-label={t('owner.deletePack', { title: pack.title })} onClick={() => setDeleting(pack)}>{t('owner.delete')}</Button></div>
           </li>)}</ul> : <p>{t('owner.noPacks')}</p>}
-          {managing && <p role="status">{t('owner.saving')}</p>}
+          {managing && managing !== featureAction && <p role="status">{t('owner.saving')}</p>}
         </section>}
         {error && <div id="owner-upload-error" role="alert" className="owner-error"><p>{t(`owner.errors.${error.code}`)}</p>{error.detail && <p>{error.detail}</p>}</div>}
       </>}
@@ -174,7 +212,7 @@ export function OwnerPacks() {
       <DialogContent showCloseButton={false}><DialogTitle>{t('owner.leaveTitle')}</DialogTitle><DialogDescription>{t(phase === 'publishing' ? 'owner.leavePublishing' : 'owner.leaveUploading')}</DialogDescription><div className="owner-actions"><Button variant="outline" onClick={navigation.cancel}>{t('owner.stay')}</Button><Button onClick={() => { operation.current?.abort(); navigation.confirm(); }}>{t('owner.leave')}</Button></div></DialogContent>
     </Dialog>
     <Dialog open={!!deleting} onOpenChange={open => { if (!open && !managing) setDeleting(undefined); }}>
-      <DialogContent showCloseButton={false}><DialogTitle>{t('owner.deleteTitle', { title: deleting?.title })}</DialogTitle><DialogDescription>{t('owner.deleteNotice')}</DialogDescription><div className="owner-actions"><Button variant="outline" disabled={!!managing} onClick={() => setDeleting(undefined)}>{t('owner.keepPack')}</Button><Button variant="danger" disabled={!!managing} onClick={() => { if (deleting) void manage(deleting); }}>{t('owner.delete')}</Button></div></DialogContent>
+      <DialogContent showCloseButton={false}><DialogTitle>{t('owner.deleteTitle', { title: deleting?.title })}</DialogTitle><DialogDescription>{t('owner.deleteNotice')}</DialogDescription><div className="owner-actions"><Button variant="outline" disabled={!!managing} onClick={() => setDeleting(undefined)}>{t('owner.keepPack')}</Button><Button variant="danger" disabled={!!managing} onClick={() => { if (deleting) void managePack(deleting); }}>{t('owner.delete')}</Button></div></DialogContent>
     </Dialog>
   </div>;
 }
