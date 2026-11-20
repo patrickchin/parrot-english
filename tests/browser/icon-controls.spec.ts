@@ -68,7 +68,7 @@ test('icon-first practice controls stay named, readable and usable across phone 
   await dialog.getByRole('button', { name: 'Close', exact: true }).click();
 
   await page.getByRole('button', { name: 'Next', exact: true }).click();
-  await expect(page.getByRole('button', { name: /^Line 2:/ })).toHaveAttribute('aria-current', 'step');
+  await expect(page.getByRole('group', { name: 'Dialogue', exact: true }).getByText("I'm searching for someone.", { exact: true })).toBeVisible();
   const reset = page.getByRole('button', { name: 'Start over', exact: true });
   await page.getByRole('button', { name: 'Previous line', exact: true }).press('Tab');
   await expect(reset).toBeFocused();
@@ -77,7 +77,7 @@ test('icon-first practice controls stay named, readable and usable across phone 
   await expect(dialog.getByRole('heading', { name: 'Start a new session?', exact: true })).toBeVisible();
   await expect(dialog.getByText('This attempt stays in My dubs. You can continue it at any time.', { exact: true })).toBeVisible();
   await dialog.getByRole('button', { name: 'Keep recordings and continue', exact: true }).click();
-  await expect(page.getByRole('button', { name: /^Line 2:/ })).toHaveAttribute('aria-current', 'step');
+  await expect(page.getByRole('group', { name: 'Dialogue', exact: true }).getByText("I'm searching for someone.", { exact: true })).toBeVisible();
 });
 
 test('compact recording and result actions retain their full names and accepted take', async ({ page }, info) => {

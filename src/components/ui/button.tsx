@@ -7,7 +7,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        default: "bg-primary text-primary-foreground hover:bg-[color-mix(in_srgb,var(--primary)_90%,var(--primary-foreground))]",
         highlight: "bg-highlight text-highlight-foreground hover:bg-highlight/85",
         record: "bg-record text-record-foreground hover:bg-record/85",
         danger: "bg-destructive text-destructive-foreground hover:bg-destructive/90",

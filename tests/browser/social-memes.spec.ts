@@ -33,7 +33,7 @@ for (const slug of ['corn-corntastic-day', 'apparently-get-dizzy', 'emotional-da
     const video = page.locator('video');
     await page.getByRole('button', { name: 'Play original scene', exact: true }).click();
     await expect.poll(() => video.evaluate((v: HTMLVideoElement) => v.currentTime)).toBeGreaterThan(0.2);
-    await page.getByRole('button', { name: 'Stop playback or recording', exact: true }).click();
+    await page.getByRole('button', { name: 'Pause playback', exact: true }).click();
     expect(await video.evaluate((v: HTMLVideoElement) => v.duration)).toBeCloseTo(scene.duration, 1);
     await expect(video).toHaveJSProperty('error', null);
     if (info.project.name === 'chromium') {

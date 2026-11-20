@@ -1,5 +1,5 @@
 import { contentCatalogUrl } from './catalog';
-import { relativeContentPath, storageUrl, validatePack, type Pack } from './content-pack';
+import { relativeContentPath, storageUrl, validatePack, type Clip, type Pack } from './content-pack';
 import { validateScene } from './scene';
 
 export const uploadLimits = { files: 256, total: 512 * 1024 * 1024, media: 100 * 1024 * 1024, image: 10 * 1024 * 1024, json: 2 * 1024 * 1024, metadata: 8 * 1024 * 1024 };
@@ -7,7 +7,8 @@ export type PreparedPack = { pack: Pack; files: { path: string; file: File; type
 type UploadPlan = { id: string; uploads: { path: string; url: string; headers: Record<string, string> }[] };
 export type UploadJob = UploadPlan & { completed: Set<string> };
 export type PublishedUpload = { id: string; title: string; franchise?: string; manifest: string; sceneCount: number };
-export type ManagedPack = PublishedUpload & { uploader: string; visible: boolean };
+export type ManagedPack = PublishedUpload & { uploader: string; visible: boolean; scenes: Pick<Clip, 'id' | 'title'>[] };
+export type OwnerCatalog = { packs: ManagedPack[]; featuredSceneId: string | null };
 type ErrorCode = 'configuration' | 'unauthorized' | 'request' | 'empty' | 'path' | 'type' | 'size' | 'pack' | 'scene' | 'missing' | 'extra' | 'upload' | 'publish';
 export class OwnerUploadError extends Error {
   constructor(public code: ErrorCode, public detail = '') { super(code); }
@@ -110,10 +111,19 @@ export async function unlockOwner(apiBase: string, key: string, signal: AbortSig
   await jsonRequest(apiBase + '/session', key, signal);
 }
 
-export async function listOwnerPacks(apiBase: string, key: string, signal: AbortSignal): Promise<ManagedPack[]> {
-  const value = await jsonRequest<{ packs: ManagedPack[] }>(apiBase + '/packs', key, signal);
-  if (!Array.isArray(value.packs) || value.packs.some(pack => !/^pack_[A-Za-z0-9_-]{1,80}$/.test(pack.id) || typeof pack.title !== 'string' || typeof pack.uploader !== 'string' || typeof pack.visible !== 'boolean' || !Number.isInteger(pack.sceneCount) || pack.sceneCount < 0)) throw new OwnerUploadError('request');
-  return value.packs;
+const sceneId = (id: unknown) => typeof id === 'string' && /^scene_[A-Za-z0-9_-]{1,80}$/.test(id);
+
+export async function listOwnerPacks(apiBase: string, key: string, signal: AbortSignal): Promise<OwnerCatalog> {
+  const value = await jsonRequest<OwnerCatalog>(apiBase + '/packs', key, signal);
+  if (!value || !Array.isArray(value.packs) || (value.featuredSceneId !== null && !sceneId(value.featuredSceneId)) || value.packs.some(pack =>
+    !pack || !/^pack_[A-Za-z0-9_-]{1,80}$/.test(pack.id) || typeof pack.title !== 'string' || typeof pack.uploader !== 'string' || typeof pack.visible !== 'boolean' || !Number.isInteger(pack.sceneCount) || pack.sceneCount < 0 ||
+    !Array.isArray(pack.scenes) || pack.scenes.some(scene => !scene || !sceneId(scene.id) || typeof scene.title !== 'string'))) throw new OwnerUploadError('request');
+  return value;
+}
+
+export async function setOwnerFeaturedScene(apiBase: string, key: string, sceneId: string | null, signal: AbortSignal) {
+  const result = await jsonRequest<Pick<OwnerCatalog, 'featuredSceneId'>>(apiBase + '/catalog/featured-scene', key, signal, { sceneId }, 'PATCH');
+  if (result?.featuredSceneId !== sceneId) throw new OwnerUploadError('request');
 }
 
 export async function manageOwnerPack(apiBase: string, key: string, id: string, visible: boolean | undefined, signal: AbortSignal) {

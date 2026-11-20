@@ -8,7 +8,7 @@ const background = (page: import('@playwright/test').Page) => page.evaluate(() =
 test('the blue bird identity defaults to light even on a dark device and remembers an explicit theme across routes and reload', async ({ page }, info) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/packs');
-  await expect.poll(() => background(page)).toBe('rgb(245, 248, 255)');
+  await expect.poll(() => background(page)).toBe('rgb(220, 239, 255)');
   const pack = page.getByRole('navigation', { name: '合集', exact: true }).getByRole('link', { name: 'SpongeBob SquarePants', exact: true });
   await expect(pack).toBeVisible();
   await page.getByRole('button', { name: '切换到深色模式', exact: true }).click();
@@ -50,7 +50,7 @@ test('the blue bird identity defaults to light even on a dark device and remembe
   }
   await page.getByRole('button', { name: '切换到浅色模式', exact: true }).click();
   await page.reload();
-  await expect.poll(() => background(page)).toBe('rgb(245, 248, 255)');
+  await expect.poll(() => background(page)).toBe('rgb(220, 239, 255)');
 });
 
 test('appearance switching still works across scene navigation without browser storage', async ({ page }) => {
@@ -62,8 +62,18 @@ test('appearance switching still works across scene navigation without browser s
   await page.getByRole('link', { name: 'Toy Story', exact: true }).click();
   await page.getByRole('button', { name: '选择片段：飞向宇宙！', exact: true }).click();
   await expect(page.getByRole('region', { name: '选择角色', exact: true })).toBeVisible();
+  const player = page.getByRole('main').locator('..');
+  await expect(player).toHaveCSS('background-color', 'rgb(17, 19, 24)');
   await expect.poll(() => background(page)).toBe('rgb(17, 19, 24)');
   await setLanguage(page, 'en');
   await page.getByRole('button', { name: 'Switch to light mode', exact: true }).click();
-  await expect.poll(() => background(page)).toBe('rgb(245, 248, 255)');
+  await expect(player).toHaveCSS('background-color', 'rgb(243, 239, 230)');
+  await page.getByRole('button', { name: 'Start dubbing', exact: true }).click();
+  const controls = page.getByRole('group', { name: 'Dubbing controls', exact: true });
+  await expect(controls.getByRole('button', { name: 'Record', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Switch to dark mode', exact: true }).click();
+  await expect(player).toHaveCSS('background-color', 'rgb(17, 19, 24)');
+  await expect(controls.getByRole('button', { name: 'Record', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Switch to light mode', exact: true }).click();
+  await expect.poll(() => background(page)).toBe('rgb(220, 239, 255)');
 });

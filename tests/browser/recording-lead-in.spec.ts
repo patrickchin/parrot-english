@@ -46,7 +46,7 @@ test('a short Joey line has moving video context and retains early and late voic
   const scene = readScene('friends-thesaurus');
   await page.getByRole('button', { name: '乔伊', exact: true }).click();
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
-  await page.getByRole('button', { name: "第 2 句：What'd I just say?", exact: true }).click();
+  await page.getByRole('button', { name: '下一步', exact: true }).click();
   const cursor = page.getByRole('progressbar', { name: '配音时间指针', exact: true });
   await expect(cursor).toHaveAttribute('aria-valuemax', '1.62');
   const target = page.getByRole('img', { name: '台词时间范围', exact: true });

@@ -70,7 +70,7 @@ for (const [language, translations] of [['en', en], ['zh-CN', zh]] as const) {
             const workspace = page.getByRole('region', { name: step === 'choose' ? ui.chooseARole : step === 'result' ? ui.dubComplete : ui.recordYourLines, exact: true });
             const workspaceBounds = (await workspace.boundingBox())!;
             const movieEnd = step === 'choose' ? movieBounds.y + movieBounds.height
-              : await movie.getByRole('progressbar', { name: ui.scenePlaybackProgress, exact: true }).evaluate(el => el.parentElement!.getBoundingClientRect().bottom);
+              : await (step === 'result' ? movie.getByRole('slider', { name: ui.seekScene, exact: true }) : movie.getByRole('progressbar', { name: ui.scenePlaybackProgress, exact: true })).evaluate(el => el.parentElement!.getBoundingClientRect().bottom);
             expect(Math.abs(viewingArea.x), context).toBeLessThan(1);
             expect(Math.abs(viewingArea.width - viewport.width), context).toBeLessThan(1);
             expect(viewingArea.y - header.y - header.height, `${context}; header-to-video gap`).toBeGreaterThanOrEqual(-1);
@@ -189,7 +189,7 @@ test('four role choices keep their portraits, names and actions inside a short p
   expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(668);
 });
 
-test('an eight-line role keeps every line and practice action visible on a short phone', async ({ page }) => {
+test('an eight-line role keeps practice actions visible on a short phone', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 664 });
   const scene = readScene('gogo-missing-pen');
   const role = scene.roles.find((candidate: { selectable?: boolean }) => candidate.selectable !== false)!;
@@ -197,19 +197,7 @@ test('an eight-line role keeps every line and practice action visible on a short
   expect(lines).toHaveLength(8);
   await page.goto(scenePath('gogo-missing-pen', undefined, 'en'));
   await page.getByRole('button', { name: en.player.startDubbing, exact: true }).click();
-  const picker = page.getByRole('navigation', { name: en.player.yourLines, exact: true });
-  const lineButtons = lines.map((line: { text: string }, index: number) => picker.getByRole('button', { name: `Line ${index + 1}: ${line.text}`, exact: true }));
-  await expect(picker.getByRole('button')).toHaveCount(8);
-
   const checkLayout = async () => {
-    for (const [index, button] of lineButtons.entries()) {
-      await fullyVisible(button, page, 44);
-      const box = (await button.boundingBox())!;
-      expect(box.width).toBeGreaterThanOrEqual(44);
-      const number = (await button.getByText(String(index + 1), { exact: true }).boundingBox())!;
-      expect(Math.abs(number.width - 32), 'Number disk stays smaller than its touch target').toBeLessThanOrEqual(1);
-      expect(Math.abs(number.height - 32), 'Number disk stays smaller than its touch target').toBeLessThanOrEqual(1);
-    }
     for (const name of [en.player.listenToTheOriginalLine, en.player.record, 'My recording (You)', en.player.previousLine, en.player.next, en.player.startOver, en.player.sceneCredits]) {
       await fullyVisible(page.getByRole('button', { name, exact: true }), page, 44);
     }
@@ -219,8 +207,7 @@ test('an eight-line role keeps every line and practice action visible on a short
   };
   // Check simultaneously before a click or focus can scroll an action into view.
   await expect(checkLayout).toPass({ timeout: 3000 });
-  await lineButtons[7].click();
-  await expect(lineButtons[7]).toHaveAttribute('aria-current', 'step');
+  for (const _ of lines.slice(1)) await page.getByRole('button', { name: en.player.next, exact: true }).click();
   await expect(page.getByRole('group', { name: en.player.dialogue, exact: true }).getByText(lines[7].text, { exact: true })).toBeVisible();
   await expect(checkLayout).toPass({ timeout: 3000 });
 });

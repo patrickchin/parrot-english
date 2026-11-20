@@ -27,10 +27,10 @@ test('capture waits for a parked startup clock before moving the picture', async
 });
 
 for (const lineIndex of [0, 1]) test(`recorded replay preserves its opening and picture sync with a slow speaker output (line ${lineIndex + 1})`, async ({ page }) => {
-  const lines = await prepareMediaTest(page);
+  await prepareMediaTest(page);
   await page.goto('/zh/scenes/patrick');
   await page.getByRole('button', { name: '开始配音', exact: true }).click();
-  if (lineIndex) await page.getByRole('button', { name: lines[lineIndex], exact: true }).click();
+  if (lineIndex) await page.getByRole('button', { name: '下一步', exact: true }).click();
   await page.getByRole('button', { name: '开始录音', exact: true }).click();
   const listen = page.getByRole('button', { name: '听我的录音', exact: true });
   await expect(listen).toBeEnabled();

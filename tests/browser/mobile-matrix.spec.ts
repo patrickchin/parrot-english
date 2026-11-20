@@ -89,7 +89,7 @@ test('phone and tablet layouts retain Collections navigation, practice controls 
       const control = page.getByRole('button', { name, exact: true });
       await touchControl(page, control); await control.click({ trial: true });
     }
-    await expect(page.getByRole('button', { name: 'Line 1: Thank you.', exact: true })).toHaveAttribute('aria-current', 'step');
+    await expect(page.getByText('Thank you.', { exact: true })).toBeVisible();
     await touchControl(page, page.getByRole('button', { name: 'Record', exact: true }));
     await mobileScreenshot(page, info, 'practice', viewport.name);
   }

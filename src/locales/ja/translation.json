@@ -77,6 +77,8 @@
     "playDub": "吹き替えを再生",
     "playReferenceScene": "お手本のシーンを再生",
     "scenePlaybackProgress": "シーンの再生位置",
+    "seekScene": "シーンの再生位置を変更",
+    "pausePlayback": "再生を一時停止",
     "chooseARole": "キャラクターを選ぶ",
     "dubComplete": "吹き替え完成",
     "recordYourLines": "セリフを録音",
@@ -86,7 +88,6 @@
     "saving": "保存中…",
     "notSavedYet": "まだ保存されていません",
     "savedOnThisDeviceOnly": "この端末にだけ保存",
-    "yourLines": "自分のセリフ",
     "chooseALine": "セリフを選ぶ",
     "previousLine": "前のセリフ",
     "original": "お手本",
@@ -128,7 +129,6 @@
     "takeReady": "録音できました。聞いてみるか、次のセリフへ進もう。",
     "listenFirst": "お手本を聞いてから録音しよう。",
     "completedLines": "{{total}}行中{{completed}}行が完了",
-    "lineLabel": "セリフ{{number}}：{{text}}",
     "lineNumber": "{{total}}行中{{number}}行目",
     "listenOriginal": "お手本",
     "recordedLines": "{{count}}行録音したよ。"
@@ -241,7 +241,8 @@
     "searchPlaceholder": "コレクションやアップロードした人を検索",
     "noResults": "コレクションが見つかりません。",
     "clearFilters": "検索をクリア",
-    "uploadedBy": "アップロード：{{uploader}}"
+    "uploadedBy": "アップロード：{{uploader}}",
+    "featuredScene": "おすすめシーン"
   },
   "owner": {
     "title": "コレクションを管理",
@@ -307,7 +308,11 @@
     "saving": "変更を保存中…",
     "deleteTitle": "{{title}} を削除しますか？",
     "deleteNotice": "自分の一覧と公開コレクションから削除します。共有の動画、音声、画像はストレージに残ります。",
-    "keepPack": "コレクションを残す"
+    "keepPack": "コレクションを残す",
+    "noFeaturedScene": "おすすめシーンを表示しない",
+    "saveFeaturedScene": "おすすめシーンを保存",
+    "featuredSceneSaved": "おすすめシーンを更新しました。",
+    "featuredSceneFailed": "おすすめシーンを保存できませんでした。もう一度お試しください。"
   },
   "share": {
     "prepare": "共有の準備",

@@ -79,10 +79,9 @@ trace artifacts separate when running multiple Playwright processes.
 `mobile-layout.spec.ts` checks the actual video picture and every lesson action
 before any interaction can scroll them into view. English and Chinese role
 choice, practice, and completion fit at 375 × 667, 390 × 664 (browser chrome
-visible), and 390 × 844. Separate cases cover four role choices, an eight-line
-picker, and rotation to 844 × 390. Controls retain a minimum 44 px touch height;
-the three main recording actions are 56 px tall. Numbered line markers are
-32 px circles inside 44 px touch targets, without a redundant visible prompt.
+visible), and 390 × 844. Separate cases cover four role choices, navigation
+through an eight-line role, and rotation to 844 × 390. Controls retain a
+minimum 44 px touch height, and the three main recording actions are 56 px tall.
 
 Landscape clips fill the phone's viewing width edge to edge. The mobile video
 starts directly below the header and uses natural flex flow rather than a

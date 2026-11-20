@@ -60,7 +60,15 @@ test('player summaries stay out of the picture and primary controls follow their
     const movie = page.getByRole('region', { name: 'Movie scene', exact: true });
     const transport = (await movie.getByRole('button', { name: 'Play reference scene', exact: true }).boundingBox())!;
     const progress = (await movie.getByRole('progressbar', { name: 'Scene playback progress', exact: true }).boundingBox())!;
-    expect(transport.x).toBeGreaterThan(progress.x + progress.width);
+    expect(transport.x + transport.width).toBeLessThan(progress.x);
+    const waveformBox = (await waveform.boundingBox())!;
+    expect(waveformBox.y).toBeGreaterThanOrEqual(transport.y + transport.height);
+    expect(group.y).toBeGreaterThanOrEqual(transport.y + transport.height);
+    if (viewport.width >= 900) {
+      expect(waveformBox.x + waveformBox.width).toBeLessThan(group.x);
+    } else {
+      expect(waveformBox.y + waveformBox.height).toBeLessThanOrEqual(group.y);
+    }
     for (const button of await controls.getByRole('button').all()) await touchControl(page, button);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
@@ -126,8 +134,10 @@ test('finished-dub Previous returns to the last line and accepted takes survive 
   for (const _ of lines) await page.getByRole('button', { name: 'Next', exact: true }).click();
   const result = page.getByRole('region', { name: 'Dub complete', exact: true });
   await result.getByRole('button', { name: 'Previous line', exact: true }).click();
-  await expect(page.getByRole('button', { name: /^Line 3:/ })).toHaveAttribute('aria-current', 'step');
-  await page.getByRole('button', { name: /^Line 1:/ }).click();
+  await expect(page.getByText('A dragon.', { exact: true })).toBeVisible();
+  const previous = page.getByRole('button', { name: 'Previous line', exact: true });
+  await previous.click();
+  await previous.click();
   await expect(take).toBeEnabled();
   await expect(page.getByRole('alert')).toHaveCount(0);
   await take.click();

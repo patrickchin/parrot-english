@@ -63,13 +63,93 @@ test('a metadata-only hosted video keeps Play available and loads directly from 
   await play.click();
   await expectTrustedLoads(page, 1);
   await expect.poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.currentTime)).toBeGreaterThan(0.2);
-  await page.getByRole('button', { name: 'Stop playback or recording', exact: true }).click();
+  await page.getByRole('button', { name: 'Pause playback', exact: true }).click();
   // Prepared playback must not reload the source and discard its native state.
   await play.click();
   await expect.poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.currentTime)).toBeGreaterThan(0.2);
   await expectTrustedLoads(page, 1);
-  await page.getByRole('button', { name: 'Stop playback or recording', exact: true }).click();
+  await page.getByRole('button', { name: 'Pause playback', exact: true }).click();
   expect(await page.evaluate(() => (window as unknown as PreloadWindow).mediaAudit.tracks.length)).toBe(0);
+});
+
+test('scene preview seeks by pointer and keyboard and can switch straight to dubbing', async ({ page }) => {
+  await page.goto('/en/scenes/patrick');
+  const movie = page.getByRole('region', { name: 'Movie scene', exact: true });
+  const slider = movie.getByRole('slider', { name: 'Seek in scene', exact: true });
+  const video = movie.getByLabel(/dialogue scene$/);
+  const position = () => video.evaluate((element: HTMLVideoElement) => element.currentTime);
+  const play = movie.getByRole('button', { name: 'Play reference scene', exact: true });
+  const start = page.getByRole('button', { name: 'Start dubbing', exact: true });
+  await expect(slider).toBeEnabled();
+  const bounds = (await slider.boundingBox())!, playBounds = (await play.boundingBox())!;
+  expect(playBounds.x + playBounds.width).toBeLessThan(bounds.x);
+  expect(bounds.height).toBeGreaterThanOrEqual(44);
+  await slider.click({ position: { x: bounds.width * .46, y: bounds.height / 2 } });
+  await expect.poll(position).toBeGreaterThan(1.3);
+  await play.click();
+  const pause = movie.getByRole('button', { name: 'Pause playback', exact: true });
+  await expect(pause).toBeVisible();
+  await expect.poll(position).toBeGreaterThan(1.4);
+  await pause.click();
+  await expect(video).toHaveJSProperty('paused', true);
+  await play.click();
+  await expect(pause).toBeVisible();
+  await slider.press('Home');
+  await expect.poll(position).toBeLessThan(1);
+  await expect(video).toHaveJSProperty('paused', false);
+  await expect(start).toBeEnabled();
+  await start.click();
+  await expect(page.getByRole('region', { name: 'Record your lines', exact: true })).toBeVisible();
+  await expect(video).toHaveJSProperty('paused', true);
+  await expect(page.getByRole('alert')).toHaveCount(0);
+});
+
+test('a finished dub can seek and resume from the new position with its audio', async ({ page }) => {
+  await page.goto('/en/dubs');
+  const dubId = await page.evaluate(async () => {
+    const catalogPath = '/src/catalog.ts', contentPath = '/src/content-pack.ts', lessonPath = '/src/lesson-state.ts';
+    const storePath = '/src/dub-store.ts', wavPath = '/src/pcm-recording.ts';
+    const { contentCatalogUrl } = await import(catalogPath);
+    const { loadContent, loadScene } = await import(contentPath) as typeof import('../../src/content-pack');
+    const { createLesson } = await import(lessonPath) as typeof import('../../src/lesson-state');
+    const { newDubId, saveDub } = await import(storePath) as typeof import('../../src/dub-store');
+    const { encodePcmWav } = await import(wavPath);
+    const clip = (await loadContent(contentCatalogUrl)).clips.find(clip => clip.slug === 'patrick')!;
+    const scene = await loadScene(clip), lesson = createLesson(scene), id = newDubId();
+    lesson.step = 'result';
+    for (const line of scene.lines) lesson.progress[line.id] = { status: 'skipped' };
+    lesson.progress[scene.lines[0].id] = { status: 'recorded', take: {
+      blob: encodePcmWav([new Float32Array(48000).fill(.2)], 48000), duration: 1, start: 0, peaks: [.2],
+    } };
+    await saveDub(id, Date.now(), clip.slug, scene, lesson);
+    return id;
+  });
+  await page.goto(`/en/scenes/patrick/dubs/${dubId}`);
+  await expect(page.getByRole('region', { name: 'Dub complete', exact: true })).toBeVisible();
+  const movie = page.getByRole('region', { name: 'Movie scene', exact: true });
+  const slider = movie.getByRole('slider', { name: 'Seek in scene', exact: true });
+  const video = movie.getByLabel(/dialogue scene$/);
+  const time = () => video.evaluate((element: HTMLVideoElement) => element.currentTime);
+  const play = movie.getByRole('button', { name: 'Play dub', exact: true });
+  const pause = movie.getByRole('button', { name: 'Pause playback', exact: true });
+  await expect(slider).toBeEnabled();
+  await slider.press('Home');
+  for (let index = 0; index < 4; index++) await slider.press('ArrowRight');
+  await expect.poll(time).toBeCloseTo(.4, 1);
+  await play.click();
+  await expect(pause).toBeVisible();
+  await expect.poll(time).toBeGreaterThan(.4);
+  const voiceOffsets = await page.evaluate(() => (window as unknown as PreloadWindow).mediaAudit.voiceOffsets);
+  expect(voiceOffsets).toHaveLength(1);
+  expect(voiceOffsets[0]).toBeCloseTo(.4, 1);
+  const bounds = (await slider.boundingBox())!;
+  await slider.click({ position: { x: bounds.width * .68, y: bounds.height / 2 } });
+  await expect(video).toHaveJSProperty('paused', true);
+  await expect.poll(time).toBeGreaterThan(1.9);
+  await play.click();
+  await expect(pause).toBeVisible();
+  await expect.poll(time).toBeGreaterThan(2.1);
+  await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
 test('cold Start, Record and resumed-dub playback initiate loading without premature microphone access', async ({ page }) => {
@@ -80,9 +160,8 @@ test('cold Start, Record and resumed-dub playback initiate loading without prema
   await expectTrustedLoads(page, 1);
   expect(await page.evaluate(() => (window as unknown as PreloadWindow).mediaAudit.tracks.length)).toBe(0);
   await expect.poll(() => page.locator('video').evaluate((video: HTMLVideoElement) => video.readyState)).toBeGreaterThanOrEqual(3);
-  const secondLine = page.getByRole('navigation', { name: 'Your lines', exact: true }).getByRole('button', { name: /^Line 2:/ });
-  await secondLine.click();
-  await expect(secondLine).toHaveAttribute('aria-current', 'step');
+  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  await expect(page.getByText("I'm searching for someone.", { exact: true })).toBeVisible();
   // This line starts its preview at 0.7 s. A cold load resets native media to
   // HAVE_NOTHING/time zero, so preparing it must preserve the subsequent seek.
   await page.evaluate(() => (window as unknown as PreloadWindow).preloadAudit.hold());
@@ -96,7 +175,6 @@ test('cold Start, Record and resumed-dub playback initiate loading without prema
   await expect.poll(() => page.evaluate(() => (window as unknown as PreloadWindow).mediaAudit.tracks.every(track => track.readyState === 'ended'))).toBe(true);
   await page.reload();
   await expectMetadataOnly(page);
-  await expect(secondLine).toHaveAttribute('aria-current', 'step');
   await expect(page.getByText("I'm searching for someone.", { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Record this line again', exact: true })).toBeEnabled();
   const listen = page.getByRole('button', { name: 'My recording (You)', exact: true });

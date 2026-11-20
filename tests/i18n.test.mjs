@@ -28,13 +28,13 @@ test('locale resources have matching keys and named interpolation variables', ()
 });
 
 test('i18next renders the added languages with named variables', () => {
-  for (const [language, expected] of [['es', 'Frase 2: Hello, Sam.'], ['ja', 'セリフ2：Hello, Sam.'], ['ko', '대사 2: Hello, Sam.']]) {
-    assert.equal(i18n.t('recording.lineLabel', { lng: language, number: 2, text: 'Hello, Sam.' }), expected);
+  for (const [language, expected] of [['es', 'Frase 2 de 3'], ['ja', '3行中2行目'], ['ko', '3개 중 2번째 대사']]) {
+    assert.equal(i18n.t('recording.lineNumber', { lng: language, number: 2, total: 3 }), expected);
   }
 });
 
 test('i18next renders semantic keys and named variables in either language', () => {
-  assert.equal(i18n.t('recording.lineLabel', { lng: 'en', number: 2, text: 'Hello, Sam.' }), 'Line 2: Hello, Sam.');
+  assert.equal(i18n.t('recording.lineNumber', { lng: 'en', number: 2, total: 3 }), 'Line 2 of 3');
   assert.equal(i18n.t('library.sceneCount', { lng: 'zh-CN', count: 3 }), '3 个片段');
   assert.equal(i18n.t('navigation.library', { lng: 'en' }), 'Scene library');
   assert.equal(i18n.t('errors.microphoneDenied', { lng: 'en' }), 'Microphone access is off. Allow it in your browser’s site settings, then press record.');
