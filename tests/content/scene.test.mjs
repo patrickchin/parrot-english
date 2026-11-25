@@ -6,15 +6,15 @@ import { dirname } from 'node:path';
 import { validateScene } from '../../src/scene.ts';
 import { franchiseGroup } from '../../src/franchises.ts';
 
-test('all 128 internal-test scenes retain their media and audience metadata in franchise packs', async () => {
+test('all internal-test scenes retain their media and audience metadata in franchise packs', async () => {
   const scenes = clips;
   const { validateWaveform } = await import('../../src/waveform.ts');
-  assert.equal(scenes.length, 128);
+  assert.equal(scenes.length, 132);
   assert.equal(scenes.filter(s => s.cohort === 'younger-age-5').length, 15);
   assert.equal(scenes.filter(s => s.cohort === 'older-audience').length, 84);
   assert.equal(scenes.filter(s => s.cohort === 'older-children').length, 15);
-  assert.equal(scenes.filter(s => s.cohort === 'teens').length, 14);
-  assert.equal(new Set(scenes.map(s => s.slug)).size, 128);
+  assert.equal(scenes.filter(s => s.cohort === 'teens').length, 18);
+  assert.equal(new Set(scenes.map(s => s.slug)).size, scenes.length);
   assert.equal(packs.length, 21);
   assert.equal(new Set(packs.map(pack => pack.data.franchise)).size, packs.length);
   for (const pack of packs) {
@@ -70,6 +70,10 @@ test('TV scenes preserve independent roles and the shared sofa response', async 
   const recipe = JSON.parse(await readFile('content/tv-review-scenes.json', 'utf8'));
   for (const entry of recipe.scenes) {
     const scene = validateScene(JSON.parse(await readFile(sceneFile(entry.publicSlug), 'utf8')), `/scenes/${entry.publicSlug}/`);
+    if (entry.cohort === 'teens') {
+      const source = recipe.sources.find(source => source.id === entry.sourceId);
+      assert.equal(clips.find(clip => clip.id === scene.id).season, Number(/^S(\d+)/.exec(source.episode)[1]));
+    }
     assert.ok(scene.roles.filter(role => role.selectable !== false).length >= 2);
     assert.ok(scene.lines.length >= 3);
     assert.ok(scene.duration >= 10 && scene.duration <= 40);

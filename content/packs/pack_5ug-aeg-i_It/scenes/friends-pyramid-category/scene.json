@@ -1,0 +1,445 @@
+{
+  "version": 1,
+  "id": "scene_0VmntqUOg5Z6",
+  "title": "选哪个类别？",
+  "tags": [
+    "Friends",
+    "Joey",
+    "Gene",
+    "game show",
+    "instructions",
+    "综艺",
+    "猜词"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 18.64,
+  "video": "friends-pyramid-category-review-3e14cacfad4d.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/friends-pyramid-category/",
+  "poster": "friends-pyramid-category-poster-3e14cacfad4d.jpg",
+  "waveform": "waveform-3e14cacfad4d.json",
+  "roles": [
+    {
+      "id": "role_qkfsh8gxVb9Y",
+      "name": "节目主持人",
+      "label": "节目主持人",
+      "hint": "6 句台词",
+      "portrait": "game-show-host-avatar-55eae08e62c0.jpg"
+    },
+    {
+      "id": "role_S4BKPKkBdHYY",
+      "name": "吉恩",
+      "label": "吉恩",
+      "hint": "1 句台词",
+      "portrait": "gene-avatar-480571e2011d.jpg"
+    },
+    {
+      "id": "role_6NsUtlWP-yPB",
+      "name": "乔伊",
+      "label": "乔伊",
+      "hint": "2 句台词",
+      "portrait": "joey-avatar-bed9d2de1433.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_NX8WyOZTL7MY",
+      "roleId": "role_qkfsh8gxVb9Y",
+      "start": 0.06,
+      "end": 1.56,
+      "text": "Gene, you won the toss, so you're going to start.",
+      "hint": "吉恩，你赢了掷硬币，所以你先开始。",
+      "words": [
+        {
+          "text": "Gene,",
+          "start": 0.08,
+          "end": 0.242
+        },
+        {
+          "text": "you",
+          "start": 0.324,
+          "end": 0.384
+        },
+        {
+          "text": "won",
+          "start": 0.425,
+          "end": 0.506
+        },
+        {
+          "text": "the",
+          "start": 0.546,
+          "end": 0.607
+        },
+        {
+          "text": "toss,",
+          "start": 0.648,
+          "end": 0.851
+        },
+        {
+          "text": "so",
+          "start": 0.891,
+          "end": 0.972
+        },
+        {
+          "text": "you're",
+          "start": 1.033,
+          "end": 1.134
+        },
+        {
+          "text": "going",
+          "start": 1.155,
+          "end": 1.256
+        },
+        {
+          "text": "to",
+          "start": 1.276,
+          "end": 1.317
+        },
+        {
+          "text": "start.",
+          "start": 1.337,
+          "end": 1.519
+        }
+      ]
+    },
+    {
+      "id": "line_3SFpJ36PsppR",
+      "roleId": "role_qkfsh8gxVb9Y",
+      "start": 1.57,
+      "end": 2.58,
+      "text": "Which category would you like?",
+      "hint": "你想选哪个类别？",
+      "words": [
+        {
+          "text": "Which",
+          "start": 1.57,
+          "end": 1.691
+        },
+        {
+          "text": "category",
+          "start": 1.752,
+          "end": 2.136
+        },
+        {
+          "text": "would",
+          "start": 2.156,
+          "end": 2.257
+        },
+        {
+          "text": "you",
+          "start": 2.277,
+          "end": 2.358
+        },
+        {
+          "text": "like?",
+          "start": 2.378,
+          "end": 2.499
+        }
+      ]
+    },
+    {
+      "id": "line_4kXe9M_PEtNa",
+      "roleId": "role_S4BKPKkBdHYY",
+      "start": 2.59,
+      "end": 3.93,
+      "text": "I'll take “You Cross the Line.”",
+      "hint": "我选“你越界了”。",
+      "words": [
+        {
+          "text": "I'll",
+          "start": 2.631,
+          "end": 2.773
+        },
+        {
+          "text": "take",
+          "start": 2.813,
+          "end": 2.976
+        },
+        {
+          "text": "“You",
+          "start": 3.037,
+          "end": 3.118
+        },
+        {
+          "text": "Cross",
+          "start": 3.24,
+          "end": 3.483
+        },
+        {
+          "text": "the",
+          "start": 3.585,
+          "end": 3.666
+        },
+        {
+          "text": "Line.”",
+          "start": 3.707,
+          "end": 3.93
+        }
+      ]
+    },
+    {
+      "id": "line_rh0_gShM3RdT",
+      "roleId": "role_qkfsh8gxVb9Y",
+      "start": 3.94,
+      "end": 5.1,
+      "text": "“You Cross the Line,” Joey.",
+      "hint": "乔伊，类别是“你越界了”。",
+      "words": [
+        {
+          "text": "“You",
+          "start": 4.001,
+          "end": 4.082
+        },
+        {
+          "text": "Cross",
+          "start": 4.164,
+          "end": 4.388
+        },
+        {
+          "text": "the",
+          "start": 4.489,
+          "end": 4.571
+        },
+        {
+          "text": "Line,”",
+          "start": 4.612,
+          "end": 4.815
+        },
+        {
+          "text": "Joey.",
+          "start": 4.856,
+          "end": 5.08
+        }
+      ]
+    },
+    {
+      "id": "line_TPBW4jCfGSlA",
+      "roleId": "role_qkfsh8gxVb9Y",
+      "start": 5.56,
+      "end": 8.27,
+      "text": "Describe for Gene these things that have lines.",
+      "hint": "请给吉恩描述这些有线的东西。",
+      "words": [
+        {
+          "text": "Describe",
+          "start": 5.58,
+          "end": 5.941
+        },
+        {
+          "text": "for",
+          "start": 5.982,
+          "end": 6.062
+        },
+        {
+          "text": "Gene",
+          "start": 6.122,
+          "end": 6.343
+        },
+        {
+          "text": "these",
+          "start": 6.644,
+          "end": 6.825
+        },
+        {
+          "text": "things",
+          "start": 6.925,
+          "end": 7.246
+        },
+        {
+          "text": "that",
+          "start": 7.447,
+          "end": 7.567
+        },
+        {
+          "text": "have",
+          "start": 7.628,
+          "end": 7.808
+        },
+        {
+          "text": "lines.",
+          "start": 7.949,
+          "end": 8.23
+        }
+      ]
+    },
+    {
+      "id": "line_6Yu1inmROns9",
+      "roleId": "role_qkfsh8gxVb9Y",
+      "start": 8.66,
+      "end": 10.27,
+      "text": "Give me twenty seconds on the clock, please.",
+      "hint": "请把计时器设为二十秒。",
+      "words": [
+        {
+          "text": "Give",
+          "start": 8.781,
+          "end": 8.881
+        },
+        {
+          "text": "me",
+          "start": 8.902,
+          "end": 8.942
+        },
+        {
+          "text": "twenty",
+          "start": 9.002,
+          "end": 9.183
+        },
+        {
+          "text": "seconds",
+          "start": 9.244,
+          "end": 9.485
+        },
+        {
+          "text": "on",
+          "start": 9.545,
+          "end": 9.586
+        },
+        {
+          "text": "the",
+          "start": 9.626,
+          "end": 9.686
+        },
+        {
+          "text": "clock,",
+          "start": 9.707,
+          "end": 9.868
+        },
+        {
+          "text": "please.",
+          "start": 9.928,
+          "end": 10.189
+        }
+      ]
+    },
+    {
+      "id": "line_LlUK9J82hri7",
+      "roleId": "role_qkfsh8gxVb9Y",
+      "start": 10.3,
+      "end": 11.76,
+      "text": "Ready? Go.",
+      "hint": "准备好了吗？开始！",
+      "words": [
+        {
+          "text": "Ready?",
+          "start": 10.949,
+          "end": 11.172
+        },
+        {
+          "text": "Go.",
+          "start": 11.456,
+          "end": 11.537
+        }
+      ]
+    },
+    {
+      "id": "line_HE-i3VKJBOuV",
+      "roleId": "role_6NsUtlWP-yPB",
+      "start": 12.6,
+      "end": 14.79,
+      "text": "Okay, it's a store, like a supermarket.",
+      "hint": "好，是家商店，像超市一样。",
+      "words": [
+        {
+          "text": "Okay,",
+          "start": 13.223,
+          "end": 13.464
+        },
+        {
+          "text": "it's",
+          "start": 13.524,
+          "end": 13.605
+        },
+        {
+          "text": "a",
+          "start": 13.645,
+          "end": 13.665
+        },
+        {
+          "text": "store,",
+          "start": 13.725,
+          "end": 14.047
+        },
+        {
+          "text": "like",
+          "start": 14.147,
+          "end": 14.328
+        },
+        {
+          "text": "a",
+          "start": 14.408,
+          "end": 14.428
+        },
+        {
+          "text": "supermarket.",
+          "start": 14.469,
+          "end": 14.79
+        }
+      ]
+    },
+    {
+      "id": "line_p3a0ss62FbkU",
+      "roleId": "role_6NsUtlWP-yPB",
+      "start": 15.06,
+      "end": 18.19,
+      "text": "Oh! I see what I did. Okay, okay.",
+      "hint": "哦！我知道我刚才怎么了。好，好。",
+      "words": [
+        {
+          "text": "Oh!",
+          "start": 15.662,
+          "end": 15.762
+        },
+        {
+          "text": "I",
+          "start": 16.846,
+          "end": 16.866
+        },
+        {
+          "text": "see",
+          "start": 17.046,
+          "end": 17.127
+        },
+        {
+          "text": "what",
+          "start": 17.187,
+          "end": 17.327
+        },
+        {
+          "text": "I",
+          "start": 17.347,
+          "end": 17.367
+        },
+        {
+          "text": "did.",
+          "start": 17.428,
+          "end": 17.528
+        },
+        {
+          "text": "Okay,",
+          "start": 17.568,
+          "end": 17.648
+        },
+        {
+          "text": "okay.",
+          "start": 17.749,
+          "end": 18.13
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment against the uncut source with source speech recognition and frame review",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Friends — S10 E11",
+    "attribution": "Warner Bros. Television",
+    "source": "https://www.youtube.com/watch?v=28LNdwfhW6I&t=44s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 44.38–62.99 秒的连续节选。Game-show banter. The cut ends before Joey gives the second clue and excludes the later adult joke."
+  }
+}

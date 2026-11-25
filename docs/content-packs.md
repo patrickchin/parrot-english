@@ -67,6 +67,7 @@ Each scene summary has:
 
 - `id` matching the scene manifest, `slug`, and optional readable `routeSlug`.
 - `title`, `english`, `note` (show or film), `source`, `cohort`, and `poster`.
+- Optional `season`, a positive integer used to filter TV collections. Scenes without a season still appear under All seasons.
 - `tags` and `quotes` for library search.
 - `manifest`, a path relative to `pack.json`, such as `scenes/greetings/scene.json`.
 

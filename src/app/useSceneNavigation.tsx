@@ -83,10 +83,12 @@ function useNavigationState() {
       const { page, href } = current.current;
       const params = new URL(href, window.location.origin).searchParams;
       const targetPack = page.packId ?? (draftId ? clips.find(clip => clip.slug === slug)?.packId : undefined);
+      if (slug && page.page === 'library' && page.folder === 'teens') params.set('browse', 'teens');
+      const backToTeens = page.folder === 'teens' && params.get('browse') === 'teens';
       if (slug && targetPack) params.set('pack', targetPack);
-      if (!slug) params.delete('pack');
+      if (!slug) { params.delete('pack'); params.delete('browse'); }
       const search = params.size ? '?' + params : '';
-      void go((slug ? scenePath(slug, draftId, page.language, clips) : page.packId ? packPath(page.packId, page.language) : libraryPath('all', page.language)) + search);
+      void go((slug ? scenePath(slug, draftId, page.language, clips) : page.packId ? packPath(page.packId, page.language) : libraryPath(backToTeens ? 'teens' : 'all', page.language)) + search);
     },
     confirm() { if (blocker.state === 'blocked') blocker.proceed(); },
     cancel() { if (blocker.state === 'blocked') blocker.reset(); },

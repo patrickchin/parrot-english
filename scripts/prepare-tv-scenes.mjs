@@ -16,7 +16,7 @@ if (!scenes.length) throw new Error('No selected conversations.');
 const local = 'content/local-dubbing';
 const output = `${local}/${recipeIndex >= 0 ? 'review-release' : preschool ? 'preschool-release' : 'tv-release'}`;
 const root = 'https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/';
-const names = { Sheldon: '谢尔顿', Librarian: '图书管理员', 'George Cooper Sr.': '乔治爸爸', Rachel: '瑞秋', Ross: '罗斯', Chandler: '钱德勒', 'Rachel and Chandler': '瑞秋和钱德勒', Joey: '乔伊', Barney: '巴尼', Ted: '泰德', Marshall: '马修', Robin: '罗宾', Lily: '莉莉', Missy: '米茜', Georgie: '小乔治', Mandy: '曼迪', 'Dr. Sturgis': '斯特吉斯博士', Researcher: '研究员', Harry: '哈利', Ron: '罗恩', 'Shop assistant': '店员', Monica: '莫妮卡', Penny: '佩妮', Leonard: '莱纳德', Amy: '艾米', 'Barney and Marshall': '巴尼和马修', Peppa: '佩奇', 'Daddy Pig': '猪爸爸', 'Mummy Pig': '猪妈妈', Holly: '霍莉', Ben: '本', 'Nanny Plum': '梅姨', Bluey: '布鲁伊', Bandit: '班迪特爸爸', Chilli: '奇莉妈妈', Teacher: '老师', Class: '同学们', Kate: '凯特', 'Child in blue': '蓝衣小朋友', 'Child in purple': '紫衣小朋友', Dog: '小狗', Sally: '萨莉', Gogo: 'Gogo', Tony: '托尼', Jenny: '珍妮', 'Tony and Jenny': '托尼和珍妮', 'Teacher (Gogo)': 'Gogo的老师', Jeeby: 'Jeeby', 'Green friend': '绿色朋友', 'Friend (reaction)': '朋友（惊叹）' };
+const names = { Sheldon: '谢尔顿', Librarian: '图书管理员', 'George Cooper Sr.': '乔治爸爸', Rachel: '瑞秋', Ross: '罗斯', Chandler: '钱德勒', 'Rachel and Chandler': '瑞秋和钱德勒', Joey: '乔伊', Barney: '巴尼', Ted: '泰德', Marshall: '马修', Robin: '罗宾', Lily: '莉莉', Missy: '米茜', Georgie: '小乔治', Mandy: '曼迪', 'Dr. Sturgis': '斯特吉斯博士', Researcher: '研究员', Harry: '哈利', Ron: '罗恩', 'Shop assistant': '店员', 'Game-show host': '节目主持人', Gene: '吉恩', Monica: '莫妮卡', Penny: '佩妮', Leonard: '莱纳德', Amy: '艾米', 'Barney and Marshall': '巴尼和马修', Peppa: '佩奇', 'Daddy Pig': '猪爸爸', 'Mummy Pig': '猪妈妈', Holly: '霍莉', Ben: '本', 'Nanny Plum': '梅姨', Bluey: '布鲁伊', Bandit: '班迪特爸爸', Chilli: '奇莉妈妈', Teacher: '老师', Class: '同学们', Kate: '凯特', 'Child in blue': '蓝衣小朋友', 'Child in purple': '紫衣小朋友', Dog: '小狗', Sally: '萨莉', Gogo: 'Gogo', Tony: '托尼', Jenny: '珍妮', 'Tony and Jenny': '托尼和珍妮', 'Teacher (Gogo)': 'Gogo的老师', Jeeby: 'Jeeby', 'Green friend': '绿色朋友', 'Friend (reaction)': '朋友（惊叹）' };
 const translations = Object.fromEntries(Object.entries(names).map(([en, zh]) => [zh, en]));
 const media = [], entries = [], slugs = [];
 await mkdir(output, { recursive: true });
@@ -24,6 +24,7 @@ for (const entry of scenes) {
   const slug = entry.publicSlug;
   const source = recipe.sources.find(source => source.id === entry.sourceId);
   const franchise = source.franchise ?? source.series;
+  const season = /^S([1-9]\d*) E\d+$/.exec(source.episode)?.[1];
   let previous;
   try { previous = JSON.parse(await readFile(`${sceneFolder(slug, franchise, entry.tags)}/scene.json`, 'utf8')); } catch (error) { if (error.code !== 'ENOENT') throw error; }
   if (!entry.sceneId || !entry.lines?.length || !entry.lines.every(line => line.words?.length)) throw new Error(`Align the dialogue before preparing ${slug}`);
@@ -52,9 +53,10 @@ for (const entry of scenes) {
   await mkdir(sceneFolder(slug, franchise, entry.tags), { recursive: true });
   await writeFile(`${sceneFolder(slug, franchise, entry.tags)}/scene.json`, JSON.stringify(scene, null, 2) + '\n');
   translations[entry.titleZh] = entry.title;
-  entries.push({ id: scene.id, slug, routeSlug: entry.routeSlug ?? existingCatalog.find(clip => clip.slug === slug)?.routeSlug ?? slug, title: entry.titleZh, english: entry.title, note: source.franchise ?? source.series, source: scene.credit.source, cohort: preschool && entry.beginnerSuitable !== true ? 'older-audience' : entry.cohort, poster: scene.mediaBase + scene.poster });
+  entries.push({ id: scene.id, slug, routeSlug: entry.routeSlug ?? existingCatalog.find(clip => clip.slug === slug)?.routeSlug ?? slug, title: entry.titleZh, english: entry.title, note: source.franchise ?? source.series, source: scene.credit.source, cohort: preschool && entry.beginnerSuitable !== true ? 'older-audience' : entry.cohort, poster: scene.mediaBase + scene.poster, ...(entry.cohort === 'teens' && season && { season: Number(season) }) });
   slugs.push(slug);
-  media.push({ file: `${local}/${video}`, key: `clips/${slug}/${video}` }, { file: `${local}/${scene.poster}`, key: `clips/${slug}/${scene.poster}` });
+  const filenames = new Set([video, scene.poster, ...scene.roles.flatMap(role => role.portrait ? [role.portrait] : [])]);
+  for (const file of filenames) media.push({ file: `${local}/${file}`, key: `clips/${slug}/${file}` });
 }
 const catalog = existingCatalog.filter(clip => !slugs.includes(clip.slug));
 await writeCatalog([...catalog, ...entries]);

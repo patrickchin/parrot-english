@@ -1,0 +1,509 @@
+{
+  "version": 1,
+  "id": "scene_eQjUAs2_MBKq",
+  "title": "能开车送我一程吗？",
+  "tags": [
+    "How I Met Your Mother",
+    "HIMYM",
+    "Barney",
+    "Ted",
+    "rides",
+    "requests",
+    "搭车",
+    "请求"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 24.942,
+  "video": "himym-need-a-ride-review-75bb79a2cf9c.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/himym-need-a-ride/",
+  "poster": "himym-need-a-ride-poster-75bb79a2cf9c.jpg",
+  "waveform": "waveform-75bb79a2cf9c.json",
+  "roles": [
+    {
+      "id": "role_u37YteQ5Wp3A",
+      "name": "巴尼",
+      "label": "巴尼",
+      "hint": "6 句台词",
+      "portrait": "barney-avatar-185e05103792.jpg"
+    },
+    {
+      "id": "role_RC1aJy2gIcpz",
+      "name": "泰德",
+      "label": "泰德",
+      "hint": "3 句台词",
+      "portrait": "ted-avatar-e92754003c8f.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_3b_t86DR_dpj",
+      "roleId": "role_u37YteQ5Wp3A",
+      "start": 0.16,
+      "end": 2.83,
+      "text": "Hey. Hey, is Marshall around?",
+      "hint": "嘿，嘿，马修在吗？",
+      "words": [
+        {
+          "text": "Hey.",
+          "start": 1.164,
+          "end": 1.344
+        },
+        {
+          "text": "Hey,",
+          "start": 1.886,
+          "end": 2.087
+        },
+        {
+          "text": "is",
+          "start": 2.147,
+          "end": 2.208
+        },
+        {
+          "text": "Marshall",
+          "start": 2.268,
+          "end": 2.549
+        },
+        {
+          "text": "around?",
+          "start": 2.569,
+          "end": 2.77
+        }
+      ]
+    },
+    {
+      "id": "line_8doQoPOE1bdz",
+      "roleId": "role_u37YteQ5Wp3A",
+      "start": 2.95,
+      "end": 5.8,
+      "text": "I have a massage in Queens in half an hour. I need a ride.",
+      "hint": "我半小时后要去皇后区做按摩，得有人开车送我。",
+      "words": [
+        {
+          "text": "I",
+          "start": 3.131,
+          "end": 3.151
+        },
+        {
+          "text": "have",
+          "start": 3.251,
+          "end": 3.351
+        },
+        {
+          "text": "a",
+          "start": 3.432,
+          "end": 3.452
+        },
+        {
+          "text": "massage",
+          "start": 3.512,
+          "end": 3.873
+        },
+        {
+          "text": "in",
+          "start": 3.893,
+          "end": 3.933
+        },
+        {
+          "text": "Queens",
+          "start": 4.054,
+          "end": 4.375
+        },
+        {
+          "text": "in",
+          "start": 4.475,
+          "end": 4.536
+        },
+        {
+          "text": "half",
+          "start": 4.756,
+          "end": 4.957
+        },
+        {
+          "text": "an",
+          "start": 5.017,
+          "end": 5.057
+        },
+        {
+          "text": "hour.",
+          "start": 5.098,
+          "end": 5.258
+        },
+        {
+          "text": "I",
+          "start": 5.298,
+          "end": 5.318
+        },
+        {
+          "text": "need",
+          "start": 5.358,
+          "end": 5.459
+        },
+        {
+          "text": "a",
+          "start": 5.499,
+          "end": 5.519
+        },
+        {
+          "text": "ride.",
+          "start": 5.559,
+          "end": 5.68
+        }
+      ]
+    },
+    {
+      "id": "line_hrkPGdIrbd-q",
+      "roleId": "role_RC1aJy2gIcpz",
+      "start": 5.81,
+      "end": 7.83,
+      "text": "Oh, no. He's at the library all day. Just take the keys.",
+      "hint": "哦，他不在。他今天都在图书馆。你直接拿钥匙吧。",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 5.992,
+          "end": 6.052
+        },
+        {
+          "text": "no.",
+          "start": 6.133,
+          "end": 6.194
+        },
+        {
+          "text": "He's",
+          "start": 6.275,
+          "end": 6.335
+        },
+        {
+          "text": "at",
+          "start": 6.355,
+          "end": 6.396
+        },
+        {
+          "text": "the",
+          "start": 6.436,
+          "end": 6.497
+        },
+        {
+          "text": "library",
+          "start": 6.537,
+          "end": 6.8
+        },
+        {
+          "text": "all",
+          "start": 6.82,
+          "end": 6.921
+        },
+        {
+          "text": "day.",
+          "start": 6.941,
+          "end": 7.022
+        },
+        {
+          "text": "Just",
+          "start": 7.103,
+          "end": 7.204
+        },
+        {
+          "text": "take",
+          "start": 7.224,
+          "end": 7.345
+        },
+        {
+          "text": "the",
+          "start": 7.365,
+          "end": 7.446
+        },
+        {
+          "text": "keys.",
+          "start": 7.466,
+          "end": 7.648
+        }
+      ]
+    },
+    {
+      "id": "line_E4FtgebA-7QF",
+      "roleId": "role_u37YteQ5Wp3A",
+      "start": 7.9,
+      "end": 11.95,
+      "text": "Hey, why don't you drive me?",
+      "hint": "嘿，要不你开车送我？",
+      "words": [
+        {
+          "text": "Hey,",
+          "start": 10.146,
+          "end": 10.346
+        },
+        {
+          "text": "why",
+          "start": 10.988,
+          "end": 11.068
+        },
+        {
+          "text": "don't",
+          "start": 11.108,
+          "end": 11.248
+        },
+        {
+          "text": "you",
+          "start": 11.288,
+          "end": 11.369
+        },
+        {
+          "text": "drive",
+          "start": 11.449,
+          "end": 11.709
+        },
+        {
+          "text": "me?",
+          "start": 11.79,
+          "end": 11.93
+        }
+      ]
+    },
+    {
+      "id": "line_jWBu6O0oZDMN",
+      "roleId": "role_u37YteQ5Wp3A",
+      "start": 11.98,
+      "end": 13.59,
+      "text": "It'll be like a total road trip.",
+      "hint": "就当是一次公路旅行。",
+      "words": [
+        {
+          "text": "It'll",
+          "start": 12.242,
+          "end": 12.423
+        },
+        {
+          "text": "be",
+          "start": 12.443,
+          "end": 12.483
+        },
+        {
+          "text": "like",
+          "start": 12.503,
+          "end": 12.604
+        },
+        {
+          "text": "a",
+          "start": 12.644,
+          "end": 12.664
+        },
+        {
+          "text": "total",
+          "start": 12.705,
+          "end": 12.946
+        },
+        {
+          "text": "road",
+          "start": 12.986,
+          "end": 13.188
+        },
+        {
+          "text": "trip.",
+          "start": 13.268,
+          "end": 13.469
+        }
+      ]
+    },
+    {
+      "id": "line_7PjVyqj62Mk0",
+      "roleId": "role_RC1aJy2gIcpz",
+      "start": 13.72,
+      "end": 14.36,
+      "text": "To Queens?",
+      "hint": "就去皇后区？",
+      "words": [
+        {
+          "text": "To",
+          "start": 13.968,
+          "end": 14.05
+        },
+        {
+          "text": "Queens?",
+          "start": 14.112,
+          "end": 14.36
+        }
+      ]
+    },
+    {
+      "id": "line_Qw9TZs8mQ4eL",
+      "roleId": "role_u37YteQ5Wp3A",
+      "start": 14.74,
+      "end": 18.2,
+      "text": "Yeah, we'll get, we'll get beef jerky, Triscuits.",
+      "hint": "对啊，我们可以买牛肉干，还有饼干。",
+      "words": [
+        {
+          "text": "Yeah,",
+          "start": 15.303,
+          "end": 15.585
+        },
+        {
+          "text": "we'll",
+          "start": 15.766,
+          "end": 15.927
+        },
+        {
+          "text": "get,",
+          "start": 15.967,
+          "end": 16.068
+        },
+        {
+          "text": "we'll",
+          "start": 16.47,
+          "end": 16.611
+        },
+        {
+          "text": "get",
+          "start": 16.631,
+          "end": 16.711
+        },
+        {
+          "text": "beef",
+          "start": 16.832,
+          "end": 16.993
+        },
+        {
+          "text": "jerky,",
+          "start": 17.073,
+          "end": 17.375
+        },
+        {
+          "text": "Triscuits.",
+          "start": 17.677,
+          "end": 18.059
+        }
+      ]
+    },
+    {
+      "id": "line_PUb-oA7ZqN_e",
+      "roleId": "role_RC1aJy2gIcpz",
+      "start": 18.78,
+      "end": 20.46,
+      "text": "Uh, actually, I have a lot of work to do.",
+      "hint": "呃，其实我还有很多事要做。",
+      "words": [
+        {
+          "text": "Uh,",
+          "start": 18.942,
+          "end": 19.003
+        },
+        {
+          "text": "actually,",
+          "start": 19.165,
+          "end": 19.468
+        },
+        {
+          "text": "I",
+          "start": 19.529,
+          "end": 19.549
+        },
+        {
+          "text": "have",
+          "start": 19.569,
+          "end": 19.671
+        },
+        {
+          "text": "a",
+          "start": 19.691,
+          "end": 19.731
+        },
+        {
+          "text": "lot",
+          "start": 19.752,
+          "end": 19.853
+        },
+        {
+          "text": "of",
+          "start": 19.873,
+          "end": 19.913
+        },
+        {
+          "text": "work",
+          "start": 19.954,
+          "end": 20.055
+        },
+        {
+          "text": "to",
+          "start": 20.096,
+          "end": 20.156
+        },
+        {
+          "text": "do.",
+          "start": 20.197,
+          "end": 20.258
+        }
+      ]
+    },
+    {
+      "id": "line_FCRj8b8Fs04i",
+      "roleId": "role_u37YteQ5Wp3A",
+      "start": 20.48,
+      "end": 24.83,
+      "text": "Okay. Well, I'll just... I'll cancel. See you later.",
+      "hint": "好吧。那我就……取消吧。回头见。",
+      "words": [
+        {
+          "text": "Okay.",
+          "start": 21.462,
+          "end": 21.723
+        },
+        {
+          "text": "Well,",
+          "start": 22.144,
+          "end": 22.304
+        },
+        {
+          "text": "I'll",
+          "start": 22.465,
+          "end": 22.605
+        },
+        {
+          "text": "just...",
+          "start": 22.825,
+          "end": 23.066
+        },
+        {
+          "text": "I'll",
+          "start": 23.387,
+          "end": 23.467
+        },
+        {
+          "text": "cancel.",
+          "start": 23.487,
+          "end": 23.788
+        },
+        {
+          "text": "See",
+          "start": 24.449,
+          "end": 24.549
+        },
+        {
+          "text": "you",
+          "start": 24.589,
+          "end": 24.67
+        },
+        {
+          "text": "later.",
+          "start": 24.69,
+          "end": 24.79
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment against the uncut source with source speech recognition and frame review",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "How I Met Your Mother — S2 E17",
+    "attribution": "20th Television",
+    "source": "https://www.youtube.com/watch?v=aYa-yIHXDAg&t=28s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 28.72–53.65 秒的连续节选。Everyday request between friends. The cut ends before the follow-up about driving and the later sexist remarks."
+  }
+}

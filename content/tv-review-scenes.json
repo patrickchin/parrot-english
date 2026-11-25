@@ -228,6 +228,30 @@
       "officialChannel": true,
       "attribution": "Warner Bros. Television",
       "duration": 223
+    },
+    {
+      "id": "28LNdwfhW6I",
+      "url": "https://www.youtube.com/watch?v=28LNdwfhW6I",
+      "localFile": "content/local-dubbing/review/teens/sources/28LNdwfhW6I.mp4",
+      "series": "Friends",
+      "episode": "S10 E11",
+      "uploadTitle": "Joey on the \"Pyramid\" Game Show \"Paper...Snow...A ghost!\" | Friends",
+      "channel": "Comedy Central UK",
+      "officialChannel": true,
+      "attribution": "Warner Bros. Television",
+      "duration": 99
+    },
+    {
+      "id": "Fda0RZG9b0I",
+      "url": "https://www.youtube.com/watch?v=Fda0RZG9b0I",
+      "localFile": "content/local-dubbing/review/teens/sources/Fda0RZG9b0I.mp4",
+      "series": "The Big Bang Theory",
+      "episode": "S9 E23",
+      "uploadTitle": "Penny & Sheldon Quiz Each Other | The Big Bang Theory",
+      "channel": "The Big Bang Theory",
+      "officialChannel": true,
+      "attribution": "Warner Bros. Television",
+      "duration": 72
     }
   ],
   "scenes": [
@@ -11344,6 +11368,1600 @@
         "上课",
         "洗手间"
       ]
+    },
+    {
+      "id": "clip_qn7bathiRDMQ",
+      "sceneId": "scene_fQ0Q3jABkK3P",
+      "batch": "2026-11-25",
+      "cohort": "teens",
+      "slug": "15-friends-delivery-charge",
+      "publicSlug": "friends-delivery-charge",
+      "title": "The delivery charge",
+      "titleZh": "送货费这么贵？",
+      "sourceId": "UJHa8Bjjy1k",
+      "start": 0,
+      "end": 13.16,
+      "roles": [
+        {
+          "id": "role_3UfGiNuKVUKR",
+          "name": "Shop assistant",
+          "selectable": true,
+          "portrait": "shop-assistant-avatar-693b2b6a16ed.jpg"
+        },
+        {
+          "id": "role_Hiv9i2W5cFGo",
+          "name": "Ross",
+          "selectable": true,
+          "portrait": "ross-avatar-6852ef573d6b.jpg"
+        },
+        {
+          "id": "role_vp75PwW6pJiI",
+          "name": "Rachel",
+          "selectable": true,
+          "portrait": "rachel-avatar-0ae447c0241f.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_vZFa7xiNKS66",
+          "roleId": "role_3UfGiNuKVUKR",
+          "speaker": "Shop assistant",
+          "start": 0.02,
+          "end": 1.34,
+          "text": "Could you just sign right here, please?",
+          "hint": "请在这里签个字，好吗？",
+          "words": [
+            {
+              "text": "Could",
+              "start": 0.162,
+              "end": 0.284
+            },
+            {
+              "text": "you",
+              "start": 0.304,
+              "end": 0.365
+            },
+            {
+              "text": "just",
+              "start": 0.426,
+              "end": 0.507
+            },
+            {
+              "text": "sign",
+              "start": 0.528,
+              "end": 0.69
+            },
+            {
+              "text": "right",
+              "start": 0.751,
+              "end": 0.873
+            },
+            {
+              "text": "here,",
+              "start": 0.893,
+              "end": 1.015
+            },
+            {
+              "text": "please?",
+              "start": 1.035,
+              "end": 1.279
+            }
+          ]
+        },
+        {
+          "id": "line_WRK-FR9BMi97",
+          "roleId": "role_Hiv9i2W5cFGo",
+          "speaker": "Ross",
+          "start": 1.35,
+          "end": 1.98,
+          "text": "Oh, sure.",
+          "hint": "哦，当然。",
+          "words": [
+            {
+              "text": "Oh,",
+              "start": 1.391,
+              "end": 1.452
+            },
+            {
+              "text": "sure.",
+              "start": 1.492,
+              "end": 1.675
+            }
+          ]
+        },
+        {
+          "id": "line_loqGZNH0bbbn",
+          "roleId": "role_Hiv9i2W5cFGo",
+          "speaker": "Ross",
+          "start": 2.72,
+          "end": 6.92,
+          "text": "Oh, what? The delivery charge is almost as much as the couch!",
+          "hint": "啊，什么？送货费都快赶上沙发的价钱了！",
+          "words": [
+            {
+              "text": "Oh,",
+              "start": 2.901,
+              "end": 2.961
+            },
+            {
+              "text": "what?",
+              "start": 3.222,
+              "end": 3.343
+            },
+            {
+              "text": "The",
+              "start": 4.569,
+              "end": 4.629
+            },
+            {
+              "text": "delivery",
+              "start": 4.689,
+              "end": 5.091
+            },
+            {
+              "text": "charge",
+              "start": 5.172,
+              "end": 5.453
+            },
+            {
+              "text": "is",
+              "start": 5.513,
+              "end": 5.574
+            },
+            {
+              "text": "almost",
+              "start": 5.634,
+              "end": 5.835
+            },
+            {
+              "text": "as",
+              "start": 5.895,
+              "end": 5.955
+            },
+            {
+              "text": "much",
+              "start": 6.016,
+              "end": 6.156
+            },
+            {
+              "text": "as",
+              "start": 6.217,
+              "end": 6.277
+            },
+            {
+              "text": "the",
+              "start": 6.357,
+              "end": 6.418
+            },
+            {
+              "text": "couch!",
+              "start": 6.478,
+              "end": 6.86
+            }
+          ]
+        },
+        {
+          "id": "line_IXEz6EanpUxK",
+          "roleId": "role_vp75PwW6pJiI",
+          "speaker": "Rachel",
+          "start": 7.11,
+          "end": 8.2,
+          "text": "Wait, no. That's ridiculous.",
+          "hint": "等等，这也太离谱了。",
+          "words": [
+            {
+              "text": "Wait,",
+              "start": 7.15,
+              "end": 7.332
+            },
+            {
+              "text": "no.",
+              "start": 7.473,
+              "end": 7.554
+            },
+            {
+              "text": "That's",
+              "start": 7.675,
+              "end": 7.837
+            },
+            {
+              "text": "ridiculous.",
+              "start": 7.877,
+              "end": 8.2
+            }
+          ]
+        },
+        {
+          "id": "line_xLQyjSr9d215",
+          "roleId": "role_vp75PwW6pJiI",
+          "speaker": "Rachel",
+          "start": 8.43,
+          "end": 10.12,
+          "text": "Come on. He lives three blocks away.",
+          "hint": "拜托，他就住在三个街区外。",
+          "words": [
+            {
+              "text": "Come",
+              "start": 8.49,
+              "end": 8.611
+            },
+            {
+              "text": "on.",
+              "start": 8.651,
+              "end": 8.692
+            },
+            {
+              "text": "He",
+              "start": 8.732,
+              "end": 8.792
+            },
+            {
+              "text": "lives",
+              "start": 8.832,
+              "end": 9.013
+            },
+            {
+              "text": "three",
+              "start": 9.074,
+              "end": 9.255
+            },
+            {
+              "text": "blocks",
+              "start": 9.315,
+              "end": 9.617
+            },
+            {
+              "text": "away.",
+              "start": 9.718,
+              "end": 10.1
+            }
+          ]
+        },
+        {
+          "id": "line_yNV8jYttYco0",
+          "roleId": "role_Hiv9i2W5cFGo",
+          "speaker": "Ross",
+          "start": 10.14,
+          "end": 12.08,
+          "text": "Yeah. You know what? I'll take it myself.",
+          "hint": "是啊。这样吧，我自己搬。",
+          "words": [
+            {
+              "text": "Yeah.",
+              "start": 10.14,
+              "end": 10.261
+            },
+            {
+              "text": "You",
+              "start": 10.322,
+              "end": 10.403
+            },
+            {
+              "text": "know",
+              "start": 10.423,
+              "end": 10.524
+            },
+            {
+              "text": "what?",
+              "start": 10.605,
+              "end": 11.171
+            },
+            {
+              "text": "I'll",
+              "start": 11.272,
+              "end": 11.413
+            },
+            {
+              "text": "take",
+              "start": 11.474,
+              "end": 11.615
+            },
+            {
+              "text": "it",
+              "start": 11.676,
+              "end": 11.736
+            },
+            {
+              "text": "myself.",
+              "start": 11.777,
+              "end": 12.08
+            }
+          ]
+        },
+        {
+          "id": "line_JTru56RoQd-X",
+          "roleId": "role_Hiv9i2W5cFGo",
+          "speaker": "Ross",
+          "start": 12.29,
+          "end": 12.97,
+          "text": "Thank you.",
+          "hint": "谢谢。",
+          "words": [
+            {
+              "text": "Thank",
+              "start": 12.352,
+              "end": 12.475
+            },
+            {
+              "text": "you.",
+              "start": 12.558,
+              "end": 12.743
+            }
+          ]
+        }
+      ],
+      "observedDialogueTurnsAtLeast": 4,
+      "summary": "Ross questions the cost of delivering a couch. Rachel points out how close he lives, and Ross decides to take it himself.",
+      "practice": "Asking for a signature, reacting to a fee, and making a decision.",
+      "contentNotes": "Comic frustration over a delivery charge. This cut ends before the staff begin moving the couch.",
+      "reviewStatus": "uncut source frames and alignment reviewed; adult listening and suitability review pending",
+      "tags": [
+        "Friends",
+        "Ross",
+        "Rachel",
+        "shopping",
+        "delivery",
+        "送货",
+        "价格"
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment against the uncut source with source speech recognition and frame review",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_gdy8TaPS3H5i",
+      "sceneId": "scene_0VmntqUOg5Z6",
+      "batch": "2026-11-25",
+      "cohort": "teens",
+      "slug": "16-friends-pyramid-category",
+      "publicSlug": "friends-pyramid-category",
+      "title": "Choose a category",
+      "titleZh": "选哪个类别？",
+      "sourceId": "28LNdwfhW6I",
+      "start": 44.38,
+      "end": 62.99,
+      "roles": [
+        {
+          "id": "role_qkfsh8gxVb9Y",
+          "name": "Game-show host",
+          "selectable": true,
+          "portrait": "game-show-host-avatar-55eae08e62c0.jpg"
+        },
+        {
+          "id": "role_S4BKPKkBdHYY",
+          "name": "Gene",
+          "selectable": true,
+          "portrait": "gene-avatar-480571e2011d.jpg"
+        },
+        {
+          "id": "role_6NsUtlWP-yPB",
+          "name": "Joey",
+          "selectable": true,
+          "portrait": "joey-avatar-bed9d2de1433.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_NX8WyOZTL7MY",
+          "roleId": "role_qkfsh8gxVb9Y",
+          "speaker": "Game-show host",
+          "start": 44.44,
+          "end": 45.94,
+          "text": "Gene, you won the toss, so you're going to start.",
+          "hint": "吉恩，你赢了掷硬币，所以你先开始。",
+          "words": [
+            {
+              "text": "Gene,",
+              "start": 44.46,
+              "end": 44.622
+            },
+            {
+              "text": "you",
+              "start": 44.704,
+              "end": 44.764
+            },
+            {
+              "text": "won",
+              "start": 44.805,
+              "end": 44.886
+            },
+            {
+              "text": "the",
+              "start": 44.926,
+              "end": 44.987
+            },
+            {
+              "text": "toss,",
+              "start": 45.028,
+              "end": 45.231
+            },
+            {
+              "text": "so",
+              "start": 45.271,
+              "end": 45.352
+            },
+            {
+              "text": "you're",
+              "start": 45.413,
+              "end": 45.514
+            },
+            {
+              "text": "going",
+              "start": 45.535,
+              "end": 45.636
+            },
+            {
+              "text": "to",
+              "start": 45.656,
+              "end": 45.697
+            },
+            {
+              "text": "start.",
+              "start": 45.717,
+              "end": 45.899
+            }
+          ]
+        },
+        {
+          "id": "line_3SFpJ36PsppR",
+          "roleId": "role_qkfsh8gxVb9Y",
+          "speaker": "Game-show host",
+          "start": 45.95,
+          "end": 46.96,
+          "text": "Which category would you like?",
+          "hint": "你想选哪个类别？",
+          "words": [
+            {
+              "text": "Which",
+              "start": 45.95,
+              "end": 46.071
+            },
+            {
+              "text": "category",
+              "start": 46.132,
+              "end": 46.516
+            },
+            {
+              "text": "would",
+              "start": 46.536,
+              "end": 46.637
+            },
+            {
+              "text": "you",
+              "start": 46.657,
+              "end": 46.738
+            },
+            {
+              "text": "like?",
+              "start": 46.758,
+              "end": 46.879
+            }
+          ]
+        },
+        {
+          "id": "line_4kXe9M_PEtNa",
+          "roleId": "role_S4BKPKkBdHYY",
+          "speaker": "Gene",
+          "start": 46.97,
+          "end": 48.31,
+          "text": "I'll take “You Cross the Line.”",
+          "hint": "我选“你越界了”。",
+          "words": [
+            {
+              "text": "I'll",
+              "start": 47.011,
+              "end": 47.153
+            },
+            {
+              "text": "take",
+              "start": 47.193,
+              "end": 47.356
+            },
+            {
+              "text": "“You",
+              "start": 47.417,
+              "end": 47.498
+            },
+            {
+              "text": "Cross",
+              "start": 47.62,
+              "end": 47.863
+            },
+            {
+              "text": "the",
+              "start": 47.965,
+              "end": 48.046
+            },
+            {
+              "text": "Line.”",
+              "start": 48.087,
+              "end": 48.31
+            }
+          ]
+        },
+        {
+          "id": "line_rh0_gShM3RdT",
+          "roleId": "role_qkfsh8gxVb9Y",
+          "speaker": "Game-show host",
+          "start": 48.32,
+          "end": 49.48,
+          "text": "“You Cross the Line,” Joey.",
+          "hint": "乔伊，类别是“你越界了”。",
+          "words": [
+            {
+              "text": "“You",
+              "start": 48.381,
+              "end": 48.462
+            },
+            {
+              "text": "Cross",
+              "start": 48.544,
+              "end": 48.768
+            },
+            {
+              "text": "the",
+              "start": 48.869,
+              "end": 48.951
+            },
+            {
+              "text": "Line,”",
+              "start": 48.992,
+              "end": 49.195
+            },
+            {
+              "text": "Joey.",
+              "start": 49.236,
+              "end": 49.46
+            }
+          ]
+        },
+        {
+          "id": "line_TPBW4jCfGSlA",
+          "roleId": "role_qkfsh8gxVb9Y",
+          "speaker": "Game-show host",
+          "start": 49.94,
+          "end": 52.65,
+          "text": "Describe for Gene these things that have lines.",
+          "hint": "请给吉恩描述这些有线的东西。",
+          "words": [
+            {
+              "text": "Describe",
+              "start": 49.96,
+              "end": 50.321
+            },
+            {
+              "text": "for",
+              "start": 50.362,
+              "end": 50.442
+            },
+            {
+              "text": "Gene",
+              "start": 50.502,
+              "end": 50.723
+            },
+            {
+              "text": "these",
+              "start": 51.024,
+              "end": 51.205
+            },
+            {
+              "text": "things",
+              "start": 51.305,
+              "end": 51.626
+            },
+            {
+              "text": "that",
+              "start": 51.827,
+              "end": 51.947
+            },
+            {
+              "text": "have",
+              "start": 52.008,
+              "end": 52.188
+            },
+            {
+              "text": "lines.",
+              "start": 52.329,
+              "end": 52.61
+            }
+          ]
+        },
+        {
+          "id": "line_6Yu1inmROns9",
+          "roleId": "role_qkfsh8gxVb9Y",
+          "speaker": "Game-show host",
+          "start": 53.04,
+          "end": 54.65,
+          "text": "Give me twenty seconds on the clock, please.",
+          "hint": "请把计时器设为二十秒。",
+          "words": [
+            {
+              "text": "Give",
+              "start": 53.161,
+              "end": 53.261
+            },
+            {
+              "text": "me",
+              "start": 53.282,
+              "end": 53.322
+            },
+            {
+              "text": "twenty",
+              "start": 53.382,
+              "end": 53.563
+            },
+            {
+              "text": "seconds",
+              "start": 53.624,
+              "end": 53.865
+            },
+            {
+              "text": "on",
+              "start": 53.925,
+              "end": 53.966
+            },
+            {
+              "text": "the",
+              "start": 54.006,
+              "end": 54.066
+            },
+            {
+              "text": "clock,",
+              "start": 54.087,
+              "end": 54.248
+            },
+            {
+              "text": "please.",
+              "start": 54.308,
+              "end": 54.569
+            }
+          ]
+        },
+        {
+          "id": "line_LlUK9J82hri7",
+          "roleId": "role_qkfsh8gxVb9Y",
+          "speaker": "Game-show host",
+          "start": 54.68,
+          "end": 56.14,
+          "text": "Ready? Go.",
+          "hint": "准备好了吗？开始！",
+          "words": [
+            {
+              "text": "Ready?",
+              "start": 55.329,
+              "end": 55.552
+            },
+            {
+              "text": "Go.",
+              "start": 55.836,
+              "end": 55.917
+            }
+          ]
+        },
+        {
+          "id": "line_HE-i3VKJBOuV",
+          "roleId": "role_6NsUtlWP-yPB",
+          "speaker": "Joey",
+          "start": 56.98,
+          "end": 59.17,
+          "text": "Okay, it's a store, like a supermarket.",
+          "hint": "好，是家商店，像超市一样。",
+          "words": [
+            {
+              "text": "Okay,",
+              "start": 57.603,
+              "end": 57.844
+            },
+            {
+              "text": "it's",
+              "start": 57.904,
+              "end": 57.985
+            },
+            {
+              "text": "a",
+              "start": 58.025,
+              "end": 58.045
+            },
+            {
+              "text": "store,",
+              "start": 58.105,
+              "end": 58.427
+            },
+            {
+              "text": "like",
+              "start": 58.527,
+              "end": 58.708
+            },
+            {
+              "text": "a",
+              "start": 58.788,
+              "end": 58.808
+            },
+            {
+              "text": "supermarket.",
+              "start": 58.849,
+              "end": 59.17
+            }
+          ]
+        },
+        {
+          "id": "line_p3a0ss62FbkU",
+          "roleId": "role_6NsUtlWP-yPB",
+          "speaker": "Joey",
+          "start": 59.44,
+          "end": 62.57,
+          "text": "Oh! I see what I did. Okay, okay.",
+          "hint": "哦！我知道我刚才怎么了。好，好。",
+          "words": [
+            {
+              "text": "Oh!",
+              "start": 60.042,
+              "end": 60.142
+            },
+            {
+              "text": "I",
+              "start": 61.226,
+              "end": 61.246
+            },
+            {
+              "text": "see",
+              "start": 61.426,
+              "end": 61.507
+            },
+            {
+              "text": "what",
+              "start": 61.567,
+              "end": 61.707
+            },
+            {
+              "text": "I",
+              "start": 61.727,
+              "end": 61.747
+            },
+            {
+              "text": "did.",
+              "start": 61.808,
+              "end": 61.908
+            },
+            {
+              "text": "Okay,",
+              "start": 61.948,
+              "end": 62.028
+            },
+            {
+              "text": "okay.",
+              "start": 62.129,
+              "end": 62.51
+            }
+          ]
+        }
+      ],
+      "observedDialogueTurnsAtLeast": 4,
+      "summary": "A game-show host tells Gene and Joey how to start a timed round. Joey accidentally gives away the answer.",
+      "practice": "Choosing a category, giving instructions, and describing an everyday place.",
+      "contentNotes": "Game-show banter. The cut ends before Joey gives the second clue and excludes the later adult joke.",
+      "reviewStatus": "uncut source frames and alignment reviewed; adult listening and suitability review pending",
+      "tags": [
+        "Friends",
+        "Joey",
+        "Gene",
+        "game show",
+        "instructions",
+        "综艺",
+        "猜词"
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment against the uncut source with source speech recognition and frame review",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_tO3HOi1R0_9m",
+      "sceneId": "scene_eQjUAs2_MBKq",
+      "batch": "2026-11-25",
+      "cohort": "teens",
+      "slug": "17-himym-need-a-ride",
+      "publicSlug": "himym-need-a-ride",
+      "title": "Can you give me a ride?",
+      "titleZh": "能开车送我一程吗？",
+      "sourceId": "aYa-yIHXDAg",
+      "start": 28.72,
+      "end": 53.65,
+      "roles": [
+        {
+          "id": "role_u37YteQ5Wp3A",
+          "name": "Barney",
+          "selectable": true,
+          "portrait": "barney-avatar-185e05103792.jpg"
+        },
+        {
+          "id": "role_RC1aJy2gIcpz",
+          "name": "Ted",
+          "selectable": true,
+          "portrait": "ted-avatar-e92754003c8f.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_3b_t86DR_dpj",
+          "roleId": "role_u37YteQ5Wp3A",
+          "speaker": "Barney",
+          "start": 28.88,
+          "end": 31.55,
+          "text": "Hey. Hey, is Marshall around?",
+          "hint": "嘿，嘿，马修在吗？",
+          "words": [
+            {
+              "text": "Hey.",
+              "start": 29.884,
+              "end": 30.064
+            },
+            {
+              "text": "Hey,",
+              "start": 30.606,
+              "end": 30.807
+            },
+            {
+              "text": "is",
+              "start": 30.867,
+              "end": 30.928
+            },
+            {
+              "text": "Marshall",
+              "start": 30.988,
+              "end": 31.269
+            },
+            {
+              "text": "around?",
+              "start": 31.289,
+              "end": 31.49
+            }
+          ]
+        },
+        {
+          "id": "line_8doQoPOE1bdz",
+          "roleId": "role_u37YteQ5Wp3A",
+          "speaker": "Barney",
+          "start": 31.67,
+          "end": 34.52,
+          "text": "I have a massage in Queens in half an hour. I need a ride.",
+          "hint": "我半小时后要去皇后区做按摩，得有人开车送我。",
+          "words": [
+            {
+              "text": "I",
+              "start": 31.851,
+              "end": 31.871
+            },
+            {
+              "text": "have",
+              "start": 31.971,
+              "end": 32.071
+            },
+            {
+              "text": "a",
+              "start": 32.152,
+              "end": 32.172
+            },
+            {
+              "text": "massage",
+              "start": 32.232,
+              "end": 32.593
+            },
+            {
+              "text": "in",
+              "start": 32.613,
+              "end": 32.653
+            },
+            {
+              "text": "Queens",
+              "start": 32.774,
+              "end": 33.095
+            },
+            {
+              "text": "in",
+              "start": 33.195,
+              "end": 33.256
+            },
+            {
+              "text": "half",
+              "start": 33.476,
+              "end": 33.677
+            },
+            {
+              "text": "an",
+              "start": 33.737,
+              "end": 33.777
+            },
+            {
+              "text": "hour.",
+              "start": 33.818,
+              "end": 33.978
+            },
+            {
+              "text": "I",
+              "start": 34.018,
+              "end": 34.038
+            },
+            {
+              "text": "need",
+              "start": 34.078,
+              "end": 34.179
+            },
+            {
+              "text": "a",
+              "start": 34.219,
+              "end": 34.239
+            },
+            {
+              "text": "ride.",
+              "start": 34.279,
+              "end": 34.4
+            }
+          ]
+        },
+        {
+          "id": "line_hrkPGdIrbd-q",
+          "roleId": "role_RC1aJy2gIcpz",
+          "speaker": "Ted",
+          "start": 34.53,
+          "end": 36.55,
+          "text": "Oh, no. He's at the library all day. Just take the keys.",
+          "hint": "哦，他不在。他今天都在图书馆。你直接拿钥匙吧。",
+          "words": [
+            {
+              "text": "Oh,",
+              "start": 34.712,
+              "end": 34.772
+            },
+            {
+              "text": "no.",
+              "start": 34.853,
+              "end": 34.914
+            },
+            {
+              "text": "He's",
+              "start": 34.995,
+              "end": 35.055
+            },
+            {
+              "text": "at",
+              "start": 35.075,
+              "end": 35.116
+            },
+            {
+              "text": "the",
+              "start": 35.156,
+              "end": 35.217
+            },
+            {
+              "text": "library",
+              "start": 35.257,
+              "end": 35.52
+            },
+            {
+              "text": "all",
+              "start": 35.54,
+              "end": 35.641
+            },
+            {
+              "text": "day.",
+              "start": 35.661,
+              "end": 35.742
+            },
+            {
+              "text": "Just",
+              "start": 35.823,
+              "end": 35.924
+            },
+            {
+              "text": "take",
+              "start": 35.944,
+              "end": 36.065
+            },
+            {
+              "text": "the",
+              "start": 36.085,
+              "end": 36.166
+            },
+            {
+              "text": "keys.",
+              "start": 36.186,
+              "end": 36.368
+            }
+          ]
+        },
+        {
+          "id": "line_E4FtgebA-7QF",
+          "roleId": "role_u37YteQ5Wp3A",
+          "speaker": "Barney",
+          "start": 36.62,
+          "end": 40.67,
+          "text": "Hey, why don't you drive me?",
+          "hint": "嘿，要不你开车送我？",
+          "words": [
+            {
+              "text": "Hey,",
+              "start": 38.866,
+              "end": 39.066
+            },
+            {
+              "text": "why",
+              "start": 39.708,
+              "end": 39.788
+            },
+            {
+              "text": "don't",
+              "start": 39.828,
+              "end": 39.968
+            },
+            {
+              "text": "you",
+              "start": 40.008,
+              "end": 40.089
+            },
+            {
+              "text": "drive",
+              "start": 40.169,
+              "end": 40.429
+            },
+            {
+              "text": "me?",
+              "start": 40.51,
+              "end": 40.65
+            }
+          ]
+        },
+        {
+          "id": "line_jWBu6O0oZDMN",
+          "roleId": "role_u37YteQ5Wp3A",
+          "speaker": "Barney",
+          "start": 40.7,
+          "end": 42.31,
+          "text": "It'll be like a total road trip.",
+          "hint": "就当是一次公路旅行。",
+          "words": [
+            {
+              "text": "It'll",
+              "start": 40.962,
+              "end": 41.143
+            },
+            {
+              "text": "be",
+              "start": 41.163,
+              "end": 41.203
+            },
+            {
+              "text": "like",
+              "start": 41.223,
+              "end": 41.324
+            },
+            {
+              "text": "a",
+              "start": 41.364,
+              "end": 41.384
+            },
+            {
+              "text": "total",
+              "start": 41.425,
+              "end": 41.666
+            },
+            {
+              "text": "road",
+              "start": 41.706,
+              "end": 41.908
+            },
+            {
+              "text": "trip.",
+              "start": 41.988,
+              "end": 42.189
+            }
+          ]
+        },
+        {
+          "id": "line_7PjVyqj62Mk0",
+          "roleId": "role_RC1aJy2gIcpz",
+          "speaker": "Ted",
+          "start": 42.44,
+          "end": 43.08,
+          "text": "To Queens?",
+          "hint": "就去皇后区？",
+          "words": [
+            {
+              "text": "To",
+              "start": 42.688,
+              "end": 42.77
+            },
+            {
+              "text": "Queens?",
+              "start": 42.832,
+              "end": 43.08
+            }
+          ]
+        },
+        {
+          "id": "line_Qw9TZs8mQ4eL",
+          "roleId": "role_u37YteQ5Wp3A",
+          "speaker": "Barney",
+          "start": 43.46,
+          "end": 46.92,
+          "text": "Yeah, we'll get, we'll get beef jerky, Triscuits.",
+          "hint": "对啊，我们可以买牛肉干，还有饼干。",
+          "words": [
+            {
+              "text": "Yeah,",
+              "start": 44.023,
+              "end": 44.305
+            },
+            {
+              "text": "we'll",
+              "start": 44.486,
+              "end": 44.647
+            },
+            {
+              "text": "get,",
+              "start": 44.687,
+              "end": 44.788
+            },
+            {
+              "text": "we'll",
+              "start": 45.19,
+              "end": 45.331
+            },
+            {
+              "text": "get",
+              "start": 45.351,
+              "end": 45.431
+            },
+            {
+              "text": "beef",
+              "start": 45.552,
+              "end": 45.713
+            },
+            {
+              "text": "jerky,",
+              "start": 45.793,
+              "end": 46.095
+            },
+            {
+              "text": "Triscuits.",
+              "start": 46.397,
+              "end": 46.779
+            }
+          ]
+        },
+        {
+          "id": "line_PUb-oA7ZqN_e",
+          "roleId": "role_RC1aJy2gIcpz",
+          "speaker": "Ted",
+          "start": 47.5,
+          "end": 49.18,
+          "text": "Uh, actually, I have a lot of work to do.",
+          "hint": "呃，其实我还有很多事要做。",
+          "words": [
+            {
+              "text": "Uh,",
+              "start": 47.662,
+              "end": 47.723
+            },
+            {
+              "text": "actually,",
+              "start": 47.885,
+              "end": 48.188
+            },
+            {
+              "text": "I",
+              "start": 48.249,
+              "end": 48.269
+            },
+            {
+              "text": "have",
+              "start": 48.289,
+              "end": 48.391
+            },
+            {
+              "text": "a",
+              "start": 48.411,
+              "end": 48.451
+            },
+            {
+              "text": "lot",
+              "start": 48.472,
+              "end": 48.573
+            },
+            {
+              "text": "of",
+              "start": 48.593,
+              "end": 48.633
+            },
+            {
+              "text": "work",
+              "start": 48.674,
+              "end": 48.775
+            },
+            {
+              "text": "to",
+              "start": 48.816,
+              "end": 48.876
+            },
+            {
+              "text": "do.",
+              "start": 48.917,
+              "end": 48.978
+            }
+          ]
+        },
+        {
+          "id": "line_FCRj8b8Fs04i",
+          "roleId": "role_u37YteQ5Wp3A",
+          "speaker": "Barney",
+          "start": 49.2,
+          "end": 53.55,
+          "text": "Okay. Well, I'll just... I'll cancel. See you later.",
+          "hint": "好吧。那我就……取消吧。回头见。",
+          "words": [
+            {
+              "text": "Okay.",
+              "start": 50.182,
+              "end": 50.443
+            },
+            {
+              "text": "Well,",
+              "start": 50.864,
+              "end": 51.024
+            },
+            {
+              "text": "I'll",
+              "start": 51.185,
+              "end": 51.325
+            },
+            {
+              "text": "just...",
+              "start": 51.545,
+              "end": 51.786
+            },
+            {
+              "text": "I'll",
+              "start": 52.107,
+              "end": 52.187
+            },
+            {
+              "text": "cancel.",
+              "start": 52.207,
+              "end": 52.508
+            },
+            {
+              "text": "See",
+              "start": 53.169,
+              "end": 53.269
+            },
+            {
+              "text": "you",
+              "start": 53.309,
+              "end": 53.39
+            },
+            {
+              "text": "later.",
+              "start": 53.41,
+              "end": 53.51
+            }
+          ]
+        }
+      ],
+      "observedDialogueTurnsAtLeast": 7,
+      "summary": "Barney asks Ted for a ride to Queens and pitches it as a road trip. Ted is busy, so Barney says he will cancel.",
+      "practice": "Asking for a ride, making a suggestion, and declining politely.",
+      "contentNotes": "Everyday request between friends. The cut ends before the follow-up about driving and the later sexist remarks.",
+      "reviewStatus": "uncut source frames and alignment reviewed; adult listening and suitability review pending",
+      "tags": [
+        "How I Met Your Mother",
+        "HIMYM",
+        "Barney",
+        "Ted",
+        "rides",
+        "requests",
+        "搭车",
+        "请求"
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment against the uncut source with source speech recognition and frame review",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
+    },
+    {
+      "id": "clip_Vs2ivJf8dBVZ",
+      "sceneId": "scene_adumsKgnflD0",
+      "batch": "2026-11-25",
+      "cohort": "teens",
+      "slug": "18-big-bang-mic-drop",
+      "publicSlug": "big-bang-mic-drop",
+      "title": "Who's Mike Drop?",
+      "titleZh": "迈克·德罗普是谁？",
+      "sourceId": "Fda0RZG9b0I",
+      "start": 39.81,
+      "end": 59.45,
+      "roles": [
+        {
+          "id": "role__hGmWE1FJ897",
+          "name": "Leonard",
+          "selectable": true,
+          "portrait": "leonard-avatar-a071594dacda.jpg"
+        },
+        {
+          "id": "role_4SsCYmcnGs-p",
+          "name": "Sheldon",
+          "selectable": true,
+          "portrait": "sheldon-avatar-edb28a75cfc9.jpg"
+        }
+      ],
+      "lines": [
+        {
+          "id": "line_28DRhKzBLuZI",
+          "roleId": "role__hGmWE1FJ897",
+          "speaker": "Leonard",
+          "start": 39.92,
+          "end": 42.01,
+          "text": "What are you guys doing?",
+          "hint": "你们在做什么？",
+          "words": [
+            {
+              "text": "What",
+              "start": 39.92,
+              "end": 40.623
+            },
+            {
+              "text": "are",
+              "start": 41.367,
+              "end": 41.427
+            },
+            {
+              "text": "you",
+              "start": 41.447,
+              "end": 41.528
+            },
+            {
+              "text": "guys",
+              "start": 41.548,
+              "end": 41.688
+            },
+            {
+              "text": "doing?",
+              "start": 41.729,
+              "end": 41.99
+            }
+          ]
+        },
+        {
+          "id": "line_wrZCBpKc1klk",
+          "roleId": "role_4SsCYmcnGs-p",
+          "speaker": "Sheldon",
+          "start": 42.35,
+          "end": 47.05,
+          "text": "Well, we decided to use our breakfast time to expand our respective knowledge bases.",
+          "hint": "我们决定利用早餐时间，各自拓宽一下知识面。",
+          "words": [
+            {
+              "text": "Well,",
+              "start": 42.993,
+              "end": 43.133
+            },
+            {
+              "text": "we",
+              "start": 43.153,
+              "end": 43.234
+            },
+            {
+              "text": "decided",
+              "start": 43.334,
+              "end": 43.736
+            },
+            {
+              "text": "to",
+              "start": 43.796,
+              "end": 43.836
+            },
+            {
+              "text": "use",
+              "start": 43.917,
+              "end": 43.997
+            },
+            {
+              "text": "our",
+              "start": 44.057,
+              "end": 44.158
+            },
+            {
+              "text": "breakfast",
+              "start": 44.218,
+              "end": 44.62
+            },
+            {
+              "text": "time",
+              "start": 44.66,
+              "end": 44.901
+            },
+            {
+              "text": "to",
+              "start": 44.961,
+              "end": 45.041
+            },
+            {
+              "text": "expand",
+              "start": 45.162,
+              "end": 45.584
+            },
+            {
+              "text": "our",
+              "start": 45.684,
+              "end": 45.765
+            },
+            {
+              "text": "respective",
+              "start": 45.825,
+              "end": 46.307
+            },
+            {
+              "text": "knowledge",
+              "start": 46.367,
+              "end": 46.688
+            },
+            {
+              "text": "bases.",
+              "start": 46.769,
+              "end": 47.01
+            }
+          ]
+        },
+        {
+          "id": "line_L4VO_WFrWHWx",
+          "roleId": "role__hGmWE1FJ897",
+          "speaker": "Leonard",
+          "start": 47.63,
+          "end": 48.5,
+          "text": "Let me try.",
+          "hint": "让我试试。",
+          "words": [
+            {
+              "text": "Let",
+              "start": 47.832,
+              "end": 47.933
+            },
+            {
+              "text": "me",
+              "start": 47.974,
+              "end": 48.035
+            },
+            {
+              "text": "try.",
+              "start": 48.075,
+              "end": 48.399
+            }
+          ]
+        },
+        {
+          "id": "line_YR3NmnJ-Y6KR",
+          "roleId": "role__hGmWE1FJ897",
+          "speaker": "Leonard",
+          "start": 51.03,
+          "end": 53.92,
+          "text": "Atom of hydrogen, Adam of Maroon Five, mic drop.",
+          "hint": "氢原子、魔力红乐队的亚当，表演完毕。",
+          "words": [
+            {
+              "text": "Atom",
+              "start": 51.311,
+              "end": 51.451
+            },
+            {
+              "text": "of",
+              "start": 51.512,
+              "end": 51.552
+            },
+            {
+              "text": "hydrogen,",
+              "start": 51.612,
+              "end": 52.094
+            },
+            {
+              "text": "Adam",
+              "start": 52.314,
+              "end": 52.475
+            },
+            {
+              "text": "of",
+              "start": 52.535,
+              "end": 52.575
+            },
+            {
+              "text": "Maroon",
+              "start": 52.615,
+              "end": 52.876
+            },
+            {
+              "text": "Five,",
+              "start": 52.977,
+              "end": 53.218
+            },
+            {
+              "text": "mic",
+              "start": 53.358,
+              "end": 53.519
+            },
+            {
+              "text": "drop.",
+              "start": 53.619,
+              "end": 53.84
+            }
+          ]
+        },
+        {
+          "id": "line_r94NO7KcY4eR",
+          "roleId": "role_4SsCYmcnGs-p",
+          "speaker": "Sheldon",
+          "start": 57.58,
+          "end": 59.19,
+          "text": "I'm sorry, who is Mike Drop?",
+          "hint": "不好意思，迈克·德罗普是谁？",
+          "words": [
+            {
+              "text": "I'm",
+              "start": 57.862,
+              "end": 57.962
+            },
+            {
+              "text": "sorry,",
+              "start": 58.003,
+              "end": 58.143
+            },
+            {
+              "text": "who",
+              "start": 58.204,
+              "end": 58.284
+            },
+            {
+              "text": "is",
+              "start": 58.385,
+              "end": 58.445
+            },
+            {
+              "text": "Mike",
+              "start": 58.566,
+              "end": 58.747
+            },
+            {
+              "text": "Drop?",
+              "start": 58.868,
+              "end": 59.15
+            }
+          ]
+        }
+      ],
+      "observedDialogueTurnsAtLeast": 4,
+      "summary": "Leonard interrupts a breakfast quiz, shows off what he knows, and leaves Sheldon puzzling over a turn of phrase.",
+      "practice": "Asking what someone is doing, explaining a routine, and clarifying a wordplay.",
+      "contentNotes": "A wordplay on “mic drop.” The cut starts after the preceding comments about celebrities.",
+      "reviewStatus": "uncut source frames and alignment reviewed; adult listening and suitability review pending",
+      "tags": [
+        "The Big Bang Theory",
+        "Sheldon",
+        "Leonard",
+        "quiz",
+        "wordplay",
+        "问答",
+        "双关"
+      ],
+      "wordTiming": {
+        "method": "CTC forced alignment against the uncut source with source speech recognition and frame review",
+        "tool": "torchaudio 2.6.0",
+        "model": "WAV2VEC2_ASR_BASE_960H",
+        "language": "en"
+      }
     }
   ]
 }

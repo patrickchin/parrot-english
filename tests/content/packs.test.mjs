@@ -21,9 +21,9 @@ test('staging is deterministic, includes only referenced content, and rejects sy
   const second = await stageDirectory('content', join(folder, 'second'));
   assert.equal(first.revision, second.revision);
   assert.deepEqual(first.catalog, second.catalog);
-  assert.equal(first.sceneCount, 128);
+  assert.equal(first.sceneCount, 132);
   assert.equal(first.catalog.packs.length, 21);
-  assert.equal(first.files.size, 277);
+  assert.equal(first.files.size, 285);
   assert.ok(first.catalog.packs.every(pack => /^releases\/[a-f0-9]{24}\/packs\//.test(pack.manifest)));
   assert.ok([...first.files.keys()].every(path => path.startsWith('packs/')));
   const expected = first.catalog.packs.flatMap(pack => {
@@ -137,7 +137,7 @@ test('CLI publication uses private signed PUTs then one atomic owner API batch, 
   };
   const result = await publishDirectory('content');
   assert.equal(result.catalog.packs.length, 21);
-  assert.equal(requests.filter(item => item.method === 'PUT').length, 277);
+  assert.equal(requests.filter(item => item.method === 'PUT').length, result.files.size);
   const activations = requests.filter(item => item.url.pathname === '/publish');
   assert.equal(activations.length, 1);
   assert.equal(requests.at(-1).url.pathname, '/publish');

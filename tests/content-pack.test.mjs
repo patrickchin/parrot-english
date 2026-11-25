@@ -64,6 +64,7 @@ test('pack trust boundaries reject traversal, unsupported versions, collisions a
     p => { p.title = '   '; },
     p => { p.franchise = '   '; },
     p => { p.scenes[0].manifest = '../scene.json'; },
+    p => { p.scenes[0].season = 1.5; },
     p => { p.scenes[1].id = p.scenes[0].id; },
     p => { p.scenes[1].routeSlug = p.scenes[0].routeSlug ?? p.scenes[0].slug; },
     p => { p.locales.en.scenes.scene_absent = { title: 'Bad', licence: '', changes: '' }; },
