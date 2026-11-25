@@ -158,7 +158,6 @@
     "packs": "Collections"
   },
   "library": {
-    "series": "Series",
     "seasonFilter": "Filter by season",
     "allSeasons": "All seasons",
     "seasonNumber": "Season {{number}}",

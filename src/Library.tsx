@@ -7,19 +7,17 @@ import { searchScenes } from './scene-search';
 import { AppHeader } from './app/AppHeader';
 import { ContentPoster } from './app/ContentPoster';
 import { Icon } from './shared/ui';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { packPath, packsPath } from './app/routes';
+import { packsPath } from './app/routes';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 
-export function Library({ onChoose, packId, teens }: { onChoose: (slug: string, draftId?: string) => void; packId?: string; teens?: boolean }) {
+export function Library({ onChoose, packId }: { onChoose: (slug: string, draftId?: string) => void; packId?: string }) {
   const { t } = useTranslation();
   const { clips, packs } = useContent();
   const { language } = useLanguage();
   const pack = packs.find(item => item.id === packId);
-  const scenes = clips.filter(clip => packId ? clip.packId === packId : !teens || clip.cohort === 'teens');
-  const seriesIds = new Set(scenes.map(clip => clip.packId));
-  const series = teens ? packs.filter(item => seriesIds.has(item.id)).sort((a, b) => a.title.localeCompare(b.title, language)) : [];
+  const scenes = packId ? clips.filter(clip => clip.packId === packId) : clips;
   const seasons = pack ? [...new Set(scenes.flatMap(clip => clip.season === undefined ? [] : [clip.season]))].sort((a, b) => a - b) : [];
   const [params, setParams] = useSearchParams();
   const season = seasons.find(value => String(value) === params.get('season'));
@@ -39,19 +37,16 @@ export function Library({ onChoose, packId, teens }: { onChoose: (slug: string, 
     <main className="library-main">
       <header className="pack-detail-heading">
         <Link className="library-back" to={packsPath(language)}><Icon name="back" /><span>{t('packs.allPacks')}</span></Link>
-        <h1 className="font-display">{pack?.title ?? t(teens ? 'categories.teens' : 'library.allScenes')}</h1>
+        <h1 className="font-display">{pack?.title ?? t('library.allScenes')}</h1>
         {pack?.description && <p className="pack-description">{pack.description}</p>}
         {pack && <p className="pack-meta"><span>{t('packs.uploadedBy', { uploader: pack.uploader })}</span><span>{t('library.sceneCount', { count: pack.sceneCount })}</span></p>}
       </header>
-      {!!series.length && <nav aria-label={t('library.series')} className="mt-5 flex flex-wrap gap-2.5">
-        {series.map(item => <Link key={item.id} to={packPath(item.id, language)} className={buttonVariants({ variant: 'outline', className: 'min-h-11 max-w-full whitespace-normal px-3' })}>{item.title}</Link>)}
-      </nav>}
       <section aria-label={t('packs.scenes')}>
         <div className="library-toolbar" data-collection>
           <div className="library-scope"><h2>{t('packs.scenes')}</h2><span>{t('library.sceneCount', { count: visible.length })}</span></div>
           <InputGroup className="library-search h-12 bg-card">
             <InputGroupAddon><Icon name="search" /></InputGroupAddon>
-            <InputGroupInput ref={search} type="search" aria-label={t('library.findAScene')} placeholder={t(teens || seasons.length ? 'library.findAScene' : 'library.titleCharacterTagOrLine')} value={query} onChange={e => setQuery(e.target.value)} className="h-11 text-base sm:text-sm" />
+            <InputGroupInput ref={search} type="search" aria-label={t('library.findAScene')} placeholder={t(seasons.length ? 'library.findAScene' : 'library.titleCharacterTagOrLine')} value={query} onChange={e => setQuery(e.target.value)} className="h-11 text-base sm:text-sm" />
             {query && <InputGroupAddon align="inline-end"><Button variant="ghost" size="icon" onClick={clearSearch} aria-label={t('library.clearSearch')} className="size-11 p-0"><Icon name="close" /></Button></InputGroupAddon>}
           </InputGroup>
         </div>
@@ -63,7 +58,7 @@ export function Library({ onChoose, packId, teens }: { onChoose: (slug: string, 
         <ul role="list" className="scene-shelf">{visible.map((clip, index) => <li key={clip.slug}>
           <button onClick={() => onChoose(clip.slug)} aria-label={t('library.chooseScene', { title: t(`content:scenes.${clip.id}.title`, { defaultValue: clip.title }) })} className="scene-select">
             <ContentPoster src={clip.poster} eager={index < 2} priority={index === 0} />
-            <span className="scene-copy"><span role="heading" aria-level={3} className="scene-title font-display">{t(`content:scenes.${clip.id}.title`, { defaultValue: clip.title })}</span>{(teens || pack?.title === 'Memes') && <span className="scene-source">{clip.note}</span>}</span>
+            <span className="scene-copy"><span role="heading" aria-level={3} className="scene-title font-display">{t(`content:scenes.${clip.id}.title`, { defaultValue: clip.title })}</span>{pack?.title === 'Memes' && <span className="scene-source">{clip.note}</span>}</span>
           </button>
         </li>)}</ul>
       </section>
