@@ -158,6 +158,10 @@
     "packs": "컬렉션"
   },
   "library": {
+    "series": "시리즈",
+    "seasonFilter": "시즌별로 필터링",
+    "allSeasons": "모든 시즌",
+    "seasonNumber": "시즌 {{number}}",
     "sceneCount": "장면 {{count}}개",
     "findAScene": "장면 찾기",
     "titleCharacterTagOrLine": "제목, 캐릭터 또는 대사",

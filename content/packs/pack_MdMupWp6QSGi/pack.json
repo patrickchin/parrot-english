@@ -48,7 +48,8 @@
         "Oh my God, we're gonna kill them.",
         "天哪，咱们肯定能完胜他们。"
       ],
-      "manifest": "scenes/big-bang-the-present/scene.json"
+      "manifest": "scenes/big-bang-the-present/scene.json",
+      "season": 6
     },
     {
       "id": "scene_guZULjk7gGk",
@@ -94,7 +95,8 @@
         "You're welcome.",
         "不客气。"
       ],
-      "manifest": "scenes/big-bang-notebook/scene.json"
+      "manifest": "scenes/big-bang-notebook/scene.json",
+      "season": 3
     },
     {
       "id": "scene_5XN5XS_M_Mw",
@@ -131,7 +133,42 @@
         "Not for two thousand six hundred years.",
         "我可憋不了两千六百年。"
       ],
-      "manifest": "scenes/big-bang-long-lesson/scene.json"
+      "manifest": "scenes/big-bang-long-lesson/scene.json",
+      "season": 3
+    },
+    {
+      "id": "scene_adumsKgnflD0",
+      "slug": "big-bang-mic-drop",
+      "routeSlug": "big-bang-mic-drop",
+      "title": "迈克·德罗普是谁？",
+      "english": "Who's Mike Drop?",
+      "note": "The Big Bang Theory",
+      "source": "https://www.youtube.com/watch?v=Fda0RZG9b0I&t=39s",
+      "cohort": "teens",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/big-bang-mic-drop/big-bang-mic-drop-poster-58aaab3ee15d.jpg",
+      "season": 9,
+      "tags": [
+        "The Big Bang Theory",
+        "Sheldon",
+        "Leonard",
+        "quiz",
+        "wordplay",
+        "问答",
+        "双关"
+      ],
+      "quotes": [
+        "What are you guys doing?",
+        "你们在做什么？",
+        "Well, we decided to use our breakfast time to expand our respective knowledge bases.",
+        "我们决定利用早餐时间，各自拓宽一下知识面。",
+        "Let me try.",
+        "让我试试。",
+        "Atom of hydrogen, Adam of Maroon Five, mic drop.",
+        "氢原子、魔力红乐队的亚当，表演完毕。",
+        "I'm sorry, who is Mike Drop?",
+        "不好意思，迈克·德罗普是谁？"
+      ],
+      "manifest": "scenes/big-bang-mic-drop/scene.json"
     }
   ],
   "locales": {
@@ -151,6 +188,11 @@
           "title": "Not for two thousand six hundred years",
           "licence": "Redistribution permission unconfirmed",
           "changes": "Internal prototype testing; excerpt from 106.55–120.45 seconds of the original upload. Classroom-style sarcasm and a bathroom request. The technical lecture and accusation about Leonard’s research are excluded."
+        },
+        "scene_adumsKgnflD0": {
+          "title": "Who's Mike Drop?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing. Excerpt from 39.81–59.45 seconds of the original upload."
         }
       },
       "roles": {
@@ -185,6 +227,14 @@
         "role_9ZB7SS6ZoTs": {
           "name": "Sheldon",
           "hint": "3 lines"
+        },
+        "role__hGmWE1FJ897": {
+          "name": "Leonard",
+          "hint": "3 lines"
+        },
+        "role_4SsCYmcnGs-p": {
+          "name": "Sheldon",
+          "hint": "2 lines"
         }
       },
       "notices": {
@@ -208,6 +258,11 @@
           "title": "我可憋不了两千六百年",
           "licence": "未确认再分发许可",
           "changes": "内部原型测试；原上传 106.55–120.45 秒的连续节选。Classroom-style sarcasm and a bathroom request. The technical lecture and accusation about Leonard’s research are excluded."
+        },
+        "scene_adumsKgnflD0": {
+          "title": "迈克·德罗普是谁？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试。原上传视频中 39.81–59.45 秒的节选。"
         }
       },
       "roles": {
@@ -242,6 +297,14 @@
         "role_9ZB7SS6ZoTs": {
           "name": "谢尔顿",
           "hint": "3 句台词"
+        },
+        "role__hGmWE1FJ897": {
+          "name": "莱纳德",
+          "hint": "3 句台词"
+        },
+        "role_4SsCYmcnGs-p": {
+          "name": "谢尔顿",
+          "hint": "2 句台词"
         }
       },
       "notices": {
@@ -265,6 +328,11 @@
           "title": "No puedo aguantar dos mil seiscientos años",
           "licence": "Permiso de redistribución sin confirmar",
           "changes": "Prueba interna del prototipo; fragmento de los segundos 106.55–120.45 del vídeo original. Sarcasmo en forma de clase y una petición para ir al baño. Se excluyen la explicación técnica y la acusación sobre la investigación de Leonard."
+        },
+        "scene_adumsKgnflD0": {
+          "title": "¿Quién es Mike Drop?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo. Fragmento de los segundos 39.81–59.45 del vídeo original."
         }
       },
       "roles": {
@@ -299,6 +367,14 @@
         "role_9ZB7SS6ZoTs": {
           "name": "Sheldon",
           "hint": "3 frases"
+        },
+        "role__hGmWE1FJ897": {
+          "name": "Leonard",
+          "hint": "3 frases"
+        },
+        "role_4SsCYmcnGs-p": {
+          "name": "Sheldon",
+          "hint": "2 frases"
         }
       },
       "notices": {
@@ -322,6 +398,11 @@
           "title": "二千六百年も我慢できないよ",
           "licence": "再配布の許諾は未確認",
           "changes": "内部試作テスト用。元の動画の106.55–120.45秒の抜粋です。 授業風の皮肉と、トイレに行くお願いがあります。専門的な講義やレナードの研究への非難は含みません。"
+        },
+        "scene_adumsKgnflD0": {
+          "title": "マイク・ドロップって誰？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の39.81–59.45秒の抜粋です。"
         }
       },
       "roles": {
@@ -356,6 +437,14 @@
         "role_9ZB7SS6ZoTs": {
           "name": "シェルドン",
           "hint": "セリフ3行"
+        },
+        "role__hGmWE1FJ897": {
+          "name": "レナード",
+          "hint": "セリフ3行"
+        },
+        "role_4SsCYmcnGs-p": {
+          "name": "シェルドン",
+          "hint": "セリフ2行"
         }
       },
       "notices": {
@@ -379,6 +468,11 @@
           "title": "이천육백 년은 못 참겠어",
           "licence": "재배포 허가 미확인",
           "changes": "내부 시제품 테스트용. 원본 영상의 106.55–120.45초 구간을 발췌했어요. 수업식 비꼼과 화장실에 가겠다는 요청이 있어요. 전문 강의와 레너드의 연구에 대한 비난은 제외했어요."
+        },
+        "scene_adumsKgnflD0": {
+          "title": "마이크 드롭이 누구예요?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 39.81–59.45초 구간을 발췌했어요."
         }
       },
       "roles": {
@@ -413,6 +507,14 @@
         "role_9ZB7SS6ZoTs": {
           "name": "셸던",
           "hint": "대사 3개"
+        },
+        "role__hGmWE1FJ897": {
+          "name": "레너드",
+          "hint": "대사 3개"
+        },
+        "role_4SsCYmcnGs-p": {
+          "name": "셸던",
+          "hint": "대사 2개"
         }
       },
       "notices": {

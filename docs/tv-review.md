@@ -138,3 +138,24 @@ The shared sofa response is preserved as an incidental non-selectable role.
 The driving captions retain Ted’s Zitch-dog game call; the cake captions retain
 Rachel’s off-screen response. Prompt boundaries are kept between speaker changes.
 Only a merge to GitHub `main` triggers the automatic ESA application release.
+
+## Teen series expansion — 2026-11-25
+
+Four new scenes bring the teen catalog to 18 across three series. The original
+English audio is retained. Each pack entry includes the season, selectable roles
+with portraits, English dialogue with Chinese hints, timed words, and a waveform.
+
+| Series | Episode | Scene | Source range (s) |
+| --- | --- | --- | --- |
+| Friends | S5 E16 | The delivery charge | [0–13.16](https://www.youtube.com/watch?v=UJHa8Bjjy1k) |
+| Friends | S10 E11 | Choose a category | [44.38–62.99](https://www.youtube.com/watch?v=28LNdwfhW6I&t=44s) |
+| How I Met Your Mother | S2 E17 | Can you give me a ride? | [28.72–53.65](https://www.youtube.com/watch?v=aYa-yIHXDAg&t=28s) |
+| The Big Bang Theory | S9 E23 | Who’s Mike Drop? | [39.81–59.45](https://www.youtube.com/watch?v=Fda0RZG9b0I&t=39s) |
+
+These scenes use the existing adult internal-test review process and retain
+`redistribution-not-cleared`. Source frames, speech recognition, and alignment
+on the uncut audio informed the selections. Adult listening and suitability
+review are pending. Local MP4s with matching bilingual VTT files are under
+`content/local-dubbing/review/teens/`. The upload list in
+`content/local-dubbing/tv-release/media.json` includes the videos, posters, and
+role portraits. The updated content is staged locally for internal review.

@@ -158,6 +158,10 @@
     "packs": "合集"
   },
   "library": {
+    "series": "剧集系列",
+    "seasonFilter": "按季筛选",
+    "allSeasons": "全部季",
+    "seasonNumber": "第 {{number}} 季",
     "sceneCount": "{{count}} 个片段",
     "findAScene": "查找片段",
     "titleCharacterTagOrLine": "标题、角色或台词",

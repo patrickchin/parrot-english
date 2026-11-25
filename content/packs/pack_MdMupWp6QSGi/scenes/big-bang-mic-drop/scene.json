@@ -1,0 +1,288 @@
+{
+  "version": 1,
+  "id": "scene_adumsKgnflD0",
+  "title": "迈克·德罗普是谁？",
+  "tags": [
+    "The Big Bang Theory",
+    "Sheldon",
+    "Leonard",
+    "quiz",
+    "wordplay",
+    "问答",
+    "双关"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 19.645,
+  "video": "big-bang-mic-drop-review-58aaab3ee15d.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/big-bang-mic-drop/",
+  "poster": "big-bang-mic-drop-poster-58aaab3ee15d.jpg",
+  "waveform": "waveform-58aaab3ee15d.json",
+  "roles": [
+    {
+      "id": "role__hGmWE1FJ897",
+      "name": "莱纳德",
+      "label": "莱纳德",
+      "hint": "3 句台词",
+      "portrait": "leonard-avatar-a071594dacda.jpg"
+    },
+    {
+      "id": "role_4SsCYmcnGs-p",
+      "name": "谢尔顿",
+      "label": "谢尔顿",
+      "hint": "2 句台词",
+      "portrait": "sheldon-avatar-edb28a75cfc9.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_28DRhKzBLuZI",
+      "roleId": "role__hGmWE1FJ897",
+      "start": 0.11,
+      "end": 2.2,
+      "text": "What are you guys doing?",
+      "hint": "你们在做什么？",
+      "words": [
+        {
+          "text": "What",
+          "start": 0.11,
+          "end": 0.813
+        },
+        {
+          "text": "are",
+          "start": 1.557,
+          "end": 1.617
+        },
+        {
+          "text": "you",
+          "start": 1.637,
+          "end": 1.718
+        },
+        {
+          "text": "guys",
+          "start": 1.738,
+          "end": 1.878
+        },
+        {
+          "text": "doing?",
+          "start": 1.919,
+          "end": 2.18
+        }
+      ]
+    },
+    {
+      "id": "line_wrZCBpKc1klk",
+      "roleId": "role_4SsCYmcnGs-p",
+      "start": 2.54,
+      "end": 7.24,
+      "text": "Well, we decided to use our breakfast time to expand our respective knowledge bases.",
+      "hint": "我们决定利用早餐时间，各自拓宽一下知识面。",
+      "words": [
+        {
+          "text": "Well,",
+          "start": 3.183,
+          "end": 3.323
+        },
+        {
+          "text": "we",
+          "start": 3.343,
+          "end": 3.424
+        },
+        {
+          "text": "decided",
+          "start": 3.524,
+          "end": 3.926
+        },
+        {
+          "text": "to",
+          "start": 3.986,
+          "end": 4.026
+        },
+        {
+          "text": "use",
+          "start": 4.107,
+          "end": 4.187
+        },
+        {
+          "text": "our",
+          "start": 4.247,
+          "end": 4.348
+        },
+        {
+          "text": "breakfast",
+          "start": 4.408,
+          "end": 4.81
+        },
+        {
+          "text": "time",
+          "start": 4.85,
+          "end": 5.091
+        },
+        {
+          "text": "to",
+          "start": 5.151,
+          "end": 5.231
+        },
+        {
+          "text": "expand",
+          "start": 5.352,
+          "end": 5.774
+        },
+        {
+          "text": "our",
+          "start": 5.874,
+          "end": 5.955
+        },
+        {
+          "text": "respective",
+          "start": 6.015,
+          "end": 6.497
+        },
+        {
+          "text": "knowledge",
+          "start": 6.557,
+          "end": 6.878
+        },
+        {
+          "text": "bases.",
+          "start": 6.959,
+          "end": 7.2
+        }
+      ]
+    },
+    {
+      "id": "line_L4VO_WFrWHWx",
+      "roleId": "role__hGmWE1FJ897",
+      "start": 7.82,
+      "end": 8.69,
+      "text": "Let me try.",
+      "hint": "让我试试。",
+      "words": [
+        {
+          "text": "Let",
+          "start": 8.022,
+          "end": 8.123
+        },
+        {
+          "text": "me",
+          "start": 8.164,
+          "end": 8.225
+        },
+        {
+          "text": "try.",
+          "start": 8.265,
+          "end": 8.589
+        }
+      ]
+    },
+    {
+      "id": "line_YR3NmnJ-Y6KR",
+      "roleId": "role__hGmWE1FJ897",
+      "start": 11.22,
+      "end": 14.11,
+      "text": "Atom of hydrogen, Adam of Maroon Five, mic drop.",
+      "hint": "氢原子、魔力红乐队的亚当，表演完毕。",
+      "words": [
+        {
+          "text": "Atom",
+          "start": 11.501,
+          "end": 11.641
+        },
+        {
+          "text": "of",
+          "start": 11.702,
+          "end": 11.742
+        },
+        {
+          "text": "hydrogen,",
+          "start": 11.802,
+          "end": 12.284
+        },
+        {
+          "text": "Adam",
+          "start": 12.504,
+          "end": 12.665
+        },
+        {
+          "text": "of",
+          "start": 12.725,
+          "end": 12.765
+        },
+        {
+          "text": "Maroon",
+          "start": 12.805,
+          "end": 13.066
+        },
+        {
+          "text": "Five,",
+          "start": 13.167,
+          "end": 13.408
+        },
+        {
+          "text": "mic",
+          "start": 13.548,
+          "end": 13.709
+        },
+        {
+          "text": "drop.",
+          "start": 13.809,
+          "end": 14.03
+        }
+      ]
+    },
+    {
+      "id": "line_r94NO7KcY4eR",
+      "roleId": "role_4SsCYmcnGs-p",
+      "start": 17.77,
+      "end": 19.38,
+      "text": "I'm sorry, who is Mike Drop?",
+      "hint": "不好意思，迈克·德罗普是谁？",
+      "words": [
+        {
+          "text": "I'm",
+          "start": 18.052,
+          "end": 18.152
+        },
+        {
+          "text": "sorry,",
+          "start": 18.193,
+          "end": 18.333
+        },
+        {
+          "text": "who",
+          "start": 18.394,
+          "end": 18.474
+        },
+        {
+          "text": "is",
+          "start": 18.575,
+          "end": 18.635
+        },
+        {
+          "text": "Mike",
+          "start": 18.756,
+          "end": 18.937
+        },
+        {
+          "text": "Drop?",
+          "start": 19.058,
+          "end": 19.34
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment against the uncut source with source speech recognition and frame review",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "The Big Bang Theory — S9 E23",
+    "attribution": "Warner Bros. Television",
+    "source": "https://www.youtube.com/watch?v=Fda0RZG9b0I&t=39s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 39.81–59.45 秒的连续节选。A wordplay on “mic drop.” The cut starts after the preceding comments about celebrities."
+  }
+}

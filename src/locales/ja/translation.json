@@ -158,6 +158,10 @@
     "packs": "コレクション"
   },
   "library": {
+    "series": "シリーズ",
+    "seasonFilter": "シーズンで絞り込む",
+    "allSeasons": "すべてのシーズン",
+    "seasonNumber": "シーズン{{number}}",
     "sceneCount": "{{count}}シーン",
     "findAScene": "シーンを探す",
     "titleCharacterTagOrLine": "タイトル、キャラクター、セリフ",

@@ -45,7 +45,8 @@
         "You think?",
         "你才发现啊？"
       ],
-      "manifest": "scenes/friends-moving-couch/scene.json"
+      "manifest": "scenes/friends-moving-couch/scene.json",
+      "season": 5
     },
     {
       "id": "scene_lPxb4HHQVrQ",
@@ -87,7 +88,8 @@
         "Oh my God, that's great! I'm smart! No, no, I'm brainy, bright, clever. I love this thing!",
         "天哪，太棒了！我真聪明！不，不，我是才思敏捷、机灵、睿智。我爱这个功能！"
       ],
-      "manifest": "scenes/friends-thesaurus/scene.json"
+      "manifest": "scenes/friends-thesaurus/scene.json",
+      "season": 10
     },
     {
       "id": "scene__ZPXHnc-PuE",
@@ -127,7 +129,8 @@
         "Okay. There you go. Enjoy your half, my friend, but that is it. No sharing, no switching, and don't come crying to me if you eat your piece too fast.",
         "行，给你。好好享用你那一半吧，朋友。不过说定了，不分着吃、不交换。要是你吃得太快，可别来求我。"
       ],
-      "manifest": "scenes/friends-cheesecake/scene.json"
+      "manifest": "scenes/friends-cheesecake/scene.json",
+      "season": 7
     },
     {
       "id": "scene_ib-oCCujJSU",
@@ -170,7 +173,8 @@
         "I will take it.",
         "成交。"
       ],
-      "manifest": "scenes/friends-return-couch/scene.json"
+      "manifest": "scenes/friends-return-couch/scene.json",
+      "season": 5
     },
     {
       "id": "scene_VcyyHi5Kk4A",
@@ -206,7 +210,8 @@
         "Oh, yeah, nobody knows, and we're not supposed to ask.",
         "哦，没人知道，而且咱们还不能问。"
       ],
-      "manifest": "scenes/friends-vacuum-attachments/scene.json"
+      "manifest": "scenes/friends-vacuum-attachments/scene.json",
+      "season": 1
     },
     {
       "id": "scene_U4HGHLNvT3k",
@@ -240,7 +245,8 @@
         "I could do that.",
         "这我能做到。"
       ],
-      "manifest": "scenes/friends-unpaid-bill/scene.json"
+      "manifest": "scenes/friends-unpaid-bill/scene.json",
+      "season": 1
     },
     {
       "id": "scene_h81smyBB8mI",
@@ -275,7 +281,88 @@
         "Not anymore.",
         "现在不在了。"
       ],
-      "manifest": "scenes/friends-brown-jar/scene.json"
+      "manifest": "scenes/friends-brown-jar/scene.json",
+      "season": 6
+    },
+    {
+      "id": "scene_fQ0Q3jABkK3P",
+      "slug": "friends-delivery-charge",
+      "routeSlug": "friends-delivery-charge",
+      "title": "送货费这么贵？",
+      "english": "The delivery charge",
+      "note": "Friends",
+      "source": "https://www.youtube.com/watch?v=UJHa8Bjjy1k&t=0s",
+      "cohort": "teens",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/friends-delivery-charge/friends-delivery-charge-poster-c0eca16c997e.jpg",
+      "season": 5,
+      "tags": [
+        "Friends",
+        "Ross",
+        "Rachel",
+        "shopping",
+        "delivery",
+        "送货",
+        "价格"
+      ],
+      "quotes": [
+        "Could you just sign right here, please?",
+        "请在这里签个字，好吗？",
+        "Oh, sure.",
+        "哦，当然。",
+        "Oh, what? The delivery charge is almost as much as the couch!",
+        "啊，什么？送货费都快赶上沙发的价钱了！",
+        "Wait, no. That's ridiculous.",
+        "等等，这也太离谱了。",
+        "Come on. He lives three blocks away.",
+        "拜托，他就住在三个街区外。",
+        "Yeah. You know what? I'll take it myself.",
+        "是啊。这样吧，我自己搬。",
+        "Thank you.",
+        "谢谢。"
+      ],
+      "manifest": "scenes/friends-delivery-charge/scene.json"
+    },
+    {
+      "id": "scene_0VmntqUOg5Z6",
+      "slug": "friends-pyramid-category",
+      "routeSlug": "friends-pyramid-category",
+      "title": "选哪个类别？",
+      "english": "Choose a category",
+      "note": "Friends",
+      "source": "https://www.youtube.com/watch?v=28LNdwfhW6I&t=44s",
+      "cohort": "teens",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/friends-pyramid-category/friends-pyramid-category-poster-3e14cacfad4d.jpg",
+      "season": 10,
+      "tags": [
+        "Friends",
+        "Joey",
+        "Gene",
+        "game show",
+        "instructions",
+        "综艺",
+        "猜词"
+      ],
+      "quotes": [
+        "Gene, you won the toss, so you're going to start.",
+        "吉恩，你赢了掷硬币，所以你先开始。",
+        "Which category would you like?",
+        "你想选哪个类别？",
+        "I'll take “You Cross the Line.”",
+        "我选“你越界了”。",
+        "“You Cross the Line,” Joey.",
+        "乔伊，类别是“你越界了”。",
+        "Describe for Gene these things that have lines.",
+        "请给吉恩描述这些有线的东西。",
+        "Give me twenty seconds on the clock, please.",
+        "请把计时器设为二十秒。",
+        "Ready? Go.",
+        "准备好了吗？开始！",
+        "Okay, it's a store, like a supermarket.",
+        "好，是家商店，像超市一样。",
+        "Oh! I see what I did. Okay, okay.",
+        "哦！我知道我刚才怎么了。好，好。"
+      ],
+      "manifest": "scenes/friends-pyramid-category/scene.json"
     }
   ],
   "locales": {
@@ -315,6 +402,16 @@
           "title": "What was in that brown jar?",
           "licence": "Redistribution permission unconfirmed",
           "changes": "Internal prototype testing; excerpt from 7.2–23.25 seconds of the original upload. Gross-out food joke and deliberately poor food-safety judgment, not advice. Stops before the payment argument, violent shove, and adult subplot."
+        },
+        "scene_fQ0Q3jABkK3P": {
+          "title": "The delivery charge",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing. Excerpt from 0–13.16 seconds of the original upload."
+        },
+        "scene_0VmntqUOg5Z6": {
+          "title": "Choose a category",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing. Excerpt from 44.38–62.99 seconds of the original upload."
         }
       },
       "roles": {
@@ -381,6 +478,30 @@
         "role_eUgVQq3TJ18": {
           "name": "Joey",
           "hint": "3 lines"
+        },
+        "role_3UfGiNuKVUKR": {
+          "name": "Shop assistant",
+          "hint": "1 line"
+        },
+        "role_Hiv9i2W5cFGo": {
+          "name": "Ross",
+          "hint": "4 lines"
+        },
+        "role_vp75PwW6pJiI": {
+          "name": "Rachel",
+          "hint": "2 lines"
+        },
+        "role_qkfsh8gxVb9Y": {
+          "name": "Game-show host",
+          "hint": "6 lines"
+        },
+        "role_S4BKPKkBdHYY": {
+          "name": "Gene",
+          "hint": "1 line"
+        },
+        "role_6NsUtlWP-yPB": {
+          "name": "Joey",
+          "hint": "2 lines"
         }
       },
       "notices": {
@@ -424,6 +545,16 @@
           "title": "那个棕色罐子里装的是什么？",
           "licence": "未确认再分发许可",
           "changes": "内部原型测试；原上传 7.2–23.25 秒的连续节选。Gross-out food joke and deliberately poor food-safety judgment, not advice. Stops before the payment argument, violent shove, and adult subplot."
+        },
+        "scene_fQ0Q3jABkK3P": {
+          "title": "送货费这么贵？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试。原上传视频中 0–13.16 秒的节选。"
+        },
+        "scene_0VmntqUOg5Z6": {
+          "title": "选哪个类别？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试。原上传视频中 44.38–62.99 秒的节选。"
         }
       },
       "roles": {
@@ -490,6 +621,30 @@
         "role_eUgVQq3TJ18": {
           "name": "乔伊",
           "hint": "3 句台词"
+        },
+        "role_3UfGiNuKVUKR": {
+          "name": "店员",
+          "hint": "1 句台词"
+        },
+        "role_Hiv9i2W5cFGo": {
+          "name": "罗斯",
+          "hint": "4 句台词"
+        },
+        "role_vp75PwW6pJiI": {
+          "name": "瑞秋",
+          "hint": "2 句台词"
+        },
+        "role_qkfsh8gxVb9Y": {
+          "name": "节目主持人",
+          "hint": "6 句台词"
+        },
+        "role_S4BKPKkBdHYY": {
+          "name": "吉恩",
+          "hint": "1 句台词"
+        },
+        "role_6NsUtlWP-yPB": {
+          "name": "乔伊",
+          "hint": "2 句台词"
         }
       },
       "notices": {
@@ -533,6 +688,16 @@
           "title": "¿Qué había en ese tarro marrón?",
           "licence": "Permiso de redistribución sin confirmar",
           "changes": "Prueba interna del prototipo; fragmento de los segundos 7.2–23.25 del vídeo original. Broma de comida desagradable y una decisión deliberadamente mala sobre seguridad alimentaria; no es un consejo. Termina antes de la discusión sobre el pago, el empujón violento y la trama para adultos."
+        },
+        "scene_fQ0Q3jABkK3P": {
+          "title": "El coste del envío",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo. Fragmento de los segundos 0–13.16 del vídeo original."
+        },
+        "scene_0VmntqUOg5Z6": {
+          "title": "Elige una categoría",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo. Fragmento de los segundos 44.38–62.99 del vídeo original."
         }
       },
       "roles": {
@@ -599,6 +764,30 @@
         "role_eUgVQq3TJ18": {
           "name": "Joey",
           "hint": "3 frases"
+        },
+        "role_3UfGiNuKVUKR": {
+          "name": "Dependiente",
+          "hint": "1 frase"
+        },
+        "role_Hiv9i2W5cFGo": {
+          "name": "Ross",
+          "hint": "4 frases"
+        },
+        "role_vp75PwW6pJiI": {
+          "name": "Rachel",
+          "hint": "2 frases"
+        },
+        "role_qkfsh8gxVb9Y": {
+          "name": "Presentador",
+          "hint": "6 frases"
+        },
+        "role_S4BKPKkBdHYY": {
+          "name": "Gene",
+          "hint": "1 frase"
+        },
+        "role_6NsUtlWP-yPB": {
+          "name": "Joey",
+          "hint": "2 frases"
         }
       },
       "notices": {
@@ -642,6 +831,16 @@
           "title": "あの茶色い瓶には何が入ってたの？",
           "licence": "再配布の許諾は未確認",
           "changes": "内部試作テスト用。元の動画の7.2–23.25秒の抜粋です。 気持ち悪さを笑いにする食べ物の冗談と、わざと不適切に描かれた食品衛生の判断です。助言ではありません。支払いの口論、乱暴に押す行動、大人向けの筋書きの前で終わります。"
+        },
+        "scene_fQ0Q3jABkK3P": {
+          "title": "配送料はいくら？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の0–13.16秒の抜粋です。"
+        },
+        "scene_0VmntqUOg5Z6": {
+          "title": "カテゴリーを選ぼう",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の44.38–62.99秒の抜粋です。"
         }
       },
       "roles": {
@@ -708,6 +907,30 @@
         "role_eUgVQq3TJ18": {
           "name": "ジョーイ",
           "hint": "セリフ3行"
+        },
+        "role_3UfGiNuKVUKR": {
+          "name": "店員",
+          "hint": "セリフ1行"
+        },
+        "role_Hiv9i2W5cFGo": {
+          "name": "ロス",
+          "hint": "セリフ4行"
+        },
+        "role_vp75PwW6pJiI": {
+          "name": "レイチェル",
+          "hint": "セリフ2行"
+        },
+        "role_qkfsh8gxVb9Y": {
+          "name": "司会者",
+          "hint": "セリフ6行"
+        },
+        "role_S4BKPKkBdHYY": {
+          "name": "ジーン",
+          "hint": "セリフ1行"
+        },
+        "role_6NsUtlWP-yPB": {
+          "name": "ジョーイ",
+          "hint": "セリフ2行"
         }
       },
       "notices": {
@@ -751,6 +974,16 @@
           "title": "그 갈색 병에 뭐가 있었지?",
           "licence": "재배포 허가 미확인",
           "changes": "내부 시제품 테스트용. 원본 영상의 7.2–23.25초 구간을 발췌했어요. 불쾌한 음식 농담과 의도적으로 잘못된 식품 안전 판단이 나오며 조언이 아니에요. 계산 다툼, 거친 밀침과 성인용 부차 줄거리 전에 끝나요."
+        },
+        "scene_fQ0Q3jABkK3P": {
+          "title": "배송비가 이렇게 비싸요?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 0–13.16초 구간을 발췌했어요."
+        },
+        "scene_0VmntqUOg5Z6": {
+          "title": "어떤 분야를 고를까요?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 44.38–62.99초 구간을 발췌했어요."
         }
       },
       "roles": {
@@ -817,6 +1050,30 @@
         "role_eUgVQq3TJ18": {
           "name": "조이",
           "hint": "대사 3개"
+        },
+        "role_3UfGiNuKVUKR": {
+          "name": "점원",
+          "hint": "대사 1개"
+        },
+        "role_Hiv9i2W5cFGo": {
+          "name": "로스",
+          "hint": "대사 4개"
+        },
+        "role_vp75PwW6pJiI": {
+          "name": "레이철",
+          "hint": "대사 2개"
+        },
+        "role_qkfsh8gxVb9Y": {
+          "name": "진행자",
+          "hint": "대사 6개"
+        },
+        "role_S4BKPKkBdHYY": {
+          "name": "진",
+          "hint": "대사 1개"
+        },
+        "role_6NsUtlWP-yPB": {
+          "name": "조이",
+          "hint": "대사 2개"
         }
       },
       "notices": {

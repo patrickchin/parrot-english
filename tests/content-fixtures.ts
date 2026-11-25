@@ -5,7 +5,7 @@ import type { Pack } from '../src/content-pack';
 // Authoring fixtures belong to tests, never to the player bundle.
 export type FixtureClip = {
   id: string; slug: string; routeSlug?: string; title: string; english: string;
-  note: string; source: string; cohort: string; poster: string;
+  note: string; source: string; cohort: string; poster: string; season?: number;
   tags: string[]; quotes: string[]; manifest: string; packId: string;
 };
 export const contentRoot = new URL('../content/', import.meta.url);

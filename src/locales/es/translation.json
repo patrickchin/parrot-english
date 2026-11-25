@@ -158,6 +158,10 @@
     "packs": "Colecciones"
   },
   "library": {
+    "series": "Series",
+    "seasonFilter": "Filtrar por temporada",
+    "allSeasons": "Todas las temporadas",
+    "seasonNumber": "Temporada {{number}}",
     "sceneCount": "{{count}} escenas",
     "findAScene": "Buscar una escena",
     "titleCharacterTagOrLine": "Título, personaje o frase",

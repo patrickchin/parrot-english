@@ -24,7 +24,7 @@ for (const initialPath of ['/en/packs', '/en/library/all']) test(`first visit to
   page.on('request', request => requests.push({ method: request.method(), url: request.url(), type: request.resourceType() }));
   await page.goto(initialPath);
   expect(packs).toHaveLength(21);
-  expect(clips).toHaveLength(128);
+  expect(clips).toHaveLength(132);
   if (initialPath === '/en/packs') {
     const gallery = page.getByRole('navigation', { name: 'Collections', exact: true });
     await expect(gallery.getByRole('link')).toHaveCount(packs.length);

@@ -1,0 +1,340 @@
+{
+  "version": 1,
+  "id": "scene_fQ0Q3jABkK3P",
+  "title": "送货费这么贵？",
+  "tags": [
+    "Friends",
+    "Ross",
+    "Rachel",
+    "shopping",
+    "delivery",
+    "送货",
+    "价格"
+  ],
+  "description": "内部原型测试；选角色，听原声，录下自己的版本。",
+  "duration": 13.18,
+  "video": "friends-delivery-charge-review-c0eca16c997e.mp4",
+  "mediaBase": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/friends-delivery-charge/",
+  "poster": "friends-delivery-charge-poster-c0eca16c997e.jpg",
+  "waveform": "waveform-c0eca16c997e.json",
+  "roles": [
+    {
+      "id": "role_3UfGiNuKVUKR",
+      "name": "店员",
+      "label": "店员",
+      "hint": "1 句台词",
+      "portrait": "shop-assistant-avatar-693b2b6a16ed.jpg"
+    },
+    {
+      "id": "role_Hiv9i2W5cFGo",
+      "name": "罗斯",
+      "label": "罗斯",
+      "hint": "4 句台词",
+      "portrait": "ross-avatar-6852ef573d6b.jpg"
+    },
+    {
+      "id": "role_vp75PwW6pJiI",
+      "name": "瑞秋",
+      "label": "瑞秋",
+      "hint": "2 句台词",
+      "portrait": "rachel-avatar-0ae447c0241f.jpg"
+    }
+  ],
+  "lines": [
+    {
+      "id": "line_vZFa7xiNKS66",
+      "roleId": "role_3UfGiNuKVUKR",
+      "start": 0.02,
+      "end": 1.34,
+      "text": "Could you just sign right here, please?",
+      "hint": "请在这里签个字，好吗？",
+      "words": [
+        {
+          "text": "Could",
+          "start": 0.162,
+          "end": 0.284
+        },
+        {
+          "text": "you",
+          "start": 0.304,
+          "end": 0.365
+        },
+        {
+          "text": "just",
+          "start": 0.426,
+          "end": 0.507
+        },
+        {
+          "text": "sign",
+          "start": 0.528,
+          "end": 0.69
+        },
+        {
+          "text": "right",
+          "start": 0.751,
+          "end": 0.873
+        },
+        {
+          "text": "here,",
+          "start": 0.893,
+          "end": 1.015
+        },
+        {
+          "text": "please?",
+          "start": 1.035,
+          "end": 1.279
+        }
+      ]
+    },
+    {
+      "id": "line_WRK-FR9BMi97",
+      "roleId": "role_Hiv9i2W5cFGo",
+      "start": 1.35,
+      "end": 1.98,
+      "text": "Oh, sure.",
+      "hint": "哦，当然。",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 1.391,
+          "end": 1.452
+        },
+        {
+          "text": "sure.",
+          "start": 1.492,
+          "end": 1.675
+        }
+      ]
+    },
+    {
+      "id": "line_loqGZNH0bbbn",
+      "roleId": "role_Hiv9i2W5cFGo",
+      "start": 2.72,
+      "end": 6.92,
+      "text": "Oh, what? The delivery charge is almost as much as the couch!",
+      "hint": "啊，什么？送货费都快赶上沙发的价钱了！",
+      "words": [
+        {
+          "text": "Oh,",
+          "start": 2.901,
+          "end": 2.961
+        },
+        {
+          "text": "what?",
+          "start": 3.222,
+          "end": 3.343
+        },
+        {
+          "text": "The",
+          "start": 4.569,
+          "end": 4.629
+        },
+        {
+          "text": "delivery",
+          "start": 4.689,
+          "end": 5.091
+        },
+        {
+          "text": "charge",
+          "start": 5.172,
+          "end": 5.453
+        },
+        {
+          "text": "is",
+          "start": 5.513,
+          "end": 5.574
+        },
+        {
+          "text": "almost",
+          "start": 5.634,
+          "end": 5.835
+        },
+        {
+          "text": "as",
+          "start": 5.895,
+          "end": 5.955
+        },
+        {
+          "text": "much",
+          "start": 6.016,
+          "end": 6.156
+        },
+        {
+          "text": "as",
+          "start": 6.217,
+          "end": 6.277
+        },
+        {
+          "text": "the",
+          "start": 6.357,
+          "end": 6.418
+        },
+        {
+          "text": "couch!",
+          "start": 6.478,
+          "end": 6.86
+        }
+      ]
+    },
+    {
+      "id": "line_IXEz6EanpUxK",
+      "roleId": "role_vp75PwW6pJiI",
+      "start": 7.11,
+      "end": 8.2,
+      "text": "Wait, no. That's ridiculous.",
+      "hint": "等等，这也太离谱了。",
+      "words": [
+        {
+          "text": "Wait,",
+          "start": 7.15,
+          "end": 7.332
+        },
+        {
+          "text": "no.",
+          "start": 7.473,
+          "end": 7.554
+        },
+        {
+          "text": "That's",
+          "start": 7.675,
+          "end": 7.837
+        },
+        {
+          "text": "ridiculous.",
+          "start": 7.877,
+          "end": 8.2
+        }
+      ]
+    },
+    {
+      "id": "line_xLQyjSr9d215",
+      "roleId": "role_vp75PwW6pJiI",
+      "start": 8.43,
+      "end": 10.12,
+      "text": "Come on. He lives three blocks away.",
+      "hint": "拜托，他就住在三个街区外。",
+      "words": [
+        {
+          "text": "Come",
+          "start": 8.49,
+          "end": 8.611
+        },
+        {
+          "text": "on.",
+          "start": 8.651,
+          "end": 8.692
+        },
+        {
+          "text": "He",
+          "start": 8.732,
+          "end": 8.792
+        },
+        {
+          "text": "lives",
+          "start": 8.832,
+          "end": 9.013
+        },
+        {
+          "text": "three",
+          "start": 9.074,
+          "end": 9.255
+        },
+        {
+          "text": "blocks",
+          "start": 9.315,
+          "end": 9.617
+        },
+        {
+          "text": "away.",
+          "start": 9.718,
+          "end": 10.1
+        }
+      ]
+    },
+    {
+      "id": "line_yNV8jYttYco0",
+      "roleId": "role_Hiv9i2W5cFGo",
+      "start": 10.14,
+      "end": 12.08,
+      "text": "Yeah. You know what? I'll take it myself.",
+      "hint": "是啊。这样吧，我自己搬。",
+      "words": [
+        {
+          "text": "Yeah.",
+          "start": 10.14,
+          "end": 10.261
+        },
+        {
+          "text": "You",
+          "start": 10.322,
+          "end": 10.403
+        },
+        {
+          "text": "know",
+          "start": 10.423,
+          "end": 10.524
+        },
+        {
+          "text": "what?",
+          "start": 10.605,
+          "end": 11.171
+        },
+        {
+          "text": "I'll",
+          "start": 11.272,
+          "end": 11.413
+        },
+        {
+          "text": "take",
+          "start": 11.474,
+          "end": 11.615
+        },
+        {
+          "text": "it",
+          "start": 11.676,
+          "end": 11.736
+        },
+        {
+          "text": "myself.",
+          "start": 11.777,
+          "end": 12.08
+        }
+      ]
+    },
+    {
+      "id": "line_JTru56RoQd-X",
+      "roleId": "role_Hiv9i2W5cFGo",
+      "start": 12.29,
+      "end": 12.97,
+      "text": "Thank you.",
+      "hint": "谢谢。",
+      "words": [
+        {
+          "text": "Thank",
+          "start": 12.352,
+          "end": 12.475
+        },
+        {
+          "text": "you.",
+          "start": 12.558,
+          "end": 12.743
+        }
+      ]
+    }
+  ],
+  "wordTiming": {
+    "method": "CTC forced alignment against the uncut source with source speech recognition and frame review",
+    "tool": "torchaudio 2.6.0",
+    "model": "WAV2VEC2_ASR_BASE_960H",
+    "language": "en"
+  },
+  "rightsStatus": "redistribution-not-cleared",
+  "credit": {
+    "title": "Friends — S5 E16",
+    "attribution": "Warner Bros. Television",
+    "source": "https://www.youtube.com/watch?v=UJHa8Bjjy1k&t=0s",
+    "licence": "未确认再分发许可",
+    "licenceUrl": "https://www.youtube.com/howyoutubeworks/policies/copyright/",
+    "changes": "内部原型测试；原上传 0–13.16 秒的连续节选。Comic frustration over a delivery charge. This cut ends before the staff begin moving the couch."
+  }
+}

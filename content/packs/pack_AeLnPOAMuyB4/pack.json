@@ -43,7 +43,8 @@
         "Step on the brake. Sometime in the next twenty minutes.",
         "踩刹车吧。争取在接下来二十分钟内踩下去。"
       ],
-      "manifest": "scenes/himym-driving-lesson/scene.json"
+      "manifest": "scenes/himym-driving-lesson/scene.json",
+      "season": 2
     },
     {
       "id": "scene_ON8p1LWII74",
@@ -88,7 +89,8 @@
         "Hey, I got... ducks are, ducks are... Rabbits are adorable! Ducks are... Have you ever been in a fight with a duck? I mean, ducks are jerks!",
         "鸭子……兔子多可爱啊！鸭子嘛……你们跟鸭子打过架吗？我是说，鸭子可讨厌了！"
       ],
-      "manifest": "scenes/himym-rabbit-or-duck/scene.json"
+      "manifest": "scenes/himym-rabbit-or-duck/scene.json",
+      "season": 5
     },
     {
       "id": "scene_d6ZZqjpfSfA",
@@ -131,7 +133,8 @@
         "Okay, maybe so, but it's no worse than you using the word literally in every other sentence.",
         "好吧，也许是。但总比你说两句话就用一次“字面意义上”好不到哪儿去。"
       ],
-      "manifest": "scenes/himym-literally/scene.json"
+      "manifest": "scenes/himym-literally/scene.json",
+      "season": 3
     },
     {
       "id": "scene_Jjy8Z_ovOQI",
@@ -169,7 +172,51 @@
         "Or you could, you know, pour it over your shirt.",
         "或者，你知道，也可以倒在衬衫上。"
       ],
-      "manifest": "scenes/himym-water-is-a-drink/scene.json"
+      "manifest": "scenes/himym-water-is-a-drink/scene.json",
+      "season": 3
+    },
+    {
+      "id": "scene_eQjUAs2_MBKq",
+      "slug": "himym-need-a-ride",
+      "routeSlug": "himym-need-a-ride",
+      "title": "能开车送我一程吗？",
+      "english": "Can you give me a ride?",
+      "note": "How I Met Your Mother",
+      "source": "https://www.youtube.com/watch?v=aYa-yIHXDAg&t=28s",
+      "cohort": "teens",
+      "poster": "https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/clips/himym-need-a-ride/himym-need-a-ride-poster-75bb79a2cf9c.jpg",
+      "season": 2,
+      "tags": [
+        "How I Met Your Mother",
+        "HIMYM",
+        "Barney",
+        "Ted",
+        "rides",
+        "requests",
+        "搭车",
+        "请求"
+      ],
+      "quotes": [
+        "Hey. Hey, is Marshall around?",
+        "嘿，嘿，马修在吗？",
+        "I have a massage in Queens in half an hour. I need a ride.",
+        "我半小时后要去皇后区做按摩，得有人开车送我。",
+        "Oh, no. He's at the library all day. Just take the keys.",
+        "哦，他不在。他今天都在图书馆。你直接拿钥匙吧。",
+        "Hey, why don't you drive me?",
+        "嘿，要不你开车送我？",
+        "It'll be like a total road trip.",
+        "就当是一次公路旅行。",
+        "To Queens?",
+        "就去皇后区？",
+        "Yeah, we'll get, we'll get beef jerky, Triscuits.",
+        "对啊，我们可以买牛肉干，还有饼干。",
+        "Uh, actually, I have a lot of work to do.",
+        "呃，其实我还有很多事要做。",
+        "Okay. Well, I'll just... I'll cancel. See you later.",
+        "好吧。那我就……取消吧。回头见。"
+      ],
+      "manifest": "scenes/himym-need-a-ride/scene.json"
     }
   ],
   "locales": {
@@ -194,6 +241,11 @@
           "title": "Is that how water works?",
           "licence": "Redistribution permission unconfirmed",
           "changes": "Internal prototype testing; excerpt from 1.45–16.95 seconds of the original upload. Adult sitcom context, but only water is discussed. Brief Marshall joke remains as non-selectable support. Ends before the already published literally/figuratively exchange."
+        },
+        "scene_eQjUAs2_MBKq": {
+          "title": "Can you give me a ride?",
+          "licence": "Redistribution permission unconfirmed",
+          "changes": "Internal prototype testing. Excerpt from 28.72–53.65 seconds of the original upload."
         }
       },
       "roles": {
@@ -244,6 +296,14 @@
         "role_XyMomtlHVYE": {
           "name": "Marshall",
           "hint": "1 line"
+        },
+        "role_u37YteQ5Wp3A": {
+          "name": "Barney",
+          "hint": "6 lines"
+        },
+        "role_RC1aJy2gIcpz": {
+          "name": "Ted",
+          "hint": "3 lines"
         }
       },
       "notices": {
@@ -272,6 +332,11 @@
           "title": "水原来是这么用的吗？",
           "licence": "未确认再分发许可",
           "changes": "内部原型测试；原上传 1.45–16.95 秒的连续节选。Adult sitcom context, but only water is discussed. Brief Marshall joke remains as non-selectable support. Ends before the already published literally/figuratively exchange."
+        },
+        "scene_eQjUAs2_MBKq": {
+          "title": "能开车送我一程吗？",
+          "licence": "未确认再分发许可",
+          "changes": "内部原型测试。原上传视频中 28.72–53.65 秒的节选。"
         }
       },
       "roles": {
@@ -322,6 +387,14 @@
         "role_XyMomtlHVYE": {
           "name": "马修",
           "hint": "1 句台词"
+        },
+        "role_u37YteQ5Wp3A": {
+          "name": "巴尼",
+          "hint": "6 句台词"
+        },
+        "role_RC1aJy2gIcpz": {
+          "name": "泰德",
+          "hint": "3 句台词"
         }
       },
       "notices": {
@@ -350,6 +423,11 @@
           "title": "¿Así funciona el agua?",
           "licence": "Permiso de redistribución sin confirmar",
           "changes": "Prueba interna del prototipo; fragmento de los segundos 1.45–16.95 del vídeo original. Procede de una comedia para adultos, pero solo se habla de agua. La breve broma de Marshall se conserva como intervención no seleccionable. Termina antes del diálogo ya publicado sobre el sentido literal y figurado."
+        },
+        "scene_eQjUAs2_MBKq": {
+          "title": "¿Me puedes llevar?",
+          "licence": "Permiso de redistribución sin confirmar",
+          "changes": "Prueba interna del prototipo. Fragmento de los segundos 28.72–53.65 del vídeo original."
         }
       },
       "roles": {
@@ -400,6 +478,14 @@
         "role_XyMomtlHVYE": {
           "name": "Marshall",
           "hint": "1 frase"
+        },
+        "role_u37YteQ5Wp3A": {
+          "name": "Barney",
+          "hint": "6 frases"
+        },
+        "role_RC1aJy2gIcpz": {
+          "name": "Ted",
+          "hint": "3 frases"
         }
       },
       "notices": {
@@ -428,6 +514,11 @@
           "title": "水ってそういうもの？",
           "licence": "再配布の許諾は未確認",
           "changes": "内部試作テスト用。元の動画の1.45–16.95秒の抜粋です。 大人向けコメディですが、話題は水だけです。マーシャルの短い冗談は選択できない脇役の発言として残しています。公開済みの「文字どおり・例え」の会話の前で終わります。"
+        },
+        "scene_eQjUAs2_MBKq": {
+          "title": "車で送ってくれる？",
+          "licence": "再配布の許諾は未確認",
+          "changes": "内部試作テスト用。元の動画の28.72–53.65秒の抜粋です。"
         }
       },
       "roles": {
@@ -478,6 +569,14 @@
         "role_XyMomtlHVYE": {
           "name": "マーシャル",
           "hint": "セリフ1行"
+        },
+        "role_u37YteQ5Wp3A": {
+          "name": "バーニー",
+          "hint": "セリフ6行"
+        },
+        "role_RC1aJy2gIcpz": {
+          "name": "テッド",
+          "hint": "セリフ3行"
         }
       },
       "notices": {
@@ -506,6 +605,11 @@
           "title": "물이 원래 그런 거야?",
           "licence": "재배포 허가 미확인",
           "changes": "내부 시제품 테스트용. 원본 영상의 1.45–16.95초 구간을 발췌했어요. 성인 시트콤 배경이지만 물에 대해서만 이야기해요. 마셜의 짧은 농담은 선택할 수 없는 보조 대사로 남겨 두었어요. 이미 공개된 문자 그대로와 비유의 대화 전에 끝나요."
+        },
+        "scene_eQjUAs2_MBKq": {
+          "title": "차로 데려다줄래?",
+          "licence": "재배포 허가 미확인",
+          "changes": "내부 시제품 테스트용. 원본 영상의 28.72–53.65초 구간을 발췌했어요."
         }
       },
       "roles": {
@@ -556,6 +660,14 @@
         "role_XyMomtlHVYE": {
           "name": "마셜",
           "hint": "대사 1개"
+        },
+        "role_u37YteQ5Wp3A": {
+          "name": "바니",
+          "hint": "대사 6개"
+        },
+        "role_RC1aJy2gIcpz": {
+          "name": "테드",
+          "hint": "대사 3개"
         }
       },
       "notices": {

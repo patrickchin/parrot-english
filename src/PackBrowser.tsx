@@ -35,7 +35,10 @@ export function PackBrowser() {
           <div className="pack-banner-copy">
             <h1 className="font-display">{t('navigation.packs')}</h1>
             <p>{t('packs.introduction')}</p>
-            <Link className={buttonVariants({ variant: featured ? 'outline' : 'highlight', className: 'mt-4 min-h-11 gap-2 whitespace-normal px-5 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-ring focus-visible:ring-0' })} to={libraryPath('all', language)}>{t('library.allScenes')}<Icon name="arrow" /></Link>
+            <div className="mt-4 flex flex-wrap gap-2.5">
+              <Link className={buttonVariants({ variant: featured ? 'outline' : 'highlight', className: 'min-h-11 gap-2 whitespace-normal px-5 focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-ring focus-visible:ring-0' })} to={libraryPath('all', language)}>{t('library.allScenes')}<Icon name="arrow" /></Link>
+              {clips.some(clip => clip.cohort === 'teens') && <Link className={buttonVariants({ variant: 'outline', className: 'min-h-11 px-4' })} to={libraryPath('teens', language)}>{t('categories.teens')}</Link>}
+            </div>
           </div>
           {featured && <section aria-labelledby="featured-scene-title">
             <Link className="featured-scene" to={`${scenePath(featured.slug, undefined, language, [featured])}?pack=${encodeURIComponent(featured.packId)}`}>

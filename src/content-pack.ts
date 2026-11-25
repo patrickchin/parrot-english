@@ -2,7 +2,7 @@ import { validateScene, type Scene } from './scene.ts';
 
 export type Clip = {
   id: string; slug: string; routeSlug?: string; title: string; english: string;
-  note: string; source: string; cohort: string; poster: string;
+  note: string; source: string; cohort: string; poster: string; season?: number;
   tags: string[]; quotes: string[]; manifest: string; packId: string;
   notices?: Record<string, { library: string; scene: string }>;
 };
@@ -66,6 +66,7 @@ export function validatePack(value: unknown, expectedId: string): Pack {
         (scene.routeSlug !== undefined && !slug(scene.routeSlug)) || routes.has(scene.routeSlug ?? scene.slug) ||
         !['title', 'english', 'note', 'source'].every(key => text(scene[key])) ||
         !['older-audience', 'younger-age-5', 'older-children', 'teens'].includes(String(scene.cohort)) ||
+        (scene.season !== undefined && (typeof scene.season !== 'number' || !Number.isSafeInteger(scene.season) || scene.season < 1)) ||
         !relativeContentPath(scene.manifest) || !text(scene.poster, 1000) ||
         !list(scene.tags, 32, 80) || !list(scene.quotes, 120, 300) ||
         typeof scene.source !== 'string' || !/^https:\/\//.test(scene.source)) throw invalid();
