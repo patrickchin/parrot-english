@@ -155,7 +155,7 @@
     "howToDub": "吹き替えのやり方",
     "language": "表示言語",
     "dubs": "自分の吹き替え",
-    "packs": "コレクション"
+    "packs": "さがす"
   },
   "library": {
     "seasonFilter": "シーズンで絞り込む",
@@ -224,7 +224,7 @@
     "ready": "動画ができました。保存して共有できます。"
   },
   "categories": {
-    "films": "ミーム・クリップ",
+    "films": "アニメ・映画",
     "younger": "はじめての英語",
     "older": "10〜12歳",
     "teens": "ティーン"
@@ -233,17 +233,11 @@
     "title": "Parrotbook · 英語で吹き替え"
   },
   "packs": {
-    "introduction": "コレクションを選んで、自分らしくシーンを演じましょう。",
     "allPacks": "すべてのコレクション",
     "by": "作成者：{{author}}",
-    "scenes": "コレクション内のシーン",
     "emptyTitle": "コレクションはまだありません",
     "emptyDescription": "新しいコレクションが公開されると、ここに表示されます。",
     "emptyPack": "このコレクションにはシーンがありません",
-    "findPack": "コレクションを探す",
-    "searchPlaceholder": "コレクションやアップロードした人を検索",
-    "noResults": "コレクションが見つかりません。",
-    "clearFilters": "検索をクリア",
     "uploadedBy": "アップロード：{{uploader}}",
     "featuredScene": "おすすめシーン"
   },
@@ -364,5 +358,20 @@
       "clipboard": "リンクをコピーできませんでした。上のリンクを選択して手動でコピーしてください。"
     },
     "removing": "共有動画を削除中…"
+  },
+  "browse": {
+    "title": "吹き替えるシーンを選ぼう",
+    "search": "番組やシーンをさがす",
+    "searchPlaceholder": "番組・キャラクター・セリフ",
+    "home": "ホーム",
+    "breadcrumb": "パンくずリスト",
+    "shows": "番組",
+    "scenes": "シーン",
+    "seeAll": "すべて見る",
+    "seeAllLabel": "{{title}}の{{count}}件をすべて見る",
+    "showCount_one": "{{count}}番組",
+    "showCount_other": "{{count}}番組",
+    "resultCount_one": "{{count}}件",
+    "resultCount_other": "{{count}}件"
   }
 }

@@ -1,5 +1,4 @@
-import { test, expect } from './fixtures';
-import { packs } from '../content-fixtures';
+import { test, expect, homeShelves, shelfTitle, showCard } from './fixtures';
 import { prepareMediaTest } from './media-fixture';
 import { mobileScreenshot, mobileViewports, touchControl } from './mobile-viewports';
 
@@ -30,14 +29,14 @@ test('phone and tablet layouts keep software notices and source hashes readable'
   }
 });
 
-test('phone and tablet layouts retain Collections navigation, practice controls and completion through rotation', async ({ page, browser }, info) => {
+test('phone and tablet layouts retain browse shelves, practice controls and completion through rotation', async ({ page, browser }, info) => {
   console.log(`Mobile QA engine: ${info.project.name} ${browser.version()}`);
   const lines = await prepareMediaTest(page);
   await page.goto('/en/packs');
-  const gallery = page.getByRole('navigation', { name: 'Collections', exact: true });
-  await expect(gallery.getByRole('link')).toHaveCount(packs.length);
+  const cards = page.getByRole('main').getByRole('listitem');
+  await expect(page.getByRole('main').getByRole('heading', { level: 2 })).toHaveCount(homeShelves.length);
   // Full-page screenshots do not themselves load offscreen lazy covers.
-  for (const card of await gallery.getByRole('link').all()) {
+  for (const card of await cards.all()) {
     await card.scrollIntoViewIfNeeded();
     const cover = card.locator('img');
     await expect.poll(() => cover.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
@@ -45,11 +44,25 @@ test('phone and tablet layouts retain Collections navigation, practice controls 
   }
   for (const viewport of mobileViewports) {
     await page.setViewportSize(viewport);
-    await expect(page.getByRole('heading', { level: 1, name: 'Collections', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Pick a scene to dub', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await touchControl(page, page.getByRole('searchbox', { name: 'Find a collection', exact: true }));
+    await touchControl(page, page.getByRole('searchbox', { name: 'Find a show or scene', exact: true }));
+    await page.evaluate(() => scrollTo(0, 0));
+    await mobileScreenshot(page, info, 'collections', viewport.name);
+  }
+  const shelf = homeShelves.find(shelf => shelf.kind === 'section' && shelf.shows.length > 4)!;
+  const name = shelfTitle(shelf, 'en');
+  const total = shelf.kind === 'section' ? shelf.shows.length : 0;
+  await page.getByRole('region', { name, exact: true }).getByRole('link', { name: `See all ${total} in ${name}`, exact: true }).tap();
+  const shows = page.getByRole('list', { name: 'Shows', exact: true }).getByRole('link');
+  await expect(shows).toHaveCount(total);
+  for (const viewport of mobileViewports) {
+    await page.setViewportSize(viewport);
+    await expect(page.getByRole('heading', { level: 1, name, exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await touchControl(page, page.getByRole('navigation', { name: 'Breadcrumb', exact: true }).getByRole('link', { name: 'Home', exact: true }));
     const columns = viewport.width >= 1024 ? 4 : viewport.width >= 640 ? 3 : 2;
-    const boxes = await Promise.all(Array.from({ length: columns + 1 }, (_, index) => gallery.getByRole('link').nth(index).boundingBox()));
+    const boxes = await Promise.all(Array.from({ length: columns + 1 }, (_, index) => shows.nth(index).boundingBox()));
     const first = boxes[0]!;
     for (let index = 1; index < columns; index++) {
       const card = boxes[index]!, previous = boxes[index - 1]!;
@@ -60,12 +73,12 @@ test('phone and tablet layouts retain Collections navigation, practice controls 
     const nextRow = boxes[columns]!;
     expect(nextRow.x).toBeCloseTo(first.x, 0);
     expect(nextRow.y).toBeGreaterThan(first.y + first.height);
-    await page.evaluate(() => scrollTo(0, 0));
-    await mobileScreenshot(page, info, 'collections', viewport.name);
   }
-  await page.getByRole('searchbox', { name: 'Find a collection', exact: true }).fill('SpongeBob');
-  await expect(gallery.getByRole('link')).toHaveCount(1);
-  await gallery.getByRole('link', { name: 'SpongeBob SquarePants', exact: true }).tap();
+  await page.getByRole('navigation', { name: 'Breadcrumb', exact: true }).getByRole('link', { name: 'Home', exact: true }).tap();
+  await page.getByRole('searchbox', { name: 'Find a show or scene', exact: true }).fill('SpongeBob');
+  const showResults = page.getByRole('region', { name: 'Shows', exact: true });
+  await expect(showResults.getByRole('link')).toHaveCount(1);
+  await showCard(showResults, 'SpongeBob SquarePants').tap();
   await page.getByRole('button', { name: 'Choose scene: Who are you looking for?', exact: true }).tap();
   await expect(page.getByRole('button', { name: 'Start dubbing', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Start dubbing', exact: true }).tap();

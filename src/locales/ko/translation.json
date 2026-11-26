@@ -155,7 +155,7 @@
     "howToDub": "더빙하는 방법",
     "language": "화면 언어",
     "dubs": "내 더빙",
-    "packs": "컬렉션"
+    "packs": "둘러보기"
   },
   "library": {
     "seasonFilter": "시즌별로 필터링",
@@ -224,7 +224,7 @@
     "ready": "동영상이 준비됐어요. 저장한 후 공유할 수 있어요."
   },
   "categories": {
-    "films": "밈과 클립",
+    "films": "애니메이션과 영화",
     "younger": "처음 배우는 영어",
     "older": "10~12세",
     "teens": "청소년"
@@ -233,17 +233,11 @@
     "title": "Parrotbook · 영어 더빙"
   },
   "packs": {
-    "introduction": "컬렉션을 골라 나만의 장면을 만들어 보세요.",
     "allPacks": "모든 컬렉션",
     "by": "제작: {{author}}",
-    "scenes": "이 컬렉션의 장면",
     "emptyTitle": "아직 컬렉션이 없어요",
     "emptyDescription": "새 컬렉션이 공개되면 여기에 표시돼요.",
     "emptyPack": "이 컬렉션에는 장면이 없어요",
-    "findPack": "컬렉션 찾기",
-    "searchPlaceholder": "컬렉션 또는 업로더 검색",
-    "noResults": "컬렉션을 찾지 못했어요.",
-    "clearFilters": "검색 지우기",
     "uploadedBy": "{{uploader}} 님이 업로드",
     "featuredScene": "추천 장면"
   },
@@ -364,5 +358,20 @@
       "clipboard": "링크를 복사하지 못했습니다. 위의 링크를 선택하여 직접 복사하세요."
     },
     "removing": "공유 동영상 삭제 중…"
+  },
+  "browse": {
+    "title": "더빙할 장면을 골라요",
+    "search": "프로그램이나 장면 찾기",
+    "searchPlaceholder": "프로그램, 캐릭터, 대사",
+    "home": "홈",
+    "breadcrumb": "탐색 경로",
+    "shows": "프로그램",
+    "scenes": "장면",
+    "seeAll": "모두 보기",
+    "seeAllLabel": "{{title}} {{count}}개 모두 보기",
+    "showCount_one": "프로그램 {{count}}개",
+    "showCount_other": "프로그램 {{count}}개",
+    "resultCount_one": "결과 {{count}}개",
+    "resultCount_other": "결과 {{count}}개"
   }
 }

@@ -1,10 +1,10 @@
-import { test, expect, setLanguage } from './fixtures';
+import { test, expect, setLanguage, openShow, sceneItems } from './fixtures';
 import { clips } from '../content-fixtures';
 
 test('scene search finds tags and full dialogue and remains scoped to a selected pack', async ({ page }) => {
   await page.goto('/library/all');
   const search = page.getByRole('searchbox', { name: '查找片段', exact: true });
-  const results = page.getByRole('listitem');
+  const results = sceneItems(page);
   for (const query of ['  SPONGEBOB  ', 'sponge bob', '海绵宝宝', 'Spongebb']) {
     await search.fill(query);
     await expect(results).toHaveCount(5);
@@ -22,8 +22,8 @@ test('scene search finds tags and full dialogue and remains scoped to a selected
   await page.getByRole('button', { name: '清除搜索', exact: true }).click();
   await expect(search).toBeFocused();
   await expect(results).toHaveCount(clips.length);
-  await page.getByRole('link', { name: '全部合集', exact: true }).click();
-  await page.getByRole('link', { name: 'English Singsing', exact: true }).click();
+  await page.getByRole('navigation', { name: '导航路径', exact: true }).getByRole('link', { name: '首页', exact: true }).click();
+  await openShow(page, 'English Singsing');
   await expect(results).toHaveCount(clips.filter(clip => clip.note === 'English Singsing').length);
   await search.fill('SpongeBob');
   await expect(results).toHaveCount(0);
@@ -37,7 +37,7 @@ test('tag and title results rank above scenes that only mention the query in dia
   await page.goto('/library/all');
   await setLanguage(page, 'en');
   await page.getByRole('searchbox', { name: 'Find a scene' }).fill('food');
-  const results = page.getByRole('listitem');
+  const results = sceneItems(page);
   // Metadata matches precede a scene that mentions food only in dialogue,
   // independently of source pack ordering or other newly published matches.
   await expect(page.getByRole('button', { name: 'Choose scene: Fish are friends!', exact: true })).toBeVisible();

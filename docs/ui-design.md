@@ -28,11 +28,10 @@ shared button geometry. Separate panels with flat fills; only menus and dialogs
 carry a shadow. Dialogs use a plain dim backdrop. Keep touch targets at least
 44px, visible keyboard focus, selection labels, and readable disabled controls.
 
-The library answers “Which scene shall I dub?” with a split green introduction
-and an actual featured poster plus its title and series. Phones stack these
-parts and keep the poster visible. The introduction is translated in every
-interface language. Retain four visible category controls, show filters,
-search, scene counts, group headings, empty states, and source/privacy notices.
+Home answers “Which scene shall I dub?” with a short banner (title and search,
+plus a featured poster when the catalog names one), then one shelf per section
+showing up to four shows and a “See all” link when more exist. Retain search,
+scene counts (shown once per page), empty states, and source/privacy notices.
 The existing four-column desktop, three-column tablet, and two-column phone
 shelves keep their established behavior. Posters use their 16:9 frame.
 
@@ -127,29 +126,45 @@ each scene or reset. The browser handles microphone access when needed. Keep
 the local-recording notice in the footer and guardian guidance in Help; guardian
 authorization before child use remains part of the planned grown-up setup.
 
-Page navigation uses `/library/:folder`, `/dubs`, `/scenes/:slug`, and
-`/scenes/:slug/dubs/:dubId`. The root opens the default film library. Audience
-selection adds a history entry, and direct scene links return to that scene's
-audience folder. Saved dub IDs replace the current scene address without
-reloading the player. Each page supports `/en/`, `/zh/`, `/es/`, `/ja/`, and `/ko/`, with the URL
-determining the interface language. An unprefixed entry uses the saved browser
-preference, defaulting to Chinese, and replaces its address with the prefixed URL.
+Learners browse in three layers, each with one job:
+
+- **Section** — who a scene suits: First English, Cartoons & films, Ages 10–12,
+  Teenagers. Derived from each scene's `cohort`; a show joins the section of its
+  most common cohort.
+- **Show** — where scenes come from. A published pack whose scenes share one
+  source (`note`) is a show; its page lists scenes with an optional season filter.
+- **Scene** — what the learner dubs.
+
+A pack whose scenes come from several sources (Memes) is a **collection**: it gets
+its own home shelf of scenes instead of joining a section. Packs remain the
+publishing unit and their uploader stays on the owner page; learners never see
+"pack" or "uploaded by". Tags are search keywords only and never become browse
+navigation. One search on home covers show titles and scenes (title, tags,
+characters, dialogue). Each page has one `h1`; only home adds `h2` shelf titles.
+
+Page navigation uses `/`, `/library/:section`, `/library/all`, `/packs/:packId`,
+`/dubs`, `/scenes/:slug`, and `/scenes/:slug/dubs/:dubId`. Show pages show a
+Home / Section breadcrumb. Scenes opened from a show or a home shelf carry
+`?pack=` so the player's Back returns to that show. Saved dub IDs replace the
+current scene address without reloading the player. Each page supports `/en/`,
+`/zh/`, `/es/`, `/ja/`, and `/ko/`, with the URL determining the interface
+language. An unprefixed entry uses the saved browser preference, defaulting to
+Chinese, and replaces its address with the prefixed URL.
 
 Approved sitemap:
 
 ```text
-/                                      Open the preferred language
-/en/                                   English scene library
-/zh/                                   Chinese scene library
-/:language/library/older-audience      Films & animation
-/:language/library/younger-age-5       Younger children
-/:language/library/older-children      Ages 10–12
-/:language/library/teens               Teenagers
-/:language/dubs                        My dubs
-/en/scenes/patrick                     Patrick scene in English UI
-/zh/scenes/friends-cheesecake          Friends scene in Chinese UI
-/en/scenes/toy-story-infinity          Toy Story scene in English UI
-/:language/scenes/:name/dubs/:dub-id    Continue a saved dub
+/                                         Open the preferred language
+/:language/                               Home: section shelves and search
+/:language/library/first-english          Section: First English shows
+/:language/library/cartoons-and-films     Section: Cartoons & films shows
+/:language/library/ages-10-12             Section: Ages 10–12 shows
+/:language/library/teens                  Section: Teenagers shows
+/:language/library/all                    All scenes
+/:language/packs/:packId                  A show or collection
+/:language/dubs                           My dubs
+/en/scenes/toy-story-infinity             Toy Story scene in English UI
+/:language/scenes/:name/dubs/:dub-id      Continue a saved dub
 ```
 
 Scene URLs use stable readable names, separate from translated display titles.
@@ -176,12 +191,6 @@ Language switching changes only the prefix, preserving the scene, saved-dub ID,
 selected line, unsaved takes, and active recording. Language-only Back/Forward
 navigation does not reload the player. Theme remains a separate browser preference.
 Pack metadata, application assets, APIs, and OSS media keep their unprefixed URLs.
-
-Browse prerecorded videos using visible, solid category buttons for Films &
-animation, Younger children, Ages 10–12, and Teenagers. Each shows its scene
-count and a small thumbnail from its videos, and the selected category has a
-contrasting fill. Keep every category visible: four across on larger screens,
-two columns on phones, without a dropdown.
 
 The picture frame follows the source video's metadata instead of stretching to
 fill the viewport height. Fit the picture and its 44px neutral control strip

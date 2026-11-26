@@ -1,5 +1,5 @@
 import { scenePath } from './scene-path';
-import { test, expect, catalogUrl, setLanguage } from './fixtures';
+import { test, expect, catalogUrl, setLanguage, browseText, escapeRegExp, homeShelves, openShow, shelfTitle, showCard } from './fixtures';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { clips, packs } from '../content-fixtures';
@@ -15,7 +15,7 @@ test('catalog downloads while application JavaScript is held and is reused on fi
     await expect.poll(() => requests).toBe(1);
     await expect(page.getByRole('searchbox')).toHaveCount(0);
   } finally { release(); }
-  await expect(page.getByRole('searchbox', { name: 'Find a collection', exact: true })).toBeVisible();
+  await expect(page.getByRole('searchbox', { name: 'Find a show or scene', exact: true })).toBeVisible();
   expect(requests).toBe(1);
 });
 
@@ -26,15 +26,25 @@ for (const initialPath of ['/en/packs', '/en/library/all']) test(`first visit to
   expect(packs).toHaveLength(21);
   expect(clips).toHaveLength(132);
   if (initialPath === '/en/packs') {
-    const gallery = page.getByRole('navigation', { name: 'Collections', exact: true });
-    await expect(gallery.getByRole('link')).toHaveCount(packs.length);
-    for (const pack of packs) await expect(gallery.getByRole('link', { name: pack.data.title, exact: true })).toBeVisible();
+    // Every published pack is either a show on an age shelf or a collection shelf.
+    expect(homeShelves.reduce((total, shelf) => total + (shelf.kind === 'section' ? shelf.shows.length : 1), 0)).toBe(packs.length);
+    await expect(page.getByRole('main').getByRole('heading', { level: 2 })).toHaveText(homeShelves.map(shelf => shelfTitle(shelf, 'en')));
+    for (const shelf of homeShelves) {
+      const name = shelfTitle(shelf, 'en');
+      const region = page.getByRole('region', { name, exact: true });
+      if (shelf.kind === 'collection') await expect(region.getByRole('link', { name: `See all ${shelf.scenes.length} in ${name}`, exact: true })).toBeVisible();
+      else if (shelf.shows.length > 4) await expect(region.getByRole('link', { name: `See all ${shelf.shows.length} in ${name}`, exact: true })).toBeVisible();
+      else for (const show of shelf.shows) await expect(showCard(region, show.title)).toBeVisible();
+    }
     await page.getByRole('link', { name: 'All scenes', exact: true }).click();
   }
   for (const language of ['en', 'zh-CN', 'es', 'ja', 'ko'] as const) {
     await setLanguage(page, language);
-    const titles = packs.flatMap(pack => pack.data.scenes.map((clip: typeof clips[number]) => pack.data.locales[language].scenes[clip.id].title));
-    await expect(page.getByRole('heading', { level: 3 })).toHaveText(titles);
+    const titles = packs.flatMap(pack => pack.data.scenes.map((clip: typeof clips[number]) => pack.data.locales[language].scenes[clip.id].title as string));
+    const choose = browseText(language).library.chooseScene;
+    const scenes = page.getByRole('main').getByRole('button', { name: new RegExp(`^${escapeRegExp(choose.replace('{{title}}', ''))}`) });
+    await expect(scenes).toHaveCount(titles.length);
+    for (const [index, title] of titles.entries()) await expect(scenes.nth(index)).toHaveAccessibleName(choose.replace('{{title}}', title));
   }
   await setLanguage(page, 'en');
   const catalogRequests = () => requests.filter(request => request.url === catalogUrl);
@@ -59,10 +69,8 @@ for (const initialPath of ['/en/packs', '/en/library/all']) test(`first visit to
 test('the production build browses published packs and reloads the selected pack', async ({ page }) => {
   const response = await page.goto('/en/packs');
   expect(response?.status()).toBe(200);
-  const gallery = page.getByRole('navigation', { name: 'Collections', exact: true });
-  await expect(gallery.getByRole('link')).toHaveCount(packs.length);
   const pack = packs[0];
-  await gallery.getByRole('link', { name: pack.data.title, exact: true }).click();
+  await page.getByRole('region', { name: pack.data.title, exact: true }).getByRole('link', { name: `See all ${pack.data.scenes.length} in ${pack.data.title}`, exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: pack.data.title, exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(pack.data.scenes.length);
   await page.reload();
@@ -98,8 +106,7 @@ test('production prepares player code from a scene list and defers owner JavaScr
   const codecsRequested = () => [...scripts].some(path => /\/assets\/(?:src|mediabunny[^/]*|export-dub)-[^/]+\.js$/.test(path));
   await page.route('**/api/owner-config', route => route.fulfill({ json: { apiBase: 'https://owner.example.test' } }));
   await page.goto('/en/');
-  const gallery = page.getByRole('navigation', { name: 'Collections', exact: true });
-  await expect(gallery.getByRole('link')).toHaveCount(packs.length);
+  await expect(page.getByRole('main').getByRole('heading', { level: 2 })).toHaveCount(homeShelves.length);
   // This verifies request presence, not HTTP-cache behavior; routing fixtures
   // deliberately disable the browser cache in this test suite.
   for (const prefix of ['Player', 'OwnerPacks', 'SavedDubs', 'SharedDub', 'share-client', 'dialog']) {
@@ -109,7 +116,7 @@ test('production prepares player code from a scene list and defers owner JavaScr
 
   const clip = clips.find(clip => clip.slug === 'patrick')!;
   const pack = packs.find(pack => pack.entry.id === clip.packId)!;
-  await gallery.getByRole('link', { name: pack.data.title, exact: true }).click();
+  await openShow(page, pack.data.title);
   await expect(page.getByRole('heading', { level: 1, name: pack.data.title, exact: true })).toBeVisible();
   // Warm only code while the learner chooses a scene, without fetching video.
   await expect.poll(() => requested('Player')).toBe(true);
@@ -184,7 +191,7 @@ for (const path of ['/en/', '/zh/', '/en/packs', '/zh/packs', '/en/library/all',
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   if (path.includes('/scenes/')) await expect(page.getByRole('button', { name: english ? 'Start dubbing' : '开始配音', exact: true })).toBeEnabled();
   else if (path.includes('/dubs')) await expect(page.getByRole('heading', { level: 1 })).toHaveText(english ? 'My dubs' : '我的配音');
-  else await expect(page.getByRole('searchbox', { name: path.includes('/library/') ? english ? 'Find a scene' : '查找片段' : english ? 'Find a collection' : '查找合集', exact: true })).toBeVisible();
+  else await expect(page.getByRole('searchbox', { name: path.includes('/library/') ? english ? 'Find a scene' : '查找片段' : english ? 'Find a show or scene' : '查找节目或片段', exact: true })).toBeVisible();
 });
 
 for (const [language, heading, search, start] of [

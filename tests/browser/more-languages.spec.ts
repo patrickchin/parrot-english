@@ -1,4 +1,4 @@
-import { test, expect, setLanguage } from './fixtures';
+import { test, expect, setLanguage, browseText, escapeRegExp, homeShelves, shelfTitle } from './fixtures';
 
 const added = [
   { code: 'es', label: 'Español', title: 'Parrotbook · Doblaje en inglés', start: 'Empezar a doblar', search: 'Buscar una escena', dubs: 'Mis doblajes', next: 'Siguiente' },
@@ -26,8 +26,11 @@ for (const language of added) test(`${language.code} opens directly, persists, a
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(language.dubs);
   await page.goto('/');
   await expect(page).toHaveURL(new RegExp(`/${language.code}/$`));
-  await expect(page.getByRole('searchbox')).toBeVisible();
-  await expect(page.getByRole('listitem')).toHaveCount(0);
+  const text = browseText(language.code);
+  await expect(page.getByRole('heading', { level: 1, name: text.browse.title, exact: true })).toBeVisible();
+  await expect(page.getByRole('searchbox', { name: text.browse.search, exact: true })).toBeVisible();
+  await expect(page.getByRole('main').getByRole('heading', { level: 2 })).toHaveText(homeShelves.map(shelf => shelfTitle(shelf, language.code)));
+  await expect(page.getByRole('button', { name: new RegExp(`^${escapeRegExp(text.library.chooseScene.replace('{{title}}', ''))}`) })).toHaveCount(4);
 });
 
 test.describe('saved player language changes', () => {

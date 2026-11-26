@@ -1,4 +1,4 @@
-import { test, expect, setLanguage, headerDestination } from './fixtures';
+import { test, expect, setLanguage, headerDestination, openShow } from './fixtures';
 import { clips, packs } from '../content-fixtures';
 
 test('the home wordmark returns to Packs without reloading the app or its catalog', async ({ page }) => {
@@ -8,11 +8,11 @@ test('the home wordmark returns to Packs without reloading the app or its catalo
     if (new URL(request.url()).pathname === '/content/catalog.json') catalogs++;
   });
   await page.goto('/en/');
-  await page.getByRole('link', { name: 'Shrek', exact: true }).click();
+  await openShow(page, 'Shrek');
   await expect(page.getByRole('heading', { name: 'Shrek', exact: true })).toBeVisible();
   const before = { documents, catalogs };
   await page.getByRole('link', { name: 'Parrotbook home', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Collections', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Pick a scene to dub', exact: true })).toBeVisible();
   expect({ documents, catalogs }).toEqual(before);
 });
 
@@ -41,14 +41,15 @@ test('the readable Toy Story URL keeps its name through saving, reload and resum
 
 test('pack paths follow selection, reload, Back and Forward', async ({ page }) => {
   await page.goto('/en/');
-  await page.getByRole('link', { name: 'Shrek', exact: true }).click();
+  await openShow(page, 'Shrek');
   await expect(page).toHaveURL(new RegExp('/packs/' + packs.find(pack => pack.data.title === 'Shrek')!.entry.id + '$'));
-  await page.getByRole('link', { name: 'All collections', exact: true }).click();
-  await page.getByRole('link', { name: 'Friends', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Breadcrumb', exact: true }).getByRole('link', { name: 'Home', exact: true }).click();
+  await openShow(page, 'Friends');
   await expect(page).toHaveURL(new RegExp('/packs/' + packs.find(pack => pack.data.title === 'Friends')!.entry.id + '$'));
   await page.getByRole('searchbox').fill('not-a-scene');
   await page.goBack();
-  await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(0);
+  await expect(page.getByRole('heading', { level: 1, name: 'Pick a scene to dub', exact: true })).toBeVisible();
+  await expect(page.getByRole('searchbox', { name: 'Find a show or scene', exact: true })).toHaveValue('');
   await page.goForward();
   await expect(page.getByRole('searchbox')).toHaveValue('');
   await page.reload();
@@ -123,7 +124,7 @@ test('My dubs is a separate page with direct links, history, language and an emp
   }
   await page.getByRole('button', { name: 'Browse scenes', exact: true }).click();
   await expect(page.getByRole('searchbox')).toBeVisible();
-  await expect(await headerDestination(page, 'Collections')).toHaveAttribute('aria-current', 'page');
+  await expect(await headerDestination(page, 'Browse')).toHaveAttribute('aria-current', 'page');
   await page.keyboard.press('Escape');
   await page.goto('/dubs/');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('My dubs');
@@ -132,7 +133,7 @@ test('My dubs is a separate page with direct links, history, language and an emp
 test('My dubs shows storage read failures and retries without an empty-state claim', async ({ page }) => {
   await page.goto('/dubs');
   await expect(page.getByRole('heading', { name: '还没有配音', exact: true })).toBeVisible();
-  await (await headerDestination(page, '合集')).click();
+  await (await headerDestination(page, '浏览')).click();
   await page.evaluate(() => {
     const open = indexedDB.open.bind(indexedDB);
     (window as Window & { restoreStorage?: () => void }).restoreStorage = () => { indexedDB.open = open; };
@@ -164,7 +165,7 @@ test('navigation shares the language-selector row and its compact menu supports 
       expect(Math.abs(navigationBox.y + navigationBox.height / 2 - languageBox.y - languageBox.height / 2)).toBeLessThan(1);
       expect(navigationBox.x + navigationBox.width).toBeLessThanOrEqual(languageBox.x + 1);
       const brand = (await page.getByRole('link', { name: 'Parrotbook home', exact: true }).boundingBox())!;
-      const firstNavigation = compact ? navigationBox : (await page.getByRole('link', { name: 'Collections', exact: true }).boundingBox())!;
+      const firstNavigation = compact ? navigationBox : (await page.getByRole('link', { name: 'Browse', exact: true }).boundingBox())!;
       expect(brand.x + brand.width).toBeLessThanOrEqual(firstNavigation.x + 1);
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
       if (compact) {

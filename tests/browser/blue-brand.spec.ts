@@ -43,7 +43,7 @@ async function expectTextContrast(control: Locator, label: string) {
 
 test('the geometric bird stays visible and its native icon links use the published branding assets', async ({ page }) => {
   await page.goto('/en/packs');
-  await expect(page.getByRole('heading', { level: 1, name: 'Collections', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Pick a scene to dub', exact: true })).toBeVisible();
   const home = page.getByRole('banner').getByRole('link', { name: 'Parrotbook home', exact: true });
   const logo = home.getByAltText('', { exact: true });
   await expect(logo).toHaveCount(1);

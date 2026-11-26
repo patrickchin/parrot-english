@@ -1,5 +1,5 @@
 import { scenePath } from './scene-path';
-import { test, expect, setLanguage } from './fixtures';
+import { test, expect, setLanguage, sceneItems } from './fixtures';
 import { clips, packs } from '../content-fixtures';
 import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
@@ -10,7 +10,7 @@ const filmCount = clips.length;
 test('hovering the scene title highlights the whole scene and keyboard focus does too', async ({ page }, info) => {
   await page.goto('/en/library/all');
   const scene = page.getByRole('button', { name: 'Choose scene: No, this is Patrick!', exact: true });
-  const title = scene.getByRole('heading');
+  const title = scene.getByText('No, this is Patrick!', { exact: true });
   await expect(title).toBeVisible();
   const background = () => scene.evaluate(element => getComputedStyle(element).backgroundColor);
   const resting = await background();
@@ -39,8 +39,10 @@ test('the simplified shelf keeps scenes, privacy and source details accessible w
   await expect(page.getByRole('button', { name: /Sintel/ })).toHaveCount(0);
   for (const clip of clips) {
     await expect(page.getByRole('button', { name: `选择片段：${clip.title}`, exact: true })).toBeVisible();
-    await expect(page.getByRole('heading', { level: 3, name: clip.title, exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: `选择片段：${clip.title}`, exact: true }).getByText(clip.title, { exact: true })).toBeVisible();
   }
+  // Scene card titles are labels inside buttons, not an outline of headings.
+  await expect(page.getByRole('heading', { level: 3 })).toHaveCount(0);
   for (const notice of new Set(packs.map(pack => pack.data.locales['zh-CN'].notices?.library).filter(Boolean))) await expect(page.getByText(notice as string, { exact: true })).toBeVisible();
   for (const width of [375, 1280]) {
     await page.setViewportSize({ width, height: 812 });
@@ -89,13 +91,13 @@ test('the expanded shelf finds scenes by Chinese, English, and film, and opens a
   await page.getByRole('button', { name: '查看全部片段', exact: true }).click();
   await expect(search).toBeFocused();
   await expect(search).toHaveValue('');
-  await expect(page.getByRole('listitem')).toHaveCount(filmCount);
+  await expect(sceneItems(page)).toHaveCount(filmCount);
   await search.fill('zxqvunfindable');
   await setLanguage(page, 'en');
   await expect(page.getByRole('status')).toHaveText('No scenes found.');
   await page.getByRole('button', { name: 'Clear search', exact: true }).click();
   await expect(search).toBeFocused();
-  await expect(page.getByRole('listitem')).toHaveCount(filmCount);
+  await expect(sceneItems(page)).toHaveCount(filmCount);
   await search.fill('mayonnaise');
   await page.getByRole('button', { name: 'Choose scene: Is mayonnaise an instrument?', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Start dubbing', exact: true })).toBeEnabled();
@@ -106,7 +108,7 @@ test('the expanded shelf finds scenes by Chinese, English, and film, and opens a
 
 test('the scene shelf stays a keyboard-accessible grid', async ({ page }) => {
   await page.goto('/library/all');
-  await expect(page.getByRole('listitem')).toHaveCount(filmCount);
+  await expect(sceneItems(page)).toHaveCount(filmCount);
   await expect(page.getByRole('button', { name: '列表视图', exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: '网格视图', exact: true })).toHaveCount(0);
   const first = page.getByRole('button', { name: /^选择片段：/ }).nth(0);
@@ -126,11 +128,11 @@ test('the scene shelf stays a keyboard-accessible grid', async ({ page }) => {
   await back.click();
   await expect(page).toHaveURL(/\/zh\/library\/all$/);
   await expect(page.getByRole('heading', { level: 1, name: '全部片段', exact: true })).toBeVisible();
-  await expect(page.getByRole('listitem')).toHaveCount(clips.length);
+  await expect(sceneItems(page)).toHaveCount(clips.length);
   await page.reload();
   await expect(page).toHaveURL(/\/zh\/library\/all$/);
   await expect(page.getByRole('heading', { level: 1, name: '全部片段', exact: true })).toBeVisible();
-  await expect(page.getByRole('listitem')).toHaveCount(clips.length);
+  await expect(sceneItems(page)).toHaveCount(clips.length);
 });
 
 test('unknown pages, scenes and folders show an explicit error instead of another scene shelf', async ({ page }) => {

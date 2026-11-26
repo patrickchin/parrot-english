@@ -88,19 +88,26 @@ for (const failure of ['an unavailable catalog', 'a malformed inline pack']) tes
   await expect(page.getByRole('button', { name: 'Start dubbing', exact: true })).toHaveCount(0);
   await (await headerDestination(page, 'My dubs')).click();
   await expect(page.getByRole('heading', { level: 1, name: 'My dubs', exact: true })).toBeVisible();
-  await (await headerDestination(page, 'Collections')).click();
+  await (await headerDestination(page, 'Browse')).click();
   broken = false;
   await page.getByRole('button', { name: 'Reload', exact: true }).click();
-  await expect(page.getByRole('searchbox', { name: 'Find a collection', exact: true })).toBeVisible();
+  await expect(page.getByRole('searchbox', { name: 'Find a show or scene', exact: true })).toBeVisible();
   await expect(page.getByRole('alert')).toHaveCount(0);
 });
 
 test('an empty published catalog keeps categories and a single meaningful heading usable', async ({ page }) => {
   await page.route(catalogUrl, route => route.fulfill({ json: { version: 1, packs: [], packData: {} } }));
   await page.goto('/en/');
-  await expect(page.getByRole('heading', { level: 1, name: 'Collections', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Pick a scene to dub', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+  await expect(page.getByRole('status')).toHaveText('No collections yet');
   await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(0);
-  await page.getByRole('link', { name: 'All scenes', exact: true }).click();
+  // Without scenes there is nothing to search or list from home.
+  await expect(page.getByRole('searchbox')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'All scenes', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await page.goto('/en/library/all');
+  await expect(page.getByRole('heading', { level: 1, name: 'All scenes', exact: true })).toBeVisible();
   await expect(page.getByRole('status')).toBeVisible();
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
   await expect(page.getByRole('alert')).toHaveCount(0);
@@ -117,7 +124,7 @@ test('a temporary catalog failure recovers automatically without showing an erro
     ? route.fulfill({ status: 503, body: '' })
     : route.fulfill({ json: publishedCatalog }));
   await page.goto('/en/packs');
-  await expect(page.getByRole('searchbox', { name: 'Find a collection', exact: true })).toBeVisible();
+  await expect(page.getByRole('searchbox', { name: 'Find a show or scene', exact: true })).toBeVisible();
   expect(requests).toBe(2);
   expect(alerts).toBe(0);
 });

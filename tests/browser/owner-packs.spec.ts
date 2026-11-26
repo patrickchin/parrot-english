@@ -1,4 +1,4 @@
-import { test, expect, catalogUrl, headerDestination } from './fixtures';
+import { test, expect, catalogUrl, headerDestination, homeShelves, shelfTitle, showCard } from './fixtures';
 import type { Page } from '@playwright/test';
 import { publishedCatalog, packs, clips, readScene, sceneFile } from '../content-fixtures';
 import type { Pack } from '../../src/content-pack';
@@ -194,14 +194,18 @@ test('an owner publishes a native folder without franchise metadata and its pack
   await page.getByRole('link', { name: 'Open published collection', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: pack.title, exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(1);
-  await page.getByRole('link', { name: 'All collections', exact: true }).click();
-  const gallery = page.getByRole('navigation', { name: 'Collections', exact: true });
-  await page.getByRole('searchbox', { name: 'Find a collection', exact: true }).fill('Mary');
-  await expect(page.getByRole('status')).toHaveText('No collections found.');
-  await page.getByRole('searchbox', { name: 'Find a collection', exact: true }).fill('Weekend Patrick');
-  await expect(gallery.getByRole('link')).toHaveCount(1);
-  await expect(gallery.getByRole('link', { name: pack.title, exact: true })).toBeVisible();
-  await expect(gallery.getByText('Uploaded by Patrick', { exact: true })).toBeVisible();
+  await expect(page.getByText(/Uploaded by/)).toHaveCount(0);
+  await page.getByRole('navigation', { name: 'Breadcrumb', exact: true }).getByRole('link', { name: 'Home', exact: true }).click();
+  const search = page.getByRole('searchbox', { name: 'Find a show or scene', exact: true });
+  const shows = page.getByRole('region', { name: 'Shows', exact: true });
+  // Authors and uploaders are credits, not show search terms.
+  await search.fill('Mary');
+  await expect(page.getByRole('status')).toHaveText(/^\d+ results?$/);
+  await expect(shows).toHaveCount(0);
+  await search.fill('Weekend Patrick');
+  await expect(shows.getByRole('link')).toHaveCount(1);
+  await expect(showCard(shows, pack.title, 'en', 1)).toBeVisible();
+  await expect(page.getByText(/Uploaded by/)).toHaveCount(0);
 });
 
 test('failed transfers refresh signed URLs and retry without repeating completed uploads', async ({ page }) => {
@@ -240,7 +244,7 @@ test('an in-flight transfer has a navigation warning and can be cancelled before
   await page.getByLabel('Choose collection folder', { exact: true }).setInputFiles(packFolder);
   await page.getByRole('button', { name: 'Upload and publish', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Cancel upload', exact: true })).toBeVisible();
-  await (await headerDestination(page, 'Collections')).click();
+  await (await headerDestination(page, 'Browse')).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await page.getByRole('button', { name: 'Keep uploading', exact: true }).click();
   await expect(page).toHaveURL(/\/en\/owner\/packs$/);
@@ -268,21 +272,23 @@ test('owner setup failure is visible and an invalid folder never starts an uploa
   await expect(page.getByRole('button', { name: 'Upload and publish', exact: true })).toHaveCount(0);
 });
 
-test('public pack search survives reload and recovers from an empty result', async ({ page }) => {
+test('public home search survives reload and recovers from an empty result', async ({ page }) => {
   await page.goto('/en/packs');
-  const gallery = page.getByRole('navigation', { name: 'Collections', exact: true });
-  await expect(gallery.getByRole('link')).toHaveCount(packs.length);
-  await expect(gallery.getByText('Uploaded by Patrick', { exact: true })).toHaveCount(packs.length);
+  await expect(page.getByRole('main').getByRole('heading', { level: 2 })).toHaveCount(homeShelves.length);
+  await expect(page.getByText(/Uploaded by/)).toHaveCount(0);
   await expect(page.getByRole('combobox', { name: 'Franchise', exact: true })).toHaveCount(0);
-  await page.getByRole('searchbox', { name: 'Find a collection', exact: true }).fill('Patrick');
-  await expect(gallery.getByRole('link')).toHaveCount(packs.length);
-  expect(new URL(page.url()).searchParams.get('q')).toBe('Patrick');
+  const search = page.getByRole('searchbox', { name: 'Find a show or scene', exact: true });
+  await search.fill('Friends');
+  await expect(showCard(page.getByRole('region', { name: 'Shows', exact: true }), 'Friends')).toBeVisible();
+  expect(new URL(page.url()).searchParams.get('q')).toBe('Friends');
   await page.reload();
-  await expect(page.getByRole('searchbox', { name: 'Find a collection', exact: true })).toHaveValue('Patrick');
-  await page.getByRole('searchbox', { name: 'Find a collection', exact: true }).fill('no-pack-matches-this-query');
-  await expect(page.getByRole('status')).toHaveText('No collections found.');
-  await page.getByRole('button', { name: 'Clear search', exact: true }).click();
-  await expect(gallery.getByRole('link')).toHaveCount(packs.length);
+  await expect(search).toHaveValue('Friends');
+  await expect(showCard(page.getByRole('region', { name: 'Shows', exact: true }), 'Friends')).toBeVisible();
+  await search.fill('no-pack-matches-this-query');
+  await expect(page.getByRole('status')).toHaveText('0 results');
+  await page.getByRole('button', { name: 'Clear search', exact: true }).last().click();
+  await expect(search).toHaveValue('');
+  await expect(page.getByRole('main').getByRole('heading', { level: 2 })).toHaveCount(homeShelves.length);
 });
 
 test('the owner can change or clear the public featured scene at runtime', async ({ page }) => {
@@ -297,7 +303,7 @@ test('the owner can change or clear the public featured scene at runtime', async
   await picker.selectOption(featured.id);
   await save.click();
   await expect(page.getByRole('status')).toHaveText('Featured scene updated.');
-  await (await headerDestination(page, 'Collections')).click();
+  await (await headerDestination(page, 'Browse')).click();
   const region = page.getByRole('region', { name: title(featured), exact: true });
   await expect(region).toBeVisible();
   for (const width of [320, 390, 1280]) {
@@ -312,15 +318,15 @@ test('the owner can change or clear the public featured scene at runtime', async
   await picker.selectOption(second.id);
   await save.click();
   await expect(page.getByRole('status')).toHaveText('Featured scene updated.');
-  await (await headerDestination(page, 'Collections')).click();
+  await (await headerDestination(page, 'Browse')).click();
   await expect(page.getByRole('region', { name: title(second), exact: true })).toBeVisible();
   await expect(region).toHaveCount(0);
   await unlock(page);
   await picker.selectOption('');
   await save.click();
   await expect(page.getByRole('status')).toHaveText('Featured scene updated.');
-  await (await headerDestination(page, 'Collections')).click();
-  await expect(page.getByRole('navigation', { name: 'Collections', exact: true }).getByRole('link')).toHaveCount(packs.length);
+  await (await headerDestination(page, 'Browse')).click();
+  await expect(page.getByRole('main').getByRole('heading', { level: 2 })).toHaveText(homeShelves.map(shelf => shelfTitle(shelf, 'en')));
   await expect(page.getByText('Featured scene', { exact: true })).toHaveCount(0);
 });
 
@@ -338,16 +344,18 @@ test('owner management hides, restores and deletes packs through the owner API',
   }
   await row.getByRole('button', { name: `Hide ${title}`, exact: true }).click();
   await expect(row.getByText('Hidden from Collections', { exact: true })).toBeVisible();
-  await (await headerDestination(page, 'Collections')).click();
-  const gallery = page.getByRole('navigation', { name: 'Collections', exact: true });
-  await expect(gallery.getByRole('link')).toHaveCount(packs.length - 1);
-  await expect(gallery.getByRole('link', { name: title, exact: true })).toHaveCount(0);
+  await (await headerDestination(page, 'Browse')).click();
+  // The first published pack is the Memes collection, which has its own shelf.
+  const shelf = page.getByRole('region', { name: title, exact: true });
+  const shelves = page.getByRole('main').getByRole('heading', { level: 2 });
+  await expect(shelves).toHaveCount(homeShelves.length - 1);
+  await expect(shelf).toHaveCount(0);
   await unlock(page);
   await row.getByRole('button', { name: `Show ${title}`, exact: true }).click();
   await expect(row.getByText('Visible in Collections', { exact: true })).toBeVisible();
-  await (await headerDestination(page, 'Collections')).click();
-  await expect(gallery.getByRole('link')).toHaveCount(packs.length);
-  await expect(gallery.getByRole('link', { name: title, exact: true })).toBeVisible();
+  await (await headerDestination(page, 'Browse')).click();
+  await expect(shelves).toHaveCount(homeShelves.length);
+  await expect(shelf).toBeVisible();
   await unlock(page);
   await row.getByRole('button', { name: `Delete ${title}`, exact: true }).click();
   const dialog = page.getByRole('dialog');
@@ -357,7 +365,7 @@ test('owner management hides, restores and deletes packs through the owner API',
   await row.getByRole('button', { name: `Delete ${title}`, exact: true }).click();
   await dialog.getByRole('button', { name: 'Delete', exact: true }).click();
   await expect(row).toHaveCount(0);
-  await (await headerDestination(page, 'Collections')).click();
-  await expect(gallery.getByRole('link')).toHaveCount(packs.length - 1);
-  await expect(gallery.getByRole('link', { name: title, exact: true })).toHaveCount(0);
+  await (await headerDestination(page, 'Browse')).click();
+  await expect(shelves).toHaveCount(homeShelves.length - 1);
+  await expect(shelf).toHaveCount(0);
 });

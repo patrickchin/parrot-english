@@ -5,7 +5,7 @@ import { Button } from './shared/ui';
 import type { Scene } from './scene';
 import { loadScene } from './content-pack';
 import { PackBrowser } from './PackBrowser';
-import { Library } from './Library';
+import { Library, SectionPage } from './Library';
 import { packsPath } from './app/routes';
 import { useContent } from './app/ContentProvider';
 import { useSceneNavigation } from './app/useSceneNavigation';
@@ -71,6 +71,7 @@ function AppContent() {
   if (navigation.page === 'scene' && !selected) return <div className="min-h-dvh bg-paper text-ink"><AppHeader /><main className="mx-auto max-w-md px-6 py-16 text-center"><h1 className="mb-6 font-display text-3xl font-bold">{t('errors.pageNotFound')}</h1><p role="status" className="my-6 text-muted-foreground">{t('library.unavailable')}</p><Button onClick={back}>{t('navigation.library')}</Button></main></div>;
   if (navigation.page === 'packs' || navigation.directory) return <PackBrowser />;
   if (navigation.page === 'pack' && !content.packs.some(pack => pack.id === navigation.packId)) return <div className="min-h-dvh bg-paper text-ink"><AppHeader /><main className="mx-auto max-w-md px-6 py-16 text-center"><h1 className="mb-6 font-display text-3xl font-bold">{t('errors.pageNotFound')}</h1><p role="status" className="my-6 text-muted-foreground">{t('library.unavailable')}</p><Button onClick={() => navigation.navigateTo(packsPath(navigation.language))}>{t('navigation.packs')}</Button></main></div>;
+  if (!selected && !navigation.packId && navigation.page === 'library' && navigation.folder !== 'all') return <SectionPage key={navigation.folder} sectionId={navigation.folder} />;
   if (!selected) return <Library key={navigation.packId ?? navigation.folder} onChoose={choose} packId={navigation.packId} />;
   const load = loadedScene.revision === navigation.revision && loadedScene.attempt === attempt ? loadedScene.load : { status: 'loading' } as const;
   const error = load.status === 'error' ? load.error : '';

@@ -1,4 +1,5 @@
-import { test, expect, catalogUrl, setLanguage, headerDestination } from './fixtures';
+import { test, expect, catalogUrl, setLanguage, headerDestination, homeShelves, openShow, shelfTitle, showCard } from './fixtures';
+import { languagePath } from '../../src/locale';
 import { publishedCatalog, clips, packs, readScene } from '../content-fixtures';
 import { packPath, packsPath } from '../../src/app/routes';
 import type { Pack } from '../../src/content-pack';
@@ -11,25 +12,29 @@ const memePack = packs.find(pack => pack.data.scenes.some((scene: { slug: string
 const titleOf = (pack: typeof starter, id: string, language = 'en') => pack.data.locales[language].scenes[id].title as string;
 const authoredPatrick = clips.find(clip => clip.slug === 'patrick')!;
 
-test('collections match scene-card sizing and support responsive keyboard selection without user uploads', async ({ page }, info) => {
+test('home shelves match scene-card sizing and support responsive keyboard selection without user uploads', async ({ page }, info) => {
   await page.goto('/en/');
-  const entry = await headerDestination(page, 'Collections');
+  const entry = await headerDestination(page, 'Browse');
   await expect(entry).toHaveAttribute('href', packsPath('en'));
   await entry.click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Collections', exact: true })).toBeVisible();
-  const gallery = page.getByRole('navigation', { name: 'Collections', exact: true });
-  await expect(gallery.getByRole('link')).toHaveCount(packs.length);
+  await expect(page.getByRole('heading', { level: 1, name: 'Pick a scene to dub', exact: true })).toBeVisible();
+  await expect(page.getByRole('main').getByRole('heading', { level: 2 })).toHaveText(homeShelves.map(shelf => shelfTitle(shelf, 'en')));
   for (const notice of new Set(packs.map(pack => pack.data.locales.en.notices?.library).filter(Boolean))) await expect(page.getByText(notice as string, { exact: true })).toBeVisible();
-  for (const pack of packs) {
-    const card = gallery.getByRole('link', { name: pack.data.title, exact: true });
-    await expect(card).toHaveAttribute('href', packPath(pack.entry.id, 'en'));
-    await expect(card).toContainText(`Uploaded by ${pack.entry.uploader}`);
-    await expect(card).toContainText(`${pack.data.scenes.length} scenes`);
+  for (const shelf of homeShelves) {
+    if (shelf.kind !== 'section') continue;
+    const region = page.getByRole('region', { name: shelfTitle(shelf, 'en'), exact: true });
+    await expect(region.getByRole('listitem')).toHaveCount(Math.min(4, shelf.shows.length));
+    for (const show of shelf.shows.slice(0, 4)) {
+      const card = showCard(region, show.title);
+      await expect(card).toHaveAttribute('href', packPath(show.id, 'en'));
+      await expect(card).toContainText(`${show.sceneCount} scene`);
+    }
   }
+  await expect(page.getByText(/Uploaded by/)).toHaveCount(0);
   await expect(page.getByRole('button', { name: /upload|publish|import|create collection/i })).toHaveCount(0);
   await expect(page.getByRole('link', { name: /upload|publish|import|create collection/i })).toHaveCount(0);
   await expect(page.locator('input[type="file"]')).toHaveCount(0);
-  const target = gallery.getByRole('link', { name: starter.data.title, exact: true });
+  const target = showCard(page.getByRole('region', { name: 'First English', exact: true }), starter.data.title);
   const cardSizes = new Map<number, { width: number; posterWidth: number; posterHeight: number }>();
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
@@ -51,7 +56,12 @@ test('collections match scene-card sizing and support responsive keyboard select
   await target.press('Enter');
   await expect(page).toHaveURL(new URL(packPath(starter.entry.id, 'en'), page.url()).href);
   await expect(page.getByRole('heading', { level: 1, name: starter.data.title, exact: true })).toBeVisible();
-  await expect(page.getByText(starter.data.description, { exact: true })).toBeVisible();
+  const breadcrumb = page.getByRole('navigation', { name: 'Breadcrumb', exact: true });
+  await expect(breadcrumb.getByRole('link')).toHaveText(['Home', 'First English']);
+  // A single-source show needs no collection description or uploader credit.
+  await expect(page.getByText(starter.data.description, { exact: true })).toHaveCount(0);
+  await expect(page.getByText(/Uploaded by/)).toHaveCount(0);
+  await expect(page.getByText(`${starter.data.scenes.length} scenes`, { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(starter.data.scenes.length);
   await expect(page.getByRole('button', { name: /upload|publish|import|create collection/i })).toHaveCount(0);
   await expect(page.locator('input[type="file"]')).toHaveCount(0);
@@ -67,7 +77,7 @@ test('collections match scene-card sizing and support responsive keyboard select
     const card = (await scene.boundingBox())!;
     const poster = (await scene.getByAltText('', { exact: true }).boundingBox())!;
     const collection = cardSizes.get(width)!;
-    expect(card.width, `${width}px collection and scene card width`).toBeCloseTo(collection.width, 0);
+    expect(card.width, `${width}px show and scene card width`).toBeCloseTo(collection.width, 0);
     expect(poster.width, `${width}px collection and scene poster width`).toBeCloseTo(collection.posterWidth, 0);
     expect(poster.height, `${width}px collection and scene poster height`).toBeCloseTo(collection.posterHeight, 0);
   }
@@ -97,21 +107,35 @@ test('a newly published pack and its actual authored scene appear from the runti
   const manifest = memePack.entry.manifest.replace('pack.json', 'weekend-pack.json');
   await page.route(catalogUrl, route => route.fulfill({ json: current }));
   await page.goto(packsPath('en'));
-  const gallery = page.getByRole('navigation', { name: 'Collections', exact: true });
-  await expect(gallery.getByRole('link', { name: extra.title, exact: true })).toHaveCount(0);
+  const shelfName = shelfTitle(homeShelves.find(shelf => shelf.kind === 'section' && shelf.section.cohort === chosen.cohort)!, 'en');
+  const shelf = page.getByRole('region', { name: shelfName, exact: true });
+  const shows = homeShelves.find(shelf => shelf.kind === 'section' && shelf.section.cohort === chosen.cohort)!;
+  const showTotal = shows.kind === 'section' ? shows.shows.length : 0;
+  await expect(shelf.getByRole('link', { name: `See all ${showTotal} in ${shelfName}`, exact: true })).toBeVisible();
+  const search = page.getByRole('searchbox', { name: 'Find a show or scene', exact: true });
+  await search.fill(source.franchise!);
+  const showResults = page.getByRole('region', { name: 'Shows', exact: true });
+  await expect(showResults.getByRole('link')).toHaveCount(1);
+  await expect(showCard(page, extra.title, 'en', 1)).toHaveCount(0);
   current.packs.push({ id, manifest, uploader: 'Patrick' });
   current.packData[memePack.entry.id] = source;
   current.packData[id] = extra;
   await page.reload();
-  await expect(gallery.getByRole('link')).toHaveCount(packs.length + 1);
-  const added = gallery.getByRole('link', { name: extra.title, exact: true });
+  await expect(search).toHaveValue(source.franchise!);
+  await expect(showResults.getByRole('link')).toHaveCount(2);
+  await expect(showCard(showResults, memePack.data.title, 'en', source.scenes.length)).toBeVisible();
+  const added = showCard(showResults, extra.title, 'en', 1);
   await expect(added).toContainText('1 scene');
-  await page.getByRole('searchbox', { name: 'Find a collection', exact: true }).fill(source.franchise!);
-  await expect(gallery.getByRole('link')).toHaveCount(2);
-  await expect(gallery.getByRole('link', { name: memePack.data.title, exact: true })).toBeVisible();
-  await added.click();
+  await page.getByRole('button', { name: 'Clear search', exact: true }).click();
+  await expect(search).toHaveValue('');
+  await shelf.getByRole('link', { name: `See all ${showTotal + 1} in ${shelfName}`, exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1, name: shelfName, exact: true })).toBeVisible();
+  await expect(page.getByText(`${showTotal + 1} shows`, { exact: true })).toBeVisible();
+  await showCard(page.getByRole('list', { name: 'Shows', exact: true }), extra.title, 'en', 1).click();
   await expect(page.getByRole('heading', { level: 1, name: extra.title, exact: true })).toBeVisible();
-  await expect(page.getByText(extra.description, { exact: true })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Breadcrumb', exact: true }).getByRole('link')).toHaveText(['Home', shelfName]);
+  // One source makes this a show, so its collection description stays hidden.
+  await expect(page.getByText(extra.description, { exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(1);
   await page.getByRole('button', { name: `Choose scene: ${titleOf(memePack, chosen.id)}`, exact: true }).click();
   await expect(page.getByRole('button', { name: 'Start dubbing', exact: true })).toBeEnabled();
@@ -123,13 +147,15 @@ test('a newly published pack and its actual authored scene appear from the runti
   current.packData[memePack.entry.id] = memePack.data;
   await page.reload();
   await expect(page.getByRole('heading', { level: 1, name: 'Page not found', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Collections', exact: true }).click();
-  await expect(gallery.getByRole('link', { name: extra.title, exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Browse', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Pick a scene to dub', exact: true })).toBeVisible();
+  await expect(shelf.getByRole('link', { name: `See all ${showTotal} in ${shelfName}`, exact: true })).toBeVisible();
+  await expect(showCard(page, extra.title, 'en', 1)).toHaveCount(0);
 });
 
 test('pack selection scopes search and survives reload, history and language changes', async ({ page }) => {
   await page.goto(packsPath('en'));
-  await page.getByRole('navigation', { name: 'Collections', exact: true }).getByRole('link', { name: starter.data.title, exact: true }).click();
+  await openShow(page, starter.data.title);
   await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(starter.data.scenes.length);
   const notice = page.getByText(starter.data.locales.en.notices.library, { exact: true });
   await expect(notice).toBeVisible();
@@ -155,12 +181,12 @@ test('pack selection scopes search and survives reload, history and language cha
   await page.goForward();
   await expect(page).toHaveURL(new URL(packPath(starter.entry.id, 'zh-CN'), page.url()).href);
   await setLanguage(page, 'en');
-  await page.getByRole('link', { name: 'All collections', exact: true }).click();
-  await expect(page).toHaveURL(new URL(packsPath('en'), page.url()).href);
+  await page.getByRole('navigation', { name: 'Breadcrumb', exact: true }).getByRole('link', { name: 'Home', exact: true }).click();
+  await expect(page).toHaveURL(new URL(languagePath('/', 'en'), page.url()).href);
   await page.goBack();
   await expect(page.getByRole('heading', { level: 1, name: starter.data.title, exact: true })).toBeVisible();
   await page.goForward();
-  await expect(page.getByRole('navigation', { name: 'Collections', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Pick a scene to dub', exact: true })).toBeVisible();
 });
 
 test('recorded dubs retain their selected pack through saving, reload, language and player Back', async ({ page, browserName }) => {
@@ -200,7 +226,7 @@ test('recorded dubs retain their selected pack through saving, reload, language 
 test('an empty catalog keeps a useful pack gallery without an upload flow', async ({ page }) => {
   await page.route(catalogUrl, route => route.fulfill({ json: { version: 1, packs: [], packData: {} } }));
   await page.goto(packsPath('en'));
-  await expect(page.getByRole('heading', { level: 1, name: 'Collections', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Pick a scene to dub', exact: true })).toBeVisible();
   await expect(page.getByRole('status')).toHaveText('No collections yet');
   await expect(page.getByRole('button', { name: /upload|publish|import|create collection/i })).toHaveCount(0);
   await expect(page.locator('input[type="file"]')).toHaveCount(0);
@@ -212,11 +238,12 @@ test('an empty authored pack stays distinct from an unknown pack', async ({ page
   await expect(page.getByRole('heading', { level: 1, name: starter.data.title, exact: true })).toBeVisible();
   await expect(page.getByRole('status')).toHaveText('No scenes in this collection');
   await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(0);
-  await page.getByRole('link', { name: 'All collections', exact: true }).click();
+  await page.getByRole('navigation', { name: 'Breadcrumb', exact: true }).getByRole('link', { name: 'Home', exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1, name: 'Pick a scene to dub', exact: true })).toBeVisible();
   await page.goto(packPath('pack_missingTest', 'en'));
   await expect(page.getByRole('heading', { level: 1, name: 'Page not found', exact: true })).toBeVisible();
   await expect(page.getByRole('searchbox')).toHaveCount(0);
-  await page.getByRole('button', { name: 'Collections', exact: true }).click();
+  await page.getByRole('button', { name: 'Browse', exact: true }).click();
   await expect(page).toHaveURL(new URL(packsPath('en'), page.url()).href);
-  await expect(page.getByRole('navigation', { name: 'Collections', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: 'Pick a scene to dub', exact: true })).toBeVisible();
 });
