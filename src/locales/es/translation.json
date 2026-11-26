@@ -155,7 +155,7 @@
     "howToDub": "Cómo doblar",
     "language": "Idioma de la interfaz",
     "dubs": "Mis doblajes",
-    "packs": "Colecciones"
+    "packs": "Explorar"
   },
   "library": {
     "seasonFilter": "Filtrar por temporada",
@@ -223,27 +223,15 @@
     "progress": "Creando vídeo: {{percent}} %. Mantén esta página abierta.",
     "ready": "Tu vídeo está listo para guardarlo y compartirlo."
   },
-  "categories": {
-    "films": "Memes y clips",
-    "younger": "Primeros pasos en inglés",
-    "older": "De 10 a 12 años",
-    "teens": "Adolescentes"
-  },
   "app": {
     "title": "Parrotbook · Doblaje en inglés"
   },
   "packs": {
-    "introduction": "Elige una colección e interpreta la escena a tu manera.",
     "allPacks": "Todas las colecciones",
     "by": "Por {{author}}",
-    "scenes": "Escenas de esta colección",
     "emptyTitle": "Aún no hay colecciones",
     "emptyDescription": "Las nuevas colecciones aparecerán aquí cuando se publiquen.",
     "emptyPack": "Esta colección no tiene escenas",
-    "findPack": "Buscar una colección",
-    "searchPlaceholder": "Buscar colecciones o usuarios que las subieron",
-    "noResults": "No se encontraron colecciones.",
-    "clearFilters": "Borrar búsqueda",
     "uploadedBy": "Subida por {{uploader}}",
     "featuredScene": "Escena destacada"
   },
@@ -364,5 +352,32 @@
       "clipboard": "No se pudo copiar el enlace. Selecciónalo arriba y cópialo manualmente."
     },
     "removing": "Eliminando vídeo compartido…"
+  },
+  "browse": {
+    "title": "Elige una escena para doblar",
+    "search": "Busca una serie o escena",
+    "searchPlaceholder": "Serie, personaje o frase",
+    "home": "Inicio",
+    "shows": "Series",
+    "scenes": "Escenas",
+    "seeAll": "Ver todo",
+    "seeAllLabel": "Ver los {{count}} de {{title}}",
+    "resultCount_one": "{{count}} resultado",
+    "resultCount_other": "{{count}} resultados",
+    "tagFilter": "Filtrar escenas por nivel o tema",
+    "levels": {
+      "starter": "Inicial",
+      "beginner": "Principiante",
+      "intermediate": "Intermedio"
+    },
+    "topics": {
+      "phrases": "Frases cotidianas",
+      "food": "Comida",
+      "animals": "Animales",
+      "school": "Escuela",
+      "family": "Familia y amigos",
+      "funny": "Divertido",
+      "magic": "Magia"
+    }
   }
 }

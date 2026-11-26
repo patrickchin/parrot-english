@@ -1,4 +1,4 @@
-import { test, expect, setLanguage } from './fixtures';
+import { test, expect, setLanguage, escapeRegExp, sceneItems, showCard, homeShowCard, homeLink, showsShelf } from './fixtures';
 import { clips } from '../content-fixtures';
 import { readFile } from 'node:fs/promises';
 
@@ -8,22 +8,21 @@ const youngerCount = clips.filter(clip => clip.note === 'English Singsing').leng
 
 test('learner franchises open from the directory and survive playback and language changes', async ({ page }) => {
   await page.goto('/en/');
-  const tags = page.getByRole('navigation', { name: 'Collections', exact: true });
-  const younger = tags.getByRole('link', { name: 'English Singsing', exact: true });
+  const younger = showCard(showsShelf(page), 'English Singsing');
   await expect(younger).toContainText(`${youngerCount} scenes`);
   await younger.focus();
   await younger.press('Enter');
-  await expect(page.getByRole('listitem')).toHaveCount(youngerCount);
+  await expect(sceneItems(page)).toHaveCount(youngerCount);
   await page.getByRole('button', { name: 'Choose scene: Good morning! How are you?', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Start dubbing', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Back to scenes', exact: true }).click();
   await page.reload();
-  await expect(page.getByRole('listitem')).toHaveCount(youngerCount);
+  await expect(sceneItems(page)).toHaveCount(youngerCount);
   await setLanguage(page, 'zh-CN');
   await expect(page.getByRole('heading', { level: 1, name: 'English Singsing', exact: true })).toBeVisible();
-  await page.getByRole('link', { name: '全部合集', exact: true }).click();
-  await page.getByRole('link', { name: 'Ratatouille', exact: true }).click();
-  await expect(page.getByRole('listitem')).toHaveCount(filmCount);
+  await homeLink(page, 'zh-CN').click();
+  await homeShowCard(page, 'Ratatouille').click();
+  await expect(sceneItems(page)).toHaveCount(filmCount);
   await page.getByRole('searchbox').fill('cook');
   await expect(page.getByRole('button', { name: '选择片段：谁都能做饭！', exact: true })).toBeVisible();
 });
@@ -41,20 +40,20 @@ test('internet memes share one tag and retain searchable source names', async ({
   const sceneIds = new Set(recipe.scenes.map((scene: { sceneId: string }) => scene.sceneId));
   const memes = clips.filter(clip => sceneIds.has(clip.id));
   await page.goto('/en/');
-  const tags = page.getByRole('navigation', { name: 'Collections', exact: true });
-  const tag = tags.getByRole('link', { name: 'Memes', exact: true });
-  await expect(tag).toContainText(`${memes.length} scenes`);
-  await expect(tags.getByRole('link', { name: 'SpongeBob SquarePants', exact: true })).toBeVisible();
+  const shelf = page.getByRole('region', { name: 'Memes', exact: true });
+  const seeAll = shelf.getByRole('link', { name: `See all ${memes.length} in Memes`, exact: true });
+  await expect(seeAll).toBeVisible();
+  await expect(showCard(showsShelf(page), 'SpongeBob SquarePants')).toBeVisible();
   for (const source of new Set(memes.map(clip => clip.note))) {
-    await expect(tags.getByRole('link', { name: source, exact: true })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: new RegExp(`^${escapeRegExp(source)}`) })).toHaveCount(0);
   }
-  await tag.click();
+  await seeAll.click();
   await expect(page.getByRole('heading', { level: 1, name: 'Memes', exact: true })).toBeVisible();
-  await expect(page.getByRole('listitem')).toHaveCount(memes.length);
+  await expect(sceneItems(page)).toHaveCount(memes.length);
   for (const clip of memes) await expect(page.getByRole('button', { name: `Choose scene: ${clip.english}`, exact: true })).toBeVisible();
   await page.getByRole('searchbox').fill('FOX5');
   await expect(page.getByRole('button', { name: "Choose scene: Wouldn't you like to know, weather boy?", exact: true })).toBeVisible();
-  await page.getByRole('link', { name: 'All collections', exact: true }).click();
-  await page.getByRole('searchbox').fill('Memes');
-  await expect(page.getByRole('navigation', { name: 'Collections', exact: true }).getByRole('link', { name: 'Memes', exact: true })).toBeVisible();
+  await homeLink(page).click();
+  await page.getByRole('searchbox', { name: 'Find a show or scene', exact: true }).fill('Memes');
+  await expect(showCard(page.getByRole('region', { name: 'Shows', exact: true }), 'Memes')).toBeVisible();
 });

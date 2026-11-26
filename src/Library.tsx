@@ -3,13 +3,14 @@ import { useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useContent } from './app/ContentProvider';
 import { useLanguage } from './i18n';
+import { languagePath } from './locale';
 import { searchScenes } from './scene-search';
 import { AppHeader } from './app/AppHeader';
-import { ContentPoster } from './app/ContentPoster';
+import { SceneCard } from './app/BrowseCards';
 import { Icon } from './shared/ui';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { packsPath } from './app/routes';
+import { isCollection } from './browse';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 
 export function Library({ onChoose, packId }: { onChoose: (slug: string, draftId?: string) => void; packId?: string }) {
@@ -17,6 +18,7 @@ export function Library({ onChoose, packId }: { onChoose: (slug: string, draftId
   const { clips, packs } = useContent();
   const { language } = useLanguage();
   const pack = packs.find(item => item.id === packId);
+  const collection = !!pack && isCollection(pack, clips);
   const scenes = packId ? clips.filter(clip => clip.packId === packId) : clips;
   const seasons = pack ? [...new Set(scenes.flatMap(clip => clip.season === undefined ? [] : [clip.season]))].sort((a, b) => a - b) : [];
   const [params, setParams] = useSearchParams();
@@ -36,30 +38,26 @@ export function Library({ onChoose, packId }: { onChoose: (slug: string, draftId
     <AppHeader />
     <main className="library-main">
       <header className="pack-detail-heading">
-        <Link className="library-back" to={packsPath(language)}><Icon name="back" /><span>{t('packs.allPacks')}</span></Link>
+        <Link className="library-back" to={languagePath('/', language)}><Icon name="back" /><span>{t('browse.home')}</span></Link>
         <h1 className="font-display">{pack?.title ?? t('library.allScenes')}</h1>
-        {pack?.description && <p className="pack-description">{pack.description}</p>}
-        {pack && <p className="pack-meta"><span>{t('packs.uploadedBy', { uploader: pack.uploader })}</span><span>{t('library.sceneCount', { count: pack.sceneCount })}</span></p>}
+        {collection && pack.description && <p className="pack-description">{pack.description}</p>}
+        <p className="pack-meta" aria-live="polite">{t('library.sceneCount', { count: visible.length })}</p>
       </header>
-      <section aria-label={t('packs.scenes')}>
-        <div className="library-toolbar" data-collection>
-          <div className="library-scope"><h2>{t('packs.scenes')}</h2><span>{t('library.sceneCount', { count: visible.length })}</span></div>
+      <section aria-label={t('browse.scenes')}>
+        <div className="library-toolbar">
+          {!!seasons.length && <select aria-label={t('library.seasonFilter')} value={season ?? ''} onChange={event => changeSeason(event.target.value)} className="library-season min-h-12 max-w-full rounded-md border border-input bg-card px-3 text-base focus-visible:outline-2 focus-visible:outline-ring sm:text-sm">
+            <option value="">{t('library.allSeasons')}</option>
+            {seasons.map(number => <option key={number} value={number}>{t('library.seasonNumber', { number })}</option>)}
+          </select>}
           <InputGroup className="library-search h-12 bg-card">
             <InputGroupAddon><Icon name="search" /></InputGroupAddon>
-            <InputGroupInput ref={search} type="search" aria-label={t('library.findAScene')} placeholder={t(seasons.length ? 'library.findAScene' : 'library.titleCharacterTagOrLine')} value={query} onChange={e => setQuery(e.target.value)} className="h-11 text-base sm:text-sm" />
+            <InputGroupInput ref={search} type="search" aria-label={t('library.findAScene')} placeholder={t('library.titleCharacterTagOrLine')} value={query} onChange={e => setQuery(e.target.value)} className="h-11 text-base sm:text-sm" />
             {query && <InputGroupAddon align="inline-end"><Button variant="ghost" size="icon" onClick={clearSearch} aria-label={t('library.clearSearch')} className="size-11 p-0"><Icon name="close" /></Button></InputGroupAddon>}
           </InputGroup>
         </div>
-        {!!seasons.length && <select aria-label={t('library.seasonFilter')} value={season ?? ''} onChange={event => changeSeason(event.target.value)} className="mb-5 min-h-11 max-w-full rounded-md border border-input bg-card px-3 text-base focus-visible:outline-2 focus-visible:outline-ring sm:text-sm">
-          <option value="">{t('library.allSeasons')}</option>
-          {seasons.map(number => <option key={number} value={number}>{t('library.seasonNumber', { number })}</option>)}
-        </select>}
         {!visible.length && <Card className="library-empty"><p role="status">{t(scenes.length ? 'library.noScenesFound' : packId ? 'packs.emptyPack' : 'library.empty')}</p>{!!scenes.length && <><p>{t('library.searchSuggestion')}</p><Button onClick={() => { if (season) changeSeason(''); clearSearch(); }} className="mx-auto mt-5 h-12">{t('library.showAllScenes')}<Icon name="arrow" /></Button></>}</Card>}
         <ul role="list" className="scene-shelf">{visible.map((clip, index) => <li key={clip.slug}>
-          <button onClick={() => onChoose(clip.slug)} aria-label={t('library.chooseScene', { title: t(`content:scenes.${clip.id}.title`, { defaultValue: clip.title }) })} className="scene-select">
-            <ContentPoster src={clip.poster} eager={index < 2} priority={index === 0} />
-            <span className="scene-copy"><span role="heading" aria-level={3} className="scene-title font-display">{t(`content:scenes.${clip.id}.title`, { defaultValue: clip.title })}</span>{pack?.title === 'Memes' && <span className="scene-source">{clip.note}</span>}</span>
-          </button>
+          <SceneCard clip={clip} onChoose={() => onChoose(clip.slug)} source={collection || !pack} eager={index < 2} priority={index === 0} />
         </li>)}</ul>
       </section>
       {notices.map(notice => <p key={notice} className="library-notice">{notice}</p>)}

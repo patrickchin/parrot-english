@@ -155,7 +155,7 @@
     "howToDub": "吹き替えのやり方",
     "language": "表示言語",
     "dubs": "自分の吹き替え",
-    "packs": "コレクション"
+    "packs": "さがす"
   },
   "library": {
     "seasonFilter": "シーズンで絞り込む",
@@ -223,27 +223,15 @@
     "progress": "動画を作成中 {{percent}}%。このページを開いたままにしてください。",
     "ready": "動画ができました。保存して共有できます。"
   },
-  "categories": {
-    "films": "ミーム・クリップ",
-    "younger": "はじめての英語",
-    "older": "10〜12歳",
-    "teens": "ティーン"
-  },
   "app": {
     "title": "Parrotbook · 英語で吹き替え"
   },
   "packs": {
-    "introduction": "コレクションを選んで、自分らしくシーンを演じましょう。",
     "allPacks": "すべてのコレクション",
     "by": "作成者：{{author}}",
-    "scenes": "コレクション内のシーン",
     "emptyTitle": "コレクションはまだありません",
     "emptyDescription": "新しいコレクションが公開されると、ここに表示されます。",
     "emptyPack": "このコレクションにはシーンがありません",
-    "findPack": "コレクションを探す",
-    "searchPlaceholder": "コレクションやアップロードした人を検索",
-    "noResults": "コレクションが見つかりません。",
-    "clearFilters": "検索をクリア",
     "uploadedBy": "アップロード：{{uploader}}",
     "featuredScene": "おすすめシーン"
   },
@@ -364,5 +352,32 @@
       "clipboard": "リンクをコピーできませんでした。上のリンクを選択して手動でコピーしてください。"
     },
     "removing": "共有動画を削除中…"
+  },
+  "browse": {
+    "title": "吹き替えるシーンを選ぼう",
+    "search": "番組やシーンをさがす",
+    "searchPlaceholder": "番組・キャラクター・セリフ",
+    "home": "ホーム",
+    "shows": "番組",
+    "scenes": "シーン",
+    "seeAll": "すべて見る",
+    "seeAllLabel": "{{title}}の{{count}}件をすべて見る",
+    "resultCount_one": "{{count}}件",
+    "resultCount_other": "{{count}}件",
+    "tagFilter": "レベルやテーマでシーンを絞り込む",
+    "levels": {
+      "starter": "はじめて",
+      "beginner": "初級",
+      "intermediate": "中級"
+    },
+    "topics": {
+      "phrases": "日常フレーズ",
+      "food": "食べもの",
+      "animals": "動物",
+      "school": "学校",
+      "family": "家族と友だち",
+      "funny": "おもしろい",
+      "magic": "魔法"
+    }
   }
 }

@@ -1,4 +1,3 @@
-import { folders } from '../catalog';
 import type { Clip } from '../content-pack';
 import { languagePath, pathLanguage, type Language } from '../locale';
 import { generatePath, matchRoutes } from 'react-router';
@@ -34,19 +33,18 @@ export function readRoute(href: string, clips: readonly Clip[] = []) {
   const match = matchRoutes(pageRoutes, url.pathname)?.at(-1);
   const params = match?.params ?? {};
   const clip = clips.find(clip => (clip.routeSlug ?? clip.slug) === params.sceneName);
-  const folder = folders.find(item => item.value === params.folder);
   const route = match?.route.id;
   const sceneRoute = (route === 'scene' || route === 'dub') && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(params.sceneName ?? '');
   const packRoute = route === 'pack' && /^pack_[A-Za-z0-9_-]{1,80}$/.test(params.packId ?? '');
   const shareRoute = route === 'share' && /^shr_[A-Za-z0-9_-]{24}$/.test(params.shareId ?? '');
   return {
     shareId: shareRoute ? params.shareId : undefined,
-    page: shareRoute ? 'share' : route === 'dubs' ? 'dubs' : route === 'owner' ? 'owner' : route === 'packs' ? 'packs' : packRoute ? 'pack' : sceneRoute ? 'scene' : route === 'home' || route === 'library' && (folder || params.folder === 'all') ? 'library' : 'not-found',
+    page: shareRoute ? 'share' : route === 'dubs' ? 'dubs' : route === 'owner' ? 'owner' : route === 'packs' ? 'packs' : packRoute ? 'pack' : sceneRoute ? 'scene' : route === 'home' || route === 'library' && params.folder === 'all' ? 'library' : 'not-found',
     directory: route === 'home',
     language: pathLanguage(url.pathname) ?? 'zh-CN',
     slug: clip?.slug ?? (sceneRoute ? params.sceneName! : ''),
     draftId: sceneRoute ? params.draftId : undefined,
     packId: packRoute ? params.packId : sceneRoute && clip?.packId === url.searchParams.get('pack') ? clip.packId : undefined,
-    folder: clip?.cohort ?? folder?.value ?? 'all',
+    folder: 'all',
   };
 }

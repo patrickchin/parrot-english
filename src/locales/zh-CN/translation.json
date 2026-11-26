@@ -155,7 +155,7 @@
     "howToDub": "怎么配音？",
     "language": "界面语言",
     "dubs": "我的配音",
-    "packs": "合集"
+    "packs": "浏览"
   },
   "library": {
     "seasonFilter": "按季筛选",
@@ -223,27 +223,15 @@
     "progress": "正在生成视频 {{percent}}%，请保持页面打开。",
     "ready": "视频已生成，可保存后分享。"
   },
-  "categories": {
-    "films": "热梗与片段",
-    "younger": "英语启蒙",
-    "older": "10–12岁",
-    "teens": "青少年"
-  },
   "app": {
     "title": "Parrotbook · 英语配音"
   },
   "packs": {
-    "introduction": "选择合集，演绎属于你的场景。",
     "allPacks": "全部合集",
     "by": "作者：{{author}}",
-    "scenes": "合集内片段",
     "emptyTitle": "暂无合集",
     "emptyDescription": "新合集发布后会显示在这里。",
     "emptyPack": "此合集暂无片段",
-    "findPack": "查找合集",
-    "searchPlaceholder": "搜索合集或上传者",
-    "noResults": "未找到合集。",
-    "clearFilters": "清除搜索",
     "uploadedBy": "由 {{uploader}} 上传",
     "featuredScene": "精选片段"
   },
@@ -364,5 +352,32 @@
       "clipboard": "无法复制链接。请在上方选中链接并手动复制。"
     },
     "removing": "正在移除分享视频…"
+  },
+  "browse": {
+    "title": "选一个片段来配音",
+    "search": "查找节目或片段",
+    "searchPlaceholder": "节目、角色或台词",
+    "home": "首页",
+    "shows": "节目",
+    "scenes": "片段",
+    "seeAll": "查看全部",
+    "seeAllLabel": "查看{{title}}的全部 {{count}} 项",
+    "resultCount_one": "{{count}} 个结果",
+    "resultCount_other": "{{count}} 个结果",
+    "tagFilter": "按难度或主题筛选片段",
+    "levels": {
+      "starter": "启蒙",
+      "beginner": "初级",
+      "intermediate": "中级"
+    },
+    "topics": {
+      "phrases": "日常用语",
+      "food": "食物",
+      "animals": "动物",
+      "school": "学校",
+      "family": "家人与朋友",
+      "funny": "搞笑",
+      "magic": "魔法"
+    }
   }
 }
