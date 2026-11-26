@@ -1,5 +1,5 @@
 import { scenePath } from './scene-path';
-import { test, expect, catalogUrl, setLanguage, browseText, escapeRegExp, homeShelves, openShow, shelfTitle, showCard } from './fixtures';
+import { test, expect, catalogUrl, setLanguage, browseText, escapeRegExp, homeShelves, openShow, shelfShown, shelfTitle, showCard } from './fixtures';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { clips, packs } from '../content-fixtures';
@@ -33,8 +33,8 @@ for (const initialPath of ['/en/packs', '/en/library/all']) test(`first visit to
       const name = shelfTitle(shelf, 'en');
       const region = page.getByRole('region', { name, exact: true });
       if (shelf.kind === 'collection') await expect(region.getByRole('link', { name: `See all ${shelf.scenes.length} in ${name}`, exact: true })).toBeVisible();
-      else if (shelf.shows.length > 4) await expect(region.getByRole('link', { name: `See all ${shelf.shows.length} in ${name}`, exact: true })).toBeVisible();
-      else for (const show of shelf.shows) await expect(showCard(region, show.title)).toBeVisible();
+      else if (shelf.shows.length > shelfShown(shelf, page)) await expect(region.getByRole('link', { name: `See all ${shelf.shows.length} in ${name}`, exact: true })).toBeVisible();
+      else for (const show of shelf.shows.slice(0, shelfShown(shelf, page))) await expect(showCard(region, show.title)).toBeVisible();
     }
     await page.getByRole('link', { name: 'All scenes', exact: true }).click();
   }

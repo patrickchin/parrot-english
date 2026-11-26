@@ -1,4 +1,4 @@
-import { test, expect, catalogUrl, setLanguage, headerDestination, homeShelves, openShow, shelfTitle, showCard } from './fixtures';
+import { test, expect, catalogUrl, setLanguage, headerDestination, homeShelves, openShow, shelfShown, shelfTitle, showCard } from './fixtures';
 import { languagePath } from '../../src/locale';
 import { publishedCatalog, clips, packs, readScene } from '../content-fixtures';
 import { packPath, packsPath } from '../../src/app/routes';
@@ -23,8 +23,8 @@ test('home shelves match scene-card sizing and support responsive keyboard selec
   for (const shelf of homeShelves) {
     if (shelf.kind !== 'section') continue;
     const region = page.getByRole('region', { name: shelfTitle(shelf, 'en'), exact: true });
-    await expect(region.getByRole('listitem')).toHaveCount(Math.min(4, shelf.shows.length));
-    for (const show of shelf.shows.slice(0, 4)) {
+    await expect(region.getByRole('listitem')).toHaveCount(shelfShown(shelf, page));
+    for (const show of shelf.shows.slice(0, shelfShown(shelf, page))) {
       const card = showCard(region, show.title);
       await expect(card).toHaveAttribute('href', packPath(show.id, 'en'));
       await expect(card).toContainText(`${show.sceneCount} scene`);

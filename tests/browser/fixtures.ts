@@ -5,7 +5,7 @@ import { extname } from 'node:path';
 import { existsSync, readFileSync } from 'node:fs';
 import { clips, contentRoot, packs, publishedCatalog } from '../content-fixtures';
 import type { Clip, Pack } from '../../src/content-pack';
-import { browseShelves, type Shelf } from '../../src/browse';
+import { browseShelves, shelfCount, type Shelf } from '../../src/browse';
 
 export const catalogUrl = 'https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/content/catalog.json';
 export async function routeContent(page: Page, sampleScene = false) {
@@ -106,6 +106,10 @@ export const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]
 const fixturePacks = packs.map(pack => ({ ...pack.data, id: pack.entry.id, uploader: pack.entry.uploader, sceneCount: pack.data.scenes.length }));
 /** Home shelves derived from the same authored catalog the browser receives. */
 export const homeShelves = browseShelves(fixturePacks, clips as unknown as Clip[]);
+/** Columns of the home grids at the page's viewport width (see styles.css breakpoints). */
+export const viewportColumns = (page: Page) => { const width = page.viewportSize()!.width; return width >= 1024 ? 4 : width >= 640 ? 3 : 2; };
+/** Cards a home shelf previews: complete rows only. */
+export const shelfShown = (shelf: Shelf, page: Page) => shelfCount(shelf.kind === 'section' ? shelf.shows.length : shelf.scenes.length, viewportColumns(page));
 export const pageLanguage = (page: Page) => pathLanguage(new URL(page.url()).pathname) ?? 'zh-CN';
 export const browseText = (language: Language) => translations[language];
 export const shelfTitle = (shelf: Shelf, language: Language) => shelf.kind === 'section' ? browseText(language).categories[shelf.section.title.split('.')[1]] : shelf.pack.title;
@@ -131,7 +135,7 @@ export async function openShow(page: Page, title: string, { keyboard = false } =
   const name = shelfTitle(shelf, language);
   const region = page.getByRole('region', { name, exact: true });
   const activate = async (link: Locator) => { if (keyboard) { await link.focus(); await link.press('Enter'); } else await link.click(); };
-  if (shelf.shows.findIndex(show => show.title === title) < 4) return activate(showCard(region, title, language));
+  if (shelf.shows.findIndex(show => show.title === title) < shelfShown(shelf, page)) return activate(showCard(region, title, language));
   await activate(region.getByRole('link', { name: text.browse.seeAllLabel.replace('{{count}}', String(shelf.shows.length)).replace('{{title}}', name), exact: true }));
   await expect(page.getByRole('heading', { level: 1, name, exact: true })).toBeVisible();
   await activate(showCard(page.getByRole('list', { name: text.browse.shows, exact: true }), title, language));

@@ -32,6 +32,12 @@ export function sectionShows(section: Section, packs: readonly PublishedPack[], 
   return packs.filter(pack => !isCollection(pack, clips) && packSection(pack, clips) === section);
 }
 
+/** Home shelves show only complete rows; a lone card on a wrapped row wastes space. */
+export function shelfCount(items: number, columns: number, cap = 4) {
+  if (items <= columns) return items;
+  return Math.floor(Math.min(items, cap) / columns) * columns;
+}
+
 export function browseShelves(packs: readonly PublishedPack[], clips: readonly Clip[]): Shelf[] {
   const grouped: Shelf[] = sections.map(section => {
     const shows = sectionShows(section, packs, clips);

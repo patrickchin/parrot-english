@@ -1,10 +1,11 @@
-import { test, expect, catalogUrl, homeShelves } from './fixtures';
+import type { Page } from '@playwright/test';
+import { test, expect, catalogUrl, homeShelves, shelfShown } from './fixtures';
 import { clips, packs } from '../content-fixtures';
 
-// Home previews up to four items per shelf, in shelf order.
-const homeItems = homeShelves.flatMap(shelf => shelf.kind === 'section'
-  ? shelf.shows.slice(0, 4).map(show => packs.find(pack => pack.entry.id === show.id)!.data.scenes[0] as typeof clips[number])
-  : shelf.scenes.slice(0, 4) as unknown as typeof clips);
+// Home previews complete rows of each shelf, in shelf order.
+const homeItems = (page: Page) => homeShelves.flatMap(shelf => shelf.kind === 'section'
+  ? shelf.shows.slice(0, shelfShown(shelf, page)).map(show => packs.find(pack => pack.entry.id === show.id)!.data.scenes[0] as typeof clips[number])
+  : shelf.scenes.slice(0, shelfShown(shelf, page)) as unknown as typeof clips);
 
 for (const gallery of ['packs', 'scenes'] as const) test(`${gallery} waits to download distant posters until they approach the viewport`, async ({ page }) => {
   const images = new Set<string>();
@@ -13,7 +14,7 @@ for (const gallery of ['packs', 'scenes'] as const) test(`${gallery} waits to do
   const cards = gallery === 'packs'
     ? page.getByRole('main').getByRole('listitem')
     : page.getByRole('button', { name: /^Choose scene:/ });
-  await expect(cards).toHaveCount(gallery === 'packs' ? homeItems.length : clips.length);
+  await expect(cards).toHaveCount(gallery === 'packs' ? homeItems(page).length : clips.length);
   await expect.poll(() => cards.first().locator('img').evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
   await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
   // Close enough for native lazy loading to fetch, beyond our viewport margin.
@@ -23,7 +24,7 @@ for (const gallery of ['packs', 'scenes'] as const) test(`${gallery} waits to do
   }));
   expect(index).toBeGreaterThan(1);
   const card = cards.nth(index);
-  const clip = gallery === 'packs' ? homeItems[index] : clips[index];
+  const clip = gallery === 'packs' ? homeItems(page)[index] : clips[index];
   const pack = packs.find(pack => pack.data.scenes.some((scene: { slug: string }) => scene.slug === clip.slug))!;
   const poster = new URL(clip.poster, new URL(pack.entry.manifest, catalogUrl)).href;
   await expect(card).not.toBeInViewport();

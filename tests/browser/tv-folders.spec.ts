@@ -8,12 +8,12 @@ import { join } from 'node:path';
 test('new TV scenes open from the Teenagers shelf and keep a season selected through playback', async ({ page }, info) => {
   await page.goto('/en/packs');
   await expect(page.getByRole('heading', { name: 'Pick a scene to dub', level: 1 })).toBeVisible();
-  const teens = page.getByRole('region', { name: 'Teenagers', exact: true });
   for (const [collection, title] of [
     ['How I Met Your Mother', 'Can you give me a ride?'],
     ['The Big Bang Theory', "Who's Mike Drop?"],
   ]) {
-    await showCard(teens, collection).click();
+    // Narrow shelves show complete rows only, so a show may sit behind See all.
+    await openShow(page, collection);
     await expect(page.getByRole('navigation', { name: 'Breadcrumb', exact: true }).getByRole('link')).toHaveText(['Home', 'Teenagers']);
     await expect(page.getByRole('button', { name: `Choose scene: ${title}`, exact: true })).toBeVisible();
     await page.getByRole('navigation', { name: 'Breadcrumb', exact: true }).getByRole('link', { name: 'Home', exact: true }).click();

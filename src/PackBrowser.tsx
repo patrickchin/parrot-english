@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { useSyncExternalStore } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { AppHeader } from './app/AppHeader';
 import { ContentPoster } from './app/ContentPoster';
@@ -6,7 +7,7 @@ import { SceneCard, ShowCard } from './app/BrowseCards';
 import { useContent } from './app/ContentProvider';
 import { libraryPath, packPath, scenePath } from './app/routes';
 import { useSceneNavigation } from './app/useSceneNavigation';
-import { browseShelves, type Shelf } from './browse';
+import { browseShelves, shelfCount, type Shelf } from './browse';
 import type { Clip } from './content-pack';
 import { useLanguage } from './i18n';
 import { searchScenes } from './scene-search';
@@ -15,7 +16,14 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 
-const shelfSize = 4;
+// Mirrors the .pack-grid and .scene-shelf column breakpoints in styles.css.
+const columnQueries = [['(min-width: 1024px)', 4], ['(min-width: 640px)', 3]] as const;
+function readColumns() { return columnQueries.find(([query]) => matchMedia(query).matches)?.[1] ?? 2; }
+function watchColumns(change: () => void) {
+  const lists = columnQueries.map(([query]) => matchMedia(query));
+  lists.forEach(list => list.addEventListener('change', change));
+  return () => lists.forEach(list => list.removeEventListener('change', change));
+}
 
 export function PackBrowser() {
   const { t } = useTranslation();
@@ -31,6 +39,7 @@ export function PackBrowser() {
   const showResults = words.length ? packs.filter(pack => words.every(word => normalize([pack.title, pack.franchise].join(' ')).includes(word))) : [];
   const sceneResults = words.length ? searchScenes(clips, query, clip => t(`content:scenes.${clip.id}.title`, { defaultValue: clip.title })) : [];
   const shelves = browseShelves(packs, clips);
+  const columns = useSyncExternalStore(watchColumns, readColumns);
   const notices = [...new Set(clips.map(clip => clip.notices?.[language]?.library).filter((notice): notice is string => !!notice))];
   const sceneHref = (clip: Clip) => `${scenePath(clip.slug, undefined, language, clips)}?pack=${encodeURIComponent(clip.packId)}`;
   function change(value: string) {
@@ -91,7 +100,8 @@ export function PackBrowser() {
             </section>}
           </> : shelves.map((shelf, shelfIndex) => {
             const items = shelf.kind === 'section' ? shelf.shows : shelf.scenes;
-            const more = shelf.kind === 'collection' || items.length > shelfSize;
+            const shown = shelfCount(items.length, columns);
+            const more = shelf.kind === 'collection' || items.length > shown;
             const href = shelf.kind === 'section' ? libraryPath(shelf.section.id, language) : packPath(shelf.pack.id, language);
             return <section key={shelfId(shelf)} aria-labelledby={shelfId(shelf)} className="browse-shelf">
               <div className="browse-shelf-heading">
@@ -99,8 +109,8 @@ export function PackBrowser() {
                 {more && <Link to={href} className="browse-see-all" aria-label={t('browse.seeAllLabel', { title: shelfTitle(shelf), count: shelf.kind === 'section' ? shelf.shows.length : shelf.scenes.length })}>{t('browse.seeAll')}<Icon name="arrow" /></Link>}
               </div>
               {shelf.kind === 'section'
-                ? <ul role="list" className="pack-grid">{shelf.shows.slice(0, shelfSize).map((pack, index) => <li key={pack.id}><ShowCard pack={pack} eager={shelfIndex < 2} priority={shelfIndex === 0 && index === 0 && !featured} /></li>)}</ul>
-                : <ul role="list" className="scene-shelf">{shelf.scenes.slice(0, shelfSize).map(clip => <li key={clip.slug}><SceneCard clip={clip} source eager={shelfIndex < 2} onChoose={() => navigation.navigateTo(sceneHref(clip))} /></li>)}</ul>}
+                ? <ul role="list" className="pack-grid">{shelf.shows.slice(0, shown).map((pack, index) => <li key={pack.id}><ShowCard pack={pack} eager={shelfIndex < 2} priority={shelfIndex === 0 && index === 0 && !featured} /></li>)}</ul>
+                : <ul role="list" className="scene-shelf">{shelf.scenes.slice(0, shown).map(clip => <li key={clip.slug}><SceneCard clip={clip} source eager={shelfIndex < 2} onChoose={() => navigation.navigateTo(sceneHref(clip))} /></li>)}</ul>}
             </section>;
           })}
         {notices.map(notice => <p key={notice} className="library-notice">{notice}</p>)}

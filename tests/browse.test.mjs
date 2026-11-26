@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { browseShelves, isCollection, packSection, sectionShows, sections } from '../src/browse.ts';
+import { browseShelves, isCollection, packSection, sectionShows, sections, shelfCount } from '../src/browse.ts';
 
 const pack = (id, title) => ({ id, title, uploader: 'Patrick', description: '', author: '', sceneCount: 0 });
 const clip = (packId, cohort, note) => ({ packId, cohort, note });
@@ -28,4 +28,10 @@ test('home shelves list audience sections in learner order, then mixed collectio
   assert.deepEqual(shelves.map(shelf => shelf.kind === 'section' ? shelf.section.id : shelf.pack.id),
     ['first-english', 'cartoons-and-films', 'teens', 'pack_memes']);
   assert.equal(shelves[0].sceneCount, 3);
+});
+
+test('home shelves fill complete rows instead of leaving a lone wrapped card', () => {
+  assert.deepEqual([1, 2, 3, 4, 13].map(items => shelfCount(items, 4)), [1, 2, 3, 4, 4]);
+  assert.deepEqual([1, 2, 3, 4, 13].map(items => shelfCount(items, 3)), [1, 2, 3, 3, 3]);
+  assert.deepEqual([1, 2, 3, 4, 13].map(items => shelfCount(items, 2)), [1, 2, 2, 4, 4]);
 });

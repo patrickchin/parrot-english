@@ -514,6 +514,7 @@ button:disabled { cursor: not-allowed; }
 
   .scene-shelf, .pack-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .scene-copy { padding: 12px 0 4px; }
+  .pack-page .scene-copy { padding-inline: 12px; }
   .pack-card-copy { padding: 10px 8px; }
   .scene-title { font-size: 14px; }
 }

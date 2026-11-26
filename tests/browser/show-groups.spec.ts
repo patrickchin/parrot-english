@@ -1,4 +1,4 @@
-import { test, expect, setLanguage, homeShelves, escapeRegExp, openShow, sceneItems, shelfTitle, showCard } from './fixtures';
+import { test, expect, setLanguage, homeShelves, escapeRegExp, openShow, sceneItems, shelfShown, shelfTitle, showCard } from './fixtures';
 import type { Page } from '@playwright/test';
 import { clips, packs } from '../content-fixtures';
 import { libraryPath, packPath } from '../../src/app/routes';
@@ -21,13 +21,13 @@ test('home groups shows into ordered age shelves with collections and all scenes
   for (const shelf of sectionShelves) {
     const name = shelfTitle(shelf, 'en');
     const region = page.getByRole('region', { name, exact: true });
-    await expect(region.getByRole('link', { name: /scenes?$/ })).toHaveCount(Math.min(4, shelf.shows.length));
-    for (const show of shelf.shows.slice(0, 4)) await expect(showCard(region, show.title)).toHaveAttribute('href', packPath(show.id, 'en'));
-    await expect(region.getByRole('link', { name: `See all ${shelf.shows.length} in ${name}`, exact: true })).toHaveCount(shelf.shows.length > 4 ? 1 : 0);
+    await expect(region.getByRole('link', { name: /scenes?$/ })).toHaveCount(shelfShown(shelf, page));
+    for (const show of shelf.shows.slice(0, shelfShown(shelf, page))) await expect(showCard(region, show.title)).toHaveAttribute('href', packPath(show.id, 'en'));
+    await expect(region.getByRole('link', { name: `See all ${shelf.shows.length} in ${name}`, exact: true })).toHaveCount(shelf.shows.length > shelfShown(shelf, page) ? 1 : 0);
     await expect(region.getByRole('button')).toHaveCount(0);
   }
   const memes = page.getByRole('region', { name: 'Memes', exact: true });
-  await expect(memes.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(4);
+  await expect(memes.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(shelfShown(homeShelves.find(shelf => shelf.kind === 'collection')!, page));
   await expect(memes.getByRole('link', { name: `See all ${memeScenes.length} in Memes`, exact: true })).toHaveAttribute('href', packPath(memesPack.entry.id, 'en'));
   for (const region of await page.getByRole('region').all()) await expect(region.getByRole('link', { name: 'All scenes', exact: true })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'All scenes', exact: true })).toBeVisible();
@@ -167,7 +167,7 @@ test('pack and all-scene pages support history, reload, language, scene search a
 test('the Memes collection retains original source names and searches its own scenes', async ({ page }) => {
   await page.goto('/en/');
   const shelf = page.getByRole('region', { name: 'Memes', exact: true });
-  for (const clip of memeScenes.slice(0, 4)) await expect(shelf.getByRole('button', { name: `Choose scene: ${clip.english}`, exact: true }).getByText(clip.note, { exact: true })).toBeVisible();
+  for (const clip of memeScenes.slice(0, shelfShown(homeShelves.find(shelf => shelf.kind === 'collection')!, page))) await expect(shelf.getByRole('button', { name: `Choose scene: ${clip.english}`, exact: true }).getByText(clip.note, { exact: true })).toBeVisible();
   for (const creator of creators) await expect(page.getByRole('link', { name: new RegExp(`^${escapeRegExp(creator)}`) })).toHaveCount(0);
   await shelf.getByRole('link', { name: `See all ${memeScenes.length} in Memes`, exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Memes', exact: true })).toBeVisible();
