@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import { SceneStudio } from './SceneStudio';
 import { listOwnerPacks, manageOwnerPack, ownerApiConfiguration, OwnerUploadError, preparePack, setOwnerFeaturedScene, unlockOwner, uploadPack, type ManagedPack, type OwnerCatalog, type PreparedPack, type PublishedUpload, type UploadJob } from './owner-upload';
 
 const emptyOwnerCatalog: OwnerCatalog = { packs: [], featuredSceneId: null };
@@ -161,7 +162,9 @@ export function OwnerPacks() {
           <label htmlFor="owner-key">{t('owner.accessKey')}</label>
           <Input id="owner-key" name="owner-access-key" type="password" autoComplete="off" value={key} onChange={event => setKey(event.target.value)} disabled={unlocking} required aria-invalid={error?.code === 'unauthorized' || undefined} aria-describedby={error ? 'owner-upload-error' : undefined} className="h-12" />
           <Button type="submit" className="h-12" disabled={unlocking || !key.trim()}>{t(unlocking ? 'owner.unlocking' : 'owner.unlock')}</Button>
-        </form> : <section className="owner-panel" aria-labelledby="owner-package-heading">
+        </form> : <>
+        <SceneStudio />
+        <section className="owner-panel" aria-labelledby="owner-package-heading">
           <div className="owner-panel-heading"><h2 id="owner-package-heading">{t('owner.packageTitle')}</h2><Button variant="ghost" disabled={busy || !!managing} className="h-11" onClick={lock}>{t('owner.lock')}</Button></div>
           <p>{t('owner.folderNotice')}</p>
           <p className="owner-limits">{t('owner.limits')}</p>
@@ -183,7 +186,7 @@ export function OwnerPacks() {
             {phase !== 'success' && <div className="owner-actions"><Button variant="highlight" className="h-12" disabled={busy || !!managing} onClick={() => void publish()}>{t(job.current ? 'owner.retryUpload' : 'owner.publish')}</Button>{phase === 'uploading' && <Button variant="outline" className="h-12" onClick={() => operation.current?.abort()}>{t('owner.cancel')}</Button>}</div>}
           </>}
           {published && <div className="owner-published"><p role="status">{t('owner.published', { title: published.title })}</p><Link className="owner-pack-link" to={packPath(published.id, language)}>{t('owner.openPublished')}</Link></div>}
-        </section>}
+        </section></>}
         {unlocked && <section className="owner-panel owner-management" aria-labelledby="owner-management-heading">
           <h2 id="owner-management-heading">{t('owner.manageTitle')}</h2>
           {!listError && !!featuredPacks.length && <form className="owner-feature" onSubmit={saveFeaturedScene}>

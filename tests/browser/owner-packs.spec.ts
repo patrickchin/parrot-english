@@ -2,6 +2,7 @@ import { test, expect, catalogUrl, headerDestination, homeShelves, shelfTitle, s
 import type { Page } from '@playwright/test';
 import { publishedCatalog, packs, clips, readScene, sceneFile } from '../content-fixtures';
 import type { Pack } from '../../src/content-pack';
+import type { Scene } from '../../src/scene';
 import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir, homedir } from 'node:os';
 import { join } from 'node:path';
@@ -9,22 +10,30 @@ import { mobileViewports, mobileScreenshot, touchControl } from './mobile-viewpo
 
 const ownerKey = 'test-only-owner-access-key';
 const uploadId = 'upl_ownerBrowserTest';
+const patrickManifest: Omit<Scene, 'base'> = readScene('patrick');
+const patrickClip = clips.find(clip => clip.slug === 'patrick')!;
+const patrickPack: Pack = packs.find(pack => pack.entry.id === patrickClip.packId)!.data;
+const patrickEnglish = patrickPack.locales?.en;
+const patrickScene = {
+  ...patrickManifest,
+  title: patrickEnglish?.scenes[patrickManifest.id].title ?? patrickManifest.title,
+  roles: patrickManifest.roles.map(role => ({ ...role, name: patrickEnglish?.roles[role.id].name ?? role.name })),
+};
 let directory: string, packFolder: string, pack: Pack, scene: ReturnType<typeof readScene>, bodies: Map<string, Buffer>;
 
 test.beforeAll(async () => {
   directory = await mkdtemp(join(tmpdir(), 'parrotbook-owner-browser-'));
   packFolder = join(directory, 'weekend-pack');
-  const original = clips.find(clip => clip.slug === 'patrick')!;
-  const source = packs.find(pack => pack.entry.id === original.packId)!.data;
-  scene = structuredClone(readScene('patrick'));
+  const original = patrickClip;
+  const source = patrickPack;
+  scene = structuredClone(patrickManifest);
   scene.id = 'scene_ownerBrowserTest';
   const roleIds = new Map<string, string>();
   scene.roles = scene.roles.map((role: { id: string }, index: number) => {
     const id = `role_ownerBrowserTest_${index}`; roleIds.set(role.id, id); return { ...role, id };
   });
   scene.lines = scene.lines.map((line: { roleId: string }, index: number) => ({ ...line, id: `line_ownerBrowserTest_${index}`, roleId: roleIds.get(line.roleId)! }));
-  const locales = Object.fromEntries(Object.entries(source.locales).map(([language, value]) => {
-    const locale = value as { scenes: Record<string, { licence: string; changes: string }>; roles: Record<string, { name: string; hint: string }> };
+  const locales = Object.fromEntries(Object.entries(source.locales ?? {}).map(([language, locale]) => {
     return [language, { scenes: { [scene.id]: { title: 'Weekend Patrick', licence: locale.scenes[original.id].licence, changes: locale.scenes[original.id].changes } },
       roles: Object.fromEntries([...roleIds].map(([oldId, id]) => [id, locale.roles[oldId]])) }];
   }));
@@ -165,6 +174,157 @@ test('owner access protects folder uploads and never persists the access key', a
   await page.reload();
   await expect(page.getByLabel('Owner access key', { exact: true })).toHaveValue('');
   await expect(page.getByLabel('Choose collection folder', { exact: true })).toHaveCount(0);
+});
+
+test('the owner can trim Patrick’s existing subtitles and reopen the saved timings', async ({ page }) => {
+  await ownerService(page);
+  await unlock(page);
+  const studio = await importPatrick(page);
+  const timeline = studio.getByRole('region', { name: 'Timeline', exact: true });
+  const details = studio.getByRole('complementary', { name: 'Selection details', exact: true });
+  const firstCaption = patrickScene.lines[0];
+  const cue = timeline.getByRole('button', { name: firstCaption.text, exact: true }).first();
+  await expect(cue).toHaveAttribute('aria-pressed', 'true');
+  await studio.getByLabel('Scene title', { exact: true }).fill('Patrick timing draft');
+  const start = details.getByLabel('Record from (seconds)', { exact: true });
+  await expect(start).toHaveValue(String(firstCaption.start));
+  const handle = timeline.getByRole('button', { name: 'Trim recording start', exact: true });
+  await handle.scrollIntoViewIfNeeded();
+  const box = (await handle.boundingBox())!;
+  const x = box.x + box.width / 2, y = box.y + box.height / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x - 16, y, { steps: 5 });
+  await page.mouse.up();
+  await expect.poll(async () => Number(await start.inputValue())).toBeLessThan(firstCaption.start);
+  const trimmedStart = await start.inputValue();
+
+  const end = details.getByLabel('Record until (seconds)', { exact: true });
+  await expect(details.getByRole('button', { name: 'Move End (s) later by 0.1 seconds' })).toBeDisabled();
+  await details.getByRole('button', { name: 'Move End (s) earlier by 0.1 seconds' }).click();
+  await expect(end).toHaveValue('4.85');
+  await end.fill('4.8');
+  await end.press('Enter');
+  await expect(end).toHaveValue('4.8');
+  await studio.getByRole('button', { name: 'Save draft', exact: true }).click();
+  await expect(studio.getByRole('status').filter({ hasText: 'Draft saved in this browser.' })).toBeVisible();
+
+  await unlock(page);
+  await studio.getByLabel('Draft actions', { exact: true }).click();
+  await studio.getByLabel('Saved drafts', { exact: true }).selectOption({ label: 'Patrick timing draft' });
+  await expect(cue).toHaveAttribute('aria-pressed', 'true');
+  await expect(start).toHaveValue(trimmedStart);
+  await expect(end).toHaveValue('4.8');
+  for (const width of [320, 390, 768]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  }
+});
+
+async function importPatrick(page: Page) {
+  await page.getByLabel('Import scene JSON', { exact: true }).setInputFiles({
+    name: 'scene.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(patrickScene)),
+  });
+  const studio = page.getByRole('region', { name: 'Scene studio', exact: true });
+  await expect(studio.getByLabel('Scene title', { exact: true })).toHaveValue(patrickScene.title);
+  return studio;
+}
+
+test('the owner can preview Patrick’s recording windows and preserve manifest fields on export', async ({ page }, info) => {
+  await ownerService(page);
+  await unlock(page);
+  const studio = await importPatrick(page);
+  const preview = studio.getByLabel('Preview', { exact: true }).and(studio.locator('video'));
+  await expect(preview).toHaveAttribute('src', patrickScene.mediaBase + patrickScene.video);
+  const play = studio.getByRole('button', { name: 'Play recording window' });
+  await expect(play).toBeEnabled();
+  const details = studio.getByRole('complementary', { name: 'Selection details' });
+  const subtitle = details.getByRole('textbox', { name: 'Subtitle', exact: true });
+  const [first, second] = patrickScene.lines;
+  await expect(subtitle).toHaveValue(first.text);
+  const pause = studio.getByRole('button', { name: 'Pause playback', exact: true });
+  const playhead = studio.getByRole('slider', { name: 'Timeline playhead' });
+  const mediaTime = () => preview.evaluate(node => (node as HTMLVideoElement).currentTime);
+  const ruler = (await playhead.boundingBox())!;
+  await playhead.click({ position: { x: ruler.width * (first.start + 0.5) / patrickScene.duration, y: 6 } });
+  await expect.poll(mediaTime).toBeGreaterThan(first.start + 0.25);
+  expect(await mediaTime()).toBeLessThan(first.end);
+  await preview.evaluate(node => {
+    const video = node as HTMLVideoElement;
+    video.addEventListener('playing', () => { video.dataset.previewStart = String(video.currentTime); }, { once: true });
+  });
+  await play.click();
+  await expect(pause).toBeVisible();
+  await expect.poll(async () => Math.abs(Number(await preview.getAttribute('data-preview-start')) - first.start)).toBeLessThan(0.15);
+  await expect(play).toBeVisible();
+  await expect.poll(mediaTime).toBeCloseTo(first.end, 2);
+  await studio.getByRole('button', { name: second.text, exact: true }).focus();
+  await page.keyboard.press('Enter');
+  await expect(subtitle).toHaveValue(second.text);
+  if (info.project.name === 'chromium') {
+    const folder = join(homedir(), 'Pictures/Screenshots/Codex/parrot-english');
+    await mkdir(folder, { recursive: true });
+    for (const [name, width] of [['desktop', 1440], ['tablet', 768], ['phone', 390]] as const) {
+      await page.setViewportSize({ width, height: 900 });
+      await studio.screenshot({ path: join(folder, 'scene-studio-timeline-' + name + '.png') });
+    }
+  }
+  await details.getByRole('button', { name: 'Move End (s) later by 0.1 seconds' }).click();
+  await play.click();
+  await expect(pause).toBeVisible();
+  await expect(play).toBeVisible();
+  await expect.poll(mediaTime).toBeCloseTo(7.9, 2);
+  await subtitle.fill('No, this is Patrick!');
+  await studio.getByLabel('Draft actions', { exact: true }).click();
+  const [download] = await Promise.all([page.waitForEvent('download'), studio.getByRole('button', { name: 'Export draft JSON', exact: true }).click()]);
+  const output = JSON.parse(await readFile(await download.path()!, 'utf8'));
+  expect(output.scene.id).toBe(patrickScene.id);
+  expect(output.scene.credit).toEqual(patrickScene.credit);
+  const expectedLines = patrickScene.lines.map((line, index) => {
+    if (index !== 1) return line;
+    const { words: _words, ...cue } = line;
+    return { ...cue, end: 7.9, text: 'No, this is Patrick!' };
+  });
+  expect(output.scene.lines).toEqual(expectedLines);
+  expect(output.scene.roles[0].portrait).toBe(patrickScene.roles[0].portrait);
+  await studio.getByLabel('Draft actions', { exact: true }).click();
+  await studio.getByRole('button', { name: 'Source clip', exact: true }).click();
+  await expect(studio.getByLabel('YouTube URL', { exact: true })).toHaveValue(patrickScene.credit.source);
+});
+
+test('the timeline seeks a YouTube source relative to the clip start', async ({ page }) => {
+  await ownerService(page);
+  await page.route('https://www.youtube.com/iframe_api', route => route.fulfill({
+    contentType: 'application/javascript',
+    body: `
+      window.YT = { Player: class {
+        constructor(target, options) {
+          this.time = options.playerVars.start;
+          this.state = 5;
+          this.events = options.events;
+          target.dataset.videoId = options.videoId;
+          queueMicrotask(() => this.events.onReady());
+        }
+        getCurrentTime() { return this.time; }
+        getPlayerState() { return this.state; }
+        pauseVideo() { this.state = 2; this.events.onStateChange({ data: 2 }); }
+        seekTo(time) { this.time = time; window.lastYoutubeSeek = time; }
+        destroy() {}
+      }};
+      window.onYouTubeIframeAPIReady();
+    `,
+  }));
+  await unlock(page);
+  const studio = page.getByRole('region', { name: 'Scene studio', exact: true });
+  await studio.getByLabel('Clip starts at (seconds)', { exact: true }).fill('17');
+  await studio.getByLabel('Clip ends at (seconds)', { exact: true }).fill('23.2');
+  await studio.getByLabel('YouTube URL', { exact: true }).fill(patrickScene.credit.source);
+  await expect(studio.getByRole('button', { name: 'Play clip' })).toBeEnabled();
+  const ruler = studio.getByRole('slider', { name: 'Timeline playhead' });
+  await ruler.press('Home');
+  await ruler.press('ArrowRight');
+  await expect(ruler).toHaveAttribute('aria-valuetext', '00:00.10');
+  expect(await page.evaluate(() => (window as unknown as { lastYoutubeSeek: number }).lastYoutubeSeek)).toBe(17.1);
 });
 
 test('an owner publishes a native folder without franchise metadata and its pack becomes searchable without rebuilding', async ({ page }, info) => {
