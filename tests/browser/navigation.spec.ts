@@ -1,4 +1,4 @@
-import { test, expect, setLanguage, headerDestination, openShow } from './fixtures';
+import { test, expect, setLanguage, headerDestination, homeShowCard, homeLink } from './fixtures';
 import { clips, packs } from '../content-fixtures';
 
 test('the home wordmark returns to Packs without reloading the app or its catalog', async ({ page }) => {
@@ -8,7 +8,7 @@ test('the home wordmark returns to Packs without reloading the app or its catalo
     if (new URL(request.url()).pathname === '/content/catalog.json') catalogs++;
   });
   await page.goto('/en/');
-  await openShow(page, 'Shrek');
+  await homeShowCard(page, 'Shrek').click();
   await expect(page.getByRole('heading', { name: 'Shrek', exact: true })).toBeVisible();
   const before = { documents, catalogs };
   await page.getByRole('link', { name: 'Parrotbook home', exact: true }).click();
@@ -41,10 +41,10 @@ test('the readable Toy Story URL keeps its name through saving, reload and resum
 
 test('pack paths follow selection, reload, Back and Forward', async ({ page }) => {
   await page.goto('/en/');
-  await openShow(page, 'Shrek');
+  await homeShowCard(page, 'Shrek').click();
   await expect(page).toHaveURL(new RegExp('/packs/' + packs.find(pack => pack.data.title === 'Shrek')!.entry.id + '$'));
-  await page.getByRole('navigation', { name: 'Breadcrumb', exact: true }).getByRole('link', { name: 'Home', exact: true }).click();
-  await openShow(page, 'Friends');
+  await homeLink(page).click();
+  await homeShowCard(page, 'Friends').click();
   await expect(page).toHaveURL(new RegExp('/packs/' + packs.find(pack => pack.data.title === 'Friends')!.entry.id + '$'));
   await page.getByRole('searchbox').fill('not-a-scene');
   await page.goBack();

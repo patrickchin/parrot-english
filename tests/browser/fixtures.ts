@@ -5,7 +5,7 @@ import { extname } from 'node:path';
 import { existsSync, readFileSync } from 'node:fs';
 import { clips, contentRoot, packs, publishedCatalog } from '../content-fixtures';
 import type { Clip, Pack } from '../../src/content-pack';
-import { browseShelves, shelfCount, type Shelf } from '../../src/browse';
+import { browseShelves, hasTag, levels, sceneLevel, shelfCount, topics, type BrowseTag, type Level, type Shelf, type Topic } from '../../src/browse';
 
 export const catalogUrl = 'https://parrotbook-media-f6e09412.oss-cn-hongkong.aliyuncs.com/content/catalog.json';
 export async function routeContent(page: Page, sampleScene = false) {
@@ -100,46 +100,53 @@ export async function headerDestination(page: Page, name: string) {
   return page.getByRole('link', { name, exact: true });
 }
 
-type Translation = { categories: Record<string, string>; browse: Record<string, string>; library: Record<string, string> };
+type BrowseStrings = Record<string, string> & { levels: Record<Level, string>; topics: Record<Topic, string> };
+type Translation = { browse: BrowseStrings; library: Record<string, string> };
 const translations = Object.fromEntries(languages.map(({ value }) => [value, JSON.parse(readFileSync(`src/locales/${value}/translation.json`, 'utf8'))])) as Record<Language, Translation>;
 export const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const fixturePacks = packs.map(pack => ({ ...pack.data, id: pack.entry.id, uploader: pack.entry.uploader, sceneCount: pack.data.scenes.length }));
+const browseClips = clips as unknown as Clip[];
 /** Home shelves derived from the same authored catalog the browser receives. */
-export const homeShelves = browseShelves(fixturePacks, clips as unknown as Clip[]);
+export const homeShelves = browseShelves(fixturePacks, browseClips);
+/** Every single-source show, all listed on home. */
+export const homeShows = homeShelves.flatMap(shelf => shelf.kind === 'shows' ? shelf.shows : []);
+export const collectionShelves = homeShelves.filter((shelf): shelf is Extract<Shelf, { kind: 'collection' }> => shelf.kind === 'collection');
 /** Columns of the home grids at the page's viewport width (see styles.css breakpoints). */
 export const viewportColumns = (page: Page) => { const width = page.viewportSize()!.width; return width >= 1024 ? 4 : width >= 640 ? 3 : 2; };
-/** Cards a home shelf previews: complete rows only. */
-export const shelfShown = (shelf: Shelf, page: Page) => shelfCount(shelf.kind === 'section' ? shelf.shows.length : shelf.scenes.length, viewportColumns(page));
+/** Cards a home shelf shows: every show, but only complete rows of a collection. */
+export const shelfShown = (shelf: Shelf, page: Page) => shelf.kind === 'shows' ? shelf.shows.length : shelfCount(shelf.scenes.length, viewportColumns(page));
 export const pageLanguage = (page: Page) => pathLanguage(new URL(page.url()).pathname) ?? 'zh-CN';
 export const browseText = (language: Language) => translations[language];
-export const shelfTitle = (shelf: Shelf, language: Language) => shelf.kind === 'section' ? browseText(language).categories[shelf.section.title.split('.')[1]] : shelf.pack.title;
+export const shelfTitle = (shelf: Shelf, language: Language) => shelf.kind === 'shows' ? browseText(language).browse.shows : shelf.pack.title;
 export function sceneCountText(count: number, language: Language) {
   const library = browseText(language).library;
   return (library[count === 1 ? 'sceneCount_one' : 'sceneCount_other'] ?? library.sceneCount).replace('{{count}}', String(count));
 }
+
+/** Chips in the order home offers them: levels, then topics that have scenes. */
+export const homeTags: BrowseTag[] = [...levels, ...(Object.keys(topics) as Topic[]).filter(topic => browseClips.some(clip => hasTag(clip, topic)))];
+export const taggedClips = (tag: BrowseTag) => clips.filter(clip => hasTag(clip as unknown as Clip, tag));
+export const tagLabel = (tag: BrowseTag, language: Language = 'en') => {
+  const text = browseText(language).browse;
+  return (levels as readonly string[]).includes(tag) ? text.levels[tag as Level] : text.topics[tag as Topic];
+};
+export const levelText = (clip: { quotes: string[] }, language: Language = 'en') => browseText(language).browse.levels[sceneLevel(clip)];
+export const tagGroup = (page: Page, language: Language = 'en') => page.getByRole('group', { name: browseText(language).browse.tagFilter, exact: true });
+export const tagChip = (page: Page, tag: BrowseTag, language: Language = 'en') => tagGroup(page, language).getByRole('button', { name: tagLabel(tag, language), exact: true });
+/** The home grid that lists every show. */
+export const showsShelf = (page: Page, language: Language = 'en') => page.getByRole('region', { name: browseText(language).browse.shows, exact: true });
+/** A show card in the home Shows grid, in the page's current language. */
+export const homeShowCard = (page: Page, title: string) => showCard(showsShelf(page, pageLanguage(page)), title, pageLanguage(page));
+/** Show and collection pages link back to home. */
+export const homeLink = (page: Page, language: Language = 'en') => page.getByRole('main').getByRole('link', { name: browseText(language).browse.home, exact: true });
 
 /** A show card is a link named by its visible title and scene count. */
 export function showCard(scope: Page | Locator, title: string, language: Language = 'en', sceneCount = packs.find(pack => pack.data.title === title)!.data.scenes.length) {
   return scope.getByRole('link', { name: new RegExp(`^${escapeRegExp(title)}\\s*${escapeRegExp(sceneCountText(sceneCount, language))}$`) });
 }
 
-/** Scene cards in the current page's scene list, excluding breadcrumb items. */
+/** Scene cards in the current page's scene list. */
 export const sceneItems = (page: Page) => page.getByRole('main').getByRole('listitem').filter({ has: page.getByRole('button') });
-
-/** Opens a show from home through its shelf, or the shelf's section page when the show is beyond the preview. */
-export async function openShow(page: Page, title: string, { keyboard = false } = {}) {
-  const language = pageLanguage(page);
-  const text = browseText(language);
-  const shelf = homeShelves.find(shelf => shelf.kind === 'section' && shelf.shows.some(show => show.title === title));
-  if (!shelf || shelf.kind !== 'section') throw new Error(`${title} is not on a home shelf`);
-  const name = shelfTitle(shelf, language);
-  const region = page.getByRole('region', { name, exact: true });
-  const activate = async (link: Locator) => { if (keyboard) { await link.focus(); await link.press('Enter'); } else await link.click(); };
-  if (shelf.shows.findIndex(show => show.title === title) < shelfShown(shelf, page)) return activate(showCard(region, title, language));
-  await activate(region.getByRole('link', { name: text.browse.seeAllLabel.replace('{{count}}', String(shelf.shows.length)).replace('{{title}}', name), exact: true }));
-  await expect(page.getByRole('heading', { level: 1, name, exact: true })).toBeVisible();
-  await activate(showCard(page.getByRole('list', { name: text.browse.shows, exact: true }), title, language));
-}
 
 // Scrolling to reach controls must not look like a layout shift.
 export async function documentBoxes(page: Page, locators: Locator[]) {

@@ -1,4 +1,4 @@
-import { test, expect, homeShelves, shelfTitle, showCard } from './fixtures';
+import { test, expect, homeShelves, homeShows, showCard, homeLink, showsShelf, tagChip } from './fixtures';
 import { prepareMediaTest } from './media-fixture';
 import { mobileScreenshot, mobileViewports, touchControl } from './mobile-viewports';
 
@@ -42,25 +42,14 @@ test('phone and tablet layouts retain browse shelves, practice controls and comp
     await expect.poll(() => cover.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0)).toBe(true);
     await cover.evaluate((image: HTMLImageElement) => image.decode());
   }
+  const shows = showsShelf(page).getByRole('link');
+  await expect(shows).toHaveCount(homeShows.length);
   for (const viewport of mobileViewports) {
     await page.setViewportSize(viewport);
     await expect(page.getByRole('heading', { level: 1, name: 'Pick a scene to dub', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await touchControl(page, page.getByRole('searchbox', { name: 'Find a show or scene', exact: true }));
-    await page.evaluate(() => scrollTo(0, 0));
-    await mobileScreenshot(page, info, 'collections', viewport.name);
-  }
-  const shelf = homeShelves.find(shelf => shelf.kind === 'section' && shelf.shows.length > 4)!;
-  const name = shelfTitle(shelf, 'en');
-  const total = shelf.kind === 'section' ? shelf.shows.length : 0;
-  await page.getByRole('region', { name, exact: true }).getByRole('link', { name: `See all ${total} in ${name}`, exact: true }).tap();
-  const shows = page.getByRole('list', { name: 'Shows', exact: true }).getByRole('link');
-  await expect(shows).toHaveCount(total);
-  for (const viewport of mobileViewports) {
-    await page.setViewportSize(viewport);
-    await expect(page.getByRole('heading', { level: 1, name, exact: true })).toBeVisible();
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await touchControl(page, page.getByRole('navigation', { name: 'Breadcrumb', exact: true }).getByRole('link', { name: 'Home', exact: true }));
+    await touchControl(page, tagChip(page, 'starter'));
     const columns = viewport.width >= 1024 ? 4 : viewport.width >= 640 ? 3 : 2;
     const boxes = await Promise.all(Array.from({ length: columns + 1 }, (_, index) => shows.nth(index).boundingBox()));
     const first = boxes[0]!;
@@ -73,8 +62,17 @@ test('phone and tablet layouts retain browse shelves, practice controls and comp
     const nextRow = boxes[columns]!;
     expect(nextRow.x).toBeCloseTo(first.x, 0);
     expect(nextRow.y).toBeGreaterThan(first.y + first.height);
+    await page.evaluate(() => scrollTo(0, 0));
+    await mobileScreenshot(page, info, 'collections', viewport.name);
   }
-  await page.getByRole('navigation', { name: 'Breadcrumb', exact: true }).getByRole('link', { name: 'Home', exact: true }).tap();
+  await showCard(showsShelf(page), 'Friends').tap();
+  for (const viewport of mobileViewports) {
+    await page.setViewportSize(viewport);
+    await expect(page.getByRole('heading', { level: 1, name: 'Friends', exact: true })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await touchControl(page, homeLink(page));
+  }
+  await homeLink(page).tap();
   await page.getByRole('searchbox', { name: 'Find a show or scene', exact: true }).fill('SpongeBob');
   const showResults = page.getByRole('region', { name: 'Shows', exact: true });
   await expect(showResults.getByRole('link')).toHaveCount(1);

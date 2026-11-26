@@ -1,33 +1,30 @@
-import { test, expect, setLanguage, homeShelves, escapeRegExp, openShow, sceneItems, shelfShown, shelfTitle, showCard } from './fixtures';
-import type { Page } from '@playwright/test';
+import { test, expect, setLanguage, homeShelves, homeShows, collectionShelves, escapeRegExp, homeLink, levelText, sceneItems, shelfShown, shelfTitle, showCard, showsShelf } from './fixtures';
 import { clips, packs } from '../content-fixtures';
-import { libraryPath, packPath } from '../../src/app/routes';
+import { packPath } from '../../src/app/routes';
 import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 const memeScenes = clips.filter(clip => clip.tags.includes('meme') && clip.tags.includes('internet'));
 const creators = [...new Set(memeScenes.map(clip => clip.note))];
-
 const memesPack = packs.find(pack => pack.data.title === 'Memes')!;
-const breadcrumb = (page: Page) => page.getByRole('navigation', { name: 'Breadcrumb', exact: true });
-const sectionShelves = homeShelves.filter(shelf => shelf.kind === 'section');
+const memesShelf = collectionShelves.find(shelf => shelf.pack.id === memesPack.entry.id)!;
 
-test('home groups shows into ordered age shelves with collections and all scenes beside them', async ({ page }, info) => {
+test('home lists every show in one grid, then collections with complete rows and a See all link', async ({ page }, info) => {
   await page.goto('/en/');
   await expect(page.getByRole('heading', { level: 1, name: 'Pick a scene to dub', exact: true })).toBeVisible();
-  await expect(page.getByRole('main').getByRole('heading', { level: 2 })).toHaveText(['First English', 'Cartoons & films', 'Ages 10–12', 'Teenagers', 'Memes']);
-  expect(homeShelves.map(shelf => shelfTitle(shelf, 'en'))).toEqual(['First English', 'Cartoons & films', 'Ages 10–12', 'Teenagers', 'Memes']);
-  for (const shelf of sectionShelves) {
-    const name = shelfTitle(shelf, 'en');
-    const region = page.getByRole('region', { name, exact: true });
-    await expect(region.getByRole('link', { name: /scenes?$/ })).toHaveCount(shelfShown(shelf, page));
-    for (const show of shelf.shows.slice(0, shelfShown(shelf, page))) await expect(showCard(region, show.title)).toHaveAttribute('href', packPath(show.id, 'en'));
-    await expect(region.getByRole('link', { name: `See all ${shelf.shows.length} in ${name}`, exact: true })).toHaveCount(shelf.shows.length > shelfShown(shelf, page) ? 1 : 0);
-    await expect(region.getByRole('button')).toHaveCount(0);
+  await expect(page.getByRole('main').getByRole('heading', { level: 2 })).toHaveText(['Shows', 'Memes']);
+  expect(homeShelves.map(shelf => shelfTitle(shelf, 'en'))).toEqual(['Shows', 'Memes']);
+  expect(homeShows.length + collectionShelves.length).toBe(packs.length);
+  const shows = showsShelf(page);
+  await expect(shows.getByRole('link')).toHaveCount(homeShows.length);
+  for (const [index, show] of homeShows.entries()) {
+    await expect(showCard(shows, show.title)).toHaveAttribute('href', packPath(show.id, 'en'));
+    await expect(shows.getByRole('link').nth(index)).toHaveAttribute('href', packPath(show.id, 'en'));
   }
+  await expect(shows.getByRole('link', { name: /^See all/ })).toHaveCount(0);
+  await expect(shows.getByRole('button')).toHaveCount(0);
   const memes = page.getByRole('region', { name: 'Memes', exact: true });
-  await expect(memes.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(shelfShown(homeShelves.find(shelf => shelf.kind === 'collection')!, page));
   await expect(memes.getByRole('link', { name: `See all ${memeScenes.length} in Memes`, exact: true })).toHaveAttribute('href', packPath(memesPack.entry.id, 'en'));
   for (const region of await page.getByRole('region').all()) await expect(region.getByRole('link', { name: 'All scenes', exact: true })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'All scenes', exact: true })).toBeVisible();
@@ -35,7 +32,10 @@ test('home groups shows into ordered age shelves with collections and all scenes
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 1000 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    const target = showCard(page.getByRole('region', { name: 'Teenagers', exact: true }), 'Friends');
+    // Collections show only complete rows at the current column count.
+    await expect(memes.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(shelfShown(memesShelf, page));
+    await expect(shows.getByRole('link')).toHaveCount(homeShows.length);
+    const target = showCard(shows, 'Friends');
     await target.focus(); await expect(target).toBeInViewport();
     expect((await target.boundingBox())!.height).toBeGreaterThanOrEqual(44);
     if (info.project.name === 'chromium') {
@@ -54,42 +54,10 @@ test('home groups shows into ordered age shelves with collections and all scenes
   }
 });
 
-test('a section page lists every show in its shelf with a Home breadcrumb', async ({ page }) => {
-  const shelf = sectionShelves.find(shelf => shelf.shows.length > 4)!;
-  const name = shelfTitle(shelf, 'en');
-  await page.goto('/en/');
-  const seeAll = page.getByRole('region', { name, exact: true }).getByRole('link', { name: `See all ${shelf.shows.length} in ${name}`, exact: true });
-  await seeAll.focus(); await seeAll.press('Enter');
-  await expect(page).toHaveURL(new URL(libraryPath(shelf.section.id, 'en'), page.url()).href);
-  await expect(page.getByRole('heading', { level: 1, name, exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
-  await expect(breadcrumb(page).getByRole('link')).toHaveText(['Home']);
-  await expect(page.getByText(`${shelf.shows.length} shows`, { exact: true })).toBeVisible();
-  const list = page.getByRole('list', { name: 'Shows', exact: true });
-  await expect(list.getByRole('link')).toHaveCount(shelf.shows.length);
-  for (const [index, show] of shelf.shows.entries()) {
-    await expect(showCard(list, show.title)).toBeVisible();
-    await expect(list.getByRole('link').nth(index)).toHaveAttribute('href', packPath(show.id, 'en'));
-  }
-  await expect(page.getByText(/Uploaded by/)).toHaveCount(0);
-  for (const width of [320, 390, 768, 1440]) {
-    await page.setViewportSize({ width, height: 900 });
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  }
-  await page.reload();
-  await expect(list.getByRole('link')).toHaveCount(shelf.shows.length);
-  await setLanguage(page, 'zh-CN');
-  await expect(page).toHaveURL(new URL(libraryPath(shelf.section.id, 'zh-CN'), page.url()).href);
-  await expect(page.getByRole('heading', { level: 1, name: shelfTitle(shelf, 'zh-CN'), exact: true })).toBeVisible();
-  await showCard(page.getByRole('list', { name: '节目', exact: true }), shelf.shows.at(-1)!.title, 'zh-CN').click();
-  await expect(page.getByRole('heading', { level: 1, name: shelf.shows.at(-1)!.title, exact: true })).toBeVisible();
-  await page.getByRole('navigation', { name: '导航路径', exact: true }).getByRole('link', { name: shelfTitle(shelf, 'zh-CN'), exact: true }).click();
-  await expect(page.getByRole('heading', { level: 1, name: shelfTitle(shelf, 'zh-CN'), exact: true })).toBeVisible();
-  await page.goBack();
-  await expect(page.getByRole('heading', { level: 1, name: shelf.shows.at(-1)!.title, exact: true })).toBeVisible();
-  await page.goForward();
-  await page.getByRole('navigation', { name: '导航路径', exact: true }).getByRole('link', { name: '首页', exact: true }).click();
-  await expect(page.getByRole('heading', { level: 1, name: '选一个片段来配音', exact: true })).toBeVisible();
+for (const folder of ['teens', 'first-english', 'cartoons-and-films']) test(`the retired ${folder} section path shows a missing-page error`, async ({ page }) => {
+  await page.goto(`/en/library/${folder}`);
+  await expect(page.getByRole('heading', { level: 1, name: 'Page not found', exact: true })).toBeVisible();
+  await expect(page.getByRole('searchbox')).toHaveCount(0);
 });
 
 test('home search finds shows by title and scenes by content, without uploader matches, and recovers from no results', async ({ page }) => {
@@ -123,7 +91,7 @@ test('home search finds shows by title and scenes by content, without uploader m
   await search.fill('Shrek');
   await clear.first().click();
   await expect(search).toHaveValue('');
-  await openShow(page, 'Shrek');
+  await showCard(showsShelf(page), 'Shrek').click();
   await expect(page.getByRole('heading', { level: 1, name: 'Shrek', exact: true })).toBeVisible();
   await expect(sceneItems(page)).toHaveCount(clips.filter(clip => clip.note === 'Shrek').length);
 });
@@ -143,7 +111,8 @@ test('pack and all-scene pages support history, reload, language, scene search a
   await page.goto('/en/');
   const franchise = 'Peppa Pig', pack = packs.find(pack => pack.data.title === franchise)!;
   const scenes = pack.data.scenes;
-  await openShow(page, franchise, { keyboard: true });
+  const card = showCard(showsShelf(page), franchise);
+  await card.focus(); await card.press('Enter');
   await expect(page).toHaveURL(new URL(packPath(pack.entry.id, 'en'), page.url()).href);
   await page.reload(); await expect(sceneItems(page)).toHaveCount(scenes.length);
   await page.getByRole('searchbox').fill('not-a-scene');
@@ -156,58 +125,54 @@ test('pack and all-scene pages support history, reload, language, scene search a
   await expect(page.getByRole('button', { name: '开始配音', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: '返回片段', exact: true }).click();
   await expect(sceneItems(page)).toHaveCount(scenes.length);
-  await page.getByRole('navigation', { name: '导航路径', exact: true }).getByRole('link', { name: '首页', exact: true }).click();
+  await homeLink(page, 'zh-CN').click();
   await page.getByRole('link', { name: '全部片段', exact: true }).click();
   await expect(sceneItems(page)).toHaveCount(clips.length);
   await page.goBack(); await expect(page.getByRole('heading', { level: 1, name: '选一个片段来配音', exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: /^选择片段：/ })).toHaveCount(4);
+  await expect(showsShelf(page, 'zh-CN').getByRole('link')).toHaveCount(homeShows.length);
+  await expect(page.getByRole('button', { name: /^选择片段：/ })).toHaveCount(shelfShown(memesShelf, page));
   await page.goForward(); await expect(sceneItems(page)).toHaveCount(clips.length);
 });
 
 test('the Memes collection retains original source names and searches its own scenes', async ({ page }) => {
   await page.goto('/en/');
   const shelf = page.getByRole('region', { name: 'Memes', exact: true });
-  for (const clip of memeScenes.slice(0, shelfShown(homeShelves.find(shelf => shelf.kind === 'collection')!, page))) await expect(shelf.getByRole('button', { name: `Choose scene: ${clip.english}`, exact: true }).getByText(clip.note, { exact: true })).toBeVisible();
+  for (const clip of memeScenes.slice(0, shelfShown(memesShelf, page))) await expect(shelf.getByRole('button', { name: `Choose scene: ${clip.english}`, exact: true })).toContainText(`${clip.note} · ${levelText(clip)}`);
   for (const creator of creators) await expect(page.getByRole('link', { name: new RegExp(`^${escapeRegExp(creator)}`) })).toHaveCount(0);
   await shelf.getByRole('link', { name: `See all ${memeScenes.length} in Memes`, exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Memes', exact: true })).toBeVisible();
-  await expect(breadcrumb(page).getByRole('link')).toHaveText(['Home']);
+  await expect(homeLink(page)).toHaveAttribute('href', '/en/');
   await expect(page.getByText(memesPack.data.description, { exact: true })).toBeVisible();
   await expect(page.getByText(`${memeScenes.length} scenes`, { exact: true })).toBeVisible();
   await expect(page.getByText(/Uploaded by/)).toHaveCount(0);
   await expect(sceneItems(page)).toHaveCount(memeScenes.length);
-  for (const clip of memeScenes) await expect(page.getByRole('button', { name: `Choose scene: ${clip.english}`, exact: true }).getByText(clip.note, { exact: true })).toBeVisible();
+  for (const clip of memeScenes) await expect(page.getByRole('button', { name: `Choose scene: ${clip.english}`, exact: true }).getByText(`${clip.note} · ${levelText(clip)}`, { exact: true })).toBeVisible();
   await page.getByRole('searchbox').fill('Steven');
   await expect(page.getByRole('button', { name: 'Choose scene: Emotional damage!', exact: true })).toBeVisible();
   await page.reload(); await expect(sceneItems(page)).toHaveCount(memeScenes.length);
 });
 
-test('show breadcrumbs, headings and scene search remain usable across viewport sizes', async ({ page }) => {
+test('show back links, headings and scene search remain usable across viewport sizes', async ({ page }) => {
   const pack = packs.find(pack => pack.data.title === 'Shrek')!;
   await page.goto(packPath(pack.entry.id, 'en'));
-  const trail = breadcrumb(page);
-  const home = trail.getByRole('link', { name: 'Home', exact: true });
-  const section = trail.getByRole('link', { name: 'Cartoons & films', exact: true });
+  const home = homeLink(page);
   const heading = page.getByRole('heading', { name: 'Shrek', level: 1, exact: true });
   const search = page.getByRole('searchbox', { name: 'Find a scene', exact: true });
+  await expect(page.getByRole('navigation', { name: 'Breadcrumb' })).toHaveCount(0);
   await expect(page.getByText(`${pack.data.scenes.length} scenes`, { exact: true })).toBeVisible();
   await expect(page.getByText(/Uploaded by/)).toHaveCount(0);
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 1000 });
-    for (const control of [home, section, heading, search]) await expect(control).toBeVisible();
-    for (const link of [home, section]) {
-      const box = (await link.boundingBox())!;
-      expect(Math.min(box.width, box.height), 'Breadcrumb links are comfortable touch targets').toBeGreaterThanOrEqual(44);
-    }
+    for (const control of [home, heading, search]) await expect(control).toBeVisible();
+    const box = (await home.boundingBox())!;
+    expect(Math.min(box.width, box.height), 'The Home link is a comfortable touch target').toBeGreaterThanOrEqual(44);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
   await search.fill('zxqvunfindable');
   await expect(page.getByRole('status')).toHaveText('No scenes found.');
   await expect(page.getByText('0 scenes', { exact: true })).toBeVisible();
-  await section.click();
-  await expect(page.getByRole('heading', { level: 1, name: 'Cartoons & films', exact: true })).toBeVisible();
-  await page.goBack();
-  await expect(heading).toBeVisible();
   await home.focus(); await home.press('Enter');
   await expect(page.getByRole('heading', { level: 1, name: 'Pick a scene to dub', exact: true })).toBeVisible();
+  await page.goBack();
+  await expect(heading).toBeVisible();
 });

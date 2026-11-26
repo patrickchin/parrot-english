@@ -223,12 +223,6 @@
     "progress": "Creando vídeo: {{percent}} %. Mantén esta página abierta.",
     "ready": "Tu vídeo está listo para guardarlo y compartirlo."
   },
-  "categories": {
-    "films": "Dibujos y películas",
-    "younger": "Primeros pasos en inglés",
-    "older": "De 10 a 12 años",
-    "teens": "Adolescentes"
-  },
   "app": {
     "title": "Parrotbook · Doblaje en inglés"
   },
@@ -364,14 +358,26 @@
     "search": "Busca una serie o escena",
     "searchPlaceholder": "Serie, personaje o frase",
     "home": "Inicio",
-    "breadcrumb": "Ruta de navegación",
     "shows": "Series",
     "scenes": "Escenas",
     "seeAll": "Ver todo",
     "seeAllLabel": "Ver los {{count}} de {{title}}",
-    "showCount_one": "{{count}} serie",
-    "showCount_other": "{{count}} series",
     "resultCount_one": "{{count}} resultado",
-    "resultCount_other": "{{count}} resultados"
+    "resultCount_other": "{{count}} resultados",
+    "tagFilter": "Filtrar escenas por nivel o tema",
+    "levels": {
+      "starter": "Inicial",
+      "beginner": "Principiante",
+      "intermediate": "Intermedio"
+    },
+    "topics": {
+      "phrases": "Frases cotidianas",
+      "food": "Comida",
+      "animals": "Animales",
+      "school": "Escuela",
+      "family": "Familia y amigos",
+      "funny": "Divertido",
+      "magic": "Magia"
+    }
   }
 }

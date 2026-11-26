@@ -1,4 +1,4 @@
-import { test, expect, catalogUrl, headerDestination, homeShelves, shelfTitle, showCard } from './fixtures';
+import { test, expect, catalogUrl, headerDestination, homeShelves, shelfTitle, showCard, homeLink } from './fixtures';
 import type { Page } from '@playwright/test';
 import { publishedCatalog, packs, clips, readScene, sceneFile } from '../content-fixtures';
 import type { Pack } from '../../src/content-pack';
@@ -195,7 +195,7 @@ test('an owner publishes a native folder without franchise metadata and its pack
   await expect(page.getByRole('heading', { level: 1, name: pack.title, exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(1);
   await expect(page.getByText(/Uploaded by/)).toHaveCount(0);
-  await page.getByRole('navigation', { name: 'Breadcrumb', exact: true }).getByRole('link', { name: 'Home', exact: true }).click();
+  await homeLink(page).click();
   const search = page.getByRole('searchbox', { name: 'Find a show or scene', exact: true });
   const shows = page.getByRole('region', { name: 'Shows', exact: true });
   // Authors and uploaders are credits, not show search terms.

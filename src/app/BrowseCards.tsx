@@ -5,6 +5,7 @@ import { useLanguage } from '../i18n';
 import { Icon } from '../shared/ui';
 import { ContentPoster } from './ContentPoster';
 import { packPath } from './routes';
+import { sceneLevel } from '../browse';
 
 export function ShowCard({ pack, eager = false, priority = false }: { pack: PublishedPack; eager?: boolean; priority?: boolean }) {
   const { t } = useTranslation();
@@ -23,6 +24,6 @@ export function SceneCard({ clip, onChoose, source = false, eager = false, prior
   const title = t(`content:scenes.${clip.id}.title`, { defaultValue: clip.title });
   return <button onClick={onChoose} aria-label={t('library.chooseScene', { title })} className="scene-select">
     <ContentPoster src={clip.poster} eager={eager} priority={priority} />
-    <span className="scene-copy"><span className="scene-title font-display">{title}</span>{source && <span className="scene-source">{clip.note}</span>}</span>
+    <span className="scene-copy"><span className="scene-title font-display">{title}</span><span className="scene-source">{source && <>{clip.note} · </>}{t(`browse.levels.${sceneLevel(clip)}`)}</span></span>
   </button>;
 }

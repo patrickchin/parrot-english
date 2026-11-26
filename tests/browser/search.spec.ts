@@ -1,4 +1,4 @@
-import { test, expect, setLanguage, openShow, sceneItems } from './fixtures';
+import { test, expect, setLanguage, sceneItems, homeShowCard, homeLink } from './fixtures';
 import { clips } from '../content-fixtures';
 
 test('scene search finds tags and full dialogue and remains scoped to a selected pack', async ({ page }) => {
@@ -22,8 +22,8 @@ test('scene search finds tags and full dialogue and remains scoped to a selected
   await page.getByRole('button', { name: '清除搜索', exact: true }).click();
   await expect(search).toBeFocused();
   await expect(results).toHaveCount(clips.length);
-  await page.getByRole('navigation', { name: '导航路径', exact: true }).getByRole('link', { name: '首页', exact: true }).click();
-  await openShow(page, 'English Singsing');
+  await homeLink(page, 'zh-CN').click();
+  await homeShowCard(page, 'English Singsing').click();
   await expect(results).toHaveCount(clips.filter(clip => clip.note === 'English Singsing').length);
   await search.fill('SpongeBob');
   await expect(results).toHaveCount(0);

@@ -223,12 +223,6 @@
     "progress": "Creating video {{percent}}%. Keep this page open.",
     "ready": "Your video is ready to save and share."
   },
-  "categories": {
-    "films": "Cartoons & films",
-    "younger": "First English",
-    "older": "Ages 10–12",
-    "teens": "Teenagers"
-  },
   "app": {
     "title": "Parrotbook · English dubbing"
   },
@@ -364,14 +358,26 @@
     "search": "Find a show or scene",
     "searchPlaceholder": "Show, character or line",
     "home": "Home",
-    "breadcrumb": "Breadcrumb",
     "shows": "Shows",
     "scenes": "Scenes",
     "seeAll": "See all",
     "seeAllLabel": "See all {{count}} in {{title}}",
-    "showCount_one": "{{count}} show",
-    "showCount_other": "{{count}} shows",
     "resultCount_one": "{{count}} result",
-    "resultCount_other": "{{count}} results"
+    "resultCount_other": "{{count}} results",
+    "tagFilter": "Filter scenes by level or topic",
+    "levels": {
+      "starter": "Starter",
+      "beginner": "Beginner",
+      "intermediate": "Intermediate"
+    },
+    "topics": {
+      "phrases": "Everyday phrases",
+      "food": "Food",
+      "animals": "Animals",
+      "school": "School",
+      "family": "Family & friends",
+      "funny": "Funny",
+      "magic": "Magic"
+    }
   }
 }

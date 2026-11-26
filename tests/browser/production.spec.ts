@@ -1,5 +1,5 @@
 import { scenePath } from './scene-path';
-import { test, expect, catalogUrl, setLanguage, browseText, escapeRegExp, homeShelves, openShow, shelfShown, shelfTitle, showCard } from './fixtures';
+import { test, expect, catalogUrl, setLanguage, browseText, escapeRegExp, homeShelves, shelfShown, shelfTitle, showCard, homeShowCard, homeShows, collectionShelves, showsShelf } from './fixtures';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { clips, packs } from '../content-fixtures';
@@ -26,15 +26,14 @@ for (const initialPath of ['/en/packs', '/en/library/all']) test(`first visit to
   expect(packs).toHaveLength(21);
   expect(clips).toHaveLength(132);
   if (initialPath === '/en/packs') {
-    // Every published pack is either a show on an age shelf or a collection shelf.
-    expect(homeShelves.reduce((total, shelf) => total + (shelf.kind === 'section' ? shelf.shows.length : 1), 0)).toBe(packs.length);
+    // Every published pack is either a show in the home grid or a collection shelf.
+    expect(homeShows.length + collectionShelves.length).toBe(packs.length);
     await expect(page.getByRole('main').getByRole('heading', { level: 2 })).toHaveText(homeShelves.map(shelf => shelfTitle(shelf, 'en')));
-    for (const shelf of homeShelves) {
-      const name = shelfTitle(shelf, 'en');
-      const region = page.getByRole('region', { name, exact: true });
-      if (shelf.kind === 'collection') await expect(region.getByRole('link', { name: `See all ${shelf.scenes.length} in ${name}`, exact: true })).toBeVisible();
-      else if (shelf.shows.length > shelfShown(shelf, page)) await expect(region.getByRole('link', { name: `See all ${shelf.shows.length} in ${name}`, exact: true })).toBeVisible();
-      else for (const show of shelf.shows.slice(0, shelfShown(shelf, page))) await expect(showCard(region, show.title)).toBeVisible();
+    for (const show of homeShows) await expect(showCard(showsShelf(page), show.title)).toBeVisible();
+    for (const shelf of collectionShelves) {
+      const region = page.getByRole('region', { name: shelf.pack.title, exact: true });
+      await expect(region.getByRole('link', { name: `See all ${shelf.scenes.length} in ${shelf.pack.title}`, exact: true })).toBeVisible();
+      await expect(region.getByRole('button')).toHaveCount(shelfShown(shelf, page));
     }
     await page.getByRole('link', { name: 'All scenes', exact: true }).click();
   }
@@ -116,7 +115,7 @@ test('production prepares player code from a scene list and defers owner JavaScr
 
   const clip = clips.find(clip => clip.slug === 'patrick')!;
   const pack = packs.find(pack => pack.entry.id === clip.packId)!;
-  await openShow(page, pack.data.title);
+  await homeShowCard(page, pack.data.title).click();
   await expect(page.getByRole('heading', { level: 1, name: pack.data.title, exact: true })).toBeVisible();
   // Warm only code while the learner chooses a scene, without fetching video.
   await expect.poll(() => requested('Player')).toBe(true);

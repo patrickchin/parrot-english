@@ -223,12 +223,6 @@
     "progress": "동영상 만드는 중 {{percent}}%. 이 페이지를 닫지 마세요.",
     "ready": "동영상이 준비됐어요. 저장한 후 공유할 수 있어요."
   },
-  "categories": {
-    "films": "애니메이션과 영화",
-    "younger": "처음 배우는 영어",
-    "older": "10~12세",
-    "teens": "청소년"
-  },
   "app": {
     "title": "Parrotbook · 영어 더빙"
   },
@@ -364,14 +358,26 @@
     "search": "프로그램이나 장면 찾기",
     "searchPlaceholder": "프로그램, 캐릭터, 대사",
     "home": "홈",
-    "breadcrumb": "탐색 경로",
     "shows": "프로그램",
     "scenes": "장면",
     "seeAll": "모두 보기",
     "seeAllLabel": "{{title}} {{count}}개 모두 보기",
-    "showCount_one": "프로그램 {{count}}개",
-    "showCount_other": "프로그램 {{count}}개",
     "resultCount_one": "결과 {{count}}개",
-    "resultCount_other": "결과 {{count}}개"
+    "resultCount_other": "결과 {{count}}개",
+    "tagFilter": "레벨이나 주제로 장면 필터링",
+    "levels": {
+      "starter": "입문",
+      "beginner": "초급",
+      "intermediate": "중급"
+    },
+    "topics": {
+      "phrases": "일상 표현",
+      "food": "음식",
+      "animals": "동물",
+      "school": "학교",
+      "family": "가족과 친구",
+      "funny": "재미있는",
+      "magic": "마법"
+    }
   }
 }

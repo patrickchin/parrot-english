@@ -223,12 +223,6 @@
     "progress": "正在生成视频 {{percent}}%，请保持页面打开。",
     "ready": "视频已生成，可保存后分享。"
   },
-  "categories": {
-    "films": "动画与电影",
-    "younger": "英语启蒙",
-    "older": "10–12岁",
-    "teens": "青少年"
-  },
   "app": {
     "title": "Parrotbook · 英语配音"
   },
@@ -364,14 +358,26 @@
     "search": "查找节目或片段",
     "searchPlaceholder": "节目、角色或台词",
     "home": "首页",
-    "breadcrumb": "导航路径",
     "shows": "节目",
     "scenes": "片段",
     "seeAll": "查看全部",
     "seeAllLabel": "查看{{title}}的全部 {{count}} 项",
-    "showCount_one": "{{count}} 个节目",
-    "showCount_other": "{{count}} 个节目",
     "resultCount_one": "{{count}} 个结果",
-    "resultCount_other": "{{count}} 个结果"
+    "resultCount_other": "{{count}} 个结果",
+    "tagFilter": "按难度或主题筛选片段",
+    "levels": {
+      "starter": "启蒙",
+      "beginner": "初级",
+      "intermediate": "中级"
+    },
+    "topics": {
+      "phrases": "日常用语",
+      "food": "食物",
+      "animals": "动物",
+      "school": "学校",
+      "family": "家人与朋友",
+      "funny": "搞笑",
+      "magic": "魔法"
+    }
   }
 }

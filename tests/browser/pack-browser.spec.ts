@@ -1,4 +1,4 @@
-import { test, expect, catalogUrl, setLanguage, headerDestination, homeShelves, openShow, shelfShown, shelfTitle, showCard } from './fixtures';
+import { test, expect, catalogUrl, setLanguage, headerDestination, homeShelves, homeShows, levelText, shelfTitle, showCard, homeShowCard, homeLink, showsShelf } from './fixtures';
 import { languagePath } from '../../src/locale';
 import { publishedCatalog, clips, packs, readScene } from '../content-fixtures';
 import { packPath, packsPath } from '../../src/app/routes';
@@ -20,21 +20,17 @@ test('home shelves match scene-card sizing and support responsive keyboard selec
   await expect(page.getByRole('heading', { level: 1, name: 'Pick a scene to dub', exact: true })).toBeVisible();
   await expect(page.getByRole('main').getByRole('heading', { level: 2 })).toHaveText(homeShelves.map(shelf => shelfTitle(shelf, 'en')));
   for (const notice of new Set(packs.map(pack => pack.data.locales.en.notices?.library).filter(Boolean))) await expect(page.getByText(notice as string, { exact: true })).toBeVisible();
-  for (const shelf of homeShelves) {
-    if (shelf.kind !== 'section') continue;
-    const region = page.getByRole('region', { name: shelfTitle(shelf, 'en'), exact: true });
-    await expect(region.getByRole('listitem')).toHaveCount(shelfShown(shelf, page));
-    for (const show of shelf.shows.slice(0, shelfShown(shelf, page))) {
-      const card = showCard(region, show.title);
-      await expect(card).toHaveAttribute('href', packPath(show.id, 'en'));
-      await expect(card).toContainText(`${show.sceneCount} scene`);
-    }
+  await expect(showsShelf(page).getByRole('listitem')).toHaveCount(homeShows.length);
+  for (const show of homeShows) {
+    const card = showCard(showsShelf(page), show.title);
+    await expect(card).toHaveAttribute('href', packPath(show.id, 'en'));
+    await expect(card).toContainText(`${show.sceneCount} scene`);
   }
   await expect(page.getByText(/Uploaded by/)).toHaveCount(0);
   await expect(page.getByRole('button', { name: /upload|publish|import|create collection/i })).toHaveCount(0);
   await expect(page.getByRole('link', { name: /upload|publish|import|create collection/i })).toHaveCount(0);
   await expect(page.locator('input[type="file"]')).toHaveCount(0);
-  const target = showCard(page.getByRole('region', { name: 'First English', exact: true }), starter.data.title);
+  const target = showCard(showsShelf(page), starter.data.title);
   const cardSizes = new Map<number, { width: number; posterWidth: number; posterHeight: number }>();
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
@@ -56,8 +52,7 @@ test('home shelves match scene-card sizing and support responsive keyboard selec
   await target.press('Enter');
   await expect(page).toHaveURL(new URL(packPath(starter.entry.id, 'en'), page.url()).href);
   await expect(page.getByRole('heading', { level: 1, name: starter.data.title, exact: true })).toBeVisible();
-  const breadcrumb = page.getByRole('navigation', { name: 'Breadcrumb', exact: true });
-  await expect(breadcrumb.getByRole('link')).toHaveText(['Home', 'First English']);
+  await expect(homeLink(page)).toHaveAttribute('href', languagePath('/', 'en'));
   // A single-source show needs no collection description or uploader credit.
   await expect(page.getByText(starter.data.description, { exact: true })).toHaveCount(0);
   await expect(page.getByText(/Uploaded by/)).toHaveCount(0);
@@ -67,6 +62,9 @@ test('home shelves match scene-card sizing and support responsive keyboard selec
   await expect(page.locator('input[type="file"]')).toHaveCount(0);
   const first = starter.data.scenes[0];
   const scene = page.getByRole('button', { name: `Choose scene: ${titleOf(starter, first.id)}`, exact: true });
+  // Show pages give each scene its estimated level without repeating the show as source.
+  await expect(scene.getByText(levelText(first), { exact: true })).toBeVisible();
+  await expect(scene).not.toContainText(`${first.note} ·`);
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -107,11 +105,8 @@ test('a newly published pack and its actual authored scene appear from the runti
   const manifest = memePack.entry.manifest.replace('pack.json', 'weekend-pack.json');
   await page.route(catalogUrl, route => route.fulfill({ json: current }));
   await page.goto(packsPath('en'));
-  const shelfName = shelfTitle(homeShelves.find(shelf => shelf.kind === 'section' && shelf.section.cohort === chosen.cohort)!, 'en');
-  const shelf = page.getByRole('region', { name: shelfName, exact: true });
-  const shows = homeShelves.find(shelf => shelf.kind === 'section' && shelf.section.cohort === chosen.cohort)!;
-  const showTotal = shows.kind === 'section' ? shows.shows.length : 0;
-  await expect(shelf.getByRole('link', { name: `See all ${showTotal} in ${shelfName}`, exact: true })).toBeVisible();
+  const shelf = showsShelf(page);
+  await expect(shelf.getByRole('link')).toHaveCount(homeShows.length);
   const search = page.getByRole('searchbox', { name: 'Find a show or scene', exact: true });
   await search.fill(source.franchise!);
   const showResults = page.getByRole('region', { name: 'Shows', exact: true });
@@ -128,12 +123,12 @@ test('a newly published pack and its actual authored scene appear from the runti
   await expect(added).toContainText('1 scene');
   await page.getByRole('button', { name: 'Clear search', exact: true }).click();
   await expect(search).toHaveValue('');
-  await shelf.getByRole('link', { name: `See all ${showTotal + 1} in ${shelfName}`, exact: true }).click();
-  await expect(page.getByRole('heading', { level: 1, name: shelfName, exact: true })).toBeVisible();
-  await expect(page.getByText(`${showTotal + 1} shows`, { exact: true })).toBeVisible();
-  await showCard(page.getByRole('list', { name: 'Shows', exact: true }), extra.title, 'en', 1).click();
+  // A newly published single-source pack joins the end of the home Shows grid.
+  await expect(shelf.getByRole('link')).toHaveCount(homeShows.length + 1);
+  await expect(shelf.getByRole('link').last()).toHaveAttribute('href', packPath(id, 'en'));
+  await showCard(shelf, extra.title, 'en', 1).click();
   await expect(page.getByRole('heading', { level: 1, name: extra.title, exact: true })).toBeVisible();
-  await expect(page.getByRole('navigation', { name: 'Breadcrumb', exact: true }).getByRole('link')).toHaveText(['Home', shelfName]);
+  await expect(homeLink(page)).toBeVisible();
   // One source makes this a show, so its collection description stays hidden.
   await expect(page.getByText(extra.description, { exact: true })).toHaveCount(0);
   await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(1);
@@ -149,13 +144,13 @@ test('a newly published pack and its actual authored scene appear from the runti
   await expect(page.getByRole('heading', { level: 1, name: 'Page not found', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Browse', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Pick a scene to dub', exact: true })).toBeVisible();
-  await expect(shelf.getByRole('link', { name: `See all ${showTotal} in ${shelfName}`, exact: true })).toBeVisible();
+  await expect(shelf.getByRole('link')).toHaveCount(homeShows.length);
   await expect(showCard(page, extra.title, 'en', 1)).toHaveCount(0);
 });
 
 test('pack selection scopes search and survives reload, history and language changes', async ({ page }) => {
   await page.goto(packsPath('en'));
-  await openShow(page, starter.data.title);
+  await homeShowCard(page, starter.data.title).click();
   await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(starter.data.scenes.length);
   const notice = page.getByText(starter.data.locales.en.notices.library, { exact: true });
   await expect(notice).toBeVisible();
@@ -181,7 +176,7 @@ test('pack selection scopes search and survives reload, history and language cha
   await page.goForward();
   await expect(page).toHaveURL(new URL(packPath(starter.entry.id, 'zh-CN'), page.url()).href);
   await setLanguage(page, 'en');
-  await page.getByRole('navigation', { name: 'Breadcrumb', exact: true }).getByRole('link', { name: 'Home', exact: true }).click();
+  await homeLink(page).click();
   await expect(page).toHaveURL(new URL(languagePath('/', 'en'), page.url()).href);
   await page.goBack();
   await expect(page.getByRole('heading', { level: 1, name: starter.data.title, exact: true })).toBeVisible();
@@ -238,7 +233,7 @@ test('an empty authored pack stays distinct from an unknown pack', async ({ page
   await expect(page.getByRole('heading', { level: 1, name: starter.data.title, exact: true })).toBeVisible();
   await expect(page.getByRole('status')).toHaveText('No scenes in this collection');
   await expect(page.getByRole('button', { name: /^Choose scene:/ })).toHaveCount(0);
-  await page.getByRole('navigation', { name: 'Breadcrumb', exact: true }).getByRole('link', { name: 'Home', exact: true }).click();
+  await homeLink(page).click();
   await expect(page.getByRole('heading', { level: 1, name: 'Pick a scene to dub', exact: true })).toBeVisible();
   await page.goto(packPath('pack_missingTest', 'en'));
   await expect(page.getByRole('heading', { level: 1, name: 'Page not found', exact: true })).toBeVisible();

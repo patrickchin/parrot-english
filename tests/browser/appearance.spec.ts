@@ -1,4 +1,4 @@
-import { test, expect, setLanguage, openShow, showCard } from './fixtures';
+import { test, expect, setLanguage, showCard, homeShowCard, showsShelf } from './fixtures';
 import { mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -9,7 +9,7 @@ test('the blue bird identity defaults to light even on a dark device and remembe
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/packs');
   await expect.poll(() => background(page)).toBe('rgb(220, 239, 255)');
-  const pack = showCard(page.getByRole('region', { name: '动画与电影', exact: true }), 'SpongeBob SquarePants', 'zh-CN');
+  const pack = showCard(showsShelf(page, 'zh-CN'), 'SpongeBob SquarePants', 'zh-CN');
   await expect(pack).toBeVisible();
   await page.getByRole('button', { name: '切换到深色模式', exact: true }).click();
   await expect.poll(() => background(page)).toBe('rgb(17, 19, 24)');
@@ -59,7 +59,7 @@ test('appearance switching still works across scene navigation without browser s
   });
   await page.goto('/packs');
   await page.getByRole('button', { name: '切换到深色模式', exact: true }).click();
-  await openShow(page, 'Toy Story');
+  await homeShowCard(page, 'Toy Story').click();
   await page.getByRole('button', { name: '选择片段：飞向宇宙！', exact: true }).click();
   await expect(page.getByRole('region', { name: '选择角色', exact: true })).toBeVisible();
   const player = page.getByRole('main').locator('..');

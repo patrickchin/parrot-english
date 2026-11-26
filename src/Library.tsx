@@ -6,41 +6,12 @@ import { useLanguage } from './i18n';
 import { languagePath } from './locale';
 import { searchScenes } from './scene-search';
 import { AppHeader } from './app/AppHeader';
-import { SceneCard, ShowCard } from './app/BrowseCards';
+import { SceneCard } from './app/BrowseCards';
 import { Icon } from './shared/ui';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { libraryPath } from './app/routes';
-import { isCollection, packSection, sections, sectionShows, type Section } from './browse';
+import { isCollection } from './browse';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
-
-function Breadcrumb({ section }: { section?: Section }) {
-  const { t } = useTranslation();
-  const { language } = useLanguage();
-  return <nav aria-label={t('browse.breadcrumb')} className="library-breadcrumb"><ol>
-    <li><Link to={languagePath('/', language)}>{t('browse.home')}</Link></li>
-    {section && <li><Link to={libraryPath(section.id, language)}>{t(section.title)}</Link></li>}
-  </ol></nav>;
-}
-
-export function SectionPage({ sectionId }: { sectionId: string }) {
-  const { t } = useTranslation();
-  const { clips, packs } = useContent();
-  const section = sections.find(item => item.id === sectionId)!;
-  const shows = sectionShows(section, packs, clips);
-  return <div className="library-shell min-h-dvh bg-paper text-ink">
-    <AppHeader />
-    <main className="library-main">
-      <header className="pack-detail-heading">
-        <Breadcrumb />
-        <h1 className="font-display">{t(section.title)}</h1>
-        <p className="pack-meta">{t('browse.showCount', { count: shows.length })}</p>
-      </header>
-      {shows.length ? <ul role="list" aria-label={t('browse.shows')} className="pack-grid">{shows.map((show, index) => <li key={show.id}><ShowCard pack={show} eager={index < 4} priority={index === 0} /></li>)}</ul>
-        : <Card className="library-empty"><p role="status">{t('library.empty')}</p></Card>}
-    </main>
-  </div>;
-}
 
 export function Library({ onChoose, packId }: { onChoose: (slug: string, draftId?: string) => void; packId?: string }) {
   const { t } = useTranslation();
@@ -48,7 +19,6 @@ export function Library({ onChoose, packId }: { onChoose: (slug: string, draftId
   const { language } = useLanguage();
   const pack = packs.find(item => item.id === packId);
   const collection = !!pack && isCollection(pack, clips);
-  const section = pack && !collection ? packSection(pack, clips) : undefined;
   const scenes = packId ? clips.filter(clip => clip.packId === packId) : clips;
   const seasons = pack ? [...new Set(scenes.flatMap(clip => clip.season === undefined ? [] : [clip.season]))].sort((a, b) => a - b) : [];
   const [params, setParams] = useSearchParams();
@@ -68,7 +38,7 @@ export function Library({ onChoose, packId }: { onChoose: (slug: string, draftId
     <AppHeader />
     <main className="library-main">
       <header className="pack-detail-heading">
-        <Breadcrumb section={section} />
+        <Link className="library-back" to={languagePath('/', language)}><Icon name="back" /><span>{t('browse.home')}</span></Link>
         <h1 className="font-display">{pack?.title ?? t('library.allScenes')}</h1>
         {collection && pack.description && <p className="pack-description">{pack.description}</p>}
         <p className="pack-meta" aria-live="polite">{t('library.sceneCount', { count: visible.length })}</p>

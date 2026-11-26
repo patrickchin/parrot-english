@@ -2,9 +2,9 @@ import type { Page } from '@playwright/test';
 import { test, expect, catalogUrl, homeShelves, shelfShown } from './fixtures';
 import { clips, packs } from '../content-fixtures';
 
-// Home previews complete rows of each shelf, in shelf order.
-const homeItems = (page: Page) => homeShelves.flatMap(shelf => shelf.kind === 'section'
-  ? shelf.shows.slice(0, shelfShown(shelf, page)).map(show => packs.find(pack => pack.entry.id === show.id)!.data.scenes[0] as typeof clips[number])
+// Home lists every show's cover, then complete rows of each collection, in shelf order.
+const homeItems = (page: Page) => homeShelves.flatMap(shelf => shelf.kind === 'shows'
+  ? shelf.shows.map(show => packs.find(pack => pack.entry.id === show.id)!.data.scenes[0] as typeof clips[number])
   : shelf.scenes.slice(0, shelfShown(shelf, page)) as unknown as typeof clips);
 
 for (const gallery of ['packs', 'scenes'] as const) test(`${gallery} waits to download distant posters until they approach the viewport`, async ({ page }) => {

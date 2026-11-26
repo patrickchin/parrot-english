@@ -29,8 +29,8 @@ carry a shadow. Dialogs use a plain dim backdrop. Keep touch targets at least
 44px, visible keyboard focus, selection labels, and readable disabled controls.
 
 Home answers “Which scene shall I dub?” with a short banner (title and search,
-plus a featured poster when the catalog names one), then one shelf per section
-showing up to four shows and a “See all” link when more exist. Retain search,
+plus a featured poster when the catalog names one), tag chips, every show, then
+collection shelves. Retain search,
 scene counts (shown once per page), empty states, and source/privacy notices.
 The existing four-column desktop, three-column tablet, and two-column phone
 shelves keep their established behavior. Posters use their 16:9 frame.
@@ -126,40 +126,39 @@ each scene or reset. The browser handles microphone access when needed. Keep
 the local-recording notice in the footer and guardian guidance in Help; guardian
 authorization before child use remains part of the planned grown-up setup.
 
-Learners browse in three layers, each with one job:
+Learners browse **shows**, then **scenes**. There are no exclusive categories:
+age bands misdescribe foreign learners, whose English level rarely matches
+their age. Instead, home offers non-exclusive **browse tags** as filter chips:
 
-- **Section** — who a scene suits: First English, Cartoons & films, Ages 10–12,
-  Teenagers. Derived from each scene's `cohort`; a show joins the section of its
-  most common cohort.
-- **Show** — where scenes come from. A published pack whose scenes share one
-  source (`note`) is a show; its page lists scenes with an optional season filter.
-- **Scene** — what the learner dubs.
+- **Level** (Starter, Beginner, Intermediate): one per scene, currently
+  *estimated* in `src/browse.ts` from average words per spoken line. Replace with
+  reviewed, authored levels before relying on it for children.
+- **Topics** (Everyday phrases, Food, Animals, School, Family & friends, Funny,
+  Magic): any number per scene, mapped from a curated keyword list onto the
+  authored search tags.
 
-A pack whose scenes come from several sources (Memes) is a **collection**: it gets
-its own home shelf of scenes instead of joining a section. Packs remain the
-publishing unit and their uploader stays on the owner page; learners never see
-"pack" or "uploaded by". Tags are search keywords only and never become browse
-navigation. One search on home covers show titles and scenes (title, tags,
-characters, dialogue). Each page has one `h1`; only home adds `h2` shelf titles.
+A published pack whose scenes share one source (`note`) is a show. A pack mixing
+sources (Memes) is a **collection** with its own home shelf showing complete rows
+only, plus "See all". Packs remain the publishing unit; learners never see
+"pack" or "uploaded by". Authored keyword tags (characters, Chinese synonyms)
+power search only. Scene cards show their level (and source where it isn't
+obvious). On phones the chips form one swipeable row. Each page has one `h1`.
 
-Page navigation uses `/`, `/library/:section`, `/library/all`, `/packs/:packId`,
-`/dubs`, `/scenes/:slug`, and `/scenes/:slug/dubs/:dubId`. Show pages show a
-Home / Section breadcrumb. Scenes opened from a show or a home shelf carry
-`?pack=` so the player's Back returns to that show. Saved dub IDs replace the
-current scene address without reloading the player. Each page supports `/en/`,
-`/zh/`, `/es/`, `/ja/`, and `/ko/`, with the URL determining the interface
-language. An unprefixed entry uses the saved browser preference, defaulting to
-Chinese, and replaces its address with the prefixed URL.
+Page navigation uses `/`, `/library/all`, `/packs/:packId`, `/dubs`,
+`/scenes/:slug`, and `/scenes/:slug/dubs/:dubId`. Home keeps its tag and search
+in the URL (`?tag=food`, `?q=pig`). Show pages link back to Home. Scenes opened
+from a show or home carry `?pack=` so the player's Back returns to that show.
+Saved dub IDs replace the current scene address without reloading the player.
+Each page supports `/en/`, `/zh/`, `/es/`, `/ja/`, and `/ko/`, with the URL
+determining the interface language. An unprefixed entry uses the saved browser
+preference, defaulting to Chinese, and replaces its address with the prefixed URL.
 
 Approved sitemap:
 
 ```text
 /                                         Open the preferred language
-/:language/                               Home: section shelves and search
-/:language/library/first-english          Section: First English shows
-/:language/library/cartoons-and-films     Section: Cartoons & films shows
-/:language/library/ages-10-12             Section: Ages 10–12 shows
-/:language/library/teens                  Section: Teenagers shows
+/:language/                               Home: tag chips, shows, collections
+/:language/?tag=starter                   Scenes with one browse tag
 /:language/library/all                    All scenes
 /:language/packs/:packId                  A show or collection
 /:language/dubs                           My dubs

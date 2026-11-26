@@ -1,4 +1,4 @@
-import { test, expect, headerDestination, browseText, openShow, showCard } from './fixtures';
+import { test, expect, headerDestination, browseText, showCard, homeShowCard, showsShelf } from './fixtures';
 import { languagePath } from '../../src/locale';
 
 test('the pack gallery keeps artwork, readable titles and usable selection on phones in every language', async ({ page }) => {
@@ -7,7 +7,7 @@ test('the pack gallery keeps artwork, readable titles and usable selection on ph
     if (language === 'zh-CN') await expect(page).toHaveTitle('Parrotbook · 英语配音');
     const text = browseText(language);
     const title = page.getByRole('heading', { level: 1, name: text.browse.title, exact: true });
-    const pack = showCard(page.getByRole('region', { name: text.categories.teens, exact: true }), 'Friends', language);
+    const pack = showCard(showsShelf(page, language), 'Friends', language);
     for (const width of [320, 390, 768, 1440]) {
       await page.setViewportSize({ width, height: 1000 });
       await expect(title).toBeVisible();
@@ -25,7 +25,7 @@ test('the pack gallery keeps artwork, readable titles and usable selection on ph
 
 test('pack selection and shared surfaces keep playback, help, saved dubs and theme navigation usable', async ({ page }) => {
   await page.goto('/en/');
-  await openShow(page, 'Friends');
+  await homeShowCard(page, 'Friends').click();
   await page.getByRole('button', { name: 'Choose scene: A sofa that will not turn', exact: true }).click();
   await page.getByRole('button', { name: 'Start dubbing', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Record', exact: true })).toBeEnabled();
